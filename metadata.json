@@ -1,0 +1,6 @@
+{
+  "name": "Dak",
+  "description": "Threads-like app with a Bangladeshi vibe",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "528559248540",
+    "project_id": "dak-auth",
+    "storage_bucket": "dak-auth.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528559248540:android:4a8456a46e00467c794959",
+        "android_client_info": {
+          "package_name": "app.ngst.dak"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxpyiGa7kHXAmTFIiiwet6-84ZBmY-ZpY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
