@@ -1,3 +1,10 @@
-2026/06/04-14:12:20.700 4adc Reusing MANIFEST C:\Users\ARAFATH\AppData\Local\Temp\flutter_tools.e554aec9\flutter_tools_chrome_device.43ad0d7\Default\shared_proto_db/MANIFEST-000001
-2026/06/04-14:12:20.701 4adc Recovering log #3
-2026/06/04-14:12:20.703 4adc Reusing old log C:\Users\ARAFATH\AppData\Local\Temp\flutter_tools.e554aec9\flutter_tools_chrome_device.43ad0d7\Default\shared_proto_db/000003.log 
+2026/06/11-19:25:14.718 50f8 Reusing MANIFEST C:\Users\ARAFATH\AppData\Local\Temp\flutter_tools.dd3bc255\flutter_tools_chrome_device.cf300714\Default\shared_proto_db/MANIFEST-000001
+2026/06/11-19:25:14.720 50f8 Recovering log #7
+2026/06/11-19:25:14.725 50f8 Reusing old log C:\Users\ARAFATH\AppData\Local\Temp\flutter_tools.dd3bc255\flutter_tools_chrome_device.cf300714\Default\shared_proto_db/000007.log 
+2026/06/11-19:25:14.727 50f8 Delete type=0 #3
+2026/06/11-19:25:14.727 50f8 Delete type=0 #4
+2026/06/11-19:25:14.727 50f8 Delete type=2 #5
+2026/06/11-19:25:14.727 50f8 Delete type=2 #8
+2026/06/11-19:25:27.241 4360 Level-0 table #13: started
+2026/06/11-19:25:27.250 4360 Level-0 table #13: 135836 bytes OK
+2026/06/11-19:25:27.254 4360 Delete type=0 #7

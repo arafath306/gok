@@ -35,7 +35,7 @@ class AppNotification {
       threadId: json['thread_id'] as String?,
       content: json['content'] as String,
       createdAt: json['created_at'] as String? ?? 'এখনই',
-      read: json['read'] as bool? ?? false,
+      read: json['is_read'] as bool? ?? false,
     );
   }
 }

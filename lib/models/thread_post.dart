@@ -27,6 +27,21 @@ class ThreadPost {
     this.isLikedByMe = false,
   });
 
+  static String _formatRelativeTime(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return 'এখনই';
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1) return 'এখনই';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}মি';
+      if (diff.inHours < 24) return '${diff.inHours}ঘ';
+      if (diff.inDays < 7) return '${diff.inDays}দ';
+      return '${dt.day}/${dt.month}/${dt.year}';
+    } catch (_) {
+      return 'এখনই';
+    }
+  }
+
   factory ThreadPost.fromJson(Map<String, dynamic> json, {String? currentUid}) {
     final authorMap = json['profiles'] as Map<String, dynamic>?;
     final authorProfile = authorMap != null 
@@ -64,7 +79,7 @@ class ThreadPost {
       likesCount: (json['likes_count'] as int?) ?? 0,
       repliesCount: (json['replies_count'] as int?) ?? 0,
       repostsCount: (json['reposts_count'] as int?) ?? 0,
-      createdAt: json['created_at'] as String? ?? 'এখনই',
+      createdAt: _formatRelativeTime(json['created_at'] as String?),
       isLikedByMe: isLiked,
     );
   }

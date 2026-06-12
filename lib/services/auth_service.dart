@@ -49,22 +49,57 @@ class AuthService with ChangeNotifier {
       }
 
       // 2. Synchronize Supabase session
+      String? supabaseUid;
       try {
-        await _supabaseClient.auth.signInWithPassword(
+        final sbRes = await _supabaseClient.auth.signInWithPassword(
           email: email,
           password: password,
         );
+        supabaseUid = sbRes.user?.id;
+        debugPrint("Supabase signin OK, uid: $supabaseUid");
       } catch (supabaseError) {
-        // If user doesn't exist in Supabase Auth but exists in Firebase, 
-        // try to sign them up in Supabase under the hood
-        debugPrint("Supabase signin failed, trying background signup: $supabaseError");
+        // Supabase account may not exist yet — try creating it silently
+        debugPrint("Supabase signin failed: $supabaseError — trying signup");
         try {
-          await _supabaseClient.auth.signUp(
+          final sbSignup = await _supabaseClient.auth.signUp(
             email: email,
             password: password,
           );
+          supabaseUid = sbSignup.user?.id;
+          debugPrint("Supabase signup OK, uid: $supabaseUid");
         } catch (signUpError) {
-          debugPrint("Supabase background signup failed: $signUpError");
+          debugPrint("Supabase background signup also failed: $signUpError");
+        }
+      }
+
+      // 3. If we have a Supabase session, ensure profile row exists
+      if (supabaseUid != null && supabaseUid.isNotEmpty) {
+        try {
+          final existing = await _supabaseClient
+              .from('profiles')
+              .select('id')
+              .eq('id', supabaseUid)
+              .maybeSingle();
+
+          if (existing == null) {
+            // Profile row missing — create it now with Supabase UID
+            final defaultUsername = email.split('@')[0];
+            final displayName =
+                fbCredential.user?.displayName ?? defaultUsername;
+            await _supabaseClient.from('profiles').upsert({
+              'id': supabaseUid,
+              'username': defaultUsername,
+              'full_name': displayName,
+              'bio': 'আমি ডাক অ্যাপ ব্যবহার করছি।',
+              'avatar_url': null,
+              'cover_url': null,
+              'followers_count': 0,
+              'following_count': 0,
+            });
+            debugPrint("Profile created for uid: $supabaseUid");
+          }
+        } catch (profileError) {
+          debugPrint("Profile ensure error (non-fatal): $profileError");
         }
       }
 
@@ -131,10 +166,10 @@ class AuthService with ChangeNotifier {
           'username': defaultUsername,
           'full_name': fullName,
           'bio': 'আসসালামু আলাইকুম! আমি ডাক অ্যাপ ব্যবহার করছি।',
-          'avatar_url': 'https://i.pravatar.cc/150?u=$supabaseUid',
-          'cover_url': 'https://images.unsplash.com/photo-1596404886561-12cdce3fbe25',
-          'followers_count': 85,
-          'following_count': 10,
+          'avatar_url': null,
+          'cover_url': null,
+          'followers_count': 0,
+          'following_count': 0,
           'phone': phone,
           'gender': gender,
           'birthdate': birthdate,
@@ -148,10 +183,10 @@ class AuthService with ChangeNotifier {
             'username': defaultUsername,
             'full_name': fullName,
             'bio': 'আসসালামু আলাইকুম! আমি ডাক অ্যাপ ব্যবহার করছি।',
-            'avatar_url': 'https://i.pravatar.cc/150?u=$supabaseUid',
-            'cover_url': 'https://images.unsplash.com/photo-1596404886561-12cdce3fbe25',
-            'followers_count': 85,
-            'following_count': 10,
+            'avatar_url': null,
+            'cover_url': null,
+            'followers_count': 0,
+            'following_count': 0,
             'phone': phone,
           });
         } catch (innerError) {

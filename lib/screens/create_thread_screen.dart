@@ -182,11 +182,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
 
               RadioGroup<String>(
                 groupValue: _privacy,
-                onChanged: (val) {
-                  setState(() {
-                    _privacy = val!;
-                  });
-                },
+                onChanged: (val) => setState(() => _privacy = val!),
                 child: Column(
                   children: [
                     RadioListTile<String>(

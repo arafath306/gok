@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/auth_screen.dart';
+import 'screens/auth/onboarding_screen.dart';
+import 'screens/auth/auth_screen.dart';
 import 'screens/main_screen.dart';
 
 void main() async {
@@ -60,6 +61,9 @@ class DakApp extends StatelessWidget {
           primary: const Color(0xFF1E824C),
         ),
         useMaterial3: true,
+        textTheme: GoogleFonts.hindSiliguriTextTheme(
+          ThemeData.light().textTheme,
+        ),
       ),
       builder: (context, child) {
         final double screenWidth = MediaQuery.of(context).size.width;
@@ -107,28 +111,50 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool _showOnboarding = true;
+  bool _startSignUp = false;
 
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
 
-    // If user is logged in, directly send them to MainScreen (bypassing onboarding & auth)
+    // If user is logged in, push Firebase UID to DatabaseService and show MainScreen
     if (authService.isUserSignedIn) {
+      // Pass Firebase UID so DatabaseService can do read-only queries even
+      // before a Supabase session is established
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && authService.currentUid.isNotEmpty) {
+          dbService.setFirebaseUid(authService.currentUid);
+        }
+      });
       return const MainScreen();
     }
+
+    // User signed out — clear DatabaseService cache
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) dbService.clearUser();
+    });
 
     // Otherwise show Onboarding, followed by Auth Screen
     if (_showOnboarding) {
       return OnboardingScreen(
-        onFinish: () {
+        onGetStarted: () {
           setState(() {
             _showOnboarding = false;
+            _startSignUp = true;
+          });
+        },
+        onLogin: () {
+          setState(() {
+            _showOnboarding = false;
+            _startSignUp = false;
           });
         },
       );
     }
 
     return AuthScreen(
+      initialIsSignUp: _startSignUp,
       onLoginSuccess: () {
         // Upon successful auth, AuthService will trigger state change, causing AuthGate rebuild.
       },

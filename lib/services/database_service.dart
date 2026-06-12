@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
@@ -6,6 +7,10 @@ import '../models/notification.dart';
 
 class DatabaseService with ChangeNotifier {
   final _supabase = Supabase.instance.client;
+
+  // Firebase UID passed from AuthGate — used as fallback for read-only queries
+  // when Supabase session isn't established yet
+  String _firebaseUid = '';
 
   // Cache variables
   Profile? _myProfile;
@@ -20,30 +25,165 @@ class DatabaseService with ChangeNotifier {
   List<AppNotification> _notifications = [];
   List<AppNotification> get notifications => _notifications;
 
+  Set<String> _followingIds = {};
+  Set<String> get followingIds => _followingIds;
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // Get current logged-in user id
-  String get _currentUid => _supabase.auth.currentUser?.id ?? '';
+  // Supabase session UID — used for write operations (RLS checks auth.uid())
+  String get _supabaseSessionUid => _supabase.auth.currentUser?.id ?? '';
+
+  // Effective UID: prefers Supabase session, falls back to Firebase UID for reads
+  String get _currentUid {
+    if (_supabaseSessionUid.isNotEmpty) return _supabaseSessionUid;
+    return _firebaseUid;
+  }
+
+  RealtimeChannel? _threadsChannel;
+  RealtimeChannel? _likesChannel;
+  RealtimeChannel? _repliesChannel;
+  RealtimeChannel? _followsChannel;
+  RealtimeChannel? _notificationsChannel;
+  StreamSubscription<AuthState>? _supabaseAuthSub;
+
+  DatabaseService() {
+    // Listen to Supabase auth state — auto-reload when session established
+    _supabaseAuthSub = _supabase.auth.onAuthStateChange.listen((data) {
+      debugPrint('[DB] Supabase auth event: ${data.event}');
+      if (data.event == AuthChangeEvent.signedIn ||
+          data.event == AuthChangeEvent.tokenRefreshed) {
+        _onUserReady();
+      } else if (data.event == AuthChangeEvent.signedOut) {
+        // Only clear if Firebase UID also not set (full logout)
+        if (_firebaseUid.isEmpty) {
+          _clearAllData();
+        }
+      }
+    });
+
+    subscribeToRealtime();
+    if (_currentUid.isNotEmpty) {
+      _onUserReady();
+    }
+  }
+
+  /// Called by AuthGate after Firebase login — enables read-only operations
+  /// even before Supabase session is established.
+  void setFirebaseUid(String uid) {
+    if (uid == _firebaseUid && _myProfile != null) return;
+    _firebaseUid = uid;
+    debugPrint('[DB] Firebase UID set: $uid');
+    if (uid.isNotEmpty) {
+      _onUserReady();
+    }
+  }
+
+  /// Called on full logout
+  void clearUser() {
+    _firebaseUid = '';
+    _clearAllData();
+  }
+
+  void _onUserReady() {
+    fetchMyProfile();
+    fetchFollowingList();
+    fetchFeed();
+    fetchNotifications();
+    subscribeToRealtime();
+  }
+
+  void _clearAllData() {
+    _myProfile = null;
+    _feed = [];
+    _myThreads = [];
+    _notifications = [];
+    _followingIds = {};
+    unsubscribeRealtime();
+    notifyListeners();
+  }
+
+  void subscribeToRealtime() {
+    // Unsubscribe if channels already exist
+    unsubscribeRealtime();
+
+    _threadsChannel = _supabase
+        .channel('public:threads')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'threads',
+            callback: (payload) {
+              fetchFeed();
+              if (_currentUid.isNotEmpty) {
+                fetchMyThreads();
+              }
+            })
+        .subscribe();
+
+    _likesChannel = _supabase
+        .channel('public:likes')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'likes',
+            callback: (payload) {
+              fetchFeed();
+              if (_currentUid.isNotEmpty) {
+                fetchMyThreads();
+              }
+            })
+        .subscribe();
+
+    _repliesChannel = _supabase
+        .channel('public:replies')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'replies',
+            callback: (payload) {
+              fetchFeed();
+              if (_currentUid.isNotEmpty) {
+                fetchMyThreads();
+              }
+            })
+        .subscribe();
+
+    _followsChannel = _supabase
+        .channel('public:follows')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'follows',
+            callback: (payload) {
+              fetchFollowingList();
+              fetchMyProfile();
+            })
+        .subscribe();
+
+    _notificationsChannel = _supabase
+        .channel('public:notifications')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'notifications',
+            callback: (payload) {
+              fetchNotifications();
+            })
+        .subscribe();
+  }
+
+  void unsubscribeRealtime() {
+    if (_threadsChannel != null) _supabase.removeChannel(_threadsChannel!);
+    if (_likesChannel != null) _supabase.removeChannel(_likesChannel!);
+    if (_repliesChannel != null) _supabase.removeChannel(_repliesChannel!);
+    if (_followsChannel != null) _supabase.removeChannel(_followsChannel!);
+    if (_notificationsChannel != null) _supabase.removeChannel(_notificationsChannel!);
+  }
 
   // --- Profile Operations ---
 
   Future<Profile?> fetchProfile(String userId) async {
-    if (userId == 'mock_uid') {
-      return Profile(
-        id: 'mock_uid',
-        username: 'arafath_sabbir',
-        fullName: 'আরাফাত সাব্বির',
-        bio: 'সফটওয়্যার ইঞ্জিনিয়ার | ডাক অ্যাপ ডেভেলপ করছি ☕',
-        avatarUrl: 'https://i.pravatar.cc/150?u=mock_uid',
-        coverUrl: 'https://images.unsplash.com/photo-1596404886561-12cdce3fbe25',
-        followersCount: 124,
-        followingCount: 10,
-        phone: '01712345678',
-        country: 'বাংলাদেশ',
-      );
-    }
-
     try {
       final response = await _supabase
           .from('profiles')
@@ -67,25 +207,10 @@ class DatabaseService with ChangeNotifier {
   }
 
   Future<void> fetchMyProfile() async {
-    final uid = _currentUid.isEmpty ? 'mock_uid' : _currentUid;
-    final result = await fetchProfile(uid);
+    if (_currentUid.isEmpty) return;
+    final result = await fetchProfile(_currentUid);
     if (result != null) {
       _myProfile = result;
-      notifyListeners();
-    } else {
-      // Fallback in case table doesn't exist
-      _myProfile = Profile(
-        id: uid,
-        username: 'arafath_sabbir',
-        fullName: 'আরাফাত সাব্বির',
-        bio: 'সফটওয়্যার ইঞ্জিনিয়ার | ডাক অ্যাপ ডেভেলপ করছি ☕',
-        avatarUrl: 'https://i.pravatar.cc/150?u=$uid',
-        coverUrl: 'https://images.unsplash.com/photo-1596404886561-12cdce3fbe25',
-        followersCount: 124,
-        followingCount: 10,
-        phone: '01712345678',
-        country: 'বাংলাদেশ',
-      );
       notifyListeners();
     }
   }
@@ -97,24 +222,7 @@ class DatabaseService with ChangeNotifier {
     required String phone,
     required String country,
   }) async {
-    final uid = _currentUid.isEmpty ? 'mock_uid' : _currentUid;
-    if (uid == 'mock_uid') {
-      _myProfile = Profile(
-        id: 'mock_uid',
-        username: username,
-        fullName: fullName,
-        bio: bio,
-        avatarUrl: _myProfile?.avatarUrl,
-        coverUrl: _myProfile?.coverUrl,
-        followersCount: _myProfile?.followersCount ?? 124,
-        followingCount: _myProfile?.followingCount ?? 10,
-        phone: phone,
-        country: country,
-      );
-      notifyListeners();
-      return true;
-    }
-
+    if (_currentUid.isEmpty) return false;
     _isLoading = true;
     notifyListeners();
 
@@ -128,7 +236,7 @@ class DatabaseService with ChangeNotifier {
             'phone': phone,
             'country': country,
           })
-          .eq('id', uid)
+          .eq('id', _currentUid)
           .select()
           .single();
 
@@ -138,22 +246,154 @@ class DatabaseService with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      debugPrint("Update profile error: $e");
-      // Fallback update
-      _myProfile = Profile(
-        id: uid,
-        username: username,
-        fullName: fullName,
-        bio: bio,
-        avatarUrl: _myProfile?.avatarUrl,
-        coverUrl: _myProfile?.coverUrl,
-        followersCount: _myProfile?.followersCount ?? 124,
-        followingCount: _myProfile?.followingCount ?? 10,
-        phone: phone,
-        country: country,
-      );
       notifyListeners();
+      debugPrint("Update profile error: $e");
+      return false;
+    }
+  }
+
+  // --- Follow Operations ---
+
+  bool isFollowingUser(String targetUserId) {
+    return _followingIds.contains(targetUserId);
+  }
+
+  Future<void> fetchFollowingList() async {
+    if (_currentUid.isEmpty) return;
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', _currentUid);
+      final List<dynamic> data = response as List<dynamic>;
+      _followingIds = data.map((json) => json['following_id'] as String).toSet();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Fetch following list error: $e");
+    }
+  }
+
+  Future<void> toggleFollowUser(String targetUserId) async {
+    if (_currentUid.isEmpty) return;
+    try {
+      final isCurrentlyFollowing = isFollowingUser(targetUserId);
+      if (isCurrentlyFollowing) {
+        await _supabase
+            .from('follows')
+            .delete()
+            .eq('follower_id', _currentUid)
+            .eq('following_id', targetUserId);
+      } else {
+        await _supabase.from('follows').insert({
+          'follower_id': _currentUid,
+          'following_id': targetUserId,
+        });
+      }
+      await fetchFollowingList();
+      await fetchMyProfile();
+    } catch (e) {
+      debugPrint("Toggle follow user error: $e");
+    }
+  }
+
+  // --- Search & Recommendations ---
+
+  Future<List<Profile>> searchProfiles(String query) async {
+    if (query.isEmpty) return [];
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select()
+          .or('full_name.ilike.%$query%,username.ilike.%$query%')
+          .limit(20);
+      final List<dynamic> data = response as List<dynamic>;
+      return data.map((json) => Profile.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint("Search profiles error: $e");
+      return [];
+    }
+  }
+
+  Future<List<Profile>> getRecommendedProfiles() async {
+    if (_currentUid.isEmpty) return [];
+    try {
+      // Recommend newly created users, excluding oneself
+      final response = await _supabase
+          .from('profiles')
+          .select()
+          .neq('id', _currentUid)
+          .order('created_at', ascending: false)
+          .limit(10);
+      final List<dynamic> data = response as List<dynamic>;
+      return data.map((json) => Profile.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint("Get recommended profiles error: $e");
+      return [];
+    }
+  }
+
+  // --- Storage Operations (Avatar/Cover) ---
+
+  Future<String?> _uploadToStorage(String bucket, String path, Uint8List bytes) async {
+    try {
+      await _supabase.storage.from(bucket).uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/jpeg',
+          upsert: true,
+        ),
+      );
+      final publicUrl = _supabase.storage.from(bucket).getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      debugPrint("Upload to storage error: $e");
+      return null;
+    }
+  }
+
+  Future<bool> updateProfileImage(Uint8List bytes, bool isAvatar) async {
+    if (_currentUid.isEmpty) return false;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final bucket = isAvatar ? 'avatars' : 'covers';
+      final path = '$_currentUid/img_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      
+      final publicUrl = await _uploadToStorage(bucket, path, bytes);
+      if (publicUrl != null) {
+        final updateField = isAvatar ? 'avatar_url' : 'cover_url';
+        await _supabase.from('profiles').update({updateField: publicUrl}).eq('id', _currentUid);
+        await fetchMyProfile();
+        return true;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      debugPrint("Update profile image error: $e");
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteProfileImage(bool isAvatar) async {
+    if (_currentUid.isEmpty) return false;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final updateField = isAvatar ? 'avatar_url' : 'cover_url';
+      await _supabase.from('profiles').update({updateField: null}).eq('id', _currentUid);
+      await fetchMyProfile();
       return true;
+    } catch (e) {
+      debugPrint("Delete profile image error: $e");
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
@@ -175,186 +415,52 @@ class DatabaseService with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _isLoading = false;
-      debugPrint("Fetch feed error: $e. Using high-fidelity mock data.");
-      
-      final author1 = Profile(
-        id: 'u1',
-        username: 'tanvir_cse',
-        fullName: 'তানভীর আহমেদ',
-        avatarUrl: 'https://i.pravatar.cc/150?u=u1',
-        followersCount: 1250,
-      );
-      final author2 = Profile(
-        id: 'u2',
-        username: 'dhaka_vibes',
-        fullName: 'নিলয় চৌধুরী',
-        avatarUrl: 'https://i.pravatar.cc/150?u=u2',
-        followersCount: 4520,
-      );
-      final author3 = Profile(
-        id: 'u3',
-        username: 'pitha_fest',
-        fullName: 'সাদিয়া তাসনিম',
-        avatarUrl: 'https://i.pravatar.cc/150?u=u3',
-        followersCount: 890,
-      );
-
-      _feed = [
-        ThreadPost(
-          id: 'p1',
-          userId: 'u1',
-          author: author1,
-          content: 'আজকে ধানমন্ডি লেকের পাশে চা খেতে খেতে চমৎকার কিছু সময় কাটলো। ঢাকার এই বিকেলের হাওয়া আসলেই অন্যরকম! ☕✨',
-          imageUrls: const ['https://images.unsplash.com/photo-1554118811-1e0d58224f24'],
-          likesCount: 24,
-          repliesCount: 5,
-          createdAt: '১০ মি. আগে',
-          isLikedByMe: false,
-        ),
-        ThreadPost(
-          id: 'p2',
-          userId: 'u2',
-          author: author2,
-          content: 'ফ্লাটার নিয়ে নতুন একটা প্রজেক্ট শুরু করলাম। Threads আর Bluesky-এর মতো ক্লাসিক ও মিনিমালিস্ট ডিজাইন করতে দারুণ লাগছে। আপনাদের মতামত কি?',
-          likesCount: 42,
-          repliesCount: 12,
-          createdAt: '২ ঘণ্টা আগে',
-          isLikedByMe: true,
-        ),
-        ThreadPost(
-          id: 'p3',
-          userId: 'u3',
-          author: author3,
-          content: 'শীতের সকালে গরম গরম ভাপা পিঠা খাওয়ার মজাই আলাদা! কার কার পছন্দ ভাপা পিঠা? 😋',
-          imageUrls: const ['https://images.unsplash.com/photo-1601050690597-df056fb4ce78'],
-          likesCount: 18,
-          repliesCount: 3,
-          createdAt: '৪ ঘণ্টা আগে',
-          isLikedByMe: false,
-        ),
-      ];
       notifyListeners();
+      debugPrint("Fetch feed error: $e");
     }
   }
 
   Future<void> fetchMyThreads() async {
-    final uid = _currentUid.isEmpty ? 'mock_uid' : _currentUid;
+    if (_currentUid.isEmpty) return;
     try {
       final response = await _supabase
           .from('threads')
           .select('*, profiles(*), likes(user_id)')
-          .eq('user_id', uid)
+          .eq('user_id', _currentUid)
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
-      _myThreads = data.map((json) => ThreadPost.fromJson(json, currentUid: uid)).toList();
+      _myThreads = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
       notifyListeners();
     } catch (e) {
-      debugPrint("Fetch my threads error: $e. Using mock my threads.");
-      final myProf = _myProfile ?? Profile(
-        id: 'mock_uid',
-        username: 'arafath_sabbir',
-        fullName: 'আরাফাত সাব্বির',
-        avatarUrl: 'https://i.pravatar.cc/150?u=mock_uid',
-      );
-      _myThreads = [
-        ThreadPost(
-          id: 'mp1',
-          userId: myProf.id,
-          author: myProf,
-          content: 'অবশেষে আমাদের "ডাক (Dak)" অ্যাপের থ্রেডস ভার্সন ডিজাইন চমৎকারভাবে সম্পন্ন হয়েছে! লিন্ট এরর শুন্য এবং বিল্ড সম্পন্ন। 🎉📱',
-          likesCount: 56,
-          repliesCount: 8,
-          createdAt: '১ দিন আগে',
-          isLikedByMe: false,
-        ),
-        ThreadPost(
-          id: 'mp2',
-          userId: myProf.id,
-          author: myProf,
-          content: 'ক্লিন অ্যান্ড সিম্পল ফ্ল্যাট ডিজাইন দিয়ে ইউজার এক্সপেরিয়েন্স অনেক বেশি প্রিমিয়াম করা সম্ভব। আপনাদের মন্তব্য জানান নিচে!',
-          likesCount: 31,
-          repliesCount: 4,
-          createdAt: '৩ দিন আগে',
-          isLikedByMe: false,
-        ),
-      ];
-      notifyListeners();
+      debugPrint("Fetch my threads error: $e");
     }
   }
 
   Future<bool> createThread(String content, {List<String>? imageUrls, String? videoUrl}) async {
-    final uid = _currentUid.isEmpty ? 'mock_uid' : _currentUid;
-    if (uid == 'mock_uid') {
-      final myProf = _myProfile ?? Profile(
-        id: 'mock_uid',
-        username: 'arafath_sabbir',
-        fullName: 'আরাফাত সাব্বির',
-        avatarUrl: 'https://i.pravatar.cc/150?u=mock_uid',
-      );
-      final newPost = ThreadPost(
-        id: 'mp_new_${DateTime.now().millisecondsSinceEpoch}',
-        userId: 'mock_uid',
-        author: myProf,
-        content: content,
-        imageUrls: imageUrls,
-        videoUrl: videoUrl,
-        likesCount: 0,
-        repliesCount: 0,
-        createdAt: 'এখনই',
-      );
-      _myThreads.insert(0, newPost);
-      _feed.insert(0, newPost);
-      notifyListeners();
-      return true;
-    }
-
+    if (_currentUid.isEmpty) return false;
     try {
       await _supabase.from('threads').insert({
-        'user_id': uid,
+        'user_id': _currentUid,
         'content': content,
         'image_urls': imageUrls,
         'video_url': videoUrl,
-        'created_at': 'এখনই',
       });
-      
-      // Refresh feed
       await fetchFeed();
       await fetchMyThreads();
       return true;
     } catch (e) {
       debugPrint("Create thread error: $e");
-      // Fallback insert
-      final myProf = _myProfile ?? Profile(
-        id: uid,
-        username: 'arafath_sabbir',
-        fullName: 'আরাফাত সাব্বির',
-        avatarUrl: 'https://i.pravatar.cc/150?u=$uid',
-      );
-      final newPost = ThreadPost(
-        id: 'mp_new_${DateTime.now().millisecondsSinceEpoch}',
-        userId: uid,
-        author: myProf,
-        content: content,
-        imageUrls: imageUrls,
-        videoUrl: videoUrl,
-        likesCount: 0,
-        repliesCount: 0,
-        createdAt: 'এখনই',
-      );
-      _myThreads.insert(0, newPost);
-      _feed.insert(0, newPost);
-      notifyListeners();
-      return true;
+      return false;
     }
   }
 
   // --- Likes CRUD ---
 
   Future<void> toggleLike(String threadId, bool shouldLike) async {
-    final uid = _currentUid.isEmpty ? 'mock_uid' : _currentUid;
+    if (_currentUid.isEmpty) return;
 
-    // Locally update likes count inside feed list for instant UI feedback
+    // Local state optimistic update for instant UX feedback
     final feedIndex = _feed.indexWhere((p) => p.id == threadId);
     if (feedIndex != -1) {
       final post = _feed[feedIndex];
@@ -364,6 +470,7 @@ class DatabaseService with ChangeNotifier {
         author: post.author,
         content: post.content,
         imageUrls: post.imageUrls,
+        videoUrl: post.videoUrl,
         likesCount: post.likesCount + (shouldLike ? 1 : -1),
         repliesCount: post.repliesCount,
         repostsCount: post.repostsCount,
@@ -382,6 +489,7 @@ class DatabaseService with ChangeNotifier {
         author: post.author,
         content: post.content,
         imageUrls: post.imageUrls,
+        videoUrl: post.videoUrl,
         likesCount: post.likesCount + (shouldLike ? 1 : -1),
         repliesCount: post.repliesCount,
         repostsCount: post.repostsCount,
@@ -391,19 +499,17 @@ class DatabaseService with ChangeNotifier {
       notifyListeners();
     }
 
-    if (uid == 'mock_uid') return;
-
     try {
       if (shouldLike) {
         await _supabase.from('likes').insert({
-          'user_id': uid,
+          'user_id': _currentUid,
           'thread_id': threadId,
         });
       } else {
         await _supabase
             .from('likes')
             .delete()
-            .eq('user_id', uid)
+            .eq('user_id', _currentUid)
             .eq('thread_id', threadId);
       }
     } catch (e) {
@@ -411,107 +517,78 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
-  // --- Notifications (Emulated / Database combined) ---
+  // --- Notifications ---
 
   Future<void> fetchNotifications() async {
-    final uid = _currentUid.isEmpty ? 'mock_uid' : _currentUid;
+    if (_currentUid.isEmpty) return;
     try {
-      final response = await _supabase.from('profiles').select().limit(5);
+      final response = await _supabase
+          .from('notifications')
+          .select('*, actor:profiles!actor_id(*)')
+          .eq('user_id', _currentUid)
+          .order('created_at', ascending: false);
+
       final List<dynamic> data = response as List<dynamic>;
-      final activeProfiles = data.map((json) => Profile.fromJson(json)).toList();
+      _notifications = data.map((json) {
+        final actorMap = json['actor'] as Map<String, dynamic>?;
+        final actorProfile = actorMap != null 
+            ? Profile.fromJson(actorMap) 
+            : Profile(id: json['actor_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
 
-      final filteredProfiles = activeProfiles.where((p) => p.id != uid).toList();
-
-      _notifications = filteredProfiles.mapIndexed((index, profile) {
-        final type = index % 3 == 0 ? "FOLLOW" : (index % 3 == 1 ? "MENTION" : "LIKE");
-        final content = type == "FOLLOW"
-            ? "আপনাকে অনুসরণ করা শুরু করেছেন"
-            : (type == "MENTION" ? "আপনাকে একটি মন্তব্যে মেনশন করেছেন" : "আপনার পোস্টে লাইক দিয়েছেন");
+        // Parse creation time to display relative timing
+        final DateTime createdAtTime = DateTime.parse(json['created_at'] as String);
+        final String relativeTime = _getRelativeTime(createdAtTime);
 
         return AppNotification(
-          id: 'mock_n_$index',
-          userId: uid,
-          actor: profile,
-          type: type,
-          content: content,
-          createdAt: '${index + 2} মিনিট আগে',
-          read: index > 1,
+          id: json['id'] as String,
+          userId: json['user_id'] as String,
+          actor: actorProfile,
+          type: json['type'] as String,
+          threadId: json['thread_id'] as String?,
+          content: json['content'] as String,
+          createdAt: relativeTime,
+          read: json['is_read'] as bool? ?? false,
         );
       }).toList();
-
       notifyListeners();
     } catch (e) {
-      debugPrint("Fetch notifications error: $e. Falling back to mock notifications.");
-      final actor1 = Profile(id: 'u1', username: 'tanvir_cse', fullName: 'তানভীর আহমেদ', avatarUrl: 'https://i.pravatar.cc/150?u=u1');
-      final actor2 = Profile(id: 'u2', username: 'dhaka_vibes', fullName: 'নিলয় চৌধুরী', avatarUrl: 'https://i.pravatar.cc/150?u=u2');
-      final actor3 = Profile(id: 'u3', username: 'pitha_fest', fullName: 'সাদিয়া তাসনিম', avatarUrl: 'https://i.pravatar.cc/150?u=u3');
-
-      _notifications = [
-        AppNotification(
-          id: 'mn1',
-          userId: uid,
-          actor: actor1,
-          type: 'FOLLOW',
-          content: 'আপনাকে অনুসরণ করা শুরু করেছেন',
-          createdAt: '৫ মিনিট আগে',
-        ),
-        AppNotification(
-          id: 'mn2',
-          userId: uid,
-          actor: actor2,
-          type: 'LIKE',
-          content: 'আপনার পোস্টে লাইক দিয়েছেন',
-          createdAt: '১৫ মিনিট আগে',
-        ),
-        AppNotification(
-          id: 'mn3',
-          userId: uid,
-          actor: actor3,
-          type: 'REPLY',
-          content: 'আপনার পোস্টে একটি উত্তর দিয়েছেন',
-          createdAt: '১ ঘণ্টা আগে',
-        ),
-      ];
-      notifyListeners();
+      debugPrint("Fetch notifications error: $e");
     }
   }
 
-  // --- Follow Action ---
-
-  Future<void> followUser(String targetUserId) async {
-    final uid = _currentUid.isEmpty ? 'mock_uid' : _currentUid;
-    if (uid == 'mock_uid') return;
-
-    try {
-      await _supabase.from('follows').insert({
-        'follower_id': uid,
-        'following_id': targetUserId,
-      });
-      await fetchMyProfile();
-    } catch (e) {
-      debugPrint("Follow user error: $e");
-    }
+  String _getRelativeTime(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return 'এখনই';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} মিনিট আগে';
+    if (diff.inHours < 24) return '${diff.inHours} ঘণ্টা আগে';
+    return '${diff.inDays} দিন আগে';
   }
+
+  // --- Report Operations ---
 
   Future<bool> reportPost(String threadId, String reason) async {
-    final uid = _currentUid.isEmpty ? 'mock_uid' : _currentUid;
-    if (uid == 'mock_uid') return true;
-
+    if (_currentUid.isEmpty) return false;
     try {
       await _supabase.from('reports').insert({
-        'user_id': uid,
+        'user_id': _currentUid,
         'thread_id': threadId,
         'reason': reason,
       });
       return true;
     } catch (e) {
       debugPrint("Report post error: $e");
-      return true; // Graceful fallback
+      return false;
     }
+  }
+
+  @override
+  void dispose() {
+    _supabaseAuthSub?.cancel();
+    unsubscribeRealtime();
+    super.dispose();
   }
 }
 
-// Simple extension helper
 extension IterableExtension<E> on Iterable<E> {
   List<T> mapIndexed<T>(T Function(int index, E element) f) {
     var index = 0;

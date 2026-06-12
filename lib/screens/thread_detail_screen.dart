@@ -53,10 +53,11 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
             final author = authorMap != null 
                 ? Profile.fromJson(authorMap) 
                 : Profile(id: json['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+            final rawTime = json['created_at'] as String? ?? '';
             return {
               'author': author,
               'content': json['content'] as String,
-              'created_at': json['created_at'] as String? ?? 'এখনই',
+              'created_at': _formatTime(rawTime),
             };
           }).toList();
           _isLoadingComments = false;
@@ -72,6 +73,20 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     }
   }
 
+  String _formatTime(String isoString) {
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1) return 'এখনই';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}মি';
+      if (diff.inHours < 24) return '${diff.inHours}ঘ';
+      if (diff.inDays < 7) return '${diff.inDays}দিন';
+      return '${dt.day}/${dt.month}/${dt.year}';
+    } catch (_) {
+      return isoString;
+    }
+  }
+
   void _postComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
@@ -81,11 +96,11 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     if (currentUid == null) return;
 
     try {
+      // Let Supabase auto-set created_at via DB default
       await supabase.from('replies').insert({
         'thread_id': widget.post.id,
         'user_id': currentUid,
         'content': text,
-        'created_at': 'এখনই',
       });
       _commentController.clear();
       _loadComments();
@@ -93,7 +108,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       debugPrint("Post comment error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("মন্তব্য পোস্ট করতে ব্যর্থ হয়েছে")),
+          const SnackBar(content: Text("মন্তব্য পোস্ট করতে ব্যর্থ হয়েছে")),
         );
       }
     }
@@ -207,7 +222,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         ],
                         const SizedBox(height: 12),
                         Text(
-                          "4:30 PM • 18 Jun 2026", // Mock Time stamp matching mockup
+                          _formatTime(activePost.createdAt),
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
