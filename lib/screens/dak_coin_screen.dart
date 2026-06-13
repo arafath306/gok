@@ -58,7 +58,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String appBarTitle = "ডাক কয়েন ওয়ালেট";
+    String appBarTitle = "Dak Coin Wallet";
     if (_currentStep == 1 || _currentStep == 2) appBarTitle = "Buy Dak Coin";
     if (_currentStep == 3) appBarTitle = "Payment Method";
     if (_currentStep == 4) appBarTitle = "Payment";
@@ -535,7 +535,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Dak Coin কী?",
+                "What is Dak Coin?",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -544,7 +544,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Dak Coin হলো Dak অ্যাপের একটি ডিজিটাল কারেন্সি। এই কয়েন ব্যবহার করে আপনি সাবস্ক্রিপশন কিনতে পারবেন, পোস্ট বুস্ট করতে পারবেন এবং আরও অনেক প্রিমিয়াম ফিচার ব্যবহার করতে পারবেন।",
+                "Dak Coin is a digital currency for the Dak app. You can use this coin to buy subscriptions, boost posts, and access more premium features.",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
                   color: Colors.black54,
@@ -556,9 +556,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 child: Divider(height: 1, color: Color(0xFFE5E7EB)),
               ),
 
-              _buildBenefitBullet(Icons.card_membership_rounded, "Subscription নিন"),
+              _buildBenefitBullet(Icons.card_membership_rounded, "Get Subscription"),
               _buildBenefitBullet(Icons.bolt_rounded, "Post Boost করুন"),
-              _buildBenefitBullet(Icons.stars_rounded, "Premium Features ব্যবহার করুন"),
+              _buildBenefitBullet(Icons.stars_rounded, "Use Premium Features"),
               _buildBenefitBullet(Icons.shield_rounded, "Secure & Safe Transactions"),
             ],
           ),
@@ -630,7 +630,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         const SizedBox(height: 12),
 
         Text(
-          "1 Dak Coin = 1 ৳",
+          "1 Dak Coin = 1 BDT",
           style: GoogleFonts.hindSiliguri(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -649,7 +649,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           ),
           child: Center(
             child: Text(
-              "Minimum Purchase: অন্তত ১০০ Coin কিনতে হবে",
+              "Minimum Purchase: Must buy at least 100 Coins",
               style: GoogleFonts.hindSiliguri(
                 fontSize: 12,
                 color: Colors.black54,
@@ -743,7 +743,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "পেমেন্ট পদ্ধতি নির্বাচন করুন",
+          "Select Payment Method",
           style: GoogleFonts.hindSiliguri(
             fontSize: 15,
             fontWeight: FontWeight.bold,
@@ -838,7 +838,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               elevation: 0,
             ),
             child: Text(
-              "Pay $_selectedCoinsPack ৳",
+              "Pay $_selectedCoinsPack BDT",
               style: GoogleFonts.hindSiliguri(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -869,7 +869,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               const Icon(Icons.lock_rounded, color: Colors.white, size: 18),
               const SizedBox(width: 8),
               Text(
-                "সিকিউর পেমেন্ট",
+                "Secure Payment",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -914,7 +914,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    "bKash নম্বর দিন",
+                    "Enter bKash Number",
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 14.5,
                       fontWeight: FontWeight.bold,
@@ -981,7 +981,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               const SizedBox(height: 16),
 
               Text(
-                "আপনার bKash মোবাইল মেনুতে গিয়ে",
+                "Go to your bKash mobile menu",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -989,10 +989,10 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              _buildStepInstructions("১", "*247# ডায়াল করুন"),
-              _buildStepInstructions("২", "পেমেন্ট অপশন সিলেক্ট করুন"),
-              _buildStepInstructions("৩", "বিকাশ পেমেন্ট করুন"),
-              _buildStepInstructions("৪", "পেমেন্ট রেফারেন্স দিন"),
+              _buildStepInstructions("১", "Dial *247#"),
+              _buildStepInstructions("২", "Select Payment option"),
+              _buildStepInstructions("৩", "Make bKash Payment"),
+              _buildStepInstructions("৪", "Enter Payment Reference"),
             ],
           ),
         ),
@@ -1104,7 +1104,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         const SizedBox(height: 20),
 
         Text(
-          "পেমেন্ট সফল হয়েছে!",
+          "Payment Successful!",
           style: GoogleFonts.hindSiliguri(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -1149,7 +1149,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               ),
               _buildDetailItem("Coin Purchased", "$_selectedCoinsPack Coin"),
               const SizedBox(height: 10),
-              _buildDetailItem("Amount", "$_selectedCoinsPack ৳"),
+              _buildDetailItem("Amount", "$_selectedCoinsPack BDT"),
               const SizedBox(height: 10),
               _buildDetailItem("Transaction ID", "TRX1234567890"),
               const SizedBox(height: 10),
@@ -1193,7 +1193,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: const Color(0xFF006A4E),
-                  content: Text("রসিদ ডাউনলোড শুরু হয়েছে...", style: GoogleFonts.hindSiliguri()),
+                  content: Text("Downloading receipt...", style: GoogleFonts.hindSiliguri()),
                 ),
               );
             },
@@ -1353,7 +1353,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: const Color(0xFF006A4E),
-                  content: Text("অতিরিক্ত কোনো ট্রানজেকশন নেই।", style: GoogleFonts.hindSiliguri()),
+                  content: Text("No additional transactions.", style: GoogleFonts.hindSiliguri()),
                 ),
               );
             },
@@ -1504,7 +1504,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           ),
         ),
         Text(
-          "আপনার পোস্টকে বেশি মানুষের কাছে পৌঁছে দিন",
+          "আপনার Postকে বেশি মানুষের কাছে পৌঁছে Day",
           style: GoogleFonts.hindSiliguri(
             fontSize: 12,
             color: Colors.black45,
@@ -1629,7 +1629,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               const CircularProgressIndicator(color: Color(0xFF006A4E)),
               const SizedBox(height: 20),
               Text(
-                "পেমেন্ট প্রসেসিং হচ্ছে...",
+                "Payment is processing...",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -1637,7 +1637,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "অনুগ্রহ করে অপেক্ষা করুন...",
+                "Please wait...",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 11.5,
                   color: Colors.black45,
@@ -1665,7 +1665,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
             ),
           ),
           content: Text(
-            "পোস্ট বুস্ট করার জন্য আপনার ওয়ালেটে পর্যাপ্ত কয়েন নেই। দয়া করে রিচার্জ করুন।",
+            "Post বুস্ট করার জন্য আপনার ওয়ালেটে পর্যাপ্ত কয়েন নেই। দয়া করে রিচার্জ করুন।",
             style: GoogleFonts.hindSiliguri(
               fontSize: 13.5,
               height: 1.45,
@@ -1675,7 +1675,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
-                "বাতিল",
+                "Cancel",
                 style: GoogleFonts.hindSiliguri(color: Colors.black54),
               ),
             ),
@@ -1723,7 +1723,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                   const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    "পোস্ট বুস্ট সফলভাবে সম্পন্ন হয়েছে!",
+                    "Post বুস্ট সফলভাবে সম্পন্ন হয়েছে!",
                     style: GoogleFonts.hindSiliguri(fontSize: 13),
                   ),
                 ],
@@ -1740,7 +1740,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               const CircularProgressIndicator(color: Color(0xFF006A4E)),
               const SizedBox(height: 20),
               Text(
-                "পোস্ট বুস্ট করা হচ্ছে...",
+                "Post বুস্ট করা হচ্ছে...",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -1748,7 +1748,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "অনুগ্রহ করে অপেক্ষা করুন...",
+                "Please wait...",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 11.5,
                   color: Colors.black45,

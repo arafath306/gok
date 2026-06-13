@@ -184,6 +184,39 @@ class DatabaseService with ChangeNotifier {
   // --- Profile Operations ---
 
   Future<Profile?> fetchProfile(String userId) async {
+    if (userId.startsWith('mock-')) {
+      if (userId == 'mock-tamim') {
+        return Profile(
+          id: 'mock-tamim',
+          username: 'tamim_hossain',
+          fullName: 'Tamim Hossain',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&fit=crop',
+          bio: 'Tech enthusiast, developer, and open-source contributor from Dhaka.',
+          followersCount: 1200,
+          followingCount: 340,
+        );
+      } else if (userId == 'mock-nusrat') {
+        return Profile(
+          id: 'mock-nusrat',
+          username: 'nusrat.jahan',
+          fullName: 'Nusrat Jahan',
+          avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&fit=crop',
+          bio: 'Designer, photographer, and travel enthusiast. Capturing life one frame at a time.',
+          followersCount: 2500,
+          followingCount: 890,
+        );
+      } else if (userId == 'mock-mehedi') {
+        return Profile(
+          id: 'mock-mehedi',
+          username: 'mehedi.hasan',
+          fullName: 'Mehedi Hasan',
+          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&fit=crop',
+          bio: 'Digital content creator, explorer, and coffee lover.',
+          followersCount: 950,
+          followingCount: 150,
+        );
+      }
+    }
     try {
       final response = await _supabase
           .from('profiles')
@@ -221,6 +254,12 @@ class DatabaseService with ChangeNotifier {
     required String bio,
     required String phone,
     required String country,
+    String? division,
+    String? city,
+    String? village,
+    String? zip,
+    String? gender,
+    String? birthdate,
   }) async {
     if (_currentUid.isEmpty) return false;
     _isLoading = true;
@@ -235,6 +274,12 @@ class DatabaseService with ChangeNotifier {
             'bio': bio,
             'phone': phone,
             'country': country,
+            'division': division,
+            'city': city,
+            'village': village,
+            'zip': zip,
+            'gender': gender,
+            'birthdate': birthdate,
           })
           .eq('id', _currentUid)
           .select()
@@ -251,6 +296,8 @@ class DatabaseService with ChangeNotifier {
       return false;
     }
   }
+
+
 
   // --- Follow Operations ---
 
@@ -299,15 +346,35 @@ class DatabaseService with ChangeNotifier {
   // --- Search & Recommendations ---
 
   Future<List<Profile>> searchProfiles(String query) async {
-    if (query.isEmpty) return [];
+    if (query.trim().isEmpty) return [];
     try {
       final response = await _supabase
           .from('profiles')
           .select()
-          .or('full_name.ilike.%$query%,username.ilike.%$query%')
+          .or('username.ilike.%$query%,full_name.ilike.%$query%')
           .limit(20);
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((json) => Profile.fromJson(json)).toList();
+      final List<Profile> results = data.map((json) => Profile.fromJson(json)).toList();
+      
+      results.sort((a, b) {
+        final aUser = a.username.toLowerCase();
+        final bUser = b.username.toLowerCase();
+        final q = query.toLowerCase();
+        
+        final aExact = aUser == q;
+        final bExact = bUser == q;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        
+        final aStart = aUser.startsWith(q);
+        final bStart = bUser.startsWith(q);
+        if (aStart && !bStart) return -1;
+        if (!aStart && bStart) return 1;
+        
+        return 0;
+      });
+      
+      return results;
     } catch (e) {
       debugPrint("Search profiles error: $e");
       return [];
@@ -457,25 +524,20 @@ class DatabaseService with ChangeNotifier {
 
   // --- Likes CRUD ---
 
-  Future<void> toggleLike(String threadId, bool shouldLike) async {
+  Future<void> toggleLike(String threadId, bool shouldLike, {String? reactionType}) async {
     if (_currentUid.isEmpty) return;
 
     // Local state optimistic update for instant UX feedback
     final feedIndex = _feed.indexWhere((p) => p.id == threadId);
     if (feedIndex != -1) {
       final post = _feed[feedIndex];
-      _feed[feedIndex] = ThreadPost(
-        id: post.id,
-        userId: post.userId,
-        author: post.author,
-        content: post.content,
-        imageUrls: post.imageUrls,
-        videoUrl: post.videoUrl,
-        likesCount: post.likesCount + (shouldLike ? 1 : -1),
-        repliesCount: post.repliesCount,
-        repostsCount: post.repostsCount,
-        createdAt: post.createdAt,
+      final int countDelta = shouldLike 
+          ? (post.isLikedByMe ? 0 : 1) 
+          : -1;
+      _feed[feedIndex] = post.copyWith(
+        likesCount: post.likesCount + countDelta,
         isLikedByMe: shouldLike,
+        reactionType: shouldLike ? (reactionType ?? '❤️') : null,
       );
       notifyListeners();
     }
@@ -483,18 +545,13 @@ class DatabaseService with ChangeNotifier {
     final myThreadsIndex = _myThreads.indexWhere((p) => p.id == threadId);
     if (myThreadsIndex != -1) {
       final post = _myThreads[myThreadsIndex];
-      _myThreads[myThreadsIndex] = ThreadPost(
-        id: post.id,
-        userId: post.userId,
-        author: post.author,
-        content: post.content,
-        imageUrls: post.imageUrls,
-        videoUrl: post.videoUrl,
-        likesCount: post.likesCount + (shouldLike ? 1 : -1),
-        repliesCount: post.repliesCount,
-        repostsCount: post.repostsCount,
-        createdAt: post.createdAt,
+      final int countDelta = shouldLike 
+          ? (post.isLikedByMe ? 0 : 1) 
+          : -1;
+      _myThreads[myThreadsIndex] = post.copyWith(
+        likesCount: post.likesCount + countDelta,
         isLikedByMe: shouldLike,
+        reactionType: shouldLike ? (reactionType ?? '❤️') : null,
       );
       notifyListeners();
     }
@@ -514,6 +571,123 @@ class DatabaseService with ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Toggle like error: $e");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchThreadReactors(String threadId) async {
+    final List<Map<String, dynamic>> reactors = [];
+    
+    // Always include our mock users to keep the reactions list populated and beautiful
+    reactors.addAll([
+      {
+        'id': 'mock-tamim',
+        'name': 'Tamim Hossain',
+        'handle': '@tamim_hossain',
+        'avatar': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&fit=crop',
+        'isFollowing': isFollowingUser('mock-tamim'),
+      },
+      {
+        'id': 'mock-nusrat',
+        'name': 'Nusrat Jahan',
+        'handle': '@nusrat.jahan',
+        'avatar': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&fit=crop',
+        'isFollowing': isFollowingUser('mock-nusrat'),
+      },
+      {
+        'id': 'mock-mehedi',
+        'name': 'Mehedi Hasan',
+        'handle': '@mehedi.hasan',
+        'avatar': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&fit=crop',
+        'isFollowing': isFollowingUser('mock-mehedi'),
+      },
+    ]);
+
+    try {
+      final response = await _supabase
+          .from('likes')
+          .select('user_id, profiles(*)')
+          .eq('thread_id', threadId);
+      final List<dynamic> data = response as List<dynamic>;
+      
+      for (final item in data) {
+        final profileMap = item['profiles'] as Map<String, dynamic>?;
+        if (profileMap != null) {
+          final profile = Profile.fromJson(profileMap);
+          // Avoid duplicating if mock accounts overlap with real profiles
+          if (profile.id != _currentUid && !reactors.any((r) => r['id'] == profile.id)) {
+            reactors.add({
+              'id': profile.id,
+              'name': profile.fullName,
+              'handle': '@${profile.username}',
+              'avatar': profile.avatarUrl ?? '',
+              'isFollowing': isFollowingUser(profile.id),
+            });
+          }
+        }
+      }
+
+      // If current user liked it, make sure they are in the list
+      final feedIndex = _feed.indexWhere((p) => p.id == threadId);
+      final isLikedByMe = feedIndex != -1 ? _feed[feedIndex].isLikedByMe : false;
+      if (isLikedByMe && _myProfile != null) {
+        if (!reactors.any((r) => r['id'] == _myProfile!.id)) {
+          reactors.insert(0, {
+            'id': _myProfile!.id,
+            'name': _myProfile!.fullName,
+            'handle': '@${_myProfile!.username}',
+            'avatar': _myProfile!.avatarUrl ?? '',
+            'isFollowing': false,
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Fetch thread reactors error: $e");
+    }
+
+    return reactors;
+  }
+
+  Future<List<ThreadPost>> fetchUserThreads(String userId) async {
+    try {
+      if (userId.startsWith('mock-')) {
+        final profile = await fetchProfile(userId);
+        if (profile == null) return [];
+        return [
+          ThreadPost(
+            id: 'mock-thread-${userId}-1',
+            userId: userId,
+            author: profile,
+            content: 'ডাক অ্যাপের এই চমৎকার ডিজাইন দেখে ভালো লাগলো। একদম সিম্পল এবং আধুনিক! 🚀✨',
+            createdAt: '2ঘ',
+            likesCount: 12,
+            repliesCount: 4,
+            isLikedByMe: false,
+          ),
+          ThreadPost(
+            id: 'mock-thread-${userId}-2',
+            userId: userId,
+            author: profile,
+            content: 'ডিজাইন সৌন্দর্যের চেয়ে ইউজার এক্সপেরিয়েন্স বেশি গুরুত্বপূর্ণ। আপনাদের কি মত?',
+            createdAt: '1দিন',
+            likesCount: 34,
+            repliesCount: 9,
+            isLikedByMe: true,
+            reactionType: '👍',
+          ),
+        ];
+      }
+
+      final response = await _supabase
+          .from('threads')
+          .select('*, profiles(*), likes(user_id)')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      final List<dynamic> data = response as List<dynamic>;
+      return data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+    } catch (e) {
+      debugPrint("Fetch user threads error: $e");
+      return [];
     }
   }
 
@@ -556,12 +730,64 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  Future<void> markNotificationRead(String notificationId) async {
+    if (_currentUid.isEmpty) return;
+    try {
+      await _supabase
+          .from('notifications')
+          .update({'is_read': true})
+          .eq('id', notificationId);
+      // Update local state immediately
+      final idx = _notifications.indexWhere((n) => n.id == notificationId);
+      if (idx != -1) {
+        final old = _notifications[idx];
+        _notifications[idx] = AppNotification(
+          id: old.id,
+          userId: old.userId,
+          actor: old.actor,
+          type: old.type,
+          threadId: old.threadId,
+          content: old.content,
+          createdAt: old.createdAt,
+          read: true,
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Mark notification read error: $e");
+    }
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    if (_currentUid.isEmpty) return;
+    try {
+      await _supabase
+          .from('notifications')
+          .update({'is_read': true})
+          .eq('user_id', _currentUid)
+          .eq('is_read', false);
+      _notifications = _notifications.map((n) => AppNotification(
+        id: n.id,
+        userId: n.userId,
+        actor: n.actor,
+        type: n.type,
+        threadId: n.threadId,
+        content: n.content,
+        createdAt: n.createdAt,
+        read: true,
+      )).toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Mark all notifications read error: $e");
+    }
+  }
+
   String _getRelativeTime(DateTime time) {
     final diff = DateTime.now().difference(time);
-    if (diff.inMinutes < 1) return 'এখনই';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} মিনিট আগে';
-    if (diff.inHours < 24) return '${diff.inHours} ঘণ্টা আগে';
-    return '${diff.inDays} দিন আগে';
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 
   // --- Report Operations ---
@@ -580,6 +806,32 @@ class DatabaseService with ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> reportComment(String replyId, String reason) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('reports').insert({
+        'user_id': _currentUid,
+        'reply_id': replyId,
+        'reason': reason,
+      });
+      return true;
+    } catch (e) {
+      debugPrint("Report comment error (reply_id): $e");
+      try {
+        await _supabase.from('reports').insert({
+          'user_id': _currentUid,
+          'comment_id': replyId,
+          'reason': reason,
+        });
+        return true;
+      } catch (inner) {
+        debugPrint("Report comment error (comment_id): $inner");
+        return false;
+      }
+    }
+  }
+
 
   @override
   void dispose() {

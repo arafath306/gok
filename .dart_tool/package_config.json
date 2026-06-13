@@ -302,6 +302,12 @@
       "languageVersion": "3.6"
     },
     {
+      "name": "intl",
+      "rootUri": "file:///C:/Users/ARAFATH/AppData/Local/Pub/Cache/hosted/pub.dev/intl-0.20.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
       "name": "jni",
       "rootUri": "file:///C:/Users/ARAFATH/AppData/Local/Pub/Cache/hosted/pub.dev/jni-1.0.0",
       "packageUri": "lib/",

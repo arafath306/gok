@@ -12,6 +12,7 @@ class ThreadPost {
   final int repostsCount;
   final String createdAt;
   final bool isLikedByMe;
+  final String? reactionType;
 
   ThreadPost({
     required this.id,
@@ -25,6 +26,7 @@ class ThreadPost {
     this.repostsCount = 0,
     required this.createdAt,
     this.isLikedByMe = false,
+    this.reactionType,
   });
 
   static String _formatRelativeTime(String? isoString) {
@@ -81,6 +83,37 @@ class ThreadPost {
       repostsCount: (json['reposts_count'] as int?) ?? 0,
       createdAt: _formatRelativeTime(json['created_at'] as String?),
       isLikedByMe: isLiked,
+      reactionType: isLiked ? '❤️' : null,
+    );
+  }
+
+  ThreadPost copyWith({
+    String? id,
+    String? userId,
+    Profile? author,
+    String? content,
+    List<String>? imageUrls,
+    String? videoUrl,
+    int? likesCount,
+    int? repliesCount,
+    int? repostsCount,
+    String? createdAt,
+    bool? isLikedByMe,
+    String? reactionType,
+  }) {
+    return ThreadPost(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      author: author ?? this.author,
+      content: content ?? this.content,
+      imageUrls: imageUrls ?? this.imageUrls,
+      videoUrl: videoUrl ?? this.videoUrl,
+      likesCount: likesCount ?? this.likesCount,
+      repliesCount: repliesCount ?? this.repliesCount,
+      repostsCount: repostsCount ?? this.repostsCount,
+      createdAt: createdAt ?? this.createdAt,
+      isLikedByMe: isLikedByMe ?? this.isLikedByMe,
+      reactionType: reactionType ?? this.reactionType,
     );
   }
 }

@@ -9,6 +9,12 @@ class Profile {
   final int followingCount;
   final String? phone;
   final String? country;
+  final String? division;
+  final String? city;
+  final String? village;
+  final String? zip;
+  final String? gender;
+  final String? birthdate;
 
   Profile({
     required this.id,
@@ -21,6 +27,12 @@ class Profile {
     this.followingCount = 0,
     this.phone,
     this.country,
+    this.division,
+    this.city,
+    this.village,
+    this.zip,
+    this.gender,
+    this.birthdate,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -35,6 +47,12 @@ class Profile {
       followingCount: (json['following_count'] as int?) ?? 0,
       phone: json['phone'] as String?,
       country: json['country'] as String?,
+      division: json['division'] as String?,
+      city: json['city'] as String?,
+      village: json['village'] as String?,
+      zip: json['zip'] as String?,
+      gender: json['gender'] as String?,
+      birthdate: json['birthdate'] as String?,
     );
   }
 
@@ -50,6 +68,12 @@ class Profile {
       'following_count': followingCount,
       'phone': phone,
       'country': country,
+      'division': division,
+      'city': city,
+      'village': village,
+      'zip': zip,
+      'gender': gender,
+      'birthdate': birthdate,
     };
   }
 }

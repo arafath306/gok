@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
+import 'services/notification_settings_provider.dart';
+import 'services/chat_settings_provider.dart';
+import 'services/general_settings_provider.dart';
 import 'screens/auth/onboarding_screen.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/main_screen.dart';
-
+import 'utils/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -40,6 +42,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => DatabaseService()),
+        ChangeNotifierProvider(create: (_) => NotificationSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => ChatSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => GeneralSettingsProvider()),
       ],
       child: const DakApp(),
     ),
@@ -54,17 +59,7 @@ class DakApp extends StatelessWidget {
     return MaterialApp(
       title: 'Dak',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: const Color(0xFF1E824C),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E824C),
-          primary: const Color(0xFF1E824C),
-        ),
-        useMaterial3: true,
-        textTheme: GoogleFonts.hindSiliguriTextTheme(
-          ThemeData.light().textTheme,
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       builder: (context, child) {
         final double screenWidth = MediaQuery.of(context).size.width;
         final bool isWide = screenWidth > 600;
@@ -138,13 +133,7 @@ class _AuthGateState extends State<AuthGate> {
     // Otherwise show Onboarding, followed by Auth Screen
     if (_showOnboarding) {
       return OnboardingScreen(
-        onGetStarted: () {
-          setState(() {
-            _showOnboarding = false;
-            _startSignUp = true;
-          });
-        },
-        onLogin: () {
+        onFinish: () {
           setState(() {
             _showOnboarding = false;
             _startSignUp = false;

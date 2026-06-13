@@ -1,0 +1,199 @@
+windows_x64
+dartx
+dak__screens__profile_details_privacy_screen|_ProfileDetailsPrivacyScreenState
+_js_helper|IdentityMap<core|String,core|String>
+ui|Color?
+~()
+core|Map<core|String,core|String>
+core|Object?
+dak__screens__profile_details_privacy_screen|_ProfileDetailsPrivacyScreenState()
+~(core|String,core|String)
+ProfileDetailsPrivacyScreen
+file:///C:/Users/ARAFATH/StudioProjects/Dak/lib/screens/profile_details_privacy_screen.dart
+none
+sRGB
+Container
+Center
+Text
+SizedBox
+Divider
+Column
+StatefulBuilder
+SnackBar
+Icon
+CircleAvatar
+Expanded
+Row
+Padding
+InkWell
+PreferredSize
+MaterialIcons
+IconButton
+AppBar
+normal
+SingleChildScrollView
+Scaffold
+dak__screens__profile_details_privacy_screen|ProfileDetailsPrivacyScreen
+_privacySettings
+_privacyLabels
+_getPrivacyIcon
+BorderSide.strokeAlign
+_Enum.index
+_Enum._name
+BorderSide.style
+BorderSide.width
+Color.colorSpace
+Color.b
+Color.g
+Color.r
+Color.a
+BorderSide.color
+OutlinedBorder.side
+Radius.y
+Radius.x
+BorderRadius.bottomRight
+BorderRadius.bottomLeft
+BorderRadius.topRight
+BorderRadius.topLeft
+RoundedRectangleBorder.borderRadius
+EdgeInsets.bottom
+EdgeInsets.right
+EdgeInsets.top
+EdgeInsets.left
+_as
+Widget._location
+Widget.key
+SingleChildRenderObjectWidget.child
+SizedBox.height
+SizedBox.width
+_buildAudienceOption
+Divider.color
+Divider.radius
+Divider.endIndent
+Divider.indent
+Divider.thickness
+Divider.height
+_showAudienceSelector
+Duration._duration
+OffsetBase._dy
+OffsetBase._dx
+Icon.fontWeight
+Icon.blendMode
+Icon.applyTextScaling
+Icon.textDirection
+Icon.semanticLabel
+Icon.shadows
+Icon.color
+Icon.opticalSize
+Icon.grade
+Icon.weight
+Icon.fill
+Icon.size
+IconData.fontFamilyFallback
+IconData.matchTextDirection
+IconData.fontPackage
+IconData.fontFamily
+IconData.codePoint
+Icon.icon
+ScrollPhysics.parent
+BouncingScrollPhysics.decelerationRate
+_buildSectionHeader
+_buildDetailTile
+public
+friends
+only_me
+দর্শক নির্বাচন করুন (Select Audience)
+' তথ্যটি কে দেখতে পারবে তা নির্ধারণ করুন।
+সার্বজনীন (Public)
+অ্যাপের ভেতর ও বাইরের যে কেউ এটি দেখতে পাবে।
+বন্ধুরা (Friends)
+শুধুমাত্র আপনার বন্ধুরা এটি দেখতে পাবে।
+শুধুমাত্র আমি (Only Me)
+শুধুমাত্র আপনি এটি দেখতে পারবেন।
+প্রাইভেসি আপডেট সম্পন্ন হয়েছে!
+প্রোফাইল বিবরণ প্রাইভেসি
+যোগাযোগ বিবরণ (Contact Info)
+phone
+মোবাইল নম্বর
++৮৮০ ১৭১২ ৩৪৫৬৭৮
+email
+ইমেইল এড্রেস
+arafath@dakapp.com
+মৌলিক তথ্য (Basic Info)
+birthday
+জন্মদিন
+১৫ অক্টোবর ১৯৯৮
+gender
+লিঙ্গ
+পুরুষ
+কর্ম ও শিক্ষা (Work & Education)
+work
+কর্মস্থল
+সফটওয়্যার ইঞ্জিনিয়ার, ডাক লিমিটেড
+education
+বিশ্ববিদ্যালয়
+ঢাকা বিশ্ববিদ্যালয়
+বসবাসের স্থান (Places Lived)
+current_city
+বর্তমান শহর
+ঢাকা, বাংলাদেশ
+hometown
+দেশের বাড়ি
+চট্টগ্রাম, বাংলাদেশ
+সার্বজনীন
+বন্ধুরা
+শুধুমাত্র আমি
+packages/dak/screens/profile_details_privacy_screen.dart
+State.T
+_js_helper|IdentityMap
+IdentityMap.K
+IdentityMap.V
+InternalMap.K
+InternalMap.V
+_js_helper|InternalMap
+MapBase.K
+MapBase.V
+collection|MapBase
+LinkedHashMap.K
+LinkedHashMap.V
+collection|LinkedHashMap
+HashMap.K
+HashMap.V
+collection|HashMap
+Map.K
+Map.V
+core|Map
+core|String
+Comparable.T
+core|Comparable
+core|Pattern
+_interceptors|JSArray
+JSArray.E
+_interceptors|JavaScriptObject
+List.E
+core|List
+JSIndexable.E
+_interceptors|JSIndexable
+_js_helper|TrustedGetRuntimeType
+_interceptors|Interceptor
+_interceptors|JSObject
+Iterable.E
+core|Iterable
+_ListIterable.E
+core|_ListIterable
+EfficientLengthIterable.T
+_internal|EfficientLengthIterable
+HideEfficientLengthIterable.T
+_internal|HideEfficientLengthIterable
+TickerProviderStateMixin.T
+ScaffoldFeatureController.T
+ScaffoldFeatureController.U
+core|_Enum
+core|Enum
+ParentDataWidget.T
+ContainerBoxParentData.ChildType
+ContainerParentDataMixin.ChildType
+ui|Color
+version
+sourceRoot
+:[],

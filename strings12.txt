@@ -1,0 +1,167 @@
+windows_x64
+dartx
+dak__screens__profile_lock_screen|_ProfileLockScreenState
+core|bool
+async|Future<core|Null>
+core|Null
+core|Object?
+~()
+core|Null()
+dak__screens__profile_lock_screen|_ProfileLockScreenState()
+core|bool?
+ProfileLockScreen
+file:///C:/Users/ARAFATH/StudioProjects/Dak/lib/screens/profile_lock_screen.dart
+sRGB
+Icon
+MaterialIcons
+SizedBox
+Text
+Row
+SnackBar
+CircularProgressIndicator
+material
+Column
+AlertDialog
+Container
+PreferredSize
+IconButton
+AppBar
+normal
+circle
+CircleAvatar
+Positioned
+Stack
+SingleChildScrollView
+Expanded
+ElevatedButton
+SafeArea
+Scaffold
+_#v_isLocked
+isLocked
+dak__screens__profile_lock_screen|ProfileLockScreen
+_#_ProfileLockScreenState#_currentLockState
+_currentLockState
+Duration._duration
+_Enum.index
+_Enum._name
+Color.colorSpace
+Color.b
+Color.g
+Color.r
+Color.a
+Widget._location
+Widget.key
+Icon.fontWeight
+Icon.blendMode
+Icon.applyTextScaling
+Icon.textDirection
+Icon.semanticLabel
+Icon.shadows
+Icon.color
+Icon.opticalSize
+Icon.grade
+Icon.weight
+Icon.fill
+Icon.size
+IconData.fontFamilyFallback
+IconData.matchTextDirection
+IconData.fontPackage
+IconData.fontFamily
+IconData.codePoint
+Icon.icon
+SingleChildRenderObjectWidget.child
+SizedBox.height
+SizedBox.width
+_as
+ProgressIndicator.semanticsValue
+ProgressIndicator.semanticsLabel
+ProgressIndicator.valueColor
+ProgressIndicator.color
+ProgressIndicator.backgroundColor
+ProgressIndicator.value
+CircularProgressIndicator.controller
+CircularProgressIndicator.padding
+CircularProgressIndicator.year2023
+CircularProgressIndicator.trackGap
+CircularProgressIndicator.constraints
+CircularProgressIndicator.strokeCap
+CircularProgressIndicator.strokeAlign
+CircularProgressIndicator.strokeWidth
+CircularProgressIndicator._indicatorType
+_toggleLockState
+OffsetBase._dy
+OffsetBase._dx
+ScrollPhysics.parent
+BouncingScrollPhysics.decelerationRate
+EdgeInsets.bottom
+EdgeInsets.right
+EdgeInsets.top
+EdgeInsets.left
+BoxDecoration.shape
+BoxDecoration.backgroundBlendMode
+BoxDecoration.gradient
+Shadow.blurRadius
+Shadow.offset
+Shadow.color
+BoxShadow.blurStyle
+BoxShadow.spreadRadius
+BoxDecoration.boxShadow
+BoxDecoration.borderRadius
+BoxDecoration.border
+BoxDecoration.image
+BoxDecoration.color
+_buildLockFeatureRow
+আপনার প্রোফাইল সফলভাবে লক করা হয়েছে!
+আপনার প্রোফাইল সফলভাবে আনলক করা হয়েছে!
+আনলক করা হচ্ছে...
+লক করা হচ্ছে...
+অনুগ্রহ করে অপেক্ষা করুন...
+প্রোফাইল লকিং
+আপনার প্রোফাইল লক করা আছে
+আপনার প্রোফাইল লক করুন
+আপনার ছবি এবং পোস্ট এখন আরও বেশি নিরাপদ।
+এক ধাপে আপনার ছবি এবং পোস্ট আরও প্রাইভেট করুন।
+বন্ধুদের দৃশ্যমানতা
+শুধুমাত্র আপনার বন্ধুরা আপনার প্রোফাইলের ছবি, পোস্ট এবং স্টোরি দেখতে পাবে।
+কভার ও প্রোফাইল ছবি সুরক্ষা
+শুধুমাত্র আপনার বন্ধুরা আপনার প্রোফাইল ছবি এবং কভার ছবি বড় আকারে দেখতে পাবে।
+সার্চ ও যোগাযোগের সুযোগ
+অন্যান্য ব্যক্তিরা এখনো আপনাকে খুঁজে পেতে এবং ফ্রেন্ড রিকোয়েস্ট পাঠাতে পারবে।
+প্রোফাইল আনলক করুন
+packages/dak/screens/profile_lock_screen.dart
+State.T
+async|Future
+Future.T
+_interceptors|JSArray
+JSArray.E
+_interceptors|JavaScriptObject
+List.E
+core|List
+JSIndexable.E
+_interceptors|JSIndexable
+_js_helper|TrustedGetRuntimeType
+_interceptors|Interceptor
+_interceptors|JSObject
+Iterable.E
+core|Iterable
+_ListIterable.E
+core|_ListIterable
+EfficientLengthIterable.T
+_internal|EfficientLengthIterable
+HideEfficientLengthIterable.T
+_internal|HideEfficientLengthIterable
+ScaffoldFeatureController.T
+ScaffoldFeatureController.U
+core|_Enum
+core|Enum
+ParentDataWidget.T
+ContainerBoxParentData.ChildType
+ContainerParentDataMixin.ChildType
+ui|Shadow
+core|String
+Comparable.T
+core|Comparable
+core|Pattern
+version
+sourceRoot
+:[],

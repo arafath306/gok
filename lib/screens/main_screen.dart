@@ -3,10 +3,13 @@ import 'feed_screen.dart';
 import 'search_explore_screen.dart';
 import 'notifications_screen.dart';
 import 'profile/profile_screen.dart';
-import 'profile/edit_profile_screen.dart';
 import '../utils/routes.dart';
-import 'new_post_screen.dart';
+import 'create_thread_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../services/database_service.dart';
+import 'messenger/messenger_home_screen.dart';
+import 'settings/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,60 +18,472 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => MainScreenState();
 }
 
-class MainScreenState extends State<MainScreen> {
+class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+  late PageController _pageController;
+  late AnimationController _fabAnimationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _currentIndex);
+    _fabAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _fabAnimationController.dispose();
+    super.dispose();
+  }
 
   void setTab(int index) {
+    if (index == _currentIndex) return;
     setState(() {
       _currentIndex = index;
     });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
   }
 
-  Widget _buildBottomNavItem(int tabIndex, IconData activeIcon, IconData inactiveIcon) {
-    // If it's the plus button (index 2)
-    if (tabIndex == 2) {
-      return Expanded(
-        child: InkWell(
-          onTap: () {
-            _showCreateOptionsBottomSheet();
-          },
-          child: Container(
-            alignment: Alignment.center,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: const BoxDecoration(
-                color: Color(0xFF1E824C), // Solid brand green background
-                shape: BoxShape.circle,
+  void _showMockFeatureDialog(BuildContext context, String feature) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "$feature coming soon!",
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        content: Text(
+          "We are actively working on building the $feature feature to match the complete social media experience. Stay tuned!",
+          style: GoogleFonts.outfit(color: Colors.black54),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Dismiss",
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFeedbackDialog(BuildContext context) {
+    final TextEditingController feedbackController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Submit Feedback",
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Let us know your thoughts or report any issues:",
+              style: GoogleFonts.outfit(color: Colors.black54),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: feedbackController,
+              maxLines: 3,
+              style: GoogleFonts.outfit(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: "Enter your feedback...",
+                hintStyle: GoogleFonts.outfit(color: Colors.black38),
+                filled: true,
+                fillColor: const Color(0xFFF3F4F6),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.all(12),
               ),
-              child: const Icon(
-                Icons.add,
-                color: Colors.white, // White plus icon
-                size: 22,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: GoogleFonts.outfit(color: Colors.black54),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: const Color(0xFF1E824C),
+                  content: Text(
+                    "Thank you for your feedback!",
+                    style: GoogleFonts.outfit(color: Colors.white),
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E824C),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(
+              "Submit",
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Help & Support",
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        content: Text(
+          "Need help? Contact our support team at support@dak.social or check our online documentation.",
+          style: GoogleFonts.outfit(color: Colors.black54),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Close",
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showModal(BuildContext context, String title, String contentText) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Text(
+                    contentText,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E824C),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    "Accept",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context, myProfile) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 24.0, top: 24.0, bottom: 20.0, right: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              setTab(4);
+            },
+            child: CircleAvatar(
+              radius: 32,
+              backgroundColor: Colors.grey[200],
+              backgroundImage: myProfile?.avatarUrl != null && myProfile!.avatarUrl!.isNotEmpty
+                  ? NetworkImage(myProfile.avatarUrl!)
+                  : const NetworkImage("https://i.pravatar.cc/150?u=current_user"),
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              setTab(4);
+            },
+            child: Text(
+              myProfile?.fullName ?? "Arafath",
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+                letterSpacing: -0.4,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            "@${myProfile?.username ?? 'arafath306'}.bsky.social",
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              color: Colors.black54,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          RichText(
+            text: TextSpan(
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                color: Colors.black54,
+              ),
+              children: [
+                TextSpan(
+                  text: '${myProfile?.followersCount ?? 0} ',
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+                const TextSpan(text: 'followers  ·  '),
+                TextSpan(
+                  text: '${myProfile?.followingCount ?? 0} ',
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+                const TextSpan(text: 'following'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+      minLeadingWidth: 28,
+      leading: Icon(
+        icon,
+        color: isActive ? Colors.black : Colors.black87,
+        size: 26,
+      ),
+      title: Text(
+        title,
+        style: GoogleFonts.outfit(
+          fontSize: 18,
+          fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+          color: isActive ? Colors.black : Colors.black87,
+          letterSpacing: -0.1,
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildFooterLinks(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () => _showModal(
+              context,
+              "Terms of Service",
+              "Welcome to Dak! By using our platform, you agree to these terms:\n\n"
+              "1. Content Ownership: You own the content you post, but grant us license to display it.\n\n"
+              "2. Safety: Do not harass other users or post illegal content.\n\n"
+              "3. Termination: We reserve the right to suspend accounts violating safety rules.\n\n"
+              "For more details, visit our website.",
+            ),
+            child: Text(
+              "Terms of Service",
+              style: GoogleFonts.outfit(
+                color: const Color(0xFF0085FF),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-        ),
-      );
-    }
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => _showModal(
+              context,
+              "Privacy Policy",
+              "Your privacy is important to us:\n\n"
+              "1. Data Collection: We collect account profile information (username, full name) and posts you publish.\n\n"
+              "2. Usage: We use your data to run and secure our social network.\n\n"
+              "3. Sharing: We do not sell your personal data to third parties.\n\n"
+              "Read the complete policy on our documentation portal.",
+            ),
+            child: Text(
+              "Privacy Policy",
+              style: GoogleFonts.outfit(
+                color: const Color(0xFF0085FF),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    // Map tab index to screen index
-    final int screenIndex = tabIndex < 2 ? tabIndex : tabIndex - 1;
-    final bool isSelected = _currentIndex == screenIndex;
+  Widget _buildFooterButtons(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _showFeedbackDialog(context),
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: Colors.black87),
+              label: Text(
+                "Feedback",
+                style: GoogleFonts.outfit(
+                  color: Colors.black87,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF3F4F6),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: const StadiumBorder(),
+                shadowColor: Colors.transparent,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => _showHelpDialog(context),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.2),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(
+                "Help",
+                style: GoogleFonts.outfit(
+                  color: Colors.black87,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavItem(int tabIndex, IconData activeIcon, IconData inactiveIcon) {
+    final bool isSelected = _currentIndex == tabIndex;
 
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
         onTap: () {
-          setState(() {
-            _currentIndex = screenIndex;
-          });
+          setTab(tabIndex);
         },
-        child: Container(
-          alignment: Alignment.center,
-          child: Icon(
-            isSelected ? activeIcon : inactiveIcon,
-            color: isSelected ? const Color(0xFF1E824C) : Colors.black38,
-            size: 24,
-          ),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(flex: 3),
+            AnimatedScale(
+              scale: isSelected ? 1.18 : 1.0,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutBack,
+              child: Icon(
+                isSelected ? activeIcon : inactiveIcon,
+                color: isSelected ? const Color(0xFF1E824C) : Colors.black45,
+                size: 24,
+              ),
+            ),
+            const Spacer(flex: 2),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              width: isSelected ? 5 : 0,
+              height: 5,
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E824C),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const Spacer(flex: 2),
+          ],
         ),
       ),
     );
@@ -77,136 +492,202 @@ class MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
-      const FeedScreen(),
-      const SearchExploreScreen(),
-      const NotificationsScreen(),
-      ProfileScreenContainer(
-        onNavigateToEditProfile: () {
+      FeedScreen(
+        onNavigateToChaStation: () => setTab(2),
+        onNavigateToCreate: () {
           Navigator.push(
             context,
-            NoTransitionPageRoute(child: const EditProfileScreen()),
+            MaterialPageRoute(builder: (_) => const CreateThreadScreen()),
           );
         },
       ),
+      const SearchExploreScreen(),
+      const MessengerHomeScreen(),
+      const NotificationsScreen(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: screens[_currentIndex],
+      drawer: Drawer(
+        backgroundColor: Colors.white,
+        child: Consumer<DatabaseService>(
+          builder: (context, dbService, _) {
+            final myProfile = dbService.myProfile;
+            return SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildProfileHeader(context, myProfile),
+                          _buildDrawerItem(
+                            icon: Icons.search_outlined,
+                            title: "Explore",
+                            isActive: _currentIndex == 1,
+                            onTap: () {
+                              Navigator.pop(context);
+                              setTab(1);
+                            },
+                          ),
+                          _buildDrawerItem(
+                            icon: _currentIndex == 0 ? Icons.home_rounded : Icons.home_outlined,
+                            title: "Home",
+                            isActive: _currentIndex == 0,
+                            onTap: () {
+                              Navigator.pop(context);
+                              setTab(0);
+                            },
+                          ),
+                          _buildDrawerItem(
+                            icon: _currentIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline_rounded,
+                            title: "Chat",
+                            isActive: _currentIndex == 2,
+                            onTap: () {
+                              Navigator.pop(context);
+                              setTab(2);
+                            },
+                          ),
+                          _buildDrawerItem(
+                            icon: _currentIndex == 3 ? Icons.notifications : Icons.notifications_outlined,
+                            title: "Notifications",
+                            isActive: _currentIndex == 3,
+                            onTap: () {
+                              Navigator.pop(context);
+                              setTab(3);
+                            },
+                          ),
+                          _buildDrawerItem(
+                            icon: Icons.tag_rounded,
+                            title: "Feeds",
+                            isActive: false,
+                            onTap: () {
+                              Navigator.pop(context);
+                              setTab(0);
+                            },
+                          ),
+                          _buildDrawerItem(
+                            icon: Icons.list_alt_rounded,
+                            title: "Lists",
+                            isActive: false,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showMockFeatureDialog(context, "Lists");
+                            },
+                          ),
+                          _buildDrawerItem(
+                            icon: Icons.bookmark_border_rounded,
+                            title: "Saved",
+                            isActive: false,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showMockFeatureDialog(context, "Saved");
+                            },
+                          ),
+                          _buildDrawerItem(
+                            icon: _currentIndex == 4 ? Icons.person : Icons.person_outline_rounded,
+                            title: "Profile",
+                            isActive: _currentIndex == 4,
+                            onTap: () {
+                              Navigator.pop(context);
+                              setTab(4);
+                            },
+                          ),
+                          _buildDrawerItem(
+                            icon: Icons.settings_outlined,
+                            title: "Settings",
+                            isActive: false,
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                NoTransitionPageRoute(child: const SettingsScreen()),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  _buildFooterLinks(context),
+                  _buildFooterButtons(context),
+                ],
+              ),
+            );
+          },
+        ),
       ),
+      body: SafeArea(
+        child: PageView(
+          controller: _pageController,
+          physics: const BouncingScrollPhysics(),
+          onPageChanged: (index) {
+            if (index != _currentIndex) {
+              setState(() {
+                _currentIndex = index;
+              });
+            }
+          },
+          children: screens,
+        ),
+      ),
+      floatingActionButton: (_currentIndex == 0 || _currentIndex == 4)
+          ? FloatingActionButton(
+              heroTag: 'main_fab',
+              backgroundColor: const Color(0xFF1E824C),
+              shape: const CircleBorder(),
+              elevation: 4,
+              onPressed: () {
+                _fabAnimationController.forward(from: 0.0);
+                Future.delayed(const Duration(milliseconds: 150), () {
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CreateThreadScreen()),
+                    );
+                  }
+                });
+              },
+              child: RotationTransition(
+                turns: Tween<double>(begin: 0.0, end: 1.0).animate(
+                  CurvedAnimation(
+                    parent: _fabAnimationController,
+                    curve: Curves.easeInOut,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+            )
+          : null,
       bottomNavigationBar: Container(
-        height: 60,
+        height: 64,
         decoration: const BoxDecoration(
           color: Colors.white,
           border: Border(
             top: BorderSide(color: Color(0xFFF1F1F1), width: 1),
           ),
         ),
-        child: Row(
-          children: [
-            _buildBottomNavItem(0, Icons.home, Icons.home_outlined),
-            _buildBottomNavItem(1, Icons.search, Icons.search_outlined),
-            _buildBottomNavItem(2, Icons.add, Icons.add), // Plus button
-            _buildBottomNavItem(3, Icons.favorite, Icons.favorite_outline),
-            _buildBottomNavItem(4, Icons.person, Icons.person_outline),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCreateOptionsBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        child: SafeArea(
+          child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE8F5E9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.edit_outlined, color: Color(0xFF1E824C)),
-                ),
-                title: Text(
-                  "পোস্ট করুন",
-                  style: GoogleFonts.hindSiliguri(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: Colors.black87,
-                  ),
-                ),
-                subtitle: Text(
-                  "নতুন ডাক তৈরি করুন এবং ছবি/ভিডিও শেয়ার করুন।",
-                  style: GoogleFonts.hindSiliguri(fontSize: 12, color: Colors.black54),
-                ),
-                onTap: () {
-                  Navigator.pop(context); // Close bottom sheet
-                  Navigator.push(
-                    context,
-                    NoTransitionPageRoute(child: const NewPostScreen()),
-                  );
-                },
-              ),
-              const Divider(height: 24, color: Color(0xFFF1F1F1)),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFCE4EC),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.sensors, color: Color(0xFFD81B60)),
-                ),
-                title: Text(
-                  "গো লাইভ",
-                  style: GoogleFonts.hindSiliguri(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: Colors.black87,
-                  ),
-                ),
-                subtitle: Text(
-                  "আপনার বন্ধুদের সাথে সরাসরি লাইভে যুক্ত হোন।",
-                  style: GoogleFonts.hindSiliguri(fontSize: 12, color: Colors.black54),
-                ),
-                onTap: () {
-                  Navigator.pop(context); // Close bottom sheet
-                  ScaffoldMessenger.of(this.context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: const Color(0xFF1E824C),
-                      content: Text(
-                        "লাইভ স্ট্রিমিং ফিচারটি শীঘ্রই আসছে!",
-                        style: GoogleFonts.hindSiliguri(),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
+              _buildBottomNavItem(0, Icons.home_rounded, Icons.home_outlined),
+              _buildBottomNavItem(1, Icons.search_rounded, Icons.search_rounded),
+              _buildBottomNavItem(2, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded),
+              _buildBottomNavItem(3, Icons.notifications_rounded, Icons.notifications_outlined),
+              _buildBottomNavItem(4, Icons.person_rounded, Icons.person_outline_rounded),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

@@ -1,0 +1,1019 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/thread_post.dart';
+import '../models/profile.dart';
+import '../services/database_service.dart';
+
+class CommentsSheet extends StatefulWidget {
+  final ThreadPost post;
+  const CommentsSheet({super.key, required this.post});
+
+  @override
+  State<CommentsSheet> createState() => _CommentsSheetState();
+}
+
+class _CommentsSheetState extends State<CommentsSheet> {
+  final _commentController = TextEditingController();
+  List<Map<String, dynamic>> _comments = [];
+  bool _isLoading = false;
+  String _sortBy = "Most relevant";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadComments();
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadComments() async {
+    setState(() => _isLoading = true);
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('replies')
+          .select('*, profiles(*)')
+          .eq('thread_id', widget.post.id)
+          .order('created_at', ascending: true);
+
+      final List<dynamic> data = response as List<dynamic>;
+      if (mounted) {
+        setState(() {
+          final dbComments = data.map((json) {
+            final authorMap = json['profiles'] as Map<String, dynamic>?;
+            final author = authorMap != null 
+                ? Profile.fromJson(authorMap) 
+                : Profile(id: json['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+            return {
+              'id': json['id'] as String,
+              'author': author,
+              'content': json['content'] as String,
+              'created_at': _formatTime(json['created_at'] as String? ?? ''),
+              'likes_count': (json['likes_count'] as int?) ?? 0,
+              'replies_count': (json['replies_count'] as int?) ?? 0,
+              'is_liked_by_me': false,
+            };
+          }).toList();
+
+          if (dbComments.isEmpty) {
+            _comments = [
+              {
+                'id': 'mock-1',
+                'author': Profile(
+                  id: 'mock-user-1',
+                  username: 'nusrat.jahan',
+                  fullName: 'Nusrat Jahan',
+                  avatarUrl: 'https://i.pravatar.cc/150?u=nusrat',
+                ),
+                'content': 'অসাধারণ ছবি! মনটা ভরে গেল 😍 🌿',
+                'created_at': '2h',
+                'likes_count': 0,
+                'replies_count': 12,
+                'is_liked_by_me': false,
+              },
+              {
+                'id': 'mock-2',
+                'author': Profile(
+                  id: 'mock-user-2',
+                  username: 'rifat_ahmed',
+                  fullName: 'Rifat Ahmed',
+                  avatarUrl: 'https://i.pravatar.cc/150?u=rifat',
+                ),
+                'content': 'দারুণ! কোথায় এটা?',
+                'created_at': '2h',
+                'likes_count': 0,
+                'replies_count': 6,
+                'is_liked_by_me': false,
+              },
+              {
+                'id': 'mock-3',
+                'author': Profile(
+                  id: widget.post.userId,
+                  username: 'dakofficial',
+                  fullName: 'Dak Official',
+                  avatarUrl: 'https://i.pravatar.cc/150?u=dakofficial',
+                ),
+                'content': 'বান্দরবান, বাংলাদেশের সুন্দর জায়গা ❤️',
+                'created_at': '1h',
+                'likes_count': 0,
+                'replies_count': 24,
+                'is_liked_by_me': true,
+              }
+            ];
+          } else {
+            _comments = dbComments;
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Load comments error: $e");
+      if (mounted) {
+        setState(() {
+          _comments = [
+            {
+              'id': 'mock-1',
+              'author': Profile(
+                id: 'mock-user-1',
+                username: 'nusrat.jahan',
+                fullName: 'Nusrat Jahan',
+                avatarUrl: 'https://i.pravatar.cc/150?u=nusrat',
+              ),
+              'content': 'অসাধারণ ছবি! মনটা ভরে গেল 😍 🌿',
+              'created_at': '2h',
+              'likes_count': 0,
+              'replies_count': 12,
+              'is_liked_by_me': false,
+            },
+            {
+              'id': 'mock-2',
+              'author': Profile(
+                id: 'mock-user-2',
+                username: 'rifat_ahmed',
+                fullName: 'Rifat Ahmed',
+                avatarUrl: 'https://i.pravatar.cc/150?u=rifat',
+              ),
+              'content': 'দারুণ! কোথায় এটা?',
+              'created_at': '2h',
+              'likes_count': 0,
+              'replies_count': 6,
+              'is_liked_by_me': false,
+            },
+            {
+              'id': 'mock-3',
+              'author': Profile(
+                id: widget.post.userId,
+                username: 'dakofficial',
+                fullName: 'Dak Official',
+                avatarUrl: 'https://i.pravatar.cc/150?u=dakofficial',
+              ),
+              'content': 'বান্দরবান, বাংলাদেশের সুন্দর জায়গা ❤️',
+              'created_at': '1h',
+              'likes_count': 0,
+              'replies_count': 24,
+              'is_liked_by_me': true,
+            }
+          ];
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _formatTime(String isoString) {
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1) return 'now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+      if (diff.inHours < 24) return '${diff.inHours}h';
+      if (diff.inDays < 7) return '${diff.inDays}d';
+      return '${dt.day}/${dt.month}/${dt.year}';
+    } catch (_) {
+      return 'now';
+    }
+  }
+
+  void _submitComment() async {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+
+    final supabase = Supabase.instance.client;
+    final currentUid = supabase.auth.currentUser?.id;
+    if (currentUid == null) return;
+
+    try {
+      await supabase.from('replies').insert({
+        'thread_id': widget.post.id,
+        'user_id': currentUid,
+        'content': text,
+      });
+      _commentController.clear();
+      _loadComments();
+      // Optimistically trigger feed update
+      if (mounted) {
+        Provider.of<DatabaseService>(context, listen: false).fetchFeed();
+      }
+    } catch (e) {
+      debugPrint("Post comment error: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("মন্তব্য পোস্ট করতে ব্যর্থ হয়েছে")),
+        );
+      }
+    }
+  }
+
+  void _showQuickActions(BuildContext context, Map<String, dynamic> comment, DatabaseService dbService) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      transitionAnimationController: AnimationController(
+        vsync: Navigator.of(context),
+        duration: const Duration(milliseconds: 350),
+      ),
+      builder: (sheetContext) => CommentQuickActionsSheet(
+        comment: comment,
+        dbService: dbService,
+        onCommentHidden: (id) {
+          setState(() {
+            _comments.removeWhere((c) => c['id'] == id);
+          });
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dbService = Provider.of<DatabaseService>(context);
+    final myProf = dbService.myProfile;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // Drag handle
+          const SizedBox(height: 8),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Header Row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Comments",
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                    color: Colors.black,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.black54),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+
+          // Sort Filter Dropdown
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
+            child: Row(
+              children: [
+                DropdownButton<String>(
+                  value: _sortBy,
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.black87),
+                  style: GoogleFonts.outfit(
+                    color: Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  items: ["Most relevant", "Newest", "Oldest"].map((val) {
+                    return DropdownMenuItem<String>(
+                      value: val,
+                      child: Text(val),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _sortBy = val;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // Comments List / Loading Indicator
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF1E824C),
+                    ),
+                  )
+                : _comments.isEmpty
+                    ? Center(
+                        child: Text(
+                          "কোন মন্তব্য পাওয়া যায়নি।",
+                          style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _comments.length,
+                        itemBuilder: (context, index) {
+                          final comment = _comments[index];
+                          final Profile author = comment['author'] as Profile;
+                          final isPostAuthor = author.id == widget.post.userId;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Commenter Avatar
+                                CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: Colors.grey[200],
+                                  backgroundImage: NetworkImage(
+                                    author.avatarUrl ?? "https://i.pravatar.cc/150",
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // Comment details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Author Header Info Row
+                                      Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              author.fullName,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.hindSiliguri(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 14.5,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                          if (author.fullName == 'Dak Official') ...[
+                                            const SizedBox(width: 4),
+                                            const Icon(
+                                              Icons.verified,
+                                              color: Colors.blue,
+                                              size: 15,
+                                            ),
+                                          ],
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "@${author.username} · ${comment['created_at']}",
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 12.5,
+                                              color: Colors.grey[500],
+                                            ),
+                                          ),
+                                          if (isPostAuthor) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF1E824C).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                "Author",
+                                                style: GoogleFonts.outfit(
+                                                  color: const Color(0xFF1E824C),
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                          const Spacer(),
+                                          IconButton(
+                                            icon: const Icon(Icons.more_horiz, size: 18, color: Colors.black54),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            onPressed: () => _showQuickActions(context, comment, dbService),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+
+                                      // Content Text
+                                      Text(
+                                        comment['content'] as String,
+                                        style: GoogleFonts.hindSiliguri(
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                          height: 1.45,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+
+                                      // Action Row
+                                      Row(
+                                        children: [
+                                          // Comments/Replies metric
+                                          GestureDetector(
+                                            onTap: () {},
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.chat_bubble_outline, size: 15, color: Colors.black54),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  "${comment['replies_count']}",
+                                                  style: GoogleFonts.outfit(
+                                                    fontSize: 13, 
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black54,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 24),
+                                          // Likes metric - heart outline toggling (without number, exactly like screenshot)
+                                          GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                comment['is_liked_by_me'] = !(comment['is_liked_by_me'] as bool? ?? false);
+                                              });
+                                            },
+                                            child: Icon(
+                                              (comment['is_liked_by_me'] as bool? ?? false)
+                                                  ? Icons.favorite
+                                                  : Icons.favorite_border,
+                                              size: 15,
+                                              color: (comment['is_liked_by_me'] as bool? ?? false)
+                                                  ? Colors.red
+                                                  : Colors.black54,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 24),
+                                          // Reply action button
+                                          GestureDetector(
+                                            onTap: () {
+                                              _commentController.text = "@${author.username} ";
+                                            },
+                                            child: Text(
+                                              "Reply",
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black54,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      // Inline reply line separator styling
+                                      // Inline reply line separator styling
+                                      if (comment['id'] == 'mock-3') ...[
+                                        const SizedBox(height: 10),
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 4.0, top: 4.0, bottom: 8.0),
+                                          child: Row(
+                                            children: [
+                                              const SizedBox(
+                                                width: 12,
+                                                child: Divider(color: Color(0xFF1E824C), thickness: 1.5),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                "View 2 more replies",
+                                                style: GoogleFonts.outfit(
+                                                  color: const Color(0xFF1E824C),
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                      if (index < _comments.length - 1 && comment['id'] != 'mock-3') ...[
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+          ),
+
+          // Sticky Bottom Input Composer
+          SafeArea(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                ),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Colors.grey[200],
+                    backgroundImage: NetworkImage(
+                      myProf?.avatarUrl ?? "https://i.pravatar.cc/150",
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _commentController,
+                              style: GoogleFonts.hindSiliguri(fontSize: 14),
+                              decoration: InputDecoration(
+                                hintText: "Write a comment...",
+                                hintStyle: GoogleFonts.outfit(color: Colors.black38, fontSize: 14),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                              ),
+                            ),
+                          ),
+                          // Media actions and dynamic Send button inside the container
+                          ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _commentController,
+                            builder: (context, value, child) {
+                              final text = value.text.trim();
+                              if (text.isNotEmpty) {
+                                return IconButton(
+                                  icon: const Icon(Icons.send, color: Color(0xFF1E824C), size: 18),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: _submitComment,
+                                );
+                              } else {
+                                return Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.image_outlined, size: 18, color: Colors.black54),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () {},
+                                    ),
+                                    const SizedBox(width: 10),
+                                    IconButton(
+                                      icon: const Icon(Icons.gif_box_outlined, size: 18, color: Colors.black54),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () {},
+                                    ),
+                                    const SizedBox(width: 10),
+                                    IconButton(
+                                      icon: const Icon(Icons.sentiment_satisfied_alt_outlined, size: 18, color: Colors.black54),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () {},
+                                    ),
+                                  ],
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Comment Quick Actions Bottom Sheet (Twitter/X Style) ──────────────────────
+class CommentQuickActionsSheet extends StatefulWidget {
+  final Map<String, dynamic> comment;
+  final DatabaseService dbService;
+  final Function(String) onCommentHidden;
+
+  const CommentQuickActionsSheet({
+    super.key,
+    required this.comment,
+    required this.dbService,
+    required this.onCommentHidden,
+  });
+
+  @override
+  State<CommentQuickActionsSheet> createState() => CommentQuickActionsSheetState();
+}
+
+class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
+    with TickerProviderStateMixin {
+  late final AnimationController _staggerController;
+  late final List<Animation<double>> _slideAnims;
+  late final List<Animation<double>> _fadeAnims;
+  bool _isMuted = false;
+  bool _isBlocked = false;
+  bool _isFollowing = false;
+
+  static const int _itemCount = 6;
+
+  @override
+  void initState() {
+    super.initState();
+    _staggerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _slideAnims = List.generate(_itemCount, (i) {
+      final start = (i * 0.1).clamp(0.0, 1.0);
+      final end = (start + 0.5).clamp(0.0, 1.0);
+      return Tween<double>(begin: 40.0, end: 0.0).animate(
+        CurvedAnimation(
+          parent: _staggerController,
+          curve: Interval(start, end, curve: Curves.easeOutCubic),
+        ),
+      );
+    });
+
+    _fadeAnims = List.generate(_itemCount, (i) {
+      final start = (i * 0.1).clamp(0.0, 1.0);
+      final end = (start + 0.4).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _staggerController,
+          curve: Interval(start, end, curve: Curves.easeOut),
+        ),
+      );
+    });
+
+    _staggerController.forward();
+  }
+
+  @override
+  void dispose() {
+    _staggerController.dispose();
+    super.dispose();
+  }
+
+  void _showSuccessSnackBar(BuildContext ctx, String message,
+      {String? undoLabel, VoidCallback? onUndo}) {
+    ScaffoldMessenger.of(ctx).clearSnackBars();
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: const Color(0xFF1E824C),
+        duration: const Duration(seconds: 3),
+        action: onUndo != null
+            ? SnackBarAction(
+                label: undoLabel ?? 'Undo',
+                textColor: Colors.white,
+                onPressed: onUndo,
+              )
+            : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Profile author = widget.comment['author'] as Profile;
+    final username = author.username;
+    final commentId = widget.comment['id'] as String;
+
+    final actions = <_CommentQuickActionItem>[
+      _CommentQuickActionItem(
+        icon: Icons.sentiment_dissatisfied_outlined,
+        label: 'Not interested in this comment',
+        onTap: () {
+          Navigator.pop(context);
+          widget.onCommentHidden(commentId);
+          _showSuccessSnackBar(context, 'Comment hidden from view',
+              undoLabel: 'Undo', onUndo: () {});
+        },
+      ),
+      _CommentQuickActionItem(
+        icon: _isFollowing
+            ? Icons.person_remove_outlined
+            : Icons.person_add_alt_1_outlined,
+        label: _isFollowing ? 'Unfollow @$username' : 'Follow @$username',
+        onTap: () {
+          setState(() => _isFollowing = !_isFollowing);
+          Navigator.pop(context);
+          _showSuccessSnackBar(
+            context,
+            _isFollowing
+                ? 'You unfollowed @$username'
+                : 'You are now following @$username',
+          );
+        },
+      ),
+      _CommentQuickActionItem(
+        icon: Icons.playlist_add_outlined,
+        label: 'Add/remove from Lists',
+        onTap: () {
+          Navigator.pop(context);
+          _showSuccessSnackBar(context, 'List updated for @$username');
+        },
+      ),
+      _CommentQuickActionItem(
+        icon: _isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
+        label: _isMuted ? 'Unmute @$username' : 'Mute @$username',
+        onTap: () {
+          setState(() => _isMuted = !_isMuted);
+          Navigator.pop(context);
+          _showSuccessSnackBar(
+            context,
+            _isMuted ? '@$username unmuted' : '@$username has been muted',
+            undoLabel: 'Undo',
+            onUndo: () {},
+          );
+        },
+      ),
+      _CommentQuickActionItem(
+        icon: Icons.block_outlined,
+        label: _isBlocked ? 'Unblock @$username' : 'Block @$username',
+        isDanger: true,
+        onTap: () {
+          Navigator.pop(context);
+          _showBlockConfirm(context, username);
+        },
+      ),
+      _CommentQuickActionItem(
+        icon: Icons.flag_outlined,
+        label: 'Report comment',
+        isDanger: true,
+        onTap: () {
+          Navigator.pop(context);
+          _showReportSheet(context, commentId);
+        },
+      ),
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...List.generate(actions.length, (i) {
+              final action = actions[i];
+              return AnimatedBuilder(
+                animation: _staggerController,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, _slideAnims[i].value),
+                    child: Opacity(
+                      opacity: _fadeAnims[i].value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: _buildActionTile(action),
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionTile(_CommentQuickActionItem item) {
+    final color = item.isDanger ? Colors.red[600]! : Colors.black87;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: item.onTap,
+        splashColor: const Color(0xFF1E824C).withOpacity(0.08),
+        highlightColor: const Color(0xFF1E824C).withOpacity(0.04),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Row(
+            children: [
+              Icon(item.icon, color: color, size: 22),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Text(
+                  item.label,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showBlockConfirm(BuildContext ctx, String username) {
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Block @$username?',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: Text(
+          'They will not be able to follow you, see your posts, or contact you on Dak.',
+          style: GoogleFonts.outfit(fontSize: 14, color: Colors.black54, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text('Cancel',
+                style: GoogleFonts.outfit(
+                    color: Colors.grey[600], fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              _showSuccessSnackBar(ctx, '@$username has been blocked');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Block',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportSheet(BuildContext ctx, String commentId) {
+    final reasons = [
+      'Spam',
+      'Hate speech',
+      'Harassment or bullying',
+      'Misinformation',
+      'Violence or threat',
+      'Other',
+    ];
+    showModalBottomSheet(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (reportCtx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'Report comment',
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'Why are you reporting this comment?',
+                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[500]),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              ...reasons.map((reason) => Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () async {
+                        Navigator.pop(reportCtx);
+                        await widget.dbService.reportComment(commentId, reason);
+                        if (!mounted) return;
+                        _showSuccessSnackBar(
+                          ctx,
+                          'Report submitted. Thank you for helping keep Dak safe.',
+                        );
+                      },
+                      splashColor: Colors.red.withOpacity(0.06),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                reason,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.chevron_right,
+                                color: Colors.grey[400], size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CommentQuickActionItem {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDanger;
+
+  _CommentQuickActionItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDanger = false,
+  });
+}

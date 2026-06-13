@@ -5,6 +5,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
+import '../widgets/comments_sheet.dart';
+import '../widgets/reactions_sheet.dart';
+import '../utils/routes.dart';
+import 'profile/profile_screen.dart';
+import 'package:flutter/services.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
   final ThreadPost post;
@@ -48,18 +53,71 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       final List<dynamic> data = response as List<dynamic>;
       if (mounted) {
         setState(() {
-          _comments = data.map((json) {
+          final dbComments = data.map((json) {
             final authorMap = json['profiles'] as Map<String, dynamic>?;
             final author = authorMap != null 
                 ? Profile.fromJson(authorMap) 
                 : Profile(id: json['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
             final rawTime = json['created_at'] as String? ?? '';
             return {
+              'id': json['id'] as String? ?? 'db-${json['created_at']}',
               'author': author,
               'content': json['content'] as String,
               'created_at': _formatTime(rawTime),
+              'likes_count': 0,
+              'replies_count': 5,
+              'is_liked_by_me': false,
             };
           }).toList();
+
+          if (dbComments.isEmpty) {
+            _comments = [
+              {
+                'id': 'mock-1',
+                'author': Profile(
+                  id: 'mock-user-1',
+                  username: 'nusrat.jahan',
+                  fullName: 'Nusrat Jahan',
+                  avatarUrl: 'https://i.pravatar.cc/150?u=nusrat',
+                ),
+                'content': 'অসাধারণ ছবি! মনটা ভরে গেল 😍 🌿',
+                'created_at': '2h',
+                'likes_count': 0,
+                'replies_count': 12,
+                'is_liked_by_me': false,
+              },
+              {
+                'id': 'mock-2',
+                'author': Profile(
+                  id: 'mock-user-2',
+                  username: 'rifat_ahmed',
+                  fullName: 'Rifat Ahmed',
+                  avatarUrl: 'https://i.pravatar.cc/150?u=rifat',
+                ),
+                'content': 'দারুণ! কোথায় এটা?',
+                'created_at': '2h',
+                'likes_count': 0,
+                'replies_count': 6,
+                'is_liked_by_me': false,
+              },
+              {
+                'id': 'mock-3',
+                'author': Profile(
+                  id: widget.post.userId,
+                  username: 'dakofficial',
+                  fullName: 'Dak Official',
+                  avatarUrl: 'https://i.pravatar.cc/150?u=dakofficial',
+                ),
+                'content': 'বান্দরবান, বাংলাদেশের সুন্দর জায়গা ❤️',
+                'created_at': '1h',
+                'likes_count': 0,
+                'replies_count': 24,
+                'is_liked_by_me': true,
+              }
+            ];
+          } else {
+            _comments = dbComments;
+          }
           _isLoadingComments = false;
         });
       }
@@ -67,10 +125,75 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       debugPrint("Load comments error: $e");
       if (mounted) {
         setState(() {
+          _comments = [
+            {
+              'id': 'mock-1',
+              'author': Profile(
+                id: 'mock-user-1',
+                username: 'nusrat.jahan',
+                fullName: 'Nusrat Jahan',
+                avatarUrl: 'https://i.pravatar.cc/150?u=nusrat',
+              ),
+              'content': 'অসাধারণ ছবি! মনটা ভরে গেল 😍 🌿',
+              'created_at': '2h',
+              'likes_count': 0,
+              'replies_count': 12,
+              'is_liked_by_me': false,
+            },
+            {
+              'id': 'mock-2',
+              'author': Profile(
+                id: 'mock-user-2',
+                username: 'rifat_ahmed',
+                fullName: 'Rifat Ahmed',
+                avatarUrl: 'https://i.pravatar.cc/150?u=rifat',
+              ),
+              'content': 'দারুণ! কোথায় এটা?',
+              'created_at': '2h',
+              'likes_count': 0,
+              'replies_count': 6,
+              'is_liked_by_me': false,
+            },
+            {
+              'id': 'mock-3',
+              'author': Profile(
+                id: widget.post.userId,
+                username: 'dakofficial',
+                fullName: 'Dak Official',
+                avatarUrl: 'https://i.pravatar.cc/150?u=dakofficial',
+              ),
+              'content': 'বান্দরবান, বাংলাদেশের সুন্দর জায়গা ❤️',
+              'created_at': '1h',
+              'likes_count': 0,
+              'replies_count': 24,
+              'is_liked_by_me': true,
+            }
+          ];
           _isLoadingComments = false;
         });
       }
     }
+  }
+
+  void _showQuickActions(BuildContext context, Map<String, dynamic> comment, DatabaseService dbService) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      transitionAnimationController: AnimationController(
+        vsync: Navigator.of(context),
+        duration: const Duration(milliseconds: 350),
+      ),
+      builder: (sheetContext) => CommentQuickActionsSheet(
+        comment: comment,
+        dbService: dbService,
+        onCommentHidden: (id) {
+          setState(() {
+            _comments.removeWhere((c) => c['id'] == id);
+          });
+        },
+      ),
+    );
   }
 
   String _formatTime(String isoString) {
@@ -147,51 +270,61 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // User Details Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundImage: NetworkImage(
-                            activePost.author.avatarUrl ?? "https://i.pravatar.cc/150",
-                          ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        NoTransitionPageRoute(
+                          child: ProfileScreen(userId: activePost.userId),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    activePost.author.fullName,
-                                    style: GoogleFonts.hindSiliguri(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.black,
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundImage: NetworkImage(
+                              activePost.author.avatarUrl ?? "https://i.pravatar.cc/150",
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      activePost.author.fullName,
+                                      style: GoogleFonts.hindSiliguri(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.black,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.verified,
-                                    color: Colors.blue,
-                                    size: 14,
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                "@${activePost.author.username}",
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 13,
+                                    const SizedBox(width: 4),
+                                    const Icon(
+                                      Icons.verified,
+                                      color: Colors.blue,
+                                      size: 14,
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                Text(
+                                  "@${activePost.author.username}",
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.more_horiz, color: Colors.grey),
-                      ],
+                          const Icon(Icons.more_horiz, color: Colors.grey),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -233,11 +366,27 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         // Likes/Comments Count row
                         Row(
                           children: [
-                            Text(
-                              "${activePost.likesCount} ",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => ReactionsListSheet(post: activePost),
+                                );
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "${activePost.likesCount} ",
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  const Text("পছন্দ (Likes)   ", style: TextStyle(color: Colors.grey)),
+                                ],
+                              ),
                             ),
-                            const Text("পছন্দ (Likes)   ", style: TextStyle(color: Colors.grey)),
                             Text(
                               "${_comments.length} ",
                               style: const TextStyle(fontWeight: FontWeight.bold),
@@ -251,14 +400,40 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            IconButton(
-                              icon: Icon(
-                                activePost.isLikedByMe ? Icons.favorite : Icons.favorite_border,
-                                color: activePost.isLikedByMe ? Colors.red : Colors.black87,
-                              ),
-                              onPressed: () {
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
                                 dbService.toggleLike(activePost.id, !activePost.isLikedByMe);
                               },
+                              onLongPress: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => ReactionsListSheet(post: activePost),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
+                                  transitionBuilder: (child, animation) =>
+                                      ScaleTransition(scale: animation, child: child),
+                                  child: activePost.isLikedByMe
+                                      ? Text(
+                                          activePost.reactionType ?? '❤️',
+                                          key: ValueKey<String>(activePost.reactionType ?? '❤️'),
+                                          style: const TextStyle(fontSize: 22),
+                                        )
+                                      : const Icon(
+                                          Icons.favorite_border,
+                                          key: ValueKey<int>(0),
+                                          color: Colors.black87,
+                                          size: 24,
+                                        ),
+                                ),
+                              ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.chat_bubble_outline, color: Colors.black87),
@@ -317,16 +492,27 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       itemBuilder: (context, index) {
                         final comment = _comments[index];
                         final Profile author = comment['author'] as Profile;
+                        final isPostAuthor = author.id == widget.post.userId;
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundImage: NetworkImage(
-                                  author.avatarUrl ?? "https://i.pravatar.cc/150",
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    NoTransitionPageRoute(
+                                      child: ProfileScreen(userId: author.id),
+                                    ),
+                                  );
+                                },
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundImage: NetworkImage(
+                                    author.avatarUrl ?? "https://i.pravatar.cc/150",
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -335,21 +521,68 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          author.fullName,
-                                          style: GoogleFonts.hindSiliguri(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
+                                        Flexible(
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                NoTransitionPageRoute(
+                                                  child: ProfileScreen(userId: author.id),
+                                                ),
+                                              );
+                                            },
+                                            child: Text(
+                                              author.fullName,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.hindSiliguri(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14.5,
+                                                color: Colors.black,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                        Text(
-                                          comment['created_at'] as String,
-                                          style: const TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 11,
+                                        if (author.fullName == 'Dak Official') ...[
+                                          const SizedBox(width: 4),
+                                          const Icon(
+                                            Icons.verified,
+                                            color: Colors.blue,
+                                            size: 15,
                                           ),
+                                        ],
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "@${author.username} · ${comment['created_at']}",
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 12.5,
+                                            color: Colors.grey[500],
+                                          ),
+                                        ),
+                                        if (isPostAuthor) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF1E824C).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              "Author",
+                                              style: GoogleFonts.outfit(
+                                                color: const Color(0xFF1E824C),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                        const Spacer(),
+                                        IconButton(
+                                          icon: const Icon(Icons.more_horiz, size: 18, color: Colors.black54),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          onPressed: () => _showQuickActions(context, comment, dbService),
                                         ),
                                       ],
                                     ),
@@ -359,8 +592,89 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                       style: GoogleFonts.hindSiliguri(
                                         fontSize: 14,
                                         color: Colors.black87,
+                                        height: 1.45,
                                       ),
                                     ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        // Replies metric
+                                        GestureDetector(
+                                          onTap: () {},
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.chat_bubble_outline, size: 15, color: Colors.black54),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                "${comment['replies_count'] ?? 0}",
+                                                style: GoogleFonts.outfit(
+                                                  fontSize: 13, 
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 24),
+                                        // Likes metric - heart outline toggling (without number, exactly like screenshot)
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              comment['is_liked_by_me'] = !(comment['is_liked_by_me'] as bool? ?? false);
+                                            });
+                                          },
+                                          child: Icon(
+                                            (comment['is_liked_by_me'] as bool? ?? false)
+                                                ? Icons.favorite
+                                                : Icons.favorite_border,
+                                            size: 15,
+                                            color: (comment['is_liked_by_me'] as bool? ?? false)
+                                                ? Colors.red
+                                                : Colors.black54,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 24),
+                                        // Reply button
+                                        GestureDetector(
+                                          onTap: () {
+                                            _commentController.text = "@${author.username} ";
+                                          },
+                                          child: Text(
+                                            "Reply",
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    // Inline separator replies link mockup helper
+                                    if (comment['id'] == 'mock-3') ...[
+                                      const SizedBox(height: 10),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 4.0, top: 4.0, bottom: 8.0),
+                                        child: Row(
+                                          children: [
+                                            const SizedBox(
+                                              width: 12,
+                                              child: Divider(color: Color(0xFF1E824C), thickness: 1.5),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              "View 2 more replies",
+                                              style: GoogleFonts.outfit(
+                                                color: const Color(0xFF1E824C),
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -386,28 +700,70 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _commentController,
-                    decoration: InputDecoration(
-                      hintText: "কমেন্ট করুন...",
-                      hintStyle: GoogleFonts.hindSiliguri(color: Colors.black26),
-                      border: InputBorder.none,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: _postComment,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E824C),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _commentController,
+                            style: GoogleFonts.hindSiliguri(fontSize: 14),
+                            decoration: InputDecoration(
+                              hintText: "কমেন্ট করুন...",
+                              hintStyle: GoogleFonts.hindSiliguri(color: Colors.black26, fontSize: 14),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                        // Media actions and dynamic Send button inside the container
+                        ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _commentController,
+                          builder: (context, value, child) {
+                            final text = value.text.trim();
+                            if (text.isNotEmpty) {
+                              return IconButton(
+                                icon: const Icon(Icons.send, color: Color(0xFF1E824C), size: 18),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: _postComment,
+                              );
+                            } else {
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.image_outlined, size: 18, color: Colors.black54),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {},
+                                  ),
+                                  const SizedBox(width: 10),
+                                  IconButton(
+                                    icon: const Icon(Icons.gif_box_outlined, size: 18, color: Colors.black54),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {},
+                                  ),
+                                  const SizedBox(width: 10),
+                                  IconButton(
+                                    icon: const Icon(Icons.sentiment_satisfied_alt_outlined, size: 18, color: Colors.black54),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {},
+                                  ),
+                                ],
+                              );
+                            }
+                          },
+                        ),
+                      ],
                     ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    "পোস্ট",
-                    style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

@@ -18,6 +18,7 @@ dependencies:
   provider: ^6.1.2
   google_fonts: ^6.1.0
   image_picker: ^1.0.7
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -28,6 +29,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logo.jpg
+    - assets/logo.png
+    - assets/logo_transparent.png
     - assets/d_logo.jpg
     - assets/logo_d_icon_v2.jpg
     - assets/onboarding_1.jpg

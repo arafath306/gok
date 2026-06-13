@@ -122,6 +122,11 @@ class AuthService with ChangeNotifier {
     required String phone,
     required String gender,
     required String birthdate,
+    String? username,
+    String? division,
+    String? city,
+    String? village,
+    String? zip,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -160,7 +165,7 @@ class AuthService with ChangeNotifier {
 
       // 3. Initialize custom record in Supabase profiles database table
       try {
-        final defaultUsername = email.split('@')[0];
+        final defaultUsername = username ?? email.split('@')[0];
         await _supabaseClient.from('profiles').upsert({
           'id': supabaseUid,
           'username': defaultUsername,
@@ -173,11 +178,15 @@ class AuthService with ChangeNotifier {
           'phone': phone,
           'gender': gender,
           'birthdate': birthdate,
+          'division': division,
+          'city': city,
+          'village': village,
+          'zip': zip,
         });
       } catch (dbError) {
         debugPrint("Creating DB profile row with extra details failed, falling back: $dbError");
         try {
-          final defaultUsername = email.split('@')[0];
+          final defaultUsername = username ?? email.split('@')[0];
           await _supabaseClient.from('profiles').upsert({
             'id': supabaseUid,
             'username': defaultUsername,
@@ -209,6 +218,23 @@ class AuthService with ChangeNotifier {
       _errorMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<bool> isUsernameTaken(String username) async {
+    if (username.trim().isEmpty) return false;
+    try {
+      final res = await _supabaseClient
+          .from('profiles')
+          .select('username')
+          .eq('username', username.trim().toLowerCase())
+          .maybeSingle();
+      return res != null;
+    } catch (e) {
+      debugPrint("isUsernameTaken error: $e");
+      // Fallback/Mock behavior if database fails
+      await Future.delayed(const Duration(milliseconds: 300));
+      return ["admin", "test", "dak", "system"].contains(username.trim().toLowerCase());
     }
   }
 

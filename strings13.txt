@@ -1,0 +1,233 @@
+windows_x64
+dartx
+dak__screens__audience_setting_screen|_AudienceSettingScreenState
+~()
+core|Object?
+~(core|String?)
+core|String
+dak__screens__audience_setting_screen|_AudienceSettingScreenState()
+core|int
+AudienceSettingScreen
+file:///C:/Users/ARAFATH/StudioProjects/Dak/lib/screens/audience_setting_screen.dart
+sRGB
+Icon
+MaterialIcons
+IconButton
+Text
+AppBar
+SingleChildScrollView
+Expanded
+Column
+SafeArea
+Scaffold
+SizedBox
+Row
+Container
+Center
+GestureDetector
+Divider
+none
+DropdownMenuItem
+DropdownButtonFormField
+rectangle
+solid
+ElevatedButton
+OutlinedButton
+SnackBar
+dak__screens__audience_setting_screen|AudienceSettingScreen
+_step
+_selectedAudience
+_customPostVisibility
+_customCommentPermission
+_customProfileVisibility
+_Enum.index
+_Enum._name
+Color.colorSpace
+Color.b
+Color.g
+Color.r
+Color.a
+Widget._location
+Widget.key
+Icon.fontWeight
+Icon.blendMode
+Icon.applyTextScaling
+Icon.textDirection
+Icon.semanticLabel
+Icon.shadows
+Icon.color
+Icon.opticalSize
+Icon.grade
+Icon.weight
+Icon.fill
+Icon.size
+IconData.fontFamilyFallback
+IconData.matchTextDirection
+IconData.fontPackage
+IconData.fontFamily
+IconData.codePoint
+Icon.icon
+EdgeInsets.bottom
+EdgeInsets.right
+EdgeInsets.top
+EdgeInsets.left
+_buildSelectStep
+_buildReviewStep
+_buildBottomBar
+SingleChildRenderObjectWidget.child
+SizedBox.height
+SizedBox.width
+_buildAudienceOption
+Align.heightFactor
+Align.widthFactor
+Alignment.y
+Alignment.x
+Align.alignment
+_buildReviewRow
+Divider.color
+Divider.radius
+Divider.endIndent
+Divider.indent
+Divider.thickness
+Divider.height
+_buildCustomDropdown
+InputDecoration.visualDensity
+InputDecoration.constraints
+InputDecoration.alignLabelWithHint
+InputDecoration.semanticCounterText
+InputDecoration.enabled
+BorderSide.strokeAlign
+BorderSide.style
+BorderSide.width
+BorderSide.color
+InputBorder.borderSide
+InputDecoration.border
+InputDecoration.enabledBorder
+InputDecoration.disabledBorder
+InputDecoration.focusedErrorBorder
+InputDecoration.focusedBorder
+InputDecoration.errorBorder
+InputDecoration.hoverColor
+InputDecoration.focusColor
+InputDecoration.fillColor
+InputDecoration.filled
+InputDecoration.counterStyle
+InputDecoration.counter
+InputDecoration.counterText
+InputDecoration.suffixIconConstraints
+InputDecoration.suffixIconColor
+InputDecoration.suffixStyle
+InputDecoration.suffixText
+InputDecoration.suffix
+InputDecoration.suffixIcon
+InputDecoration.prefixIconColor
+InputDecoration.prefixStyle
+InputDecoration.prefixText
+InputDecoration.prefix
+InputDecoration.prefixIconConstraints
+InputDecoration.prefixIcon
+InputDecoration.isCollapsed
+InputDecoration.contentPadding
+InputDecoration.isDense
+InputDecoration.floatingLabelAlignment
+InputDecoration.floatingLabelBehavior
+InputDecoration.errorMaxLines
+InputDecoration.errorStyle
+InputDecoration.errorText
+InputDecoration.error
+InputDecoration.maintainLabelSize
+InputDecoration.maintainHintSize
+InputDecoration.maintainHintHeight
+InputDecoration.hintFadeDuration
+InputDecoration.hintMaxLines
+InputDecoration.hintTextDirection
+InputDecoration.hintStyle
+InputDecoration.hint
+InputDecoration.hintText
+InputDecoration.helperMaxLines
+InputDecoration.helperStyle
+InputDecoration.helperText
+InputDecoration.helper
+InputDecoration.floatingLabelStyle
+InputDecoration.labelStyle
+InputDecoration.labelText
+InputDecoration.label
+InputDecoration.iconColor
+InputDecoration.icon
+BoxDecoration.shape
+BoxDecoration.backgroundBlendMode
+BoxDecoration.gradient
+BoxDecoration.boxShadow
+BoxDecoration.borderRadius
+Border.left
+Border.bottom
+Border.right
+Border.top
+BoxDecoration.border
+BoxDecoration.image
+BoxDecoration.color
+_confirmChanges
+ডিফল্ট অডিয়েন্স সেটিং
+অডিয়েন্স সেটিং রিভিউ
+অডিয়েন্স সেটিংস গাইডলাইন
+আপনি যখন ডাক অ্যাপে নতুন কোনো পোস্ট করবেন, তখন সেটি ডিফল্টভাবে কারা দেখতে পাবে তা এখান থেকে নির্ধারণ করতে পারবেন। আপনি চাইলে পোস্ট করার সময়ও এটি পরিবর্তন করতে পারেন।
+আপনার ডিফল্ট অডিয়েন্স বেছে নিন:
+Public
+সার্বজনীন (Public)
+যে কেউ (অ্যাপের ভেতরে বা বাইরে) আপনার পোস্ট, স্টোরি এবং রিঅ্যাকশন দেখতে পাবে।
+Friends
+বন্ধুরা (Friends)
+শুধুমাত্র আপনার বন্ধুরা আপনার পোস্ট এবং স্টোরি দেখতে পাবে।
+Custom
+কাস্টম (Custom)
+পোস্ট এবং কমেন্টের জন্য আলাদা আলাদা প্রাইভেসি ম্যানুয়ালি সেট করুন।
+আপনার নির্বাচনের উপর ভিত্তি করে সেটআপ রিভিউ:
+কে মন্তব্য করতে পারবে?
+পোস্টে যে কেউ মন্তব্য করতে পারবে।
+আপনার পোস্ট এবং স্টোরি কে দেখতে পারবে?
+যে কেউ অ্যাপের হোম ফীডে আপনার পোস্ট দেখতে পাবে।
+আপনি যাদের ফলো করেন তাদের কে দেখতে পারবে?
+আপনার ফলোয়িং লিস্ট প্রোফাইলে সবার জন্য দৃশ্যমান থাকবে।
+শুধুমাত্র আপনার মিউচুয়াল বন্ধুরা মন্তব্য করতে পারবে।
+শুধুমাত্র অনুসারী ও বন্ধুরা আপনার পোস্ট দেখতে পাবে।
+ফলোয়িং লিস্ট শুধুমাত্র বন্ধুরা দেখতে পাবে।
+কে আপনার পোস্ট ও স্টোরি দেখতে পারবে?
+কে আপনার পোস্টে মন্তব্য করতে পারবে?
+কে আপনার প্রোফাইল বিবরণী দেখতে পারবে?
+পরবর্তী
+সম্পাদনা করুন
+পরিবর্তন নিশ্চিত করুন
+ডিফল্ট অডিয়েন্স প্রাইভেসি সফলভাবে আপডেট করা হয়েছে!
+packages/dak/screens/audience_setting_screen.dart
+State.T
+ParentDataWidget.T
+ContainerBoxParentData.ChildType
+ContainerParentDataMixin.ChildType
+_interceptors|JSArray
+JSArray.E
+_interceptors|JavaScriptObject
+List.E
+core|List
+JSIndexable.E
+_interceptors|JSIndexable
+_js_helper|TrustedGetRuntimeType
+_interceptors|Interceptor
+_interceptors|JSObject
+Iterable.E
+core|Iterable
+_ListIterable.E
+core|_ListIterable
+EfficientLengthIterable.T
+_internal|EfficientLengthIterable
+HideEfficientLengthIterable.T
+_internal|HideEfficientLengthIterable
+Comparable.T
+core|Comparable
+core|Pattern
+DropdownButtonFormField.T
+FormField.T
+DropdownMenuItem.T
+core|num
+version
+sourceRoot
+:[],

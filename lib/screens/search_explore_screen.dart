@@ -188,7 +188,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 backgroundColor: Colors.transparent,
               ),
               child: Text(
-                isFollowing ? "ফলো করছেন" : "ফলো করুন",
+                isFollowing ? "Following" : "Follow",
                 style: GoogleFonts.hindSiliguri(
                   color: isFollowing ? Colors.black38 : Colors.black87,
                   fontWeight: FontWeight.bold,
@@ -215,14 +215,26 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Threads style title
-              Text(
-                "খুঁজুন",
-                style: GoogleFonts.hindSiliguri(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.menu_rounded, color: Colors.black87),
+                    padding: EdgeInsets.zero,
+                    alignment: Alignment.centerLeft,
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Search",
+                    style: GoogleFonts.hindSiliguri(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
 
@@ -244,7 +256,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                           },
                         )
                       : null,
-                  hintText: "খুঁজুন...",
+                  hintText: "Search...",
                   hintStyle: GoogleFonts.hindSiliguri(color: Colors.black38, fontSize: 15),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   fillColor: const Color(0xFFF1F1F1),
@@ -267,7 +279,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                         ? _searchResults.isEmpty
                             ? Center(
                                 child: Text(
-                                  "কোনো ফলাফল পাওয়া যায়নি",
+                                  "No results found",
                                   style: GoogleFonts.hindSiliguri(color: Colors.black45),
                                 ),
                               )
@@ -290,7 +302,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      "সাম্প্রতিক খোঁজ",
+                                      "Recent Searches",
                                       style: GoogleFonts.hindSiliguri(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
@@ -309,7 +321,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       ),
                                       child: Text(
-                                        "সব মুছুন",
+                                        "Clear All",
                                         style: GoogleFonts.hindSiliguri(
                                           color: const Color(0xFF1E824C),
                                           fontWeight: FontWeight.bold,
@@ -365,7 +377,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
 
                               // Recommendations Header
                               Text(
-                                "আপনার জন্য পরামর্শ",
+                                "Recommended for you",
                                 style: GoogleFonts.hindSiliguri(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
@@ -379,7 +391,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                 child: _recommended.isEmpty
                                     ? Center(
                                         child: Text(
-                                          "কোন পরামর্শ পাওয়া যায়নি",
+                                          "No recommendations found",
                                           style: GoogleFonts.hindSiliguri(color: Colors.black45),
                                         ),
                                       )
