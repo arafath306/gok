@@ -943,7 +943,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: const Color(0xFF0085FF)),
+            Icon(icon, size: 20, color: context.primaryAccent),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -953,7 +953,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     label,
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 12,
-                      color: Colors.black54,
+                      color: context.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -962,7 +962,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     value,
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: context.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -989,7 +989,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       for (int i = 0; i < activeRows.length; i++) {
         cardContent.add(activeRows[i]);
         if (i < activeRows.length - 1) {
-          cardContent.add(Divider(height: 1, color: Colors.grey[200]));
+          cardContent.add(Divider(height: 1, color: context.border));
         }
       }
 
@@ -997,9 +997,9 @@ class _ProfileScreenState extends State<ProfileScreen>
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey[200]!, width: 1),
+          side: BorderSide(color: context.border, width: 1),
         ),
-        color: const Color(0xFFF9FBFD),
+        color: context.cardBg,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -1024,7 +1024,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: GoogleFonts.hindSiliguri(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: context.textPrimary,
           ),
         ),
         const SizedBox(height: 16),
@@ -1041,7 +1041,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: GoogleFonts.hindSiliguri(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: context.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
