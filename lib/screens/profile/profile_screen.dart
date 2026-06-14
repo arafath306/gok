@@ -129,32 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ],
         );
 
-        Widget bodyContent;
-        if (isWide) {
-          bodyContent = Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 2,
-                child: tabSection,
-              ),
-              Container(
-                width: 320,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: context.border, width: 1),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: _buildAboutSection(profile),
-                ),
-              ),
-            ],
-          );
-        } else {
-          bodyContent = tabSection;
-        }
+        Widget bodyContent = tabSection;
 
         return Scaffold(
           backgroundColor: context.scaffoldBg,
