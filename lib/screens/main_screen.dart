@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'feed_screen.dart';
 import 'search_explore_screen.dart';
 import 'notifications_screen.dart';
@@ -22,6 +23,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
   int _currentIndex = 0;
   late PageController _pageController;
   late AnimationController _fabAnimationController;
+  StreamSubscription? _notificationSubscription;
 
   @override
   void initState() {
@@ -31,13 +33,104 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dbService = Provider.of<DatabaseService>(context, listen: false);
+      _notificationSubscription = dbService.incomingNotificationStream.listen((event) {
+        if (mounted) {
+          _showInAppNotificationBanner(event);
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
+    _notificationSubscription?.cancel();
     _pageController.dispose();
     _fabAnimationController.dispose();
     super.dispose();
+  }
+
+  void _showInAppNotificationBanner(Map<String, dynamic> event) {
+    late OverlayEntry overlayEntry;
+    
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 16,
+        right: 16,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: const Color(0xFF1E824C).withOpacity(0.1),
+                  child: Icon(
+                    event['type'] == 'message' ? Icons.chat_bubble : Icons.notifications,
+                    color: const Color(0xFF1E824C),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        event['title'] as String,
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        event['body'] as String,
+                        style: GoogleFonts.hindSiliguri(
+                          fontSize: 13,
+                          color: Colors.black54,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 16, color: Colors.black38),
+                  onPressed: () => overlayEntry.remove(),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(overlayEntry);
+    
+    Future.delayed(const Duration(seconds: 4), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   void setTab(int index) {
@@ -326,14 +419,45 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     required String title,
     required VoidCallback onTap,
     bool isActive = false,
+    int badgeCount = 0,
   }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
       minLeadingWidth: 28,
-      leading: Icon(
-        icon,
-        color: isActive ? Colors.black : Colors.black87,
-        size: 26,
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            icon,
+            color: isActive ? Colors.black : Colors.black87,
+            size: 26,
+          ),
+          if (badgeCount > 0)
+            Positioned(
+              right: -4,
+              top: -4,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 14,
+                  minHeight: 14,
+                ),
+                child: Text(
+                  "$badgeCount",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
       ),
       title: Text(
         title,
@@ -448,7 +572,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     );
   }
 
-  Widget _buildBottomNavItem(int tabIndex, IconData activeIcon, IconData inactiveIcon) {
+  Widget _buildBottomNavItem(int tabIndex, IconData activeIcon, IconData inactiveIcon, {int badgeCount = 0}) {
     final bool isSelected = _currentIndex == tabIndex;
 
     return Expanded(
@@ -461,15 +585,45 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(flex: 3),
-            AnimatedScale(
-              scale: isSelected ? 1.18 : 1.0,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutBack,
-              child: Icon(
-                isSelected ? activeIcon : inactiveIcon,
-                color: isSelected ? const Color(0xFF1E824C) : Colors.black45,
-                size: 24,
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedScale(
+                  scale: isSelected ? 1.18 : 1.0,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutBack,
+                  child: Icon(
+                    isSelected ? activeIcon : inactiveIcon,
+                    color: isSelected ? const Color(0xFF1E824C) : Colors.black45,
+                    size: 24,
+                  ),
+                ),
+                if (badgeCount > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        "$badgeCount",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const Spacer(flex: 2),
             AnimatedContainer(
@@ -547,6 +701,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                             icon: _currentIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline_rounded,
                             title: "Chat",
                             isActive: _currentIndex == 2,
+                            badgeCount: dbService.unreadMessagesCount,
                             onTap: () {
                               Navigator.pop(context);
                               setTab(2);
@@ -556,6 +711,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                             icon: _currentIndex == 3 ? Icons.notifications : Icons.notifications_outlined,
                             title: "Notifications",
                             isActive: _currentIndex == 3,
+                            badgeCount: dbService.unreadNotificationsCount,
                             onTap: () {
                               Navigator.pop(context);
                               setTab(3);
@@ -668,25 +824,39 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               ),
             )
           : null,
-      bottomNavigationBar: Container(
-        height: 64,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            top: BorderSide(color: Color(0xFFF1F1F1), width: 1),
-          ),
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              _buildBottomNavItem(0, Icons.home_rounded, Icons.home_outlined),
-              _buildBottomNavItem(1, Icons.search_rounded, Icons.search_rounded),
-              _buildBottomNavItem(2, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded),
-              _buildBottomNavItem(3, Icons.notifications_rounded, Icons.notifications_outlined),
-              _buildBottomNavItem(4, Icons.person_rounded, Icons.person_outline_rounded),
-            ],
-          ),
-        ),
+      bottomNavigationBar: Consumer<DatabaseService>(
+        builder: (context, dbService, _) {
+          return Container(
+            height: 64,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(color: Color(0xFFF1F1F1), width: 1),
+              ),
+            ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  _buildBottomNavItem(0, Icons.home_rounded, Icons.home_outlined),
+                  _buildBottomNavItem(1, Icons.search_rounded, Icons.search_rounded),
+                  _buildBottomNavItem(
+                    2, 
+                    Icons.chat_bubble_rounded, 
+                    Icons.chat_bubble_outline_rounded,
+                    badgeCount: dbService.unreadMessagesCount,
+                  ),
+                  _buildBottomNavItem(
+                    3, 
+                    Icons.notifications_rounded, 
+                    Icons.notifications_outlined,
+                    badgeCount: dbService.unreadNotificationsCount,
+                  ),
+                  _buildBottomNavItem(4, Icons.person_rounded, Icons.person_outline_rounded),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -8,10 +8,6 @@ import '../models/notification.dart';
 class DatabaseService with ChangeNotifier {
   final _supabase = Supabase.instance.client;
 
-  // Firebase UID passed from AuthGate — used as fallback for read-only queries
-  // when Supabase session isn't established yet
-  String _firebaseUid = '';
-
   // Cache variables
   Profile? _myProfile;
   Profile? get myProfile => _myProfile;
@@ -28,23 +24,46 @@ class DatabaseService with ChangeNotifier {
   Set<String> _followingIds = {};
   Set<String> get followingIds => _followingIds;
 
+  Set<String> _blockedUserIds = {};
+  Set<String> get blockedUserIds => _blockedUserIds;
+
+  Set<String> _mutedUserIds = {};
+  Set<String> get mutedUserIds => _mutedUserIds;
+
+  bool isBlocked(String targetUserId) => _blockedUserIds.contains(targetUserId);
+  bool isMuted(String targetUserId) => _mutedUserIds.contains(targetUserId);
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // Supabase session UID — used for write operations (RLS checks auth.uid())
+  // Supabase session UID — used for all database operations (UUID format)
   String get _supabaseSessionUid => _supabase.auth.currentUser?.id ?? '';
 
-  // Effective UID: prefers Supabase session, falls back to Firebase UID for reads
-  String get _currentUid {
-    if (_supabaseSessionUid.isNotEmpty) return _supabaseSessionUid;
-    return _firebaseUid;
-  }
+  // Effective UID: ONLY use Supabase session UID (UUID format).
+  // Firebase UID is NOT a valid UUID and CANNOT be used for Supabase queries.
+  String get _currentUid => _supabaseSessionUid;
+
+  String get currentUid => _currentUid;
+
+  int _unreadMessagesCount = 0;
+  int get unreadMessagesCount => _unreadMessagesCount;
+
+  int _unreadNotificationsCount = 0;
+  int get unreadNotificationsCount => _unreadNotificationsCount;
+
+  final StreamController<Map<String, dynamic>> _incomingNotificationStreamController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get incomingNotificationStream =>
+      _incomingNotificationStreamController.stream;
 
   RealtimeChannel? _threadsChannel;
   RealtimeChannel? _likesChannel;
   RealtimeChannel? _repliesChannel;
   RealtimeChannel? _followsChannel;
   RealtimeChannel? _notificationsChannel;
+  RealtimeChannel? _messagesChannel;
+  RealtimeChannel? _blocksChannel;
+  RealtimeChannel? _mutesChannel;
   StreamSubscription<AuthState>? _supabaseAuthSub;
 
   DatabaseService() {
@@ -52,13 +71,15 @@ class DatabaseService with ChangeNotifier {
     _supabaseAuthSub = _supabase.auth.onAuthStateChange.listen((data) {
       debugPrint('[DB] Supabase auth event: ${data.event}');
       if (data.event == AuthChangeEvent.signedIn ||
-          data.event == AuthChangeEvent.tokenRefreshed) {
-        _onUserReady();
-      } else if (data.event == AuthChangeEvent.signedOut) {
-        // Only clear if Firebase UID also not set (full logout)
-        if (_firebaseUid.isEmpty) {
-          _clearAllData();
+          data.event == AuthChangeEvent.tokenRefreshed ||
+          data.event == AuthChangeEvent.initialSession) {
+        // Only load data if we have a valid Supabase session with UUID
+        if (_supabaseSessionUid.isNotEmpty) {
+          debugPrint('[DB] Supabase UID available: $_supabaseSessionUid');
+          _onUserReady();
         }
+      } else if (data.event == AuthChangeEvent.signedOut) {
+        _clearAllData();
       }
     });
 
@@ -68,28 +89,18 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
-  /// Called by AuthGate after Firebase login — enables read-only operations
-  /// even before Supabase session is established.
-  void setFirebaseUid(String uid) {
-    if (uid == _firebaseUid && _myProfile != null) return;
-    _firebaseUid = uid;
-    debugPrint('[DB] Firebase UID set: $uid');
-    if (uid.isNotEmpty) {
-      _onUserReady();
-    }
-  }
-
   /// Called on full logout
   void clearUser() {
-    _firebaseUid = '';
     _clearAllData();
   }
 
-  void _onUserReady() {
+  void _onUserReady() async {
+    await fetchBlockedMutedLists();
     fetchMyProfile();
     fetchFollowingList();
     fetchFeed();
     fetchNotifications();
+    fetchUnreadCounts();
     subscribeToRealtime();
   }
 
@@ -99,6 +110,8 @@ class DatabaseService with ChangeNotifier {
     _myThreads = [];
     _notifications = [];
     _followingIds = {};
+    _blockedUserIds = {};
+    _mutedUserIds = {};
     unsubscribeRealtime();
     notifyListeners();
   }
@@ -136,11 +149,11 @@ class DatabaseService with ChangeNotifier {
         .subscribe();
 
     _repliesChannel = _supabase
-        .channel('public:replies')
+        .channel('public:comments')
         .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
-            table: 'replies',
+            table: 'comments',
             callback: (payload) {
               fetchFeed();
               if (_currentUid.isNotEmpty) {
@@ -169,6 +182,56 @@ class DatabaseService with ChangeNotifier {
             table: 'notifications',
             callback: (payload) {
               fetchNotifications();
+              fetchUnreadCounts();
+              
+              if (payload.eventType == PostgresChangeEvent.insert) {
+                final newNotif = payload.newRecord;
+                if (newNotif['user_id'] == _currentUid && newNotif['actor_id'] != _currentUid) {
+                  _handleIncomingNotification(newNotif);
+                }
+              }
+            })
+        .subscribe();
+
+    _messagesChannel = _supabase
+        .channel('public:messages')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'messages',
+            callback: (payload) {
+              fetchUnreadCounts();
+              
+              if (payload.eventType == PostgresChangeEvent.insert) {
+                final newMsg = payload.newRecord;
+                if (newMsg['receiver_id'] == _currentUid && newMsg['sender_id'] != _currentUid) {
+                  _handleIncomingMessage(newMsg);
+                }
+              }
+            })
+        .subscribe();
+
+    _blocksChannel = _supabase
+        .channel('public:blocks')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'blocks',
+            callback: (payload) {
+              fetchBlockedMutedLists();
+              fetchFeed();
+            })
+        .subscribe();
+
+    _mutesChannel = _supabase
+        .channel('public:mutes')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'mutes',
+            callback: (payload) {
+              fetchBlockedMutedLists();
+              fetchFeed();
             })
         .subscribe();
   }
@@ -179,6 +242,15 @@ class DatabaseService with ChangeNotifier {
     if (_repliesChannel != null) _supabase.removeChannel(_repliesChannel!);
     if (_followsChannel != null) _supabase.removeChannel(_followsChannel!);
     if (_notificationsChannel != null) _supabase.removeChannel(_notificationsChannel!);
+    if (_messagesChannel != null) _supabase.removeChannel(_messagesChannel!);
+    if (_blocksChannel != null) {
+      _supabase.removeChannel(_blocksChannel!);
+      _blocksChannel = null;
+    }
+    if (_mutesChannel != null) {
+      _supabase.removeChannel(_mutesChannel!);
+      _mutesChannel = null;
+    }
   }
 
   // --- Profile Operations ---
@@ -305,6 +377,22 @@ class DatabaseService with ChangeNotifier {
     return _followingIds.contains(targetUserId);
   }
 
+  Future<bool> doesUserFollowMe(String otherUserId) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', otherUserId)
+          .eq('following_id', _currentUid)
+          .maybeSingle();
+      return response != null;
+    } catch (e) {
+      debugPrint("Check doesUserFollowMe error: $e");
+      return false;
+    }
+  }
+
   Future<void> fetchFollowingList() async {
     if (_currentUid.isEmpty) return;
     try {
@@ -343,6 +431,42 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  Future<void> fetchBlockedMutedLists() async {
+    if (_currentUid.isEmpty) return;
+    try {
+      final blockedRes = await _supabase
+          .from('blocks')
+          .select('blocked_id')
+          .eq('blocker_id', _currentUid);
+
+      final blockedMeRes = await _supabase
+          .from('blocks')
+          .select('blocker_id')
+          .eq('blocked_id', _currentUid);
+
+      final mutedRes = await _supabase
+          .from('mutes')
+          .select('muted_id')
+          .eq('muter_id', _currentUid);
+
+      _blockedUserIds = {};
+      for (var row in blockedRes) {
+        _blockedUserIds.add(row['blocked_id'] as String);
+      }
+      for (var row in blockedMeRes) {
+        _blockedUserIds.add(row['blocker_id'] as String);
+      }
+
+      _mutedUserIds = {};
+      for (var row in mutedRes) {
+        _mutedUserIds.add(row['muted_id'] as String);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Fetch blocked/muted lists error: $e");
+    }
+  }
+
   // --- Search & Recommendations ---
 
   Future<List<Profile>> searchProfiles(String query) async {
@@ -355,6 +479,9 @@ class DatabaseService with ChangeNotifier {
           .limit(20);
       final List<dynamic> data = response as List<dynamic>;
       final List<Profile> results = data.map((json) => Profile.fromJson(json)).toList();
+      
+      // Filter out blocked profiles
+      results.removeWhere((profile) => _blockedUserIds.contains(profile.id));
       
       results.sort((a, b) {
         final aUser = a.username.toLowerCase();
@@ -392,7 +519,11 @@ class DatabaseService with ChangeNotifier {
           .order('created_at', ascending: false)
           .limit(10);
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((json) => Profile.fromJson(json)).toList();
+      final List<Profile> results = data.map((json) => Profile.fromJson(json)).toList();
+      
+      // Filter out blocked profiles
+      results.removeWhere((profile) => _blockedUserIds.contains(profile.id));
+      return results;
     } catch (e) {
       debugPrint("Get recommended profiles error: $e");
       return [];
@@ -473,11 +604,30 @@ class DatabaseService with ChangeNotifier {
     try {
       final response = await _supabase
           .from('threads')
-          .select('*, profiles(*), likes(user_id)')
+          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
-      _feed = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      
+      // Apply block, mute, custom hidden, and private account privacy filters
+      posts.removeWhere((post) {
+        // Block/Mute filter
+        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
+          return true;
+        }
+        // Custom friend hide filter
+        if (post.isHiddenFromMe) {
+          return true;
+        }
+        // Private account filter (only show if following or is self)
+        if (post.userId != _currentUid && post.author.isPrivate) {
+          return !isFollowingUser(post.userId);
+        }
+        return false;
+      });
+
+      _feed = posts;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -492,12 +642,21 @@ class DatabaseService with ChangeNotifier {
     try {
       final response = await _supabase
           .from('threads')
-          .select('*, profiles(*), likes(user_id)')
+          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
           .eq('user_id', _currentUid)
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
-      _myThreads = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      
+      // Sort pinned threads to the top
+      posts.sort((a, b) {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return 0;
+      });
+      
+      _myThreads = posts;
       notifyListeners();
     } catch (e) {
       debugPrint("Fetch my threads error: $e");
@@ -679,14 +838,198 @@ class DatabaseService with ChangeNotifier {
 
       final response = await _supabase
           .from('threads')
-          .select('*, profiles(*), likes(user_id)')
+          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      
+      // Filter out posts hidden from profile or hidden from me
+      posts.removeWhere((post) {
+        if (post.hideFromProfile && post.userId != _currentUid) {
+          return true;
+        }
+        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
+          return true;
+        }
+        if (post.isHiddenFromMe) {
+          return true;
+        }
+        return false;
+      });
+
+      // Sort pinned threads to the top
+      posts.sort((a, b) {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return 0;
+      });
+
+      return posts;
     } catch (e) {
       debugPrint("Fetch user threads error: $e");
+      return [];
+    }
+  }
+
+  // --- Author Post Operations ---
+
+  Future<bool> togglePinPost(String threadId, bool isPinned) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('threads').update({'is_pinned': isPinned}).eq('id', threadId);
+      
+      // Update local feed
+      final feedIdx = _feed.indexWhere((p) => p.id == threadId);
+      if (feedIdx != -1) {
+        _feed[feedIdx] = _feed[feedIdx].copyWith(isPinned: isPinned);
+      }
+      // Update local myThreads
+      final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
+      if (myIdx != -1) {
+        _myThreads[myIdx] = _myThreads[myIdx].copyWith(isPinned: isPinned);
+        _myThreads.sort((a, b) {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return 0;
+        });
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("Toggle pin post error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> toggleMutePostNotifications(String threadId, bool mute) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('threads').update({'mute_notifications': mute}).eq('id', threadId);
+      
+      final feedIdx = _feed.indexWhere((p) => p.id == threadId);
+      if (feedIdx != -1) {
+        _feed[feedIdx] = _feed[feedIdx].copyWith(muteNotifications: mute);
+      }
+      final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
+      if (myIdx != -1) {
+        _myThreads[myIdx] = _myThreads[myIdx].copyWith(muteNotifications: mute);
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("Toggle mute notifications error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> toggleHidePostFromProfile(String threadId, bool hide) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('threads').update({'hide_from_profile': hide}).eq('id', threadId);
+      
+      final feedIdx = _feed.indexWhere((p) => p.id == threadId);
+      if (feedIdx != -1) {
+        _feed[feedIdx] = _feed[feedIdx].copyWith(hideFromProfile: hide);
+      }
+      final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
+      if (myIdx != -1) {
+        _myThreads[myIdx] = _myThreads[myIdx].copyWith(hideFromProfile: hide);
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("Toggle hide from profile error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> editPostContent(String threadId, String content) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('threads').update({'content': content}).eq('id', threadId);
+      
+      final feedIdx = _feed.indexWhere((p) => p.id == threadId);
+      if (feedIdx != -1) {
+        _feed[feedIdx] = _feed[feedIdx].copyWith(content: content);
+      }
+      final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
+      if (myIdx != -1) {
+        _myThreads[myIdx] = _myThreads[myIdx].copyWith(content: content);
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("Edit post content error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deletePost(String threadId) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('threads').delete().eq('id', threadId);
+      
+      _feed.removeWhere((p) => p.id == threadId);
+      _myThreads.removeWhere((p) => p.id == threadId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("Delete post error: $e");
+      return false;
+    }
+  }
+
+  Future<List<String>> fetchThreadHides(String threadId) async {
+    try {
+      final response = await _supabase
+          .from('thread_hides')
+          .select('user_id')
+          .eq('thread_id', threadId);
+      final List<dynamic> data = response as List<dynamic>;
+      return data.map((json) => json['user_id'] as String).toList();
+    } catch (e) {
+      debugPrint("Fetch thread hides error: $e");
+      return [];
+    }
+  }
+
+  Future<bool> updateThreadHides(String threadId, List<String> targetUserIds) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      // Delete existing hides
+      await _supabase.from('thread_hides').delete().eq('thread_id', threadId);
+      
+      // Insert new ones
+      if (targetUserIds.isNotEmpty) {
+        final inserts = targetUserIds.map((uid) => {
+          'thread_id': threadId,
+          'user_id': uid,
+        }).toList();
+        await _supabase.from('thread_hides').insert(inserts);
+      }
+      
+      // Refresh feed so visibility filters take effect
+      fetchFeed();
+      return true;
+    } catch (e) {
+      debugPrint("Update thread hides error: $e");
+      return false;
+    }
+  }
+
+  Future<List<Profile>> fetchFollowingProfiles() async {
+    if (_currentUid.isEmpty || _followingIds.isEmpty) return [];
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select()
+          .inFilter('id', _followingIds.toList());
+      final List<dynamic> data = response as List<dynamic>;
+      return data.map((json) => Profile.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint("Fetch following profiles error: $e");
       return [];
     }
   }
@@ -790,7 +1133,319 @@ class DatabaseService with ChangeNotifier {
     return '${diff.inDays}d ago';
   }
 
-  // --- Report Operations ---
+  // --- Unread Count Handlers ---
+
+  Future<void> fetchUnreadCounts() async {
+    if (_currentUid.isEmpty) return;
+    try {
+      final msgResponse = await _supabase
+          .from('messages')
+          .select('id')
+          .eq('receiver_id', _currentUid)
+          .eq('is_read', false);
+      _unreadMessagesCount = (msgResponse as List<dynamic>).length;
+
+      final notifResponse = await _supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', _currentUid)
+          .eq('is_read', false);
+      _unreadNotificationsCount = (notifResponse as List<dynamic>).length;
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Fetch unread counts error: $e");
+    }
+  }
+
+  void _handleIncomingMessage(Map<String, dynamic> msg) async {
+    final senderProfile = await fetchProfile(msg['sender_id'] as String);
+    final senderName = senderProfile?.fullName ?? "Someone";
+    _incomingNotificationStreamController.add({
+      'title': senderName,
+      'body': msg['content'] as String,
+      'type': 'message',
+      'sender_id': msg['sender_id'],
+    });
+  }
+
+  void _handleIncomingNotification(Map<String, dynamic> notif) async {
+    final actorProfile = await fetchProfile(notif['actor_id'] as String);
+    final actorName = actorProfile?.fullName ?? "Someone";
+    _incomingNotificationStreamController.add({
+      'title': 'New Activity',
+      'body': '$actorName ${notif['content']}',
+      'type': 'notification',
+    });
+  }
+
+  // --- Real-time Private Messaging ---
+
+  Stream<List<Map<String, dynamic>>> getMessagesStream(String otherUserId) {
+    if (_currentUid.isEmpty) return const Stream.empty();
+    
+    // Set up a broadcast stream combining the messages table query and database change triggers
+    final controller = StreamController<List<Map<String, dynamic>>>();
+    
+    Future<void> loadAndPush() async {
+      try {
+        final response = await _supabase
+            .from('messages')
+            .select()
+            .or('and(sender_id.eq.$_currentUid,receiver_id.eq.$otherUserId),and(sender_id.eq.$otherUserId,receiver_id.eq.$_currentUid)')
+            .order('created_at', ascending: true);
+        
+        final List<dynamic> data = response as List<dynamic>;
+        final messages = data.map((json) => {
+          'id': json['id'] as String,
+          'text': json['content'] as String,
+          'isMe': json['sender_id'] == _currentUid,
+          'time': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
+          'created_at': json['created_at'],
+        }).toList();
+        
+        if (!controller.isClosed) {
+          controller.add(messages);
+        }
+      } catch (e) {
+        debugPrint("Error loading messages stream: $e");
+        if (!controller.isClosed) {
+          controller.add([]);
+        }
+      }
+    }
+
+    // Load initial values
+    loadAndPush();
+
+    // Listen to realtime messages table updates
+    final subscription = _supabase
+        .channel('messages:$otherUserId')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'messages',
+            callback: (payload) {
+              loadAndPush();
+            })
+        .subscribe();
+
+    controller.onCancel = () {
+      _supabase.removeChannel(subscription);
+      controller.close();
+    };
+
+    return controller.stream;
+  }
+
+  Future<void> sendMessage(String receiverId, String content) async {
+    if (_currentUid.isEmpty) return;
+    try {
+      await _supabase.from('messages').insert({
+        'sender_id': _currentUid,
+        'receiver_id': receiverId,
+        'content': content,
+        'is_read': false,
+      });
+      
+      // Notify database and trigger unread counts updating
+      fetchUnreadCounts();
+    } catch (e) {
+      debugPrint("Send message error: $e");
+    }
+  }
+
+  Future<void> markMessagesAsRead(String otherUserId) async {
+    if (_currentUid.isEmpty) return;
+    try {
+      await _supabase
+          .from('messages')
+          .update({'is_read': true})
+          .eq('sender_id', otherUserId)
+          .eq('receiver_id', _currentUid)
+          .eq('is_read', false);
+      fetchUnreadCounts();
+    } catch (e) {
+      debugPrint("Mark messages as read error: $e");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchActiveChats() async {
+    if (_currentUid.isEmpty) return [];
+    try {
+      final response = await _supabase
+          .from('messages')
+          .select('*, sender:profiles!sender_id(*), receiver:profiles!receiver_id(*)')
+          .or('sender_id.eq.$_currentUid,receiver_id.eq.$_currentUid')
+          .order('created_at', ascending: false);
+
+      final List<dynamic> data = response as List<dynamic>;
+      final Map<String, Map<String, dynamic>> conversations = {};
+
+      for (final json in data) {
+        final senderId = json['sender_id'] as String;
+        final isMeSender = senderId == _currentUid;
+        final otherUserMap = isMeSender ? json['receiver'] : json['sender'];
+        
+        if (otherUserMap == null) continue;
+        final otherProfile = Profile.fromJson(otherUserMap as Map<String, dynamic>);
+        final otherId = otherProfile.id;
+
+        if (!conversations.containsKey(otherId)) {
+          conversations[otherId] = {
+            'profile': otherProfile,
+            'last_message': json['content'] as String,
+            'last_message_time': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
+            'unread_count': 0,
+            'timestamp': DateTime.parse(json['created_at'] as String),
+          };
+        }
+        
+        if (!isMeSender && !(json['is_read'] as bool)) {
+          conversations[otherId]!['unread_count'] = (conversations[otherId]!['unread_count'] as int) + 1;
+        }
+      }
+
+      final list = conversations.values.toList();
+      list.sort((a, b) => (b['timestamp'] as DateTime).compareTo(a['timestamp'] as DateTime));
+      return list;
+    } catch (e) {
+      debugPrint("Fetch active chats error: $e");
+      return [];
+    }
+  }
+
+  // --- Comment and Nested Replies Database CRUD ---
+
+  Future<List<Map<String, dynamic>>> fetchComments(String threadId) async {
+    try {
+      final response = await _supabase
+          .from('comments')
+          .select('*, profiles(*)')
+          .eq('thread_id', threadId)
+          .order('created_at', ascending: true);
+
+      final List<dynamic> data = response as List<dynamic>;
+      
+      // Fetch user's comment likes for is_liked_by_me tracking
+      Set<String> likedCommentIds = {};
+      if (_currentUid.isNotEmpty) {
+        final likesRes = await _supabase
+            .from('comment_likes')
+            .select('comment_id')
+            .eq('user_id', _currentUid);
+        final List<dynamic> likesData = likesRes as List<dynamic>;
+        likedCommentIds = likesData.map((l) => l['comment_id'] as String).toSet();
+      }
+
+      return data.map((json) {
+        final authorMap = json['profiles'] as Map<String, dynamic>?;
+        final author = authorMap != null 
+            ? Profile.fromJson(authorMap) 
+            : Profile(id: json['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+        
+        return {
+          'id': json['id'] as String,
+          'author': author,
+          'content': json['content'] as String,
+          'created_at': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
+          'likes_count': (json['likes_count'] as int?) ?? 0,
+          'parent_id': json['parent_id'] as String?,
+          'is_liked_by_me': likedCommentIds.contains(json['id'] as String),
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint("Fetch comments error: $e");
+      return [];
+    }
+  }
+
+  Future<bool> addComment(String threadId, String content, {String? parentId}) async {
+    if (_currentUid.isEmpty) {
+      throw Exception("User is not authenticated");
+    }
+    try {
+      await _supabase.from('comments').insert({
+        'thread_id': threadId,
+        'user_id': _currentUid,
+        'content': content,
+        'parent_id': parentId,
+      });
+      fetchFeed();
+      return true;
+    } catch (e) {
+      debugPrint("Add comment error: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> toggleCommentLike(String commentId, bool shouldLike) async {
+    if (_currentUid.isEmpty) return;
+    try {
+      if (shouldLike) {
+        await _supabase.from('comment_likes').insert({
+          'user_id': _currentUid,
+          'comment_id': commentId,
+        });
+        await _supabase.rpc('increment_comment_likes', params: {'comment_id': commentId});
+      } else {
+        await _supabase
+            .from('comment_likes')
+            .delete()
+            .eq('user_id', _currentUid)
+            .eq('comment_id', commentId);
+        await _supabase.rpc('decrement_comment_likes', params: {'comment_id': commentId});
+      }
+    } catch (e) {
+      // Fallback if RPC functions do not exist, directly update via update query
+      try {
+        final getComment = await _supabase.from('comments').select('likes_count').eq('id', commentId).single();
+        final currentLikes = (getComment['likes_count'] as int?) ?? 0;
+        final newLikes = shouldLike ? currentLikes + 1 : GREATEST(0, currentLikes - 1);
+        
+        await _supabase.from('comments').update({'likes_count': newLikes}).eq('id', commentId);
+      } catch (inner) {
+        debugPrint("Toggle comment like error: $inner");
+      }
+    }
+  }
+
+  int GREATEST(int a, int b) => a > b ? a : b;
+
+  // --- Reposts Operation ---
+
+  Future<bool> repostThread(String threadId) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      // Check if already reposted
+      final existing = await _supabase
+          .from('reposts')
+          .select('id')
+          .eq('user_id', _currentUid)
+          .eq('thread_id', threadId)
+          .maybeSingle();
+
+      if (existing != null) {
+        // Remove repost
+        await _supabase
+            .from('reposts')
+            .delete()
+            .eq('user_id', _currentUid)
+            .eq('thread_id', threadId);
+      } else {
+        // Create repost
+        await _supabase.from('reposts').insert({
+          'user_id': _currentUid,
+          'thread_id': threadId,
+        });
+      }
+      fetchFeed();
+      return true;
+    } catch (e) {
+      debugPrint("Repost thread error: $e");
+      return false;
+    }
+  }
 
   Future<bool> reportPost(String threadId, String reason) async {
     if (_currentUid.isEmpty) return false;
@@ -803,6 +1458,51 @@ class DatabaseService with ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint("Report post error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> reportProfile(String targetProfileId, String reason) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('reports').insert({
+        'user_id': _currentUid,
+        'reason': 'Profile Report (@$targetProfileId): $reason',
+      });
+      return true;
+    } catch (e) {
+      debugPrint("Report profile error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> hideThreadForCurrentUser(String threadId) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('thread_hides').upsert({
+        'thread_id': threadId,
+        'user_id': _currentUid,
+      });
+      fetchFeed();
+      return true;
+    } catch (e) {
+      debugPrint("Hide thread for current user error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> unhideThreadForCurrentUser(String threadId) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase
+          .from('thread_hides')
+          .delete()
+          .eq('thread_id', threadId)
+          .eq('user_id', _currentUid);
+      fetchFeed();
+      return true;
+    } catch (e) {
+      debugPrint("Unhide thread for current user error: $e");
       return false;
     }
   }

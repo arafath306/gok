@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
+import 'dart:ui';
 import '../../services/auth_service.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -22,42 +23,26 @@ class _AuthScreenState extends State<AuthScreen> {
   late bool _isSignUp;
   int _signUpStep = 1;
 
+  // Login Controllers
   final _emailPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  
-  // Sign up step controllers
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _villageController = TextEditingController();
-  final _zipController = TextEditingController();
+
+  // Registration Controllers
+  final _fullNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _signUpPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _dobController = TextEditingController();
 
-  String? _selectedGender;
-  String? _selectedDay;
-  String? _selectedMonth;
-  String? _selectedYear;
-  String? _selectedDivision;
+  bool _obscureLoginPassword = true;
+  bool _obscureSignUpPassword = true;
+  bool _obscureConfirmPassword = true;
 
   bool _isScanningUsername = false;
   bool? _usernameAvailable;
   String? _usernameError;
   Timer? _debounce;
-
-  final List<String> _divisions = [
-    "ঢাকা (Dhaka)",
-    "চট্টগ্রাম (Chattogram)",
-    "রাজশাহী (Rajshahi)",
-    "খুলনা (Khulna)",
-    "বরিশাল (Barishal)",
-    "সিলেট (Sylhet)",
-    "রংপুর (Rangpur)",
-    "ময়মনসিংহ (Mymensingh)"
-  ];
 
   @override
   void initState() {
@@ -69,27 +54,23 @@ class _AuthScreenState extends State<AuthScreen> {
   void dispose() {
     _emailPhoneController.dispose();
     _passwordController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _cityController.dispose();
-    _villageController.dispose();
-    _zipController.dispose();
+    _fullNameController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _signUpPasswordController.dispose();
     _confirmPasswordController.dispose();
+    _dobController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
 
-  void _submit() async {
+  void _submitLogin() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final identifier = _emailPhoneController.text.trim();
     final password = _passwordController.text.trim();
 
     if (identifier.isEmpty || password.isEmpty) {
-      _showSnackBar('অনুগ্রহ করে ইমেইল ও পাসওয়ার্ড দিন');
+      _showSnackBar('Please enter your email and password');
       return;
     }
 
@@ -99,9 +80,38 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _submitSignup() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final password = _signUpPasswordController.text;
+
+    final success = await authService.handleSignup(
+      email: _emailController.text.trim(),
+      password: password,
+      fullName: _fullNameController.text.trim(),
+      phone: '',
+      gender: 'Not Specified',
+      birthdate: _dobController.text.trim(),
+      username: _usernameController.text.trim(),
+      division: '',
+      city: '',
+      village: '',
+      zip: '',
+    );
+
+    if (success && mounted) {
+      setState(() => _signUpStep = 4); // Step 4 will be Success View
+    }
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message, style: GoogleFonts.hindSiliguri())),
+      SnackBar(
+        backgroundColor: const Color(0xFF1E293B),
+        content: Text(
+          message,
+          style: GoogleFonts.outfit(color: Colors.white),
+        ),
+      ),
     );
   }
 
@@ -113,12 +123,12 @@ class _AuthScreenState extends State<AuthScreen> {
       });
       return;
     }
-    
+
     final reg = RegExp(r'^[a-zA-Z0-9_]{3,20}$');
     if (!reg.hasMatch(username)) {
       setState(() {
         _usernameAvailable = false;
-        _usernameError = "ইউজারনেম কমপক্ষে ৩ অক্ষরের হতে হবে এবং বর্ণ, সংখ্যা বা underscore (_) থাকতে পারে।";
+        _usernameError = "At least 3 characters. Letters, numbers or _ only.";
       });
       return;
     }
@@ -136,7 +146,7 @@ class _AuthScreenState extends State<AuthScreen> {
         _isScanningUsername = false;
         _usernameAvailable = !taken;
         if (taken) {
-          _usernameError = "এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে। অন্য একটি চেষ্টা করুন।";
+          _usernameError = "This username is already taken.";
         } else {
           _usernameError = null;
         }
@@ -144,331 +154,491 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Widget _buildStepTextField({
-    required String label,
-    required TextEditingController controller,
-    required String hint,
-    bool obscureText = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.hindSiliguri(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000),
+      firstDate: DateTime(1920),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFF8B5CF6),
+              onPrimary: Colors.white,
+              surface: Color(0xFF090E17),
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: const Color(0xFF090E17),
           ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: Colors.black26),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black12),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF1E824C)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
+          child: child!,
+        );
+      },
     );
-  }
-
-  Widget _buildStepHeader() {
-    return Row(
-      children: [
-        if (_signUpStep < 7)
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-            onPressed: () {
-              if (_signUpStep > 1) {
-                setState(() => _signUpStep--);
-              } else {
-                setState(() {
-                  _isSignUp = false;
-                });
-              }
-            },
-          ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _signUpStep == 7 ? "অ্যাকাউন্ট তৈরি সম্পন্ন" : "ধাপ $_signUpStep / ৬",
-                style: GoogleFonts.hindSiliguri(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black45,
-                ),
-              ),
-              const SizedBox(height: 4),
-              LinearProgressIndicator(
-                value: _signUpStep / 6.0,
-                backgroundColor: Colors.grey[200],
-                color: const Color(0xFF1E824C),
-                minHeight: 4,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNextButton({required VoidCallback onPressed, String label = "পরবর্তী ধাপ"}) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E824C),
-        foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(48),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        elevation: 0,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.hindSiliguri(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(Icons.arrow_forward, size: 18),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActiveStep(AuthService authService) {
-    switch (_signUpStep) {
-      case 1:
-        return _buildStep1();
-      case 2:
-        return _buildStep2();
-      case 3:
-        return _buildStep3();
-      case 4:
-        return _buildStep4();
-      case 5:
-        return _buildStep5();
-      case 6:
-        return _buildStep6(authService);
-      case 7:
-        return _buildStep7();
-      default:
-        return _buildStep1();
+    if (picked != null) {
+      setState(() {
+        _dobController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+      });
     }
   }
 
+  // Helper Custom Widget: Gradient Border Glassmorphic Container
+  Widget _buildGlassCard({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF8B5CF6).withOpacity(0.35),
+            const Color(0xFFFF5E36).withOpacity(0.35)
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            margin: const EdgeInsets.all(1.0),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0E1424).withOpacity(0.8),
+              borderRadius: BorderRadius.circular(23),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDarkTextField({
+    required String hint,
+    required TextEditingController controller,
+    required IconData prefixIcon,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType keyboardType = TextInputType.text,
+    VoidCallback? onTap,
+    bool readOnly = false,
+    void Function(String)? onChanged,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        onTap: onTap,
+        readOnly: readOnly,
+        onChanged: onChanged,
+        style: GoogleFonts.outfit(color: Colors.white, fontSize: 15),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.outfit(color: Colors.white38, fontSize: 14),
+          prefixIcon: Icon(prefixIcon, color: Colors.white38, size: 20),
+          suffixIcon: suffixIcon,
+          filled: true,
+          fillColor: const Color(0xFF070B13).withOpacity(0.6),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF1E293B)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF1E293B)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradientButton({
+    required String label,
+    required VoidCallback onPressed,
+    IconData? icon,
+    bool isLoading = false,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 50,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF5E36), Color(0xFFFF2D55)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (icon != null) ...[
+                    const SizedBox(width: 8),
+                    Icon(icon, color: Colors.white, size: 18),
+                  ],
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildGoogleG() {
+    return ShaderMask(
+      shaderCallback: (bounds) {
+        return const LinearGradient(
+          colors: [Colors.blue, Colors.red, Colors.yellow, Colors.green],
+          stops: [0.0, 0.33, 0.66, 1.0],
+        ).createShader(bounds);
+      },
+      child: Text(
+        "G",
+        style: GoogleFonts.outfit(
+          fontWeight: FontWeight.w900,
+          fontSize: 20,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFF1E293B)),
+              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFF070B13).withOpacity(0.4),
+            ),
+            child: InkWell(
+              onTap: () {},
+              borderRadius: BorderRadius.circular(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildGoogleG(),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Google",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFF1E293B)),
+              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFF070B13).withOpacity(0.4),
+            ),
+            child: InkWell(
+              onTap: () {},
+              borderRadius: BorderRadius.circular(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.apple, color: Colors.white, size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Apple",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepIndicator() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildStepCircle(1),
+            _buildStepConnector(1),
+            _buildStepCircle(2),
+            _buildStepConnector(2),
+            _buildStepCircle(3),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Step $_signUpStep of 3",
+          style: GoogleFonts.outfit(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.white54,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepCircle(int step) {
+    bool isCompleted = _signUpStep > step;
+    bool isActive = _signUpStep == step;
+
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isCompleted || isActive ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B),
+        border: isActive
+            ? Border.all(color: Colors.white, width: 1.5)
+            : Border.all(color: Colors.transparent),
+      ),
+      alignment: Alignment.center,
+      child: isCompleted
+          ? const Icon(Icons.check, color: Colors.white, size: 16)
+          : Text(
+              "$step",
+              style: GoogleFonts.outfit(
+                color: isCompleted || isActive ? Colors.white : Colors.white38,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildStepConnector(int stepAfter) {
+    bool isPassed = _signUpStep > stepAfter;
+    return Container(
+      width: 40,
+      height: 2,
+      color: isPassed ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B),
+    );
+  }
+
+  // Registration step views
   Widget _buildStep1() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "আপনার নাম কী?",
-          style: GoogleFonts.hindSiliguri(
+          "Create your account",
+          style: GoogleFonts.outfit(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF1E824C),
+            color: const Color(0xFF8B5CF6),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Text(
-          "আপনার আসল নাম ব্যবহার করুন যা আপনার বন্ধুরা চেনে।",
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: Colors.black54),
+          "Let's get started with some basic info.",
+          style: GoogleFonts.outfit(fontSize: 13, color: Colors.white54),
         ),
         const SizedBox(height: 24),
-        _buildStepTextField(
-          label: "প্রথম নাম (First Name)",
-          controller: _firstNameController,
-          hint: "যেমন: তানজীর",
+        _buildDarkTextField(
+          hint: "Full Name",
+          controller: _fullNameController,
+          prefixIcon: Icons.person_outline,
         ),
-        _buildStepTextField(
-          label: "পদবী (Last Name)",
-          controller: _lastNameController,
-          hint: "যেমন: আহমেদ",
+        _buildDarkTextField(
+          hint: "Username",
+          controller: _usernameController,
+          prefixIcon: Icons.alternate_email,
+          suffixIcon: _isScanningUsername
+              ? const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF8B5CF6)),
+                  ),
+                )
+              : _usernameAvailable == null
+                  ? null
+                  : _usernameAvailable == true
+                      ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                      : const Icon(Icons.cancel, color: Colors.red, size: 20),
+          onChanged: (val) {
+            if (_debounce?.isActive ?? false) _debounce!.cancel();
+            _debounce = Timer(const Duration(milliseconds: 500), () {
+              _checkUsernameAvailability(val);
+            });
+          },
         ),
-        const SizedBox(height: 24),
-        _buildNextButton(onPressed: () {
-          if (_firstNameController.text.trim().isEmpty) {
-            _showSnackBar("অনুগ্রহ করে আপনার প্রথম নাম লিখুন");
-            return;
-          }
-          if (_lastNameController.text.trim().isEmpty) {
-            _showSnackBar("অনুগ্রহ করে আপনার পদবী লিখুন");
-            return;
-          }
-          setState(() => _signUpStep = 2);
-        }),
+        if (_usernameError != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12, left: 4),
+            child: Text(
+              _usernameError!,
+              style: GoogleFonts.outfit(color: Colors.red[400], fontSize: 12),
+            ),
+          )
+        else if (_usernameAvailable == true)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12, left: 4),
+            child: Text(
+              "Username is available",
+              style: GoogleFonts.outfit(color: Colors.green[400], fontSize: 12),
+            ),
+          ),
+        _buildDarkTextField(
+          hint: "Email",
+          controller: _emailController,
+          prefixIcon: Icons.mail_outline,
+          keyboardType: TextInputType.emailAddress,
+        ),
+        const SizedBox(height: 16),
+        _buildGradientButton(
+          label: "Next",
+          icon: Icons.arrow_forward,
+          onPressed: () {
+            if (_fullNameController.text.trim().isEmpty) {
+              _showSnackBar("Please enter your full name");
+              return;
+            }
+            if (_usernameController.text.trim().isEmpty) {
+              _showSnackBar("Please enter a username");
+              return;
+            }
+            if (_usernameAvailable != true) {
+              _showSnackBar("Please select a valid and available username");
+              return;
+            }
+            final email = _emailController.text.trim();
+            if (email.isEmpty || !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+              _showSnackBar("Please enter a valid email address");
+              return;
+            }
+            setState(() => _signUpStep = 2);
+          },
+        ),
       ],
     );
   }
 
   Widget _buildStep2() {
-    final days = List.generate(31, (index) => (index + 1).toString());
-    final months = ["জানুয়ারী", "ফেব্রুয়ারী", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
-    final currentYear = DateTime.now().year;
-    final years = List.generate(100, (index) => (currentYear - index).toString());
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "জন্মতারিখ ও লিঙ্গ",
-          style: GoogleFonts.hindSiliguri(
+          "Create your account",
+          style: GoogleFonts.outfit(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF1E824C),
+            color: const Color(0xFF8B5CF6),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Text(
-          "আপনার অ্যাকাউন্ট ভেরিফিকেশন ও সুরক্ষার জন্য এটি প্রয়োজনীয়।",
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: Colors.black54),
+          "Set a strong password to secure your account.",
+          style: GoogleFonts.outfit(fontSize: 13, color: Colors.white54),
         ),
         const SizedBox(height: 24),
-        Text(
-          "জন্মতারিখ",
-          style: GoogleFonts.hindSiliguri(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+        _buildDarkTextField(
+          hint: "Password",
+          controller: _signUpPasswordController,
+          prefixIcon: Icons.lock_outline,
+          obscureText: _obscureSignUpPassword,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscureSignUpPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+              color: Colors.white38,
+              size: 20,
+            ),
+            onPressed: () => setState(() => _obscureSignUpPassword = !_obscureSignUpPassword),
           ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                hint: const Text("দিন"),
-                value: _selectedDay,
-                items: days.map((day) => DropdownMenuItem(value: day, child: Text(day))).toList(),
-                onChanged: (val) => setState(() => _selectedDay = val),
-              ),
+        _buildDarkTextField(
+          hint: "Confirm Password",
+          controller: _confirmPasswordController,
+          prefixIcon: Icons.lock_outline,
+          obscureText: _obscureConfirmPassword,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+              color: Colors.white38,
+              size: 20,
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                hint: const Text("মাস"),
-                value: _selectedMonth,
-                items: months.map((month) => DropdownMenuItem(value: month, child: Text(month))).toList(),
-                onChanged: (val) => setState(() => _selectedMonth = val),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                hint: const Text("বছর"),
-                value: _selectedYear,
-                items: years.map((year) => DropdownMenuItem(value: year, child: Text(year))).toList(),
-                onChanged: (val) => setState(() => _selectedYear = val),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text(
-          "লিঙ্গ",
-          style: GoogleFonts.hindSiliguri(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
           ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _selectedGender == "Female" ? const Color(0xFF1E824C) : Colors.black12,
-                    width: _selectedGender == "Female" ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                  color: _selectedGender == "Female" ? const Color(0xFF1E824C).withOpacity(0.05) : Colors.transparent,
-                ),
-                child: RadioListTile<String>(
-                  title: Text("নারী", style: GoogleFonts.hindSiliguri(fontSize: 14, fontWeight: FontWeight.bold)),
-                  value: "Female",
-                  groupValue: _selectedGender,
-                  onChanged: (val) => setState(() => _selectedGender = val),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  activeColor: const Color(0xFF1E824C),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _selectedGender == "Male" ? const Color(0xFF1E824C) : Colors.black12,
-                    width: _selectedGender == "Male" ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                  color: _selectedGender == "Male" ? const Color(0xFF1E824C).withOpacity(0.05) : Colors.transparent,
-                ),
-                child: RadioListTile<String>(
-                  title: Text("পুরুষ", style: GoogleFonts.hindSiliguri(fontSize: 14, fontWeight: FontWeight.bold)),
-                  value: "Male",
-                  groupValue: _selectedGender,
-                  onChanged: (val) => setState(() => _selectedGender = val),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  activeColor: const Color(0xFF1E824C),
-                ),
-              ),
-            ),
-          ],
+        _buildDarkTextField(
+          hint: "Date of Birth",
+          controller: _dobController,
+          prefixIcon: Icons.calendar_today_outlined,
+          readOnly: true,
+          onTap: _selectDate,
         ),
-        const SizedBox(height: 24),
-        _buildNextButton(onPressed: () {
-          if (_selectedDay == null || _selectedMonth == null || _selectedYear == null) {
-            _showSnackBar("অনুগ্রহ করে আপনার জন্মতারিখ নির্বাচন করুন");
-            return;
-          }
-          if (_selectedGender == null) {
-            _showSnackBar("অনুগ্রহ করে লিঙ্গ নির্বাচন করুন");
-            return;
-          }
-          setState(() => _signUpStep = 3);
-        }),
+        const SizedBox(height: 16),
+        _buildGradientButton(
+          label: "Next",
+          icon: Icons.arrow_forward,
+          onPressed: () {
+            final pass = _signUpPasswordController.text;
+            final conf = _confirmPasswordController.text;
+            if (pass.isEmpty || pass.length < 6) {
+              _showSnackBar("Password must be at least 6 characters long");
+              return;
+            }
+            if (pass != conf) {
+              _showSnackBar("Passwords do not match");
+              return;
+            }
+            if (_dobController.text.trim().isEmpty) {
+              _showSnackBar("Please enter your date of birth");
+              return;
+            }
+            setState(() => _signUpStep = 3);
+          },
+        ),
       ],
     );
   }
@@ -478,312 +648,92 @@ class _AuthScreenState extends State<AuthScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "আপনার বর্তমান ঠিকানা",
-          style: GoogleFonts.hindSiliguri(
+          "Create your account",
+          style: GoogleFonts.outfit(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF1E824C),
+            color: const Color(0xFF8B5CF6),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Text(
-          "আপনার বর্তমান বাসস্থান এবং ডাকযোগের ঠিকানা প্রদান করুন।",
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: Colors.black54),
+          "Review your info and create your account.",
+          style: GoogleFonts.outfit(fontSize: 13, color: Colors.white54),
         ),
         const SizedBox(height: 24),
-        Text(
-          "বিভাগ (Division)",
-          style: GoogleFonts.hindSiliguri(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF070B13).withOpacity(0.6),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF1E293B)),
+          ),
+          child: Column(
+            children: [
+              _buildReviewRow(Icons.person_outline, "Full Name", _fullNameController.text),
+              const Divider(color: Color(0xFF1E293B), height: 24),
+              _buildReviewRow(Icons.alternate_email, "Username", _usernameController.text),
+              const Divider(color: Color(0xFF1E293B), height: 24),
+              _buildReviewRow(Icons.mail_outline, "Email", _emailController.text),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black12),
+        const SizedBox(height: 24),
+        Center(
+          child: Text.rich(
+            TextSpan(
+              text: "By creating an account, you agree to our\n",
+              style: GoogleFonts.outfit(color: Colors.white54, fontSize: 11, height: 1.4),
+              children: [
+                TextSpan(
+                  text: "Terms of Service",
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF8B5CF6),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+                const TextSpan(text: " and "),
+                TextSpan(
+                  text: "Privacy Policy",
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF8B5CF6),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
             ),
+            textAlign: TextAlign.center,
           ),
-          hint: Text("বিভাগ নির্বাচন করুন", style: GoogleFonts.hindSiliguri(color: Colors.black26)),
-          value: _selectedDivision,
-          items: _divisions.map((div) => DropdownMenuItem(value: div, child: Text(div, style: GoogleFonts.hindSiliguri()))).toList(),
-          onChanged: (val) => setState(() => _selectedDivision = val),
-        ),
-        const SizedBox(height: 16),
-        _buildStepTextField(
-          label: "শহর / উপজেলা (City / Town)",
-          controller: _cityController,
-          hint: "যেমন: মিরপুর, ঢাকা",
-        ),
-        _buildStepTextField(
-          label: "গ্রাম / এলাকা / সড়ক (Village / Street / House)",
-          controller: _villageController,
-          hint: "যেমন: ব্লক ডি, রোড ৫, বাড়ি ১২",
-        ),
-        _buildStepTextField(
-          label: "জিপ কোড (ZIP Code)",
-          controller: _zipController,
-          hint: "যেমন: ১২১৬",
-          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 24),
-        _buildNextButton(onPressed: () {
-          if (_selectedDivision == null) {
-            _showSnackBar("অনুগ্রহ করে আপনার বিভাগ নির্বাচন করুন");
-            return;
-          }
-          if (_cityController.text.trim().isEmpty) {
-            _showSnackBar("অনুগ্রহ করে আপনার শহর বা উপজেলা লিখুন");
-            return;
-          }
-          if (_villageController.text.trim().isEmpty) {
-            _showSnackBar("অনুগ্রহ করে আপনার গ্রাম বা এলাকার নাম লিখুন");
-            return;
-          }
-          if (_zipController.text.trim().isEmpty) {
-            _showSnackBar("অনুগ্রহ করে জিপ কোড লিখুন");
-            return;
-          }
-          setState(() => _signUpStep = 4);
-        }),
+        _buildGradientButton(
+          label: "Create Account",
+          icon: Icons.person_add_alt_1_outlined,
+          onPressed: _submitSignup,
+        ),
       ],
     );
   }
 
-  Widget _buildStep4() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildReviewRow(IconData icon, String label, String value) {
+    return Row(
       children: [
-        Text(
-          "ইউজারনেম নির্ধারণ করুন",
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF1E824C),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "আপনার বন্ধুদের সাথে যুক্ত হওয়ার জন্য একটি অনন্য ইউজারনেম পছন্দ করুন।",
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: Colors.black54),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          "ইউজারনেম (Username)",
-          style: GoogleFonts.hindSiliguri(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _usernameController,
-          onChanged: (val) {
-            if (_debounce?.isActive ?? false) _debounce!.cancel();
-            _debounce = Timer(const Duration(milliseconds: 500), () {
-              _checkUsernameAvailability(val);
-            });
-          },
-          decoration: InputDecoration(
-            hintText: "যেমন: tanzir_ahmed",
-            hintStyle: const TextStyle(color: Colors.black26),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            prefixText: "@ ",
-            prefixStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54),
-            suffixIcon: _isScanningUsername
-                ? const Padding(
-                    padding: EdgeInsets.all(12.0),
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E824C)),
-                    ),
-                  )
-                : _usernameAvailable == null
-                    ? null
-                    : _usernameAvailable == true
-                        ? const Icon(Icons.check_circle, color: Colors.green)
-                        : const Icon(Icons.cancel, color: Colors.red),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black12),
+        Icon(icon, color: Colors.white38, size: 20),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.outfit(color: Colors.white38, fontSize: 11),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black12),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: _usernameAvailable == true
-                    ? Colors.green
-                    : _usernameAvailable == false
-                        ? Colors.red
-                        : const Color(0xFF1E824C),
-              ),
-            ),
-          ),
+          ],
         ),
-        const SizedBox(height: 8),
-        if (_usernameError != null)
-          Text(
-            _usernameError!,
-            style: GoogleFonts.hindSiliguri(color: Colors.red[800], fontSize: 13),
-          )
-        else if (_usernameAvailable == true)
-          Text(
-            "অভিনন্দন! এই ইউজারনেমটি খালি আছে।",
-            style: GoogleFonts.hindSiliguri(color: Colors.green[800], fontSize: 13, fontWeight: FontWeight.bold),
-          ),
-        const SizedBox(height: 28),
-        _buildNextButton(onPressed: () {
-          if (_usernameController.text.trim().isEmpty) {
-            _showSnackBar("অনুগ্রহ করে একটি ইউজারনেম লিখুন");
-            return;
-          }
-          if (_usernameAvailable != true) {
-            _showSnackBar("দয়া করে একটি সঠিক ও অব্যবহৃত ইউজারনেম নির্বাচন করুন");
-            return;
-          }
-          setState(() => _signUpStep = 5);
-        }),
-      ],
-    );
-  }
-
-  Widget _buildStep5() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "যোগাযোগের তথ্য",
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF1E824C),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "আপনার অ্যাকাউন্ট নিরাপদ রাখতে এবং নোটিফিকেশন পেতে সঠিক ইমেইল ও মোবাইল নম্বর দিন।",
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: Colors.black54),
-        ),
-        const SizedBox(height: 24),
-        _buildStepTextField(
-          label: "ইমেইল অ্যাড্রেস (Email Address)",
-          controller: _emailController,
-          hint: "example@gmail.com",
-          keyboardType: TextInputType.emailAddress,
-        ),
-        _buildStepTextField(
-          label: "মোবাইল নম্বর (Phone Number)",
-          controller: _phoneController,
-          hint: "যেমন: ০১৭XXXXXXXX",
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 24),
-        _buildNextButton(onPressed: () {
-          final email = _emailController.text.trim();
-          final phone = _phoneController.text.trim();
-          
-          if (email.isEmpty) {
-            _showSnackBar("অনুগ্রহ করে আপনার ইমেইল লিখুন");
-            return;
-          }
-          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-            _showSnackBar("অনুগ্রহ করে একটি সঠিক ইমেইল দিন");
-            return;
-          }
-          if (phone.isEmpty) {
-            _showSnackBar("অনুগ্রহ করে মোবাইল নম্বর লিখুন");
-            return;
-          }
-          setState(() => _signUpStep = 6);
-        }),
-      ],
-    );
-  }
-
-  Widget _buildStep6(AuthService authService) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "নিরাপদ পাসওয়ার্ড তৈরি করুন",
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF1E824C),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "অন্যরা যেন সহজে অনুমান করতে না পারে এমন শক্তিশালী পাসওয়ার্ড তৈরি করুন।",
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: Colors.black54),
-        ),
-        const SizedBox(height: 24),
-        _buildStepTextField(
-          label: "পাসওয়ার্ড (Password)",
-          controller: _signUpPasswordController,
-          hint: "••••••••",
-          obscureText: true,
-        ),
-        _buildStepTextField(
-          label: "পাসওয়ার্ড নিশ্চিত করুন (Confirm Password)",
-          controller: _confirmPasswordController,
-          hint: "••••••••",
-          obscureText: true,
-        ),
-        const SizedBox(height: 24),
-        if (authService.isLoading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(12.0),
-              child: CircularProgressIndicator(color: Color(0xFF1E824C)),
-            ),
-          )
-        else
-          _buildNextButton(
-            label: "অ্যাকাউন্ট তৈরি করুন",
-            onPressed: () async {
-              final password = _signUpPasswordController.text;
-              final confirm = _confirmPasswordController.text;
-              
-              if (password.isEmpty || password.length < 6) {
-                _showSnackBar("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
-                return;
-              }
-              if (password != confirm) {
-                _showSnackBar("পাসওয়ার্ড দুটি মেলেনি, আবার চেক করুন");
-                return;
-              }
-              
-              final fullName = "${_firstNameController.text.trim()} ${_lastNameController.text.trim()}";
-              final birthdate = "$_selectedDay/$_selectedMonth/$_selectedYear";
-              
-              final success = await authService.handleSignup(
-                email: _emailController.text.trim(),
-                password: password,
-                fullName: fullName,
-                phone: _phoneController.text.trim(),
-                gender: _selectedGender!,
-                birthdate: birthdate,
-                username: _usernameController.text.trim(),
-                division: _selectedDivision,
-                city: _cityController.text.trim(),
-                village: _villageController.text.trim(),
-                zip: _zipController.text.trim(),
-              );
-              
-              if (success && mounted) {
-                setState(() => _signUpStep = 7);
-              }
-            },
-          ),
       ],
     );
   }
@@ -793,82 +743,56 @@ class _AuthScreenState extends State<AuthScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
-              color: Color(0xFFE8F5E9),
+              color: Color(0xFF141D19),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.check_circle,
-              color: Colors.green,
-              size: 80,
+              color: Color(0xFF05D782),
+              size: 64,
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            "অভিনন্দন!",
-            style: GoogleFonts.hindSiliguri(
-              fontSize: 28,
+            "Congratulations!",
+            style: GoogleFonts.outfit(
+              fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF1E824C),
+              color: const Color(0xFF05D782),
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            "আপনার ডাক অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। ইমেল ভেরিফাই করার পর লগইন করুন।",
+            "Your Dak account has been created successfully.\nPlease verify your email before logging in.",
             textAlign: TextAlign.center,
-            style: GoogleFonts.hindSiliguri(
-              fontSize: 16,
-              color: Colors.black54,
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              color: Colors.white70,
+              height: 1.4,
             ),
           ),
-          const SizedBox(height: 40),
-          ElevatedButton(
+          const SizedBox(height: 32),
+          _buildGradientButton(
+            label: "Login Now",
             onPressed: () {
               setState(() {
                 _isSignUp = false;
                 _signUpStep = 1;
-                
-                // Clear all controllers
-                _firstNameController.clear();
-                _lastNameController.clear();
-                _selectedDay = null;
-                _selectedMonth = null;
-                _selectedYear = null;
-                _selectedGender = null;
-                _selectedDivision = null;
-                _cityController.clear();
-                _villageController.clear();
-                _zipController.clear();
+                _fullNameController.clear();
                 _usernameController.clear();
-                _usernameAvailable = null;
-                _usernameError = null;
                 _emailController.clear();
-                _phoneController.clear();
                 _signUpPasswordController.clear();
                 _confirmPasswordController.clear();
+                _dobController.clear();
+                _usernameAvailable = null;
+                _usernameError = null;
               });
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E824C),
-              foregroundColor: Colors.white,
-              minimumSize: const Size(200, 48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              elevation: 0,
-            ),
-            child: Text(
-              "লগইন করুন",
-              style: GoogleFonts.hindSiliguri(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
-          const SizedBox(height: 24),
         ],
       ),
     );
@@ -879,198 +803,286 @@ class _AuthScreenState extends State<AuthScreen> {
     final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: _isSignUp
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 24),
-                      _buildStepHeader(),
-                      const SizedBox(height: 24),
-                      if (authService.errorMessage != null && _signUpStep < 7)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Text(
-                            authService.errorMessage!,
-                            style: GoogleFonts.hindSiliguri(color: Colors.red[800]),
-                          ),
+      backgroundColor: const Color(0xFF060B13),
+      body: Stack(
+        children: [
+          // 1. Top clouds background image fading out at the bottom
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: ShaderMask(
+              shaderCallback: (rect) {
+                return const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black, Colors.transparent],
+                ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
+              },
+              blendMode: BlendMode.dstIn,
+              child: Image.asset(
+                "assets/auth_clouds.png",
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+
+          // 2. Main content scroll view
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+                  // Header Back Button for SignUp Steps
+                  if (_isSignUp && _signUpStep > 1 && _signUpStep < 4)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF0E1424).withOpacity(0.8),
+                          border: Border.all(color: const Color(0xFF1E293B)),
                         ),
-                      _buildActiveStep(authService),
-                      const SizedBox(height: 40),
-                    ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 48),
-                      Center(
-                        child: Image.asset(
-                          "assets/logo_transparent.png",
-                          height: 85,
-                          width: 85,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        "স্বাগতম!",
-                        style: GoogleFonts.hindSiliguri(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1E824C),
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                          onPressed: () {
+                            setState(() => _signUpStep--);
+                          },
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "Welcome Back",
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
+                    ),
+                  const SizedBox(height: 8),
 
-                      if (authService.errorMessage != null)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Text(
-                            authService.errorMessage!,
-                            style: GoogleFonts.hindSiliguri(color: Colors.red[800]),
-                          ),
-                        ),
-
-                      _buildStepTextField(
-                        label: "ইমেইল বা মোবাইল নম্বর",
-                        controller: _emailPhoneController,
-                        hint: "example@gmail.com",
-                      ),
-                      _buildStepTextField(
-                        label: "পাসওয়ার্ড",
-                        controller: _passwordController,
-                        hint: "••••••••",
-                        obscureText: true,
-                      ),
-
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: Text(
-                            "পাসওয়ার্ড ভুলে গেছেন?",
-                            style: GoogleFonts.hindSiliguri(
-                              color: const Color(0xFF1E824C),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      if (authService.isLoading)
-                        const Center(
-                          child: CircularProgressIndicator(color: Color(0xFF1E824C)),
-                        )
-                      else
-                        ElevatedButton(
-                          onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E824C),
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size.fromHeight(48),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            "লগইন করুন",
-                            style: GoogleFonts.hindSiliguri(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-
-                      const SizedBox(height: 24),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                  // Brand Logo Stack (Glow ring + White Dove Logo)
+                  Center(
+                    child: SizedBox(
+                      height: 160,
+                      width: 200,
+                      child: Stack(
+                        alignment: Alignment.center,
                         children: [
-                          Text(
-                            "অ্যাকাউন্ট নেই? ",
-                            style: GoogleFonts.hindSiliguri(color: Colors.black54),
+                          Image.asset(
+                            "assets/auth_glow_ring.png",
+                            height: 150,
+                            width: 150,
+                            fit: BoxFit.contain,
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isSignUp = true;
-                                _signUpStep = 1;
-                              });
-                              authService.clearErrors();
-                            },
-                            child: Text(
-                              "নতুন ডাক তৈরি করুন",
-                              style: GoogleFonts.hindSiliguri(
-                                color: const Color(0xFF1E824C),
-                                fontWeight: FontWeight.bold,
-                              ),
+                          Positioned(
+                            top: 15,
+                            child: Image.asset(
+                              "assets/auth_dove.png",
+                              height: 110,
+                              width: 160,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 40),
-
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          "বাংলা (বাংলাদেশ)",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.hindSiliguri(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Center(
-                        child: Text(
-                          "মেড ইন বাংলাদেশ by NGST",
-                          style: GoogleFonts.hindSiliguri(
-                            fontSize: 11,
-                            color: Colors.black38,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                    ),
                   ),
+
+                  // Brand name and tagline
+                  Text(
+                    "Piagoan",
+                    style: GoogleFonts.outfit(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Messages. Moments. Together.",
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: Colors.white60,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Error Message Bar
+                  if (authService.errorMessage != null && _signUpStep < 4)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red[900]!.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red[700]!.withOpacity(0.5)),
+                      ),
+                      child: Text(
+                        authService.errorMessage!,
+                        style: GoogleFonts.outfit(color: Colors.red[100], fontSize: 13),
+                      ),
+                    ),
+
+                  // Registration Progress Bar
+                  if (_isSignUp && _signUpStep < 4) ...[
+                    _buildStepIndicator(),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Glassmorphic Card Container holding Login/SignUp flow
+                  _buildGlassCard(
+                    child: _isSignUp
+                        ? (_signUpStep == 1
+                            ? _buildStep1()
+                            : _signUpStep == 2
+                                ? _buildStep2()
+                                : _signUpStep == 3
+                                    ? _buildStep3()
+                                    : _buildStep7())
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Welcome back! 👋",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF8B5CF6),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Login to continue your journey",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  color: Colors.white54,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              _buildDarkTextField(
+                                hint: "Email or Username",
+                                controller: _emailPhoneController,
+                                prefixIcon: Icons.mail_outline,
+                              ),
+                              _buildDarkTextField(
+                                hint: "Password",
+                                controller: _passwordController,
+                                prefixIcon: Icons.lock_outline,
+                                obscureText: _obscureLoginPassword,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureLoginPassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: Colors.white38,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => setState(() => _obscureLoginPassword = !_obscureLoginPassword),
+                                ),
+                              ),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () {},
+                                  child: Text(
+                                    "Forgot password?",
+                                    style: GoogleFonts.outfit(
+                                      color: const Color(0xFF8B5CF6),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildGradientButton(
+                                label: "Login",
+                                icon: Icons.arrow_forward,
+                                isLoading: authService.isLoading,
+                                onPressed: _submitLogin,
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(child: Divider(color: const Color(0xFF1E293B).withOpacity(0.5))),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                    child: Text(
+                                      "or continue with",
+                                      style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
+                                    ),
+                                  ),
+                                  Expanded(child: Divider(color: const Color(0xFF1E293B).withOpacity(0.5))),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              _buildSocialButtons(),
+                              const SizedBox(height: 24),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Don't have an account? ",
+                                    style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _isSignUp = true;
+                                        _signUpStep = 1;
+                                      });
+                                      authService.clearErrors();
+                                    },
+                                    child: Text(
+                                      "Register >",
+                                      style: GoogleFonts.outfit(
+                                        color: const Color(0xFF8B5CF6),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                  ),
+
+                  // Redirect to Login from SignUp bottom area
+                  if (_isSignUp && _signUpStep < 4) ...[
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Already have an account? ",
+                          style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isSignUp = false;
+                              _signUpStep = 1;
+                            });
+                            authService.clearErrors();
+                          },
+                          child: Text(
+                            "Login",
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF8B5CF6),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

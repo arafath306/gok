@@ -1,14 +1,12 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 class AuthService with ChangeNotifier {
-  final fb.FirebaseAuth _firebaseAuth = fb.FirebaseAuth.instance;
   final sb.SupabaseClient _supabaseClient = sb.Supabase.instance.client;
 
-  fb.User? _currentUser;
-  fb.User? get currentUser => _currentUser;
+  sb.User? _currentUser;
+  sb.User? get currentUser => _currentUser;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -16,16 +14,21 @@ class AuthService with ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  StreamSubscription<sb.AuthState>? _authStateSubscription;
+
   AuthService() {
-    _firebaseAuth.authStateChanges().listen((fb.User? user) {
-      _currentUser = user;
+    // Listen to Supabase auth events
+    _authStateSubscription = _supabaseClient.auth.onAuthStateChange.listen((data) {
+      _currentUser = data.session?.user;
       notifyListeners();
     });
+    // Set initial user
+    _currentUser = _supabaseClient.auth.currentUser;
   }
 
   bool _isBypassed = false;
   bool get isUserSignedIn => _currentUser != null || _isBypassed;
-  String get currentUid => _currentUser?.uid ?? (_isBypassed ? 'mock_uid' : '');
+  String get currentUid => _currentUser?.id ?? (_isBypassed ? 'mock_uid' : '');
 
   void bypassLogin() {
     _isBypassed = true;
@@ -38,65 +41,36 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Login with Firebase Auth
-      final fbCredential = await _firebaseAuth.signInWithEmailAndPassword(
+      final response = await _supabaseClient.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
-      if (fbCredential.user == null) {
-        throw Exception("Firebase login returned null user.");
-      }
+      _currentUser = response.user;
 
-      // 2. Synchronize Supabase session
-      String? supabaseUid;
-      try {
-        final sbRes = await _supabaseClient.auth.signInWithPassword(
-          email: email,
-          password: password,
-        );
-        supabaseUid = sbRes.user?.id;
-        debugPrint("Supabase signin OK, uid: $supabaseUid");
-      } catch (supabaseError) {
-        // Supabase account may not exist yet — try creating it silently
-        debugPrint("Supabase signin failed: $supabaseError — trying signup");
-        try {
-          final sbSignup = await _supabaseClient.auth.signUp(
-            email: email,
-            password: password,
-          );
-          supabaseUid = sbSignup.user?.id;
-          debugPrint("Supabase signup OK, uid: $supabaseUid");
-        } catch (signUpError) {
-          debugPrint("Supabase background signup also failed: $signUpError");
-        }
-      }
-
-      // 3. If we have a Supabase session, ensure profile row exists
-      if (supabaseUid != null && supabaseUid.isNotEmpty) {
+      // Ensure a profile row exists for this user in public.profiles (safeguard)
+      if (_currentUser != null) {
+        final uid = _currentUser!.id;
         try {
           final existing = await _supabaseClient
               .from('profiles')
               .select('id')
-              .eq('id', supabaseUid)
+              .eq('id', uid)
               .maybeSingle();
 
           if (existing == null) {
-            // Profile row missing — create it now with Supabase UID
             final defaultUsername = email.split('@')[0];
-            final displayName =
-                fbCredential.user?.displayName ?? defaultUsername;
             await _supabaseClient.from('profiles').upsert({
-              'id': supabaseUid,
+              'id': uid,
               'username': defaultUsername,
-              'full_name': displayName,
+              'full_name': defaultUsername,
               'bio': 'আমি ডাক অ্যাপ ব্যবহার করছি।',
               'avatar_url': null,
               'cover_url': null,
               'followers_count': 0,
               'following_count': 0,
             });
-            debugPrint("Profile created for uid: $supabaseUid");
+            debugPrint("Profile created on-demand for uid: $uid");
           }
         } catch (profileError) {
           debugPrint("Profile ensure error (non-fatal): $profileError");
@@ -133,41 +107,27 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Create account in Firebase
-      final fbCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+      final defaultUsername = username ?? email.split('@')[0];
+
+      // 1. Sign up with Supabase GoTrue Auth
+      final response = await _supabaseClient.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'username': defaultUsername,
+          'full_name': fullName,
+        },
       );
 
-      final firebaseUid = fbCredential.user?.uid;
-      if (firebaseUid == null) {
-        throw Exception("Firebase sign up returned null user.");
+      final uid = response.user?.id;
+      if (uid == null) {
+        throw Exception("Signup failed: returned null user.");
       }
 
-      // Send Firebase Email Verification
+      // 2. Initialize/Update profile in profiles table with additional details
       try {
-        await fbCredential.user?.sendEmailVerification();
-      } catch (verificationError) {
-        debugPrint("Sending email verification failed: $verificationError");
-      }
-
-      // 2. Create parallel account in Supabase GoTrue Auth
-      String supabaseUid = firebaseUid;
-      try {
-        final sbAuthResponse = await _supabaseClient.auth.signUp(
-          email: email,
-          password: password,
-        );
-        supabaseUid = sbAuthResponse.user?.id ?? firebaseUid;
-      } catch (supabaseError) {
-        debugPrint("Supabase signup failed: $supabaseError");
-      }
-
-      // 3. Initialize custom record in Supabase profiles database table
-      try {
-        final defaultUsername = username ?? email.split('@')[0];
         await _supabaseClient.from('profiles').upsert({
-          'id': supabaseUid,
+          'id': uid,
           'username': defaultUsername,
           'full_name': fullName,
           'bio': 'আসসালামু আলাইকুম! আমি ডাক অ্যাপ ব্যবহার করছি।',
@@ -186,25 +146,19 @@ class AuthService with ChangeNotifier {
       } catch (dbError) {
         debugPrint("Creating DB profile row with extra details failed, falling back: $dbError");
         try {
-          final defaultUsername = username ?? email.split('@')[0];
           await _supabaseClient.from('profiles').upsert({
-            'id': supabaseUid,
+            'id': uid,
             'username': defaultUsername,
             'full_name': fullName,
             'bio': 'আসসালামু আলাইকুম! আমি ডাক অ্যাপ ব্যবহার করছি।',
-            'avatar_url': null,
-            'cover_url': null,
-            'followers_count': 0,
-            'following_count': 0,
             'phone': phone,
           });
         } catch (innerError) {
-          debugPrint("Fallback DB profile row creation failed: $innerError");
+          debugPrint("Fallback profile creation failed: $innerError");
         }
       }
 
-      // 4. Sign out immediately so they must verify and log in manually
-      await _firebaseAuth.signOut();
+      // 3. Sign out immediately so they must verify or log in manually
       try {
         await _supabaseClient.auth.signOut();
       } catch (_) {}
@@ -240,7 +194,6 @@ class AuthService with ChangeNotifier {
 
   Future<void> handleSignout() async {
     _isBypassed = false;
-    await _firebaseAuth.signOut();
     try {
       await _supabaseClient.auth.signOut();
     } catch (e) {
@@ -252,5 +205,11 @@ class AuthService with ChangeNotifier {
   void clearErrors() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
   }
 }

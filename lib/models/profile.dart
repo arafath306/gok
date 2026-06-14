@@ -15,6 +15,10 @@ class Profile {
   final String? zip;
   final String? gender;
   final String? birthdate;
+  final bool isPrivate;
+  final String allowMentions;
+  final bool filterAdult;
+  final bool autoplayVideos;
 
   Profile({
     required this.id,
@@ -33,6 +37,10 @@ class Profile {
     this.zip,
     this.gender,
     this.birthdate,
+    this.isPrivate = false,
+    this.allowMentions = 'everyone',
+    this.filterAdult = true,
+    this.autoplayVideos = true,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -53,6 +61,10 @@ class Profile {
       zip: json['zip'] as String?,
       gender: json['gender'] as String?,
       birthdate: json['birthdate'] as String?,
+      isPrivate: json['is_private'] as bool? ?? false,
+      allowMentions: json['allow_mentions'] as String? ?? 'everyone',
+      filterAdult: json['filter_adult'] as bool? ?? true,
+      autoplayVideos: json['autoplay_videos'] as bool? ?? true,
     );
   }
 
@@ -74,6 +86,10 @@ class Profile {
       'zip': zip,
       'gender': gender,
       'birthdate': birthdate,
+      'is_private': isPrivate,
+      'allow_mentions': allowMentions,
+      'filter_adult': filterAdult,
+      'autoplay_videos': autoplayVideos,
     };
   }
 }

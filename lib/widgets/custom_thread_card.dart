@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
 import '../services/database_service.dart';
+import '../services/general_settings_provider.dart';
 import '../screens/thread_detail_screen.dart';
 import '../utils/routes.dart';
 import 'comments_sheet.dart';
@@ -64,18 +65,26 @@ class CustomThreadCard extends StatelessWidget {
   }
 
   void _showQuickActions(BuildContext context, DatabaseService dbService) {
+    final isAuthor = post.userId == dbService.currentUid;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      transitionAnimationController: AnimationController(
-        vsync: Navigator.of(context),
-        duration: const Duration(milliseconds: 350),
-      ),
-      builder: (sheetContext) => _QuickActionsSheet(
-        post: post,
-        dbService: dbService,
-      ),
+      builder: (sheetContext) {
+        if (isAuthor) {
+          return _AuthorActionsSheet(
+            post: post,
+            dbService: dbService,
+            parentContext: context,
+          );
+        } else {
+          return _QuickActionsSheet(
+            post: post,
+            dbService: dbService,
+            parentContext: context,
+          );
+        }
+      },
     );
   }
 
@@ -147,39 +156,30 @@ class CustomThreadCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        NoTransitionPageRoute(
-                          child: ProfileScreen(userId: post.userId),
-                        ),
-                      );
-                    },
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage: NetworkImage(
-                        post.author.avatarUrl ?? "https://i.pravatar.cc/150",
-                      ),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.grey[200],
+                    backgroundImage: NetworkImage(
+                      post.author.avatarUrl ?? "https://i.pravatar.cc/150",
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          NoTransitionPageRoute(
-                            child: ProfileScreen(userId: post.userId),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            final isOwn = post.userId == dbService.currentUid;
+                            Navigator.push(
+                              context,
+                              NoTransitionPageRoute(
+                                child: ProfileScreen(userId: isOwn ? null : post.userId),
+                              ),
+                            );
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Flexible(
                                 child: Text(
@@ -203,17 +203,17 @@ class CustomThreadCard extends StatelessWidget {
                               ],
                             ],
                           ),
-                          const SizedBox(height: 1),
-                          Text(
-                            "@${post.author.username} · ${post.createdAt}",
-                            style: GoogleFonts.outfit(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w400,
-                            ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          "@${post.author.username} · ${post.createdAt}",
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                            fontWeight: FontWeight.w400,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
@@ -394,10 +394,13 @@ class CustomThreadCard extends StatelessWidget {
 
                   // Repost/Quote Action
                   GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Post reposted successfully")),
-                      );
+                    onTap: () async {
+                      final success = await dbService.repostThread(post.id);
+                      if (success && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Post status updated")),
+                        );
+                      }
                     },
                     behavior: HitTestBehavior.opaque,
                     child: Row(
@@ -464,8 +467,13 @@ class CustomThreadCard extends StatelessWidget {
 class _QuickActionsSheet extends StatefulWidget {
   final ThreadPost post;
   final DatabaseService dbService;
+  final BuildContext parentContext;
 
-  const _QuickActionsSheet({required this.post, required this.dbService});
+  const _QuickActionsSheet({
+    required this.post,
+    required this.dbService,
+    required this.parentContext,
+  });
 
   @override
   State<_QuickActionsSheet> createState() => _QuickActionsSheetState();
@@ -485,6 +493,10 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
   @override
   void initState() {
     super.initState();
+    _isFollowing = widget.dbService.isFollowingUser(widget.post.userId);
+    _isMuted = widget.dbService.isMuted(widget.post.userId);
+    _isBlocked = widget.dbService.isBlocked(widget.post.userId);
+
     _staggerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -561,10 +573,15 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
       _QuickActionItem(
         icon: Icons.sentiment_dissatisfied_outlined,
         label: 'Not interested in this post',
-        onTap: () {
+        onTap: () async {
           Navigator.pop(context);
-          _showSuccessSnackBar(context, 'Post hidden from your feed',
-              undoLabel: 'Undo', onUndo: () {});
+          final success = await widget.dbService.hideThreadForCurrentUser(widget.post.id);
+          if (success && mounted) {
+            _showSuccessSnackBar(context, 'Post hidden from your feed',
+                undoLabel: 'Undo', onUndo: () async {
+                  await widget.dbService.unhideThreadForCurrentUser(widget.post.id);
+                });
+          }
         },
       ),
       _QuickActionItem(
@@ -572,15 +589,18 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
             ? Icons.person_remove_outlined
             : Icons.person_add_alt_1_outlined,
         label: _isFollowing ? 'Unfollow @$username' : 'Follow @$username',
-        onTap: () {
-          setState(() => _isFollowing = !_isFollowing);
+        onTap: () async {
+          final wasFollowing = _isFollowing;
           Navigator.pop(context);
-          _showSuccessSnackBar(
-            context,
-            _isFollowing
-                ? 'You unfollowed @$username'
-                : 'You are now following @$username',
-          );
+          await widget.dbService.toggleFollowUser(widget.post.userId);
+          if (mounted) {
+            _showSuccessSnackBar(
+              context,
+              wasFollowing
+                  ? 'You unfollowed @$username'
+                  : 'You are now following @$username',
+            );
+          }
         },
       ),
       _QuickActionItem(
@@ -594,15 +614,33 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
       _QuickActionItem(
         icon: _isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
         label: _isMuted ? 'Unmute @$username' : 'Mute @$username',
-        onTap: () {
-          setState(() => _isMuted = !_isMuted);
+        onTap: () async {
+          final wasMuted = _isMuted;
           Navigator.pop(context);
-          _showSuccessSnackBar(
-            context,
-            _isMuted ? '@$username unmuted' : '@$username has been muted',
-            undoLabel: 'Undo',
-            onUndo: () {},
-          );
+          final settingsProvider = Provider.of<GeneralSettingsProvider>(context, listen: false);
+          if (wasMuted) {
+            await settingsProvider.unmuteAccount(widget.post.userId);
+          } else {
+            await settingsProvider.muteUserById(widget.post.userId);
+          }
+          await widget.dbService.fetchBlockedMutedLists();
+          await widget.dbService.fetchFeed();
+          if (mounted) {
+            _showSuccessSnackBar(
+              context,
+              wasMuted ? '@$username unmuted' : '@$username has been muted',
+              undoLabel: 'Undo',
+              onUndo: () async {
+                if (wasMuted) {
+                  await settingsProvider.muteUserById(widget.post.userId);
+                } else {
+                  await settingsProvider.unmuteAccount(widget.post.userId);
+                }
+                await widget.dbService.fetchBlockedMutedLists();
+                await widget.dbService.fetchFeed();
+              },
+            );
+          }
         },
       ),
       _QuickActionItem(
@@ -719,9 +757,15 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                     color: Colors.grey[600], fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogCtx);
-              _showSuccessSnackBar(ctx, '@$username has been blocked');
+              final settingsProvider = Provider.of<GeneralSettingsProvider>(ctx, listen: false);
+              await settingsProvider.blockUserById(widget.post.userId);
+              await widget.dbService.fetchBlockedMutedLists();
+              await widget.dbService.fetchFeed();
+              if (ctx.mounted) {
+                _showSuccessSnackBar(ctx, '@$username has been blocked');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -797,12 +841,15 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
               ...reasons.map((reason) => Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () {
+                      onTap: () async {
                         Navigator.pop(reportCtx);
-                        _showSuccessSnackBar(
-                          ctx,
-                          'Report submitted. Thank you for helping keep Dak safe.',
-                        );
+                        final success = await widget.dbService.reportPost(widget.post.id, reason);
+                        if (success) {
+                          _showSuccessSnackBar(
+                            ctx,
+                            'Report submitted. Thank you for helping keep Dak safe.',
+                          );
+                        }
                       },
                       splashColor: Colors.red.withOpacity(0.06),
                       child: Padding(
@@ -848,4 +895,578 @@ class _QuickActionItem {
     required this.onTap,
     this.isDanger = false,
   });
+}
+
+class _AuthorActionsSheet extends StatefulWidget {
+  final ThreadPost post;
+  final DatabaseService dbService;
+  final BuildContext parentContext;
+
+  const _AuthorActionsSheet({
+    required this.post,
+    required this.dbService,
+    required this.parentContext,
+  });
+
+  @override
+  State<_AuthorActionsSheet> createState() => _AuthorActionsSheetState();
+}
+
+class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
+    with TickerProviderStateMixin {
+  late final AnimationController _staggerController;
+  late final List<Animation<double>> _slideAnims;
+  late final List<Animation<double>> _fadeAnims;
+  
+  static const int _itemCount = 6;
+
+  @override
+  void initState() {
+    super.initState();
+    _staggerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _slideAnims = List.generate(_itemCount, (i) {
+      final start = (i * 0.1).clamp(0.0, 1.0);
+      final end = (start + 0.5).clamp(0.0, 1.0);
+      return Tween<double>(begin: 40.0, end: 0.0).animate(
+        CurvedAnimation(
+          parent: _staggerController,
+          curve: Interval(start, end, curve: Curves.easeOutCubic),
+        ),
+      );
+    });
+
+    _fadeAnims = List.generate(_itemCount, (i) {
+      final start = (i * 0.1).clamp(0.0, 1.0);
+      final end = (start + 0.4).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _staggerController,
+          curve: Interval(start, end, curve: Curves.easeOut),
+        ),
+      );
+    });
+
+    _staggerController.forward();
+  }
+
+  @override
+  void dispose() {
+    _staggerController.dispose();
+    super.dispose();
+  }
+
+  void _showSuccessSnackBar(BuildContext ctx, String message) {
+    ScaffoldMessenger.of(ctx).clearSnackBars();
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: const Color(0xFF1E824C),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Delete Post?',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: Text(
+          'This action is permanent and cannot be undone.',
+          style: GoogleFonts.outfit(fontSize: 14, color: Colors.black54, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text('Cancel',
+                style: GoogleFonts.outfit(
+                    color: Colors.grey[600], fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              final success = await widget.dbService.deletePost(widget.post.id);
+              if (!mounted) return;
+              if (success) {
+                _showSuccessSnackBar(context, 'Post deleted successfully');
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Delete',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditPostSheet(BuildContext ctx) {
+    final textController = TextEditingController(text: widget.post.content);
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Edit Post",
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(sheetContext),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: textController,
+                  maxLines: 5,
+                  style: GoogleFonts.hindSiliguri(fontSize: 15),
+                  decoration: InputDecoration(
+                    hintText: "What's on your mind?",
+                    hintStyle: GoogleFonts.hindSiliguri(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.black12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF1E824C), width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final newContent = textController.text.trim();
+                      if (newContent.isNotEmpty) {
+                        Navigator.pop(sheetContext);
+                        final success = await widget.dbService.editPostContent(widget.post.id, newContent);
+                        if (!mounted) return;
+                        if (success) {
+                          _showSuccessSnackBar(context, "Post updated successfully");
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E824C),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      "Save Changes",
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHideSpecificUsersSheet(BuildContext ctx) {
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _HidePostForUsersSheet(
+        post: widget.post,
+        dbService: widget.dbService,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPinned = widget.post.isPinned;
+    final isMuted = widget.post.muteNotifications;
+    final isHiddenFromProfile = widget.post.hideFromProfile;
+
+    final actions = <_QuickActionItem>[
+      _QuickActionItem(
+        icon: isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+        label: isPinned ? 'Unpin from profile' : 'Pin to profile',
+        onTap: () async {
+          Navigator.pop(context);
+          final success = await widget.dbService.togglePinPost(widget.post.id, !isPinned);
+          if (success) {
+            _showSuccessSnackBar(
+              widget.parentContext,
+              isPinned ? 'Post unpinned from profile' : 'Post pinned to profile',
+            );
+          }
+        },
+      ),
+      _QuickActionItem(
+        icon: isMuted ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
+        label: isMuted ? 'Unmute notifications' : 'Mute notifications for this post',
+        onTap: () async {
+          Navigator.pop(context);
+          final success = await widget.dbService.toggleMutePostNotifications(widget.post.id, !isMuted);
+          if (success) {
+            _showSuccessSnackBar(
+              widget.parentContext,
+              isMuted ? 'Notifications unmuted' : 'Notifications muted for this post',
+            );
+          }
+        },
+      ),
+      _QuickActionItem(
+        icon: Icons.edit_outlined,
+        label: 'Edit post',
+        onTap: () {
+          Navigator.pop(context);
+          _showEditPostSheet(widget.parentContext);
+        },
+      ),
+      _QuickActionItem(
+        icon: isHiddenFromProfile ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+        label: isHiddenFromProfile ? 'Show on profile' : 'Hide from my profile',
+        onTap: () async {
+          Navigator.pop(context);
+          final success = await widget.dbService.toggleHidePostFromProfile(widget.post.id, !isHiddenFromProfile);
+          if (success) {
+            _showSuccessSnackBar(
+              widget.parentContext,
+              isHiddenFromProfile ? 'Post is now visible on your profile' : 'Post hidden from your profile feed',
+            );
+          }
+        },
+      ),
+      _QuickActionItem(
+        icon: Icons.person_off_outlined,
+        label: 'Hide for specific users',
+        onTap: () {
+          Navigator.pop(context);
+          _showHideSpecificUsersSheet(widget.parentContext);
+        },
+      ),
+      _QuickActionItem(
+        icon: Icons.delete_outline,
+        label: 'Delete post',
+        isDanger: true,
+        onTap: () {
+          Navigator.pop(context);
+          _showDeleteConfirm(widget.parentContext);
+        },
+      ),
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...List.generate(actions.length, (i) {
+              final action = actions[i];
+              return AnimatedBuilder(
+                animation: _staggerController,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, _slideAnims[i].value),
+                    child: Opacity(
+                      opacity: _fadeAnims[i].value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: _buildActionTile(action),
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionTile(_QuickActionItem item) {
+    final color = item.isDanger ? Colors.red[600]! : Colors.black87;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: item.onTap,
+        splashColor: const Color(0xFF1E824C).withOpacity(0.08),
+        highlightColor: const Color(0xFF1E824C).withOpacity(0.04),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Row(
+            children: [
+              Icon(item.icon, color: color, size: 22),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Text(
+                  item.label,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HidePostForUsersSheet extends StatefulWidget {
+  final ThreadPost post;
+  final DatabaseService dbService;
+
+  const _HidePostForUsersSheet({required this.post, required this.dbService});
+
+  @override
+  State<_HidePostForUsersSheet> createState() => _HidePostForUsersSheetState();
+}
+
+class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
+  List<dynamic> _friends = [];
+  List<dynamic> _filteredFriends = [];
+  Set<String> _selectedHides = {};
+  bool _isLoading = true;
+  String _searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final friends = await widget.dbService.fetchFollowingProfiles();
+    final hides = await widget.dbService.fetchThreadHides(widget.post.id);
+    if (mounted) {
+      setState(() {
+        _friends = friends;
+        _filteredFriends = friends;
+        _selectedHides = hides.toSet();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _filterFriends(String query) {
+    setState(() {
+      _searchQuery = query;
+      if (query.trim().isEmpty) {
+        _filteredFriends = _friends;
+      } else {
+        _filteredFriends = _friends.where((friend) {
+          final name = friend.fullName.toString().toLowerCase();
+          final username = friend.username.toString().toLowerCase();
+          final q = query.toLowerCase();
+          return name.contains(q) || username.contains(q);
+        }).toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Hide Post From",
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final success = await widget.dbService.updateThreadHides(
+                        widget.post.id,
+                        _selectedHides.toList(),
+                      );
+                      if (success && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Visibility settings updated")),
+                        );
+                      }
+                    },
+                    child: Text(
+                      "Save",
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1E824C),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: TextField(
+                onChanged: _filterFriends,
+                decoration: InputDecoration(
+                  hintText: "Search friends...",
+                  hintStyle: GoogleFonts.outfit(color: Colors.grey, fontSize: 14),
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E824C)))
+                  : _filteredFriends.isEmpty
+                      ? Center(
+                          child: Text(
+                            _searchQuery.isEmpty ? "You are not following any friends yet" : "No friends found matching '$_searchQuery'",
+                            style: GoogleFonts.outfit(color: Colors.grey, fontSize: 14),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _filteredFriends.length,
+                          itemBuilder: (context, index) {
+                            final friend = _filteredFriends[index];
+                            final isSelected = _selectedHides.contains(friend.id);
+                            return CheckboxListTile(
+                              value: isSelected,
+                              activeColor: const Color(0xFF1E824C),
+                              onChanged: (val) {
+                                setState(() {
+                                  if (val == true) {
+                                    _selectedHides.add(friend.id);
+                                  } else {
+                                    _selectedHides.remove(friend.id);
+                                  }
+                                });
+                              },
+                              secondary: CircleAvatar(
+                                backgroundImage: NetworkImage(
+                                  friend.avatarUrl ?? "https://i.pravatar.cc/150",
+                                ),
+                              ),
+                              title: Text(
+                                friend.fullName,
+                                style: GoogleFonts.hindSiliguri(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              subtitle: Text(
+                                "@${friend.username}",
+                                style: GoogleFonts.outfit(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

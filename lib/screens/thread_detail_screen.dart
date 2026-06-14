@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
@@ -43,81 +42,11 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     });
 
     try {
-      final supabase = Supabase.instance.client;
-      final response = await supabase
-          .from('replies')
-          .select('*, profiles(*)')
-          .eq('thread_id', widget.post.id)
-          .order('created_at', ascending: true);
-
-      final List<dynamic> data = response as List<dynamic>;
+      final dbService = Provider.of<DatabaseService>(context, listen: false);
+      final dbComments = await dbService.fetchComments(widget.post.id);
       if (mounted) {
         setState(() {
-          final dbComments = data.map((json) {
-            final authorMap = json['profiles'] as Map<String, dynamic>?;
-            final author = authorMap != null 
-                ? Profile.fromJson(authorMap) 
-                : Profile(id: json['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
-            final rawTime = json['created_at'] as String? ?? '';
-            return {
-              'id': json['id'] as String? ?? 'db-${json['created_at']}',
-              'author': author,
-              'content': json['content'] as String,
-              'created_at': _formatTime(rawTime),
-              'likes_count': 0,
-              'replies_count': 5,
-              'is_liked_by_me': false,
-            };
-          }).toList();
-
-          if (dbComments.isEmpty) {
-            _comments = [
-              {
-                'id': 'mock-1',
-                'author': Profile(
-                  id: 'mock-user-1',
-                  username: 'nusrat.jahan',
-                  fullName: 'Nusrat Jahan',
-                  avatarUrl: 'https://i.pravatar.cc/150?u=nusrat',
-                ),
-                'content': 'অসাধারণ ছবি! মনটা ভরে গেল 😍 🌿',
-                'created_at': '2h',
-                'likes_count': 0,
-                'replies_count': 12,
-                'is_liked_by_me': false,
-              },
-              {
-                'id': 'mock-2',
-                'author': Profile(
-                  id: 'mock-user-2',
-                  username: 'rifat_ahmed',
-                  fullName: 'Rifat Ahmed',
-                  avatarUrl: 'https://i.pravatar.cc/150?u=rifat',
-                ),
-                'content': 'দারুণ! কোথায় এটা?',
-                'created_at': '2h',
-                'likes_count': 0,
-                'replies_count': 6,
-                'is_liked_by_me': false,
-              },
-              {
-                'id': 'mock-3',
-                'author': Profile(
-                  id: widget.post.userId,
-                  username: 'dakofficial',
-                  fullName: 'Dak Official',
-                  avatarUrl: 'https://i.pravatar.cc/150?u=dakofficial',
-                ),
-                'content': 'বান্দরবান, বাংলাদেশের সুন্দর জায়গা ❤️',
-                'created_at': '1h',
-                'likes_count': 0,
-                'replies_count': 24,
-                'is_liked_by_me': true,
-              }
-            ];
-          } else {
-            _comments = dbComments;
-          }
+          _comments = dbComments;
           _isLoadingComments = false;
         });
       }
@@ -125,50 +54,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       debugPrint("Load comments error: $e");
       if (mounted) {
         setState(() {
-          _comments = [
-            {
-              'id': 'mock-1',
-              'author': Profile(
-                id: 'mock-user-1',
-                username: 'nusrat.jahan',
-                fullName: 'Nusrat Jahan',
-                avatarUrl: 'https://i.pravatar.cc/150?u=nusrat',
-              ),
-              'content': 'অসাধারণ ছবি! মনটা ভরে গেল 😍 🌿',
-              'created_at': '2h',
-              'likes_count': 0,
-              'replies_count': 12,
-              'is_liked_by_me': false,
-            },
-            {
-              'id': 'mock-2',
-              'author': Profile(
-                id: 'mock-user-2',
-                username: 'rifat_ahmed',
-                fullName: 'Rifat Ahmed',
-                avatarUrl: 'https://i.pravatar.cc/150?u=rifat',
-              ),
-              'content': 'দারুণ! কোথায় এটা?',
-              'created_at': '2h',
-              'likes_count': 0,
-              'replies_count': 6,
-              'is_liked_by_me': false,
-            },
-            {
-              'id': 'mock-3',
-              'author': Profile(
-                id: widget.post.userId,
-                username: 'dakofficial',
-                fullName: 'Dak Official',
-                avatarUrl: 'https://i.pravatar.cc/150?u=dakofficial',
-              ),
-              'content': 'বান্দরবান, বাংলাদেশের সুন্দর জায়গা ❤️',
-              'created_at': '1h',
-              'likes_count': 0,
-              'replies_count': 24,
-              'is_liked_by_me': true,
-            }
-          ];
+          _comments = [];
           _isLoadingComments = false;
         });
       }
@@ -214,24 +100,18 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
-    final supabase = Supabase.instance.client;
-    final currentUid = supabase.auth.currentUser?.id;
-    if (currentUid == null) return;
-
     try {
-      // Let Supabase auto-set created_at via DB default
-      await supabase.from('replies').insert({
-        'thread_id': widget.post.id,
-        'user_id': currentUid,
-        'content': text,
-      });
-      _commentController.clear();
-      _loadComments();
+      final dbService = Provider.of<DatabaseService>(context, listen: false);
+      final success = await dbService.addComment(widget.post.id, text);
+      if (success) {
+        _commentController.clear();
+        _loadComments();
+      }
     } catch (e) {
       debugPrint("Post comment error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("মন্তব্য পোস্ট করতে ব্যর্থ হয়েছে")),
+          SnackBar(content: Text("মন্তব্য পোস্ট করতে ব্যর্থ হয়েছে: $e")),
         );
       }
     }
@@ -270,31 +150,32 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // User Details Header
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        NoTransitionPageRoute(
-                          child: ProfileScreen(userId: activePost.userId),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundImage: NetworkImage(
-                              activePost.author.avatarUrl ?? "https://i.pravatar.cc/150",
-                            ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundImage: NetworkImage(
+                            activePost.author.avatarUrl ?? "https://i.pravatar.cc/150",
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    NoTransitionPageRoute(
+                                      child: ProfileScreen(userId: activePost.userId),
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       activePost.author.fullName,
@@ -312,19 +193,19 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                     ),
                                   ],
                                 ),
-                                Text(
-                                  "@${activePost.author.username}",
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 13,
-                                  ),
+                              ),
+                              Text(
+                                "@${activePost.author.username}",
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                          const Icon(Icons.more_horiz, color: Colors.grey),
-                        ],
-                      ),
+                        ),
+                        const Icon(Icons.more_horiz, color: Colors.grey),
+                      ],
                     ),
                   ),
 
@@ -499,20 +380,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    NoTransitionPageRoute(
-                                      child: ProfileScreen(userId: author.id),
-                                    ),
-                                  );
-                                },
-                                child: CircleAvatar(
-                                  radius: 18,
-                                  backgroundImage: NetworkImage(
-                                    author.avatarUrl ?? "https://i.pravatar.cc/150",
-                                  ),
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundImage: NetworkImage(
+                                  author.avatarUrl ?? "https://i.pravatar.cc/150",
                                 ),
                               ),
                               const SizedBox(width: 12),

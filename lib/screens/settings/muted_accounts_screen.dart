@@ -14,26 +14,52 @@ class _MutedAccountsScreenState extends State<MutedAccountsScreen> {
   final _controller = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<GeneralSettingsProvider>(context, listen: false).fetchSettings();
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
-  void _muteNewUser(GeneralSettingsProvider provider) {
+  void _muteNewUser(GeneralSettingsProvider provider) async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    final username = text.replaceAll(' ', '_').toLowerCase();
-    provider.muteAccount(text, username, 'https://i.pravatar.cc/150?u=$username');
-    _controller.clear();
-    FocusScope.of(context).unfocus();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('@$username has been muted.'),
-        backgroundColor: const Color(0xFF1E824C),
-      ),
-    );
+    try {
+      final success = await provider.muteAccount(text);
+      if (!mounted) return;
+      if (success) {
+        _controller.clear();
+        FocusScope.of(context).unfocus();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"$text" has been muted.'),
+            backgroundColor: const Color(0xFF1E824C),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User not found in database.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception:', '').trim()),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
@@ -115,24 +141,30 @@ class _MutedAccountsScreenState extends State<MutedAccountsScreen> {
 
               // Muted users list
               Expanded(
-                child: muted.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.volume_off_rounded, size: 60, color: Colors.black26),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No muted accounts',
-                              style: GoogleFonts.outfit(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
+                child: provider.isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF1E824C),
                         ),
                       )
+                    : muted.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.volume_off_rounded, size: 60, color: Colors.black26),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No muted accounts',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
                     : ListView.separated(
                         itemCount: muted.length,
                         separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F1F1)),

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
@@ -10,31 +8,16 @@ import 'services/chat_settings_provider.dart';
 import 'services/general_settings_provider.dart';
 import 'screens/auth/onboarding_screen.dart';
 import 'screens/auth/auth_screen.dart';
+import 'screens/auth/splash_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Initialize Firebase with Web/Android dynamic options
-  if (kIsWeb) {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyAxpyiGa7kHXAmTFIiiwet6-84ZBmY-ZpY",
-        authDomain: "dak-auth.firebaseapp.com",
-        projectId: "dak-auth",
-        storageBucket: "dak-auth.firebasestorage.app",
-        messagingSenderId: "528559248540",
-        appId: "1:528559248540:web:d26d7449c25da722794959",
-      ),
-    );
-  } else {
-    await Firebase.initializeApp();
-  }
-
-  // 2. Initialize Supabase
+  // Initialize Supabase
   await Supabase.initialize(
-    url: "https://ibesspeysnqikrzovmtm.supabase.co",
-    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZXNzcGV5c25xaWtyem92bXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzA4NDEsImV4cCI6MjA5NTk0Njg0MX0.BNGNubP-fAXEE-VZaFUCZe-jsOdEVR832OCFBj16m9Q",
+    url: "https://lznxtbnqwaryqkyxfwgy.supabase.co",
+    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnh0Ym5xd2FyeXFreXhmd2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTk1MjIsImV4cCI6MjA5NjkzNTUyMn0.PGQqRFmGjE5GncIs5Eeqf5fvgxQtDMgvggNLzNEGOJk",
   );
 
   runApp(
@@ -46,18 +29,18 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ChatSettingsProvider()),
         ChangeNotifierProvider(create: (_) => GeneralSettingsProvider()),
       ],
-      child: const DakApp(),
+      child: const PigeonApp(),
     ),
   );
 }
 
-class DakApp extends StatelessWidget {
-  const DakApp({super.key});
+class PigeonApp extends StatelessWidget {
+  const PigeonApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dak',
+      title: 'Pigeon',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       builder: (context, child) {
@@ -105,23 +88,36 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
+  bool _isLoading = true;
   bool _showOnboarding = true;
   bool _startSignUp = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadSplash();
+  }
+
+  Future<void> _loadSplash() async {
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const SplashScreen();
+    }
+
     final authService = Provider.of<AuthService>(context);
     final dbService = Provider.of<DatabaseService>(context, listen: false);
 
-    // If user is logged in, push Firebase UID to DatabaseService and show MainScreen
+    // If user is logged in, show MainScreen
     if (authService.isUserSignedIn) {
-      // Pass Firebase UID so DatabaseService can do read-only queries even
-      // before a Supabase session is established
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && authService.currentUid.isNotEmpty) {
-          dbService.setFirebaseUid(authService.currentUid);
-        }
-      });
       return const MainScreen();
     }
 

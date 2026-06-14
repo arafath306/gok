@@ -39,9 +39,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   ];
 
   final List<Map<String, String>> _genders = [
-    {"label": "পুরুষ (Male)", "value": "Male"},
-    {"label": "নারী (Female)", "value": "Female"},
-    {"label": "অন্যান্য (Other)", "value": "Other"}
+    {"label": "পুরুষ (Male)", "value": "পুরুষ"},
+    {"label": "নারী (Female)", "value": "নারী"},
+    {"label": "অন্যান্য (Other)", "value": "অন্যান্য"}
   ];
 
   @override
@@ -68,6 +68,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     _selectedGender = widget.profile['gender']?.toString();
+    if (_selectedGender != null) {
+      if (_selectedGender == 'Male' || _selectedGender == 'পুরুষ') {
+        _selectedGender = 'পুরুষ';
+      } else if (_selectedGender == 'Female' || _selectedGender == 'নারী') {
+        _selectedGender = 'নারী';
+      } else if (_selectedGender == 'Other' || _selectedGender == 'অন্যান্য') {
+        _selectedGender = 'অন্যান্য';
+      } else {
+        _selectedGender = null;
+      }
+    }
     _birthdateString = widget.profile['birthdate']?.toString();
   }
 

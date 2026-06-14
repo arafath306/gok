@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
+import '../../services/general_settings_provider.dart';
 import '../../models/profile.dart';
 import '../../models/thread_post.dart';
 import '../../utils/routes.dart';
@@ -32,7 +33,17 @@ class _ProfileScreenState extends State<ProfileScreen>
     'Posts', 'Replies', 'Media', 'Videos', 'Likes', 'Feeds', 'About',
   ];
 
-  bool get _isOwnProfile => widget.userId == null;
+  /// Own profile if userId is null OR matches the current user's Supabase UID
+  bool get _isOwnProfile {
+    if (widget.userId == null) return true;
+    final db = Provider.of<DatabaseService>(context, listen: false);
+    final currentUid = db.currentUid;
+    final myProfileId = db.myProfile?.id;
+    // Check against both currentUid and myProfile.id for robustness
+    if (currentUid.isNotEmpty && widget.userId == currentUid) return true;
+    if (myProfileId != null && widget.userId == myProfileId) return true;
+    return false;
+  }
 
   @override
   void initState() {
@@ -40,9 +51,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     _tabController = TabController(length: _tabs.length, vsync: this);
 
     // If viewing another user's profile, fetch their data
-    if (!_isOwnProfile) {
-      _fetchOtherProfile();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isOwnProfile) {
+        _fetchOtherProfile();
+      }
+    });
   }
 
   @override
@@ -51,15 +64,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.dispose();
   }
 
+  bool _doesFollowMe = false;
+
   Future<void> _fetchOtherProfile() async {
     setState(() => _isLoading = true);
     final dbService = Provider.of<DatabaseService>(context, listen: false);
     final profile = await dbService.fetchProfile(widget.userId!);
     final threads = await dbService.fetchUserThreads(widget.userId!);
+    final doesFollowMe = await dbService.doesUserFollowMe(widget.userId!);
     if (mounted) {
       setState(() {
         _viewedProfile = profile;
         _viewedThreads = threads;
+        _doesFollowMe = doesFollowMe;
         _isLoading = false;
       });
     }
@@ -250,7 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               right: 8,
               child: Row(
                 children: [
-                  if (!_isOwnProfile)
+                  if (Navigator.canPop(context))
                     CircleAvatar(
                       backgroundColor: Colors.black38,
                       radius: 18,
@@ -261,22 +278,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                   const Spacer(),
-                  CircleAvatar(
-                    backgroundColor: Colors.black38,
-                    radius: 18,
-                    child: IconButton(
-                      icon: const Icon(Icons.settings_rounded, color: Colors.white, size: 18),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          NoTransitionPageRoute(
-                            child: const SettingsScreen(),
-                          ),
-                        );
-                      },
-                      padding: EdgeInsets.zero,
+                  if (_isOwnProfile)
+                    CircleAvatar(
+                      backgroundColor: Colors.black38,
+                      radius: 18,
+                      child: IconButton(
+                        icon: const Icon(Icons.settings_rounded, color: Colors.white, size: 18),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            NoTransitionPageRoute(
+                              child: const SettingsScreen(),
+                            ),
+                          );
+                        },
+                        padding: EdgeInsets.zero,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -402,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   },
                 ),
                 const SizedBox(width: 8),
-                if (profile != null) ...[
+                if (profile != null && (!profile.isPrivate || _doesFollowMe)) ...[
                   _outlinedBtn(
                     'Message',
                     onTap: () {
@@ -766,14 +784,93 @@ class _ProfileScreenState extends State<ProfileScreen>
                 title: Text('Block',
                     style: GoogleFonts.hindSiliguri(
                         fontSize: 15, color: Colors.red)),
-                onTap: () => Navigator.pop(context),
+                onTap: () async {
+                  Navigator.pop(context); // close bottom sheet
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: Text(
+                        'ব্লক করবেন?',
+                        style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold),
+                      ),
+                      content: Text(
+                        'আপনি কি নিশ্চিতভাবে এই অ্যাকাউন্টটি ব্লক করতে চান?',
+                        style: GoogleFonts.hindSiliguri(),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text('বাতিল', style: GoogleFonts.hindSiliguri(color: Colors.grey)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                          child: Text('ব্লক', style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && mounted) {
+                    final settings = Provider.of<GeneralSettingsProvider>(context, listen: false);
+                    final db = Provider.of<DatabaseService>(context, listen: false);
+                    await settings.blockUserById(widget.userId!);
+                    db.fetchBlockedMutedLists();
+                    db.fetchFeed();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('অ্যাকাউন্টটি ব্লক করা হয়েছে।', style: GoogleFonts.hindSiliguri())),
+                    );
+                    Navigator.pop(context); // Go back
+                  }
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.flag_outlined, color: Colors.red),
                 title: Text('Report',
                     style: GoogleFonts.hindSiliguri(
                         fontSize: 15, color: Colors.red)),
-                onTap: () => Navigator.pop(context),
+                onTap: () async {
+                  Navigator.pop(context); // close bottom sheet
+                  final reason = await showDialog<String>(
+                    context: context,
+                    builder: (ctx) {
+                      final controller = TextEditingController();
+                      return AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: Text(
+                          'রিপোর্ট করার কারণ',
+                          style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold),
+                        ),
+                        content: TextField(
+                          controller: controller,
+                          decoration: InputDecoration(
+                            hintText: 'কেন রিপোর্ট করছেন তা লিখুন...',
+                            hintStyle: GoogleFonts.hindSiliguri(),
+                          ),
+                          style: GoogleFonts.hindSiliguri(),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text('বাতিল', style: GoogleFonts.hindSiliguri(color: Colors.grey)),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                            child: Text('রিপোর্ট', style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (reason != null && reason.isNotEmpty && mounted) {
+                    final db = Provider.of<DatabaseService>(context, listen: false);
+                    await db.reportProfile(widget.userId!, reason);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('রিপোর্ট জমা দেওয়া হয়েছে। ধন্যবাদ!', style: GoogleFonts.hindSiliguri())),
+                    );
+                  }
+                },
               ),
             ],
             const SizedBox(height: 16),

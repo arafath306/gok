@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../models/profile.dart';
+import '../../services/database_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final Profile otherUser;
@@ -14,29 +16,18 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageCtrl = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<Map<String, dynamic>> _messages = [];
+  late final Stream<List<Map<String, dynamic>>> _messagesStream;
 
   @override
   void initState() {
     super.initState();
-    // Add some initial mock chat history
-    _messages.addAll([
-      {
-        "text": "হ্যালো! কেমন আছেন?",
-        "isMe": false,
-        "time": "10:15 AM",
-      },
-      {
-        "text": "ভালো, আপনি? ডাক অ্যাপের ডিজাইন কেমন লাগছে?",
-        "isMe": true,
-        "time": "10:16 AM",
-      },
-      {
-        "text": "অসাধারণ! বিশেষ করে এই চ্যাট স্ক্রিনের ডিজাইনটা একদম প্রিমিয়াম।",
-        "isMe": false,
-        "time": "10:18 AM",
-      },
-    ]);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    _messagesStream = dbService.getMessagesStream(widget.otherUser.id);
+    
+    // Mark messages as read upon entering the chat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      dbService.markMessagesAsRead(widget.otherUser.id);
+    });
   }
 
   @override
@@ -50,16 +41,15 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _messageCtrl.text.trim();
     if (text.isEmpty) return;
 
-    setState(() {
-      _messages.add({
-        "text": text,
-        "isMe": true,
-        "time": "Just now",
-      });
-    });
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    dbService.sendMessage(widget.otherUser.id, text);
     _messageCtrl.clear();
 
     // Scroll to bottom
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -67,28 +57,6 @@ class _ChatScreenState extends State<ChatScreen> {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
         );
-      }
-    });
-
-    // Mock an automatic reply after 1 second
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() {
-          _messages.add({
-            "text": "ধন্যবাদ! আমি মেসেজটি পেয়েছি।",
-            "isMe": false,
-            "time": "Just now",
-          });
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-            );
-          }
-        });
       }
     });
   }
@@ -155,65 +123,97 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Message List
+          // Message List from StreamBuilder
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                final bool isMe = msg["isMe"] as bool;
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _messagesStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFF1E824C)));
+                }
+                
+                final messages = snapshot.data ?? [];
+                
+                // Trigger auto-scroll on new message load
+                if (messages.isNotEmpty) {
+                  _scrollToBottom();
+                }
 
-                return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isMe ? const Color(0xFF1E824C) : Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(16),
-                        topRight: const Radius.circular(16),
-                        bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(0),
-                        bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(16),
-                      ),
-                      border: isMe ? null : Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.015),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
-                    ),
+                if (messages.isEmpty) {
+                  return Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        const Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Colors.black26),
+                        const SizedBox(height: 12),
                         Text(
-                          msg["text"] as String,
-                          style: GoogleFonts.hindSiliguri(
-                            fontSize: 14.5,
-                            color: isMe ? Colors.white : Colors.black87,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: Text(
-                            msg["time"] as String,
-                            style: GoogleFonts.outfit(
-                              fontSize: 10,
-                              color: isMe ? Colors.white60 : Colors.black38,
-                            ),
-                          ),
+                          "কথোপকথন শুরু করতে বার্তা পাঠান।",
+                          style: GoogleFonts.hindSiliguri(color: Colors.black45),
                         ),
                       ],
                     ),
-                  ),
+                  );
+                }
+
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    final bool isMe = msg["isMe"] as bool;
+
+                    return Align(
+                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isMe ? const Color(0xFF1E824C) : Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(16),
+                            topRight: const Radius.circular(16),
+                            bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(0),
+                            bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(16),
+                          ),
+                          border: isMe ? null : Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.015),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              msg["text"] as String,
+                              style: GoogleFonts.hindSiliguri(
+                                fontSize: 14.5,
+                                color: isMe ? Colors.white : Colors.black87,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: Text(
+                                msg["time"] as String,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 10,
+                                  color: isMe ? Colors.white60 : Colors.black38,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),

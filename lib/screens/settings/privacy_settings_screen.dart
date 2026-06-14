@@ -6,8 +6,21 @@ import '../messenger/chat_settings_screen.dart';
 import 'blocked_accounts_screen.dart';
 import 'muted_accounts_screen.dart';
 
-class PrivacySettingsScreen extends StatelessWidget {
+class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
+
+  @override
+  State<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
+}
+
+class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<GeneralSettingsProvider>(context, listen: false).fetchSettings();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +191,7 @@ class PrivacySettingsScreen extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF1E824C),
+            activeThumbColor: const Color(0xFF1E824C),
             activeTrackColor: const Color(0x331E824C),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: Colors.black12,

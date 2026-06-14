@@ -13,6 +13,10 @@ class ThreadPost {
   final String createdAt;
   final bool isLikedByMe;
   final String? reactionType;
+  final bool isPinned;
+  final bool muteNotifications;
+  final bool hideFromProfile;
+  final bool isHiddenFromMe;
 
   ThreadPost({
     required this.id,
@@ -27,6 +31,10 @@ class ThreadPost {
     required this.createdAt,
     this.isLikedByMe = false,
     this.reactionType,
+    this.isPinned = false,
+    this.muteNotifications = false,
+    this.hideFromProfile = false,
+    this.isHiddenFromMe = false,
   });
 
   static String _formatRelativeTime(String? isoString) {
@@ -54,6 +62,11 @@ class ThreadPost {
     final likesList = json['likes'] as List<dynamic>?;
     final isLiked = currentUid != null && likesList != null && 
         likesList.any((like) => like['user_id'] == currentUid);
+
+    // Hidden visibility check logic
+    final hidesList = json['thread_hides'] as List<dynamic>?;
+    final isHidden = currentUid != null && hidesList != null &&
+        hidesList.any((hide) => hide['user_id'] == currentUid);
 
     // Dynamic Image URLs mapping (Supabase stores it as text[] or string)
     List<String>? parsedImages;
@@ -84,6 +97,10 @@ class ThreadPost {
       createdAt: _formatRelativeTime(json['created_at'] as String?),
       isLikedByMe: isLiked,
       reactionType: isLiked ? '❤️' : null,
+      isPinned: json['is_pinned'] as bool? ?? false,
+      muteNotifications: json['mute_notifications'] as bool? ?? false,
+      hideFromProfile: json['hide_from_profile'] as bool? ?? false,
+      isHiddenFromMe: isHidden,
     );
   }
 
@@ -100,6 +117,10 @@ class ThreadPost {
     String? createdAt,
     bool? isLikedByMe,
     String? reactionType,
+    bool? isPinned,
+    bool? muteNotifications,
+    bool? hideFromProfile,
+    bool? isHiddenFromMe,
   }) {
     return ThreadPost(
       id: id ?? this.id,
@@ -114,6 +135,10 @@ class ThreadPost {
       createdAt: createdAt ?? this.createdAt,
       isLikedByMe: isLikedByMe ?? this.isLikedByMe,
       reactionType: reactionType ?? this.reactionType,
+      isPinned: isPinned ?? this.isPinned,
+      muteNotifications: muteNotifications ?? this.muteNotifications,
+      hideFromProfile: hideFromProfile ?? this.hideFromProfile,
+      isHiddenFromMe: isHiddenFromMe ?? this.isHiddenFromMe,
     );
   }
 }

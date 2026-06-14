@@ -12,8 +12,8 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  firebase_core: ^2.27.0
-  firebase_auth: ^4.17.8
+#  firebase_core: ^2.27.0
+#  firebase_auth: ^4.17.8
   supabase_flutter: ^2.5.5
   provider: ^6.1.2
   google_fonts: ^6.1.0
@@ -28,19 +28,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/logo.jpg
     - assets/logo.png
     - assets/logo_transparent.png
-    - assets/d_logo.jpg
-    - assets/logo_d_icon_v2.jpg
-    - assets/onboarding_1.jpg
-    - assets/onboarding_2.jpg
-    - assets/onboarding_screen_1.png
-    - assets/onboarding_screen_2.png
-    - assets/onboarding_screen_3.png
-    - assets/onboarding_screen_4.png
-    - assets/onboarding_illus_1.png
-    - assets/onboarding_illus_2.png
-    - assets/onboarding_illus_3.png
+    - assets/pigeon_logo.png
     - assets/onboarding_illus_4.png
-    - assets/rocket.png
+    - assets/auth_clouds.png
+    - assets/auth_dove.png
+    - assets/auth_glow_ring.png

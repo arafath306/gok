@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../widgets/custom_thread_card.dart';
+import 'main_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   final VoidCallback onNavigateToChaStation;
@@ -179,21 +180,81 @@ class _FeedScreenState extends State<FeedScreen> {
                           ),
                         ),
 
-                        // Feed List
-                        if (dbService.feed.isEmpty)
+                        // Feed List based on selected tab
+                        if (_selectedTabIndex == 2) ...[
+                          // Video tab
                           SizedBox(
                             height: 300,
                             child: Center(
                               child: Text(
-                                "কোন ডাক পাওয়া যায়নি।",
+                                "ভিডিও আপলোড করার সিস্টেম এখনও চালু হয়নি।",
                                 style: GoogleFonts.hindSiliguri(color: Colors.black45),
                               ),
                             ),
                           )
-                        else
-                          ...dbService.feed.map((post) {
-                            return CustomThreadCard(post: post);
-                          }),
+                        ] else ...[
+                          (() {
+                            final posts = _selectedTabIndex == 1
+                                ? dbService.feed
+                                    .where((post) => dbService.isFollowingUser(post.userId))
+                                    .toList()
+                                : dbService.feed;
+
+                            if (_selectedTabIndex == 1 && dbService.followingIds.isEmpty) {
+                              return SizedBox(
+                                height: 300,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "আপনার ফলোয়িং লিস্টে কেউ নেই",
+                                        style: GoogleFonts.hindSiliguri(
+                                          fontSize: 16,
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      GestureDetector(
+                                        onTap: () {
+                                          context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
+                                        },
+                                        child: Text(
+                                          "ইউজারদের ফলো করুন",
+                                          style: GoogleFonts.hindSiliguri(
+                                            fontSize: 15,
+                                            color: const Color(0xFF1E824C).withOpacity(0.6),
+                                            fontWeight: FontWeight.bold,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (posts.isEmpty) {
+                              return SizedBox(
+                                height: 300,
+                                child: Center(
+                                  child: Text(
+                                    _selectedTabIndex == 1
+                                        ? "আপনি যাদের ফলো করছেন তাদের কোনো ডাক পাওয়া যায়নি।"
+                                        : "কোন ডাক পাওয়া যায়নি।",
+                                    style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            return Column(
+                              children: posts.map((post) => CustomThreadCard(post: post)).toList(),
+                            );
+                          })(),
+                        ],
                       ],
                     ),
                   ),

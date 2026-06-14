@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../services/database_service.dart';
+import '../../models/profile.dart';
+import 'chat_screen.dart';
 import 'chat_settings_screen.dart';
 import 'member_search_sheet.dart';
 
@@ -50,52 +54,162 @@ class MessengerHomeScreen extends StatelessWidget {
           child: Container(color: const Color(0xFFEEEEEE), height: 1.0),
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Custom drawn smiley speech bubble
-            CustomPaint(
-              size: const Size(60, 60),
-              painter: SpeechBubblePainter(),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Say hi to someone',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
+      body: Consumer<DatabaseService>(
+        builder: (context, dbService, _) {
+          return FutureBuilder<List<Map<String, dynamic>>>(
+            future: dbService.fetchActiveChats(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF1E824C)),
                 );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0085FF),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                elevation: 0,
-              ),
-              icon: const Icon(Icons.add_comment_rounded, size: 18),
-              label: Text(
-                'New chat',
-                style: GoogleFonts.outfit(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
+              }
+
+              final activeChats = snapshot.data ?? [];
+
+              if (activeChats.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CustomPaint(
+                        size: const Size(60, 60),
+                        painter: SpeechBubblePainter(),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Say hi to someone',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0085FF),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.add_comment_rounded, size: 18),
+                        label: Text(
+                          'New chat',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                itemCount: activeChats.length,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F1F1)),
+                itemBuilder: (context, index) {
+                  final chat = activeChats[index];
+                  final Profile profile = chat['profile'] as Profile;
+                  final String lastMsg = chat['last_message'] as String;
+                  final String time = chat['last_message_time'] as String;
+                  final int unreadCount = chat['unread_count'] as int;
+
+                  return ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(otherUser: profile),
+                        ),
+                      );
+                    },
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    leading: CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.grey[200],
+                      backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                          ? NetworkImage(profile.avatarUrl!)
+                          : const NetworkImage("https://i.pravatar.cc/150"),
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            profile.fullName,
+                            style: GoogleFonts.hindSiliguri(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          time,
+                          style: GoogleFonts.outfit(
+                            color: unreadCount > 0 ? const Color(0xFF1E824C) : Colors.black38,
+                            fontSize: 12,
+                            fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              lastMsg,
+                              style: GoogleFonts.hindSiliguri(
+                                color: unreadCount > 0 ? Colors.black87 : Colors.black45,
+                                fontSize: 13.5,
+                                fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (unreadCount > 0)
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                "$unreadCount",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -159,4 +273,3 @@ class SpeechBubblePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

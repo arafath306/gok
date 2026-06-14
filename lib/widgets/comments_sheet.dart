@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
+import '../screens/profile/profile_screen.dart';
 
 class CommentsSheet extends StatefulWidget {
   final ThreadPost post;
@@ -32,151 +32,24 @@ class _CommentsSheetState extends State<CommentsSheet> {
     super.dispose();
   }
 
+  String? _replyToCommentId;
+
   Future<void> _loadComments() async {
     setState(() => _isLoading = true);
     try {
-      final supabase = Supabase.instance.client;
-      final response = await supabase
-          .from('replies')
-          .select('*, profiles(*)')
-          .eq('thread_id', widget.post.id)
-          .order('created_at', ascending: true);
-
-      final List<dynamic> data = response as List<dynamic>;
+      final dbService = Provider.of<DatabaseService>(context, listen: false);
+      final comments = await dbService.fetchComments(widget.post.id);
       if (mounted) {
         setState(() {
-          final dbComments = data.map((json) {
-            final authorMap = json['profiles'] as Map<String, dynamic>?;
-            final author = authorMap != null 
-                ? Profile.fromJson(authorMap) 
-                : Profile(id: json['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
-            return {
-              'id': json['id'] as String,
-              'author': author,
-              'content': json['content'] as String,
-              'created_at': _formatTime(json['created_at'] as String? ?? ''),
-              'likes_count': (json['likes_count'] as int?) ?? 0,
-              'replies_count': (json['replies_count'] as int?) ?? 0,
-              'is_liked_by_me': false,
-            };
-          }).toList();
-
-          if (dbComments.isEmpty) {
-            _comments = [
-              {
-                'id': 'mock-1',
-                'author': Profile(
-                  id: 'mock-user-1',
-                  username: 'nusrat.jahan',
-                  fullName: 'Nusrat Jahan',
-                  avatarUrl: 'https://i.pravatar.cc/150?u=nusrat',
-                ),
-                'content': 'অসাধারণ ছবি! মনটা ভরে গেল 😍 🌿',
-                'created_at': '2h',
-                'likes_count': 0,
-                'replies_count': 12,
-                'is_liked_by_me': false,
-              },
-              {
-                'id': 'mock-2',
-                'author': Profile(
-                  id: 'mock-user-2',
-                  username: 'rifat_ahmed',
-                  fullName: 'Rifat Ahmed',
-                  avatarUrl: 'https://i.pravatar.cc/150?u=rifat',
-                ),
-                'content': 'দারুণ! কোথায় এটা?',
-                'created_at': '2h',
-                'likes_count': 0,
-                'replies_count': 6,
-                'is_liked_by_me': false,
-              },
-              {
-                'id': 'mock-3',
-                'author': Profile(
-                  id: widget.post.userId,
-                  username: 'dakofficial',
-                  fullName: 'Dak Official',
-                  avatarUrl: 'https://i.pravatar.cc/150?u=dakofficial',
-                ),
-                'content': 'বান্দরবান, বাংলাদেশের সুন্দর জায়গা ❤️',
-                'created_at': '1h',
-                'likes_count': 0,
-                'replies_count': 24,
-                'is_liked_by_me': true,
-              }
-            ];
-          } else {
-            _comments = dbComments;
-          }
+          _comments = comments;
           _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint("Load comments error: $e");
       if (mounted) {
-        setState(() {
-          _comments = [
-            {
-              'id': 'mock-1',
-              'author': Profile(
-                id: 'mock-user-1',
-                username: 'nusrat.jahan',
-                fullName: 'Nusrat Jahan',
-                avatarUrl: 'https://i.pravatar.cc/150?u=nusrat',
-              ),
-              'content': 'অসাধারণ ছবি! মনটা ভরে গেল 😍 🌿',
-              'created_at': '2h',
-              'likes_count': 0,
-              'replies_count': 12,
-              'is_liked_by_me': false,
-            },
-            {
-              'id': 'mock-2',
-              'author': Profile(
-                id: 'mock-user-2',
-                username: 'rifat_ahmed',
-                fullName: 'Rifat Ahmed',
-                avatarUrl: 'https://i.pravatar.cc/150?u=rifat',
-              ),
-              'content': 'দারুণ! কোথায় এটা?',
-              'created_at': '2h',
-              'likes_count': 0,
-              'replies_count': 6,
-              'is_liked_by_me': false,
-            },
-            {
-              'id': 'mock-3',
-              'author': Profile(
-                id: widget.post.userId,
-                username: 'dakofficial',
-                fullName: 'Dak Official',
-                avatarUrl: 'https://i.pravatar.cc/150?u=dakofficial',
-              ),
-              'content': 'বান্দরবান, বাংলাদেশের সুন্দর জায়গা ❤️',
-              'created_at': '1h',
-              'likes_count': 0,
-              'replies_count': 24,
-              'is_liked_by_me': true,
-            }
-          ];
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
-    }
-  }
-
-  String _formatTime(String isoString) {
-    try {
-      final dt = DateTime.parse(isoString).toLocal();
-      final diff = DateTime.now().difference(dt);
-      if (diff.inMinutes < 1) return 'now';
-      if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-      if (diff.inHours < 24) return '${diff.inHours}h';
-      if (diff.inDays < 7) return '${diff.inDays}d';
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return 'now';
     }
   }
 
@@ -184,27 +57,26 @@ class _CommentsSheetState extends State<CommentsSheet> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
-    final supabase = Supabase.instance.client;
-    final currentUid = supabase.auth.currentUser?.id;
-    if (currentUid == null) return;
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
 
     try {
-      await supabase.from('replies').insert({
-        'thread_id': widget.post.id,
-        'user_id': currentUid,
-        'content': text,
-      });
-      _commentController.clear();
-      _loadComments();
-      // Optimistically trigger feed update
-      if (mounted) {
-        Provider.of<DatabaseService>(context, listen: false).fetchFeed();
+      final success = await dbService.addComment(
+        widget.post.id,
+        text,
+        parentId: _replyToCommentId,
+      );
+      if (success) {
+        _commentController.clear();
+        setState(() {
+          _replyToCommentId = null;
+        });
+        _loadComments();
       }
     } catch (e) {
       debugPrint("Post comment error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("মন্তব্য পোস্ট করতে ব্যর্থ হয়েছে")),
+          SnackBar(content: Text("মন্তব্য পোস্ট করতে ব্যর্থ হয়েছে: $e")),
         );
       }
     }
@@ -341,11 +213,22 @@ class _CommentsSheetState extends State<CommentsSheet> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Commenter Avatar
-                                CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: Colors.grey[200],
-                                  backgroundImage: NetworkImage(
-                                    author.avatarUrl ?? "https://i.pravatar.cc/150",
+                                GestureDetector(
+                                  onTap: () {
+                                    final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
+                                      ),
+                                    );
+                                  },
+                                  child: CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: Colors.grey[200],
+                                    backgroundImage: NetworkImage(
+                                      author.avatarUrl ?? "https://i.pravatar.cc/150",
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -359,13 +242,24 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                       Row(
                                         children: [
                                           Flexible(
-                                            child: Text(
-                                              author.fullName,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.hindSiliguri(
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 14.5,
-                                                color: Colors.black,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
+                                                  ),
+                                                );
+                                              },
+                                              child: Text(
+                                                author.fullName,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.hindSiliguri(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 14.5,
+                                                  color: Colors.black,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -436,7 +330,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                 const Icon(Icons.chat_bubble_outline, size: 15, color: Colors.black54),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  "${comment['replies_count']}",
+                                                  "${comment['replies_count'] ?? 0}",
                                                   style: GoogleFonts.outfit(
                                                     fontSize: 13, 
                                                     fontWeight: FontWeight.w500,
@@ -447,12 +341,20 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                             ),
                                           ),
                                           const SizedBox(width: 24),
-                                          // Likes metric - heart outline toggling (without number, exactly like screenshot)
+                                          // Likes metric
                                           GestureDetector(
                                             onTap: () {
+                                              final bool currentVal = comment['is_liked_by_me'] as bool? ?? false;
+                                              final bool newVal = !currentVal;
+                                              final int currentLikes = comment['likes_count'] as int? ?? 0;
+                                              
                                               setState(() {
-                                                comment['is_liked_by_me'] = !(comment['is_liked_by_me'] as bool? ?? false);
+                                                comment['is_liked_by_me'] = newVal;
+                                                comment['likes_count'] = newVal 
+                                                    ? currentLikes + 1 
+                                                    : (currentLikes > 0 ? currentLikes - 1 : 0);
                                               });
+                                              dbService.toggleCommentLike(comment['id'] as String, newVal);
                                             },
                                             child: Icon(
                                               (comment['is_liked_by_me'] as bool? ?? false)
@@ -468,7 +370,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                           // Reply action button
                                           GestureDetector(
                                             onTap: () {
-                                              _commentController.text = "@${author.username} ";
+                                              setState(() {
+                                                _replyToCommentId = comment['id'] as String?;
+                                                _commentController.text = "@${author.username} ";
+                                              });
                                             },
                                             child: Text(
                                               "Reply",

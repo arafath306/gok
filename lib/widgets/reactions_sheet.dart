@@ -249,27 +249,27 @@ class _ReactionsListSheetState extends State<ReactionsListSheet>
                       final reactorId = reactor['id'] as String;
                       final isFollowing = dbService.isFollowingUser(reactorId);
 
-                      return InkWell(
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            NoTransitionPageRoute(
-                              child: ProfileScreen(userId: reactorId),
-                            ),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10.0),
-                          child: Row(
-                            children: [
-                              _buildUserAvatar(reactor['avatar'] as String?, reactor['name'] as String),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10.0),
+                        child: Row(
+                          children: [
+                            _buildUserAvatar(reactor['avatar'] as String?, reactor['name'] as String),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      Navigator.push(
+                                        context,
+                                        NoTransitionPageRoute(
+                                          child: ProfileScreen(userId: reactorId),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
                                       reactor['name'] as String,
                                       style: GoogleFonts.hindSiliguri(
                                         fontWeight: FontWeight.bold,
@@ -277,17 +277,18 @@ class _ReactionsListSheetState extends State<ReactionsListSheet>
                                         color: Colors.black,
                                       ),
                                     ),
-                                    const SizedBox(height: 1),
-                                    Text(
-                                      reactor['handle'] as String,
-                                      style: GoogleFonts.outfit(
-                                        color: Colors.grey[500],
-                                        fontSize: 12.5,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    reactor['handle'] as String,
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.grey[500],
+                                      fontSize: 12.5,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
+                            ),
                               
                               // Follow Button
                               if (reactorId != dbService.myProfile?.id)
@@ -321,9 +322,8 @@ class _ReactionsListSheetState extends State<ReactionsListSheet>
                                 ),
                             ],
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
                   ),
           ),
         ],

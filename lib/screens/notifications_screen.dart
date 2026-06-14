@@ -145,7 +145,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF5F5F5)),
         itemBuilder: (context, index) {
           final item = list[index];
-          return Container(
+          return Material(
               color: item.read ? Colors.white : const Color(0xFFF0F7FF),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

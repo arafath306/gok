@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class GeneralSettingsProvider with ChangeNotifier {
+  final _supabase = Supabase.instance.client;
+  String get _currentUid => _supabase.auth.currentUser?.id ?? '';
+
   // Privacy State
   bool _isPrivateAccount = false;
   bool get isPrivateAccount => _isPrivateAccount;
@@ -14,17 +18,118 @@ class GeneralSettingsProvider with ChangeNotifier {
   bool _autoplayVideos = true;
   bool get autoplayVideos => _autoplayVideos;
 
-  void updatePrivacy({
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  Future<void> fetchSettings() async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // 1. Fetch privacy settings from user profile
+      final profileRes = await _supabase
+          .from('profiles')
+          .select('is_private, allow_mentions, filter_adult, autoplay_videos')
+          .eq('id', uid)
+          .maybeSingle();
+
+      if (profileRes != null) {
+        _isPrivateAccount = profileRes['is_private'] as bool? ?? false;
+        _allowMentionsFrom = profileRes['allow_mentions'] as String? ?? 'everyone';
+        _filterAdultContent = profileRes['filter_adult'] as bool? ?? true;
+        _autoplayVideos = profileRes['autoplay_videos'] as bool? ?? true;
+      }
+
+      // 2. Fetch blocked accounts
+      final blockedRes = await _supabase
+          .from('blocks')
+          .select('blocked_id')
+          .eq('blocker_id', uid);
+
+      _blockedAccounts.clear();
+      if (blockedRes.isNotEmpty) {
+        final List<String> blockedIds = List<String>.from(
+            blockedRes.map((r) => r['blocked_id'] as String));
+
+        final profilesRes = await _supabase
+            .from('profiles')
+            .select('id, full_name, username, avatar_url')
+            .inFilter('id', blockedIds);
+
+        for (var profile in profilesRes) {
+          _blockedAccounts.add({
+            'id': profile['id'] as String,
+            'name': profile['full_name'] as String? ?? '',
+            'username': profile['username'] as String? ?? '',
+            'avatar': profile['avatar_url'] as String? ?? 'https://i.pravatar.cc/150?u=${profile['username']}',
+          });
+        }
+      }
+
+      // 3. Fetch muted accounts
+      final mutedRes = await _supabase
+          .from('mutes')
+          .select('muted_id')
+          .eq('muter_id', uid);
+
+      _mutedAccounts.clear();
+      if (mutedRes.isNotEmpty) {
+        final List<String> mutedIds = List<String>.from(
+            mutedRes.map((r) => r['muted_id'] as String));
+
+        final profilesRes = await _supabase
+            .from('profiles')
+            .select('id, full_name, username, avatar_url')
+            .inFilter('id', mutedIds);
+
+        for (var profile in profilesRes) {
+          _mutedAccounts.add({
+            'id': profile['id'] as String,
+            'name': profile['full_name'] as String? ?? '',
+            'username': profile['username'] as String? ?? '',
+            'avatar': profile['avatar_url'] as String? ?? 'https://i.pravatar.cc/150?u=${profile['username']}',
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[GeneralSettings] Fetch settings error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updatePrivacy({
     bool? isPrivateAccount,
     String? allowMentionsFrom,
     bool? filterAdultContent,
     bool? autoplayVideos,
-  }) {
+  }) async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return;
+
     if (isPrivateAccount != null) _isPrivateAccount = isPrivateAccount;
     if (allowMentionsFrom != null) _allowMentionsFrom = allowMentionsFrom;
     if (filterAdultContent != null) _filterAdultContent = filterAdultContent;
     if (autoplayVideos != null) _autoplayVideos = autoplayVideos;
     notifyListeners();
+
+    try {
+      final updates = <String, dynamic>{};
+      if (isPrivateAccount != null) updates['is_private'] = isPrivateAccount;
+      if (allowMentionsFrom != null) updates['allow_mentions'] = allowMentionsFrom;
+      if (filterAdultContent != null) updates['filter_adult'] = filterAdultContent;
+      if (autoplayVideos != null) updates['autoplay_videos'] = autoplayVideos;
+
+      if (updates.isNotEmpty) {
+        await _supabase.from('profiles').update(updates).eq('id', uid);
+      }
+    } catch (e) {
+      debugPrint('[GeneralSettings] Update privacy error: $e');
+    }
   }
 
   // Security State
@@ -79,46 +184,174 @@ class GeneralSettingsProvider with ChangeNotifier {
   }
 
   // Blocked Accounts State
-  final List<Map<String, String>> _blockedAccounts = [
-    {'id': 'b1', 'name': 'Spam Bot 01', 'username': 'spambot01', 'avatar': 'https://i.pravatar.cc/150?u=spam1'},
-    {'id': 'b2', 'name': 'Ad Promoter', 'username': 'ad_promoter', 'avatar': 'https://i.pravatar.cc/150?u=ad'},
-  ];
+  final List<Map<String, String>> _blockedAccounts = [];
   List<Map<String, String>> get blockedAccounts => _blockedAccounts;
 
-  void unblockAccount(String id) {
-    _blockedAccounts.removeWhere((account) => account['id'] == id);
-    notifyListeners();
+  Future<void> unblockAccount(String id) async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return;
+
+    try {
+      await _supabase
+          .from('blocks')
+          .delete()
+          .eq('blocker_id', uid)
+          .eq('blocked_id', id);
+
+      _blockedAccounts.removeWhere((account) => account['id'] == id);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[GeneralSettings] Unblock user error: $e');
+    }
   }
 
-  void blockAccount(String name, String username, String avatar) {
-    _blockedAccounts.add({
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'name': name,
-      'username': username,
-      'avatar': avatar,
-    });
-    notifyListeners();
+  Future<bool> blockAccount(String queryText) async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return false;
+
+    try {
+      // Find user matching username or full name
+      final searchRes = await _supabase
+          .from('profiles')
+          .select('id, full_name, username, avatar_url')
+          .or('username.ilike.%$queryText%,full_name.ilike.%$queryText%')
+          .limit(1)
+          .maybeSingle();
+
+      if (searchRes == null) {
+        return false;
+      }
+
+      final targetId = searchRes['id'] as String;
+      if (targetId == uid) {
+        throw Exception("You cannot block yourself.");
+      }
+
+      // Add to database
+      await _supabase.from('blocks').upsert({
+        'blocker_id': uid,
+        'blocked_id': targetId,
+      });
+
+      // Update local cache list
+      _blockedAccounts.removeWhere((account) => account['id'] == targetId);
+      _blockedAccounts.add({
+        'id': targetId,
+        'name': searchRes['full_name'] as String? ?? '',
+        'username': searchRes['username'] as String? ?? '',
+        'avatar': searchRes['avatar_url'] as String? ?? 'https://i.pravatar.cc/150?u=${searchRes['username']}',
+      });
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('[GeneralSettings] Block account error: $e');
+      rethrow;
+    }
   }
 
   // Muted Accounts State
-  final List<Map<String, String>> _mutedAccounts = [
-    {'id': 'm1', 'name': 'Annoying User', 'username': 'annoying_123', 'avatar': 'https://i.pravatar.cc/150?u=annoying'},
-    {'id': 'm2', 'name': 'Meme Daily', 'username': 'memes_daily', 'avatar': 'https://i.pravatar.cc/150?u=meme'},
-  ];
+  final List<Map<String, String>> _mutedAccounts = [];
   List<Map<String, String>> get mutedAccounts => _mutedAccounts;
 
-  void unmuteAccount(String id) {
-    _mutedAccounts.removeWhere((account) => account['id'] == id);
-    notifyListeners();
+  Future<void> unmuteAccount(String id) async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return;
+
+    try {
+      await _supabase
+          .from('mutes')
+          .delete()
+          .eq('muter_id', uid)
+          .eq('muted_id', id);
+
+      _mutedAccounts.removeWhere((account) => account['id'] == id);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[GeneralSettings] Unmute user error: $e');
+    }
   }
 
-  void muteAccount(String name, String username, String avatar) {
-    _mutedAccounts.add({
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'name': name,
-      'username': username,
-      'avatar': avatar,
-    });
-    notifyListeners();
+  Future<bool> muteAccount(String queryText) async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return false;
+
+    try {
+      // Find user matching username or full name
+      final searchRes = await _supabase
+          .from('profiles')
+          .select('id, full_name, username, avatar_url')
+          .or('username.ilike.%$queryText%,full_name.ilike.%$queryText%')
+          .limit(1)
+          .maybeSingle();
+
+      if (searchRes == null) {
+        return false;
+      }
+
+      final targetId = searchRes['id'] as String;
+      if (targetId == uid) {
+        throw Exception("You cannot mute yourself.");
+      }
+
+      // Add to database
+      await _supabase.from('mutes').upsert({
+        'muter_id': uid,
+        'muted_id': targetId,
+      });
+
+      // Update local cache list
+      _mutedAccounts.removeWhere((account) => account['id'] == targetId);
+      _mutedAccounts.add({
+        'id': targetId,
+        'name': searchRes['full_name'] as String? ?? '',
+        'username': searchRes['username'] as String? ?? '',
+        'avatar': searchRes['avatar_url'] as String? ?? 'https://i.pravatar.cc/150?u=${searchRes['username']}',
+      });
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('[GeneralSettings] Mute account error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> blockUserById(String targetId) async {
+    final uid = _currentUid;
+    if (uid.isEmpty || targetId == uid) return;
+
+    try {
+      // Add to database
+      await _supabase.from('blocks').upsert({
+        'blocker_id': uid,
+        'blocked_id': targetId,
+      });
+
+      // Update local settings state
+      await fetchSettings();
+    } catch (e) {
+      debugPrint('[GeneralSettings] Block user by ID error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> muteUserById(String targetId) async {
+    final uid = _currentUid;
+    if (uid.isEmpty || targetId == uid) return;
+
+    try {
+      // Add to database
+      await _supabase.from('mutes').upsert({
+        'muter_id': uid,
+        'muted_id': targetId,
+      });
+
+      // Update local settings state
+      await fetchSettings();
+    } catch (e) {
+      debugPrint('[GeneralSettings] Mute user by ID error: $e');
+      rethrow;
+    }
   }
 }
