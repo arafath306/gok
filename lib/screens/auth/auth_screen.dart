@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import 'dart:ui';
 import '../../services/auth_service.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -188,28 +187,23 @@ class _AuthScreenState extends State<AuthScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF8B5CF6).withOpacity(0.35),
-            const Color(0xFFFF5E36).withOpacity(0.35)
+            const Color(0xFF7C3AED).withOpacity(0.55),
+            const Color(0xFF4F46E5).withOpacity(0.25),
+            const Color(0xFF7C3AED).withOpacity(0.35),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            margin: const EdgeInsets.all(1.0),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0E1424).withOpacity(0.8),
-              borderRadius: BorderRadius.circular(23),
-            ),
-            child: child,
-          ),
+      child: Container(
+        margin: const EdgeInsets.all(1.2),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF10132A),
+          borderRadius: BorderRadius.circular(23),
         ),
+        child: child,
       ),
     );
   }
@@ -268,14 +262,21 @@ class _AuthScreenState extends State<AuthScreen> {
   }) {
     return Container(
       width: double.infinity,
-      height: 50,
+      height: 54,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFFF5E36), Color(0xFFFF2D55)],
+          colors: [Color(0xFFFF6B3A), Color(0xFFFF3A5C)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(27),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF5E36).withOpacity(0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
@@ -283,7 +284,7 @@ class _AuthScreenState extends State<AuthScreen> {
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(27),
           ),
         ),
         child: isLoading
@@ -320,7 +321,7 @@ class _AuthScreenState extends State<AuthScreen> {
     return ShaderMask(
       shaderCallback: (bounds) {
         return const LinearGradient(
-          colors: [Colors.blue, Colors.red, Colors.yellow, Colors.green],
+          colors: [Color(0xFF4285F4), Color(0xFFEA4335), Color(0xFFFBBC05), Color(0xFF34A853)],
           stops: [0.0, 0.33, 0.66, 1.0],
         ).createShader(bounds);
       },
@@ -328,7 +329,7 @@ class _AuthScreenState extends State<AuthScreen> {
         "G",
         style: GoogleFonts.outfit(
           fontWeight: FontWeight.w900,
-          fontSize: 20,
+          fontSize: 22,
           color: Colors.white,
         ),
       ),
@@ -340,15 +341,15 @@ class _AuthScreenState extends State<AuthScreen> {
       children: [
         Expanded(
           child: Container(
-            height: 48,
+            height: 50,
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF1E293B)),
-              borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFF070B13).withOpacity(0.4),
+              border: Border.all(color: const Color(0xFF2D3050)),
+              borderRadius: BorderRadius.circular(14),
+              color: const Color(0xFF0D1021),
             ),
             child: InkWell(
               onTap: () {},
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -370,19 +371,19 @@ class _AuthScreenState extends State<AuthScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: Container(
-            height: 48,
+            height: 50,
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF1E293B)),
-              borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFF070B13).withOpacity(0.4),
+              border: Border.all(color: const Color(0xFF2D3050)),
+              borderRadius: BorderRadius.circular(14),
+              color: const Color(0xFF0D1021),
             ),
             child: InkWell(
               onTap: () {},
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.apple, color: Colors.white, size: 22),
+                  const Icon(Icons.apple, color: Colors.white, size: 24),
                   const SizedBox(width: 8),
                   Text(
                     "Apple",
@@ -801,23 +802,43 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF060B13),
+      backgroundColor: const Color(0xFF080A18),
       body: Stack(
         children: [
-          // 1. Top clouds background image fading out at the bottom
+          // 1. Full atmospheric dark background
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF0D0F24),
+                    Color(0xFF080A18),
+                    Color(0xFF060810),
+                  ],
+                  stops: [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
+
+          // 2. Atmospheric cloud image at top (fading out at bottom)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: MediaQuery.of(context).size.height * 0.45,
+            height: screenHeight * 0.52,
             child: ShaderMask(
               shaderCallback: (rect) {
                 return const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black, Colors.transparent],
+                  colors: [Colors.black, Colors.black, Colors.transparent],
+                  stops: [0.0, 0.5, 1.0],
                 ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
               },
               blendMode: BlendMode.dstIn,
@@ -828,83 +849,82 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ),
 
-          // 2. Main content scroll view
+          // 3. Main scrollable content
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 children: [
-                  const SizedBox(height: 24),
-                  // Header Back Button for SignUp Steps
+                  const SizedBox(height: 12),
+
+                  // Back button for signup steps > 1
                   if (_isSignUp && _signUpStep > 1 && _signUpStep < 4)
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFF0E1424).withOpacity(0.8),
-                          border: Border.all(color: const Color(0xFF1E293B)),
+                          color: const Color(0xFF10132A),
+                          border: Border.all(color: const Color(0xFF2D3050)),
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                          onPressed: () {
-                            setState(() => _signUpStep--);
-                          },
+                          onPressed: () => setState(() => _signUpStep--),
                         ),
                       ),
-                    ),
+                    )
+                  else
+                    const SizedBox(height: 8),
+
                   const SizedBox(height: 8),
 
-                  // Brand Logo Stack (Glow ring + White Dove Logo)
+                  // HERO: Pigeon mascot — large, prominent, centered
                   Center(
-                    child: SizedBox(
-                      height: 160,
-                      width: 200,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Image.asset(
-                            "assets/auth_glow_ring.png",
-                            height: 150,
-                            width: 150,
-                            fit: BoxFit.contain,
-                          ),
-                          Positioned(
-                            top: 15,
-                            child: Image.asset(
-                              "assets/auth_dove.png",
-                              height: 110,
-                              width: 160,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Glow halo behind pigeon
+                        Image.asset(
+                          "assets/auth_glow_ring.png",
+                          height: 200,
+                          width: 200,
+                          fit: BoxFit.contain,
+                        ),
+                        // Main mascot
+                        Image.asset(
+                          "assets/pigeon_logo.png",
+                          height: 185,
+                          width: 210,
+                          fit: BoxFit.contain,
+                        ),
+                      ],
                     ),
                   ),
 
-                  // Brand name and tagline
+                  const SizedBox(height: 8),
+
+                  // App name
                   Text(
                     "Piagoan",
                     style: GoogleFonts.outfit(
-                      fontSize: 32,
+                      fontSize: 36,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Text(
                     "Messages. Moments. Together.",
                     style: GoogleFonts.outfit(
-                      fontSize: 13,
+                      fontSize: 14,
                       color: Colors.white60,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.4,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
-                  // Error Message Bar
+                  // Error Message
                   if (authService.errorMessage != null && _signUpStep < 4)
                     Container(
                       width: double.infinity,
@@ -921,13 +941,13 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ),
 
-                  // Registration Progress Bar
+                  // Step Indicator (sign-up only)
                   if (_isSignUp && _signUpStep < 4) ...[
                     _buildStepIndicator(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                   ],
 
-                  // Glassmorphic Card Container holding Login/SignUp flow
+                  // Glassmorphic Auth Card
                   _buildGlassCard(
                     child: _isSignUp
                         ? (_signUpStep == 1
@@ -945,7 +965,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 style: GoogleFonts.outfit(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF8B5CF6),
+                                  color: const Color(0xFF9B79FF),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -960,12 +980,12 @@ class _AuthScreenState extends State<AuthScreen> {
                               _buildDarkTextField(
                                 hint: "Email or Username",
                                 controller: _emailPhoneController,
-                                prefixIcon: Icons.mail_outline,
+                                prefixIcon: Icons.mail_outline_rounded,
                               ),
                               _buildDarkTextField(
                                 hint: "Password",
                                 controller: _passwordController,
-                                prefixIcon: Icons.lock_outline,
+                                prefixIcon: Icons.lock_outline_rounded,
                                 obscureText: _obscureLoginPassword,
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -975,7 +995,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                     color: Colors.white38,
                                     size: 20,
                                   ),
-                                  onPressed: () => setState(() => _obscureLoginPassword = !_obscureLoginPassword),
+                                  onPressed: () => setState(
+                                      () => _obscureLoginPassword = !_obscureLoginPassword),
                                 ),
                               ),
                               Align(
@@ -985,14 +1006,14 @@ class _AuthScreenState extends State<AuthScreen> {
                                   child: Text(
                                     "Forgot password?",
                                     style: GoogleFonts.outfit(
-                                      color: const Color(0xFF8B5CF6),
+                                      color: const Color(0xFF9B79FF),
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 8),
                               _buildGradientButton(
                                 label: "Login",
                                 icon: Icons.arrow_forward,
@@ -1002,26 +1023,35 @@ class _AuthScreenState extends State<AuthScreen> {
                               const SizedBox(height: 24),
                               Row(
                                 children: [
-                                  Expanded(child: Divider(color: const Color(0xFF1E293B).withOpacity(0.5))),
+                                  Expanded(
+                                    child: Divider(
+                                        color: Colors.white.withOpacity(0.1)),
+                                  ),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0),
                                     child: Text(
                                       "or continue with",
-                                      style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
+                                      style: GoogleFonts.outfit(
+                                          color: Colors.white38, fontSize: 12),
                                     ),
                                   ),
-                                  Expanded(child: Divider(color: const Color(0xFF1E293B).withOpacity(0.5))),
+                                  Expanded(
+                                    child: Divider(
+                                        color: Colors.white.withOpacity(0.1)),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16),
                               _buildSocialButtons(),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
                                     "Don't have an account? ",
-                                    style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                                    style: GoogleFonts.outfit(
+                                        color: Colors.white54, fontSize: 13),
                                   ),
                                   GestureDetector(
                                     onTap: () {
@@ -1034,7 +1064,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     child: Text(
                                       "Register >",
                                       style: GoogleFonts.outfit(
-                                        color: const Color(0xFF8B5CF6),
+                                        color: const Color(0xFF9B79FF),
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13,
                                       ),
@@ -1046,7 +1076,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                   ),
 
-                  // Redirect to Login from SignUp bottom area
+                  // Already have account? link (sign-up flow)
                   if (_isSignUp && _signUpStep < 4) ...[
                     const SizedBox(height: 24),
                     Row(
@@ -1054,7 +1084,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       children: [
                         Text(
                           "Already have an account? ",
-                          style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                          style:
+                              GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
                         ),
                         GestureDetector(
                           onTap: () {
@@ -1067,7 +1098,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           child: Text(
                             "Login",
                             style: GoogleFonts.outfit(
-                              color: const Color(0xFF8B5CF6),
+                              color: const Color(0xFF9B79FF),
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
@@ -1077,7 +1108,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ],
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 48),
                 ],
               ),
             ),
