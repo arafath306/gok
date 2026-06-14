@@ -31,7 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _isLoading = false;
 
   final List<String> _tabs = [
-    'Posts', 'Replies', 'Media', 'Likes', 'Feeds', 'About',
+    'Posts', 'Replies', 'Media',
   ];
 
   /// Own profile if userId is null OR matches the current user's Supabase UID
@@ -605,9 +605,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           KeepAliveWrapper(child: _postsTab(profile, threads)),
           KeepAliveWrapper(child: _emptyTab('No replies yet')),
           KeepAliveWrapper(child: _emptyTab('No media yet')),
-          KeepAliveWrapper(child: _emptyTab('No likes yet')),
-          KeepAliveWrapper(child: _emptyTab('No feeds yet')),
-          KeepAliveWrapper(child: _aboutTab(profile)),
         ],
       );
 
@@ -923,135 +920,6 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       );
     }
-  }
-
-  Widget _aboutTab(Profile? profile) {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      child: _buildAboutSection(profile),
-    );
-  }
-
-  Widget _buildAboutSection(Profile? profile) {
-    if (profile == null) return const SizedBox();
-    
-    Widget infoRow(IconData icon, String label, String value) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 20, color: context.primaryAccent),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: GoogleFonts.hindSiliguri(
-                      fontSize: 12,
-                      color: context.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    style: GoogleFonts.hindSiliguri(
-                      fontSize: 14,
-                      color: context.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    Widget buildSectionCard(List<Map<String, dynamic>> items) {
-      final List<Widget> activeRows = [];
-      for (final item in items) {
-        final String? val = item['value'];
-        if (val != null && val.trim().isNotEmpty) {
-          activeRows.add(infoRow(item['icon'], item['label'], val));
-        }
-      }
-
-      if (activeRows.isEmpty) return const SizedBox();
-
-      final List<Widget> cardContent = [];
-      for (int i = 0; i < activeRows.length; i++) {
-        cardContent.add(activeRows[i]);
-        if (i < activeRows.length - 1) {
-          cardContent.add(Divider(height: 1, color: context.border));
-        }
-      }
-
-      return Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: context.border, width: 1),
-        ),
-        color: context.cardBg,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: cardContent,
-          ),
-        ),
-      );
-    }
-
-    final String? genderText = profile.gender == "Male"
-        ? "পুরুষ (Male)"
-        : profile.gender == "Female"
-            ? "নারী (Female)"
-            : profile.gender;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'আমার তথ্য (About)',
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: context.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        buildSectionCard([
-          {'icon': Icons.person_outline_rounded, 'label': 'নাম (Full Name)', 'value': profile.fullName},
-          {'icon': Icons.alternate_email_rounded, 'label': 'ইউজারনেম (Username)', 'value': '@${profile.username}'},
-          {'icon': Icons.phone_iphone_rounded, 'label': 'মোবাইল নম্বর (Phone)', 'value': profile.phone},
-          {'icon': Icons.wc_rounded, 'label': 'লিঙ্গ (Gender)', 'value': genderText},
-          {'icon': Icons.cake_outlined, 'label': 'জন্ম তারিখ (Birth Date)', 'value': profile.birthdate},
-        ]),
-        const SizedBox(height: 20),
-        Text(
-          'ঠিকানা (Address)',
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: context.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        buildSectionCard([
-          {'icon': Icons.map_outlined, 'label': 'বিভাগ (Division)', 'value': profile.division},
-          {'icon': Icons.location_city_outlined, 'label': 'জেলা/শহর (City)', 'value': profile.city},
-          {'icon': Icons.home_outlined, 'label': 'গ্রাম/মহল্লা (Village)', 'value': profile.village},
-          {'icon': Icons.markunread_mailbox_outlined, 'label': 'পোস্ট কোড (ZIP Code)', 'value': profile.zip},
-        ]),
-      ],
-    );
   }
 }
 
