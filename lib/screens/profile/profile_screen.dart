@@ -31,7 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _isLoading = false;
 
   final List<String> _tabs = [
-    'Posts', 'Replies', 'Media', 'Videos', 'Likes', 'Feeds', 'About',
+    'Posts', 'Replies', 'Media', 'Likes', 'Feeds', 'About',
   ];
 
   /// Own profile if userId is null OR matches the current user's Supabase UID
@@ -605,7 +605,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           KeepAliveWrapper(child: _postsTab(profile, threads)),
           KeepAliveWrapper(child: _emptyTab('No replies yet')),
           KeepAliveWrapper(child: _emptyTab('No media yet')),
-          KeepAliveWrapper(child: _emptyTab('No videos yet')),
           KeepAliveWrapper(child: _emptyTab('No likes yet')),
           KeepAliveWrapper(child: _emptyTab('No feeds yet')),
           KeepAliveWrapper(child: _aboutTab(profile)),

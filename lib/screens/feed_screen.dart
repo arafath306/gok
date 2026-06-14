@@ -25,8 +25,6 @@ class _FeedScreenState extends State<FeedScreen> {
   final List<String> _tabs = [
     "For You",
     "Following",
-    "Video",
-    "Topic",
   ];
 
   @override
@@ -167,80 +165,67 @@ class _FeedScreenState extends State<FeedScreen> {
                         ),
 
                         // Feed List based on selected tab
-                        if (_selectedTabIndex == 2) ...[
-                          // Video tab
-                          SizedBox(
-                            height: 300,
-                            child: Center(
-                              child: Text(
-                                "ভিডিও আপলোড করার সিস্টেম এখনও চালু হয়নি।",
-                                style: GoogleFonts.hindSiliguri(color: context.textSecondary),
-                              ),
-                            ),
-                          )
-                        ] else ...[
-                          (() {
-                            final posts = _selectedTabIndex == 1
-                                  ? dbService.feed
-                                      .where((post) => dbService.isFollowingUser(post.userId))
-                                      .toList()
-                                  : dbService.feed;
+                        (() {
+                          final posts = _selectedTabIndex == 1
+                                ? dbService.feed
+                                    .where((post) => dbService.isFollowingUser(post.userId))
+                                    .toList()
+                                : dbService.feed;
 
-                            if (_selectedTabIndex == 1 && dbService.followingIds.isEmpty) {
-                              return SizedBox(
-                                height: 300,
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "আপনার ফলোয়িং লিস্টে কেউ নেই",
+                          if (_selectedTabIndex == 1 && dbService.followingIds.isEmpty) {
+                            return SizedBox(
+                              height: 300,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "আপনার ফলোয়িং লিস্টে কেউ নেই",
+                                      style: GoogleFonts.hindSiliguri(
+                                        fontSize: 16,
+                                        color: context.textSecondary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    GestureDetector(
+                                      onTap: () {
+                                        context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
+                                      },
+                                      child: Text(
+                                        "ইউজারদের ফলো করুন",
                                         style: GoogleFonts.hindSiliguri(
-                                          fontSize: 16,
-                                          color: context.textSecondary,
-                                          fontWeight: FontWeight.w500,
+                                          fontSize: 15,
+                                          color: const Color(0xFF1E824C).withOpacity(0.6),
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      GestureDetector(
-                                        onTap: () {
-                                          context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
-                                        },
-                                        child: Text(
-                                          "ইউজারদের ফলো করুন",
-                                          style: GoogleFonts.hindSiliguri(
-                                            fontSize: 15,
-                                            color: const Color(0xFF1E824C).withOpacity(0.6),
-                                            fontWeight: FontWeight.bold,
-                                            decoration: TextDecoration.underline,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            }
-
-                            if (posts.isEmpty) {
-                              return SizedBox(
-                                height: 300,
-                                child: Center(
-                                  child: Text(
-                                    _selectedTabIndex == 1
-                                        ? "আপনি যাদের ফলো করছেন তাদের কোনো ডাক পাওয়া যায়নি।"
-                                        : "কোন ডাক পাওয়া যায়নি।",
-                                    style: GoogleFonts.hindSiliguri(color: context.textSecondary),
-                                  ),
-                                ),
-                              );
-                            }
-
-                            return Column(
-                              children: posts.map((post) => CustomThreadCard(key: ValueKey(post.id), post: post)).toList(),
+                              ),
                             );
-                          })(),
-                        ],
+                          }
+
+                          if (posts.isEmpty) {
+                            return SizedBox(
+                              height: 300,
+                              child: Center(
+                                child: Text(
+                                  _selectedTabIndex == 1
+                                      ? "আপনি যাদের ফলো করছেন তাদের কোনো ডাক পাওয়া যায়নি।"
+                                      : "কোন ডাক পাওয়া যায়নি।",
+                                  style: GoogleFonts.hindSiliguri(color: context.textSecondary),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            children: posts.map((post) => CustomThreadCard(key: ValueKey(post.id), post: post)).toList(),
+                          );
+                        })(),
                       ],
                     ),
                   ),
