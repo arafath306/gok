@@ -192,6 +192,66 @@ class AuthService with ChangeNotifier {
     }
   }
 
+  Future<bool> sendPasswordReset(String email) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _supabaseClient.auth.resetPasswordForEmail(email.trim());
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> verifyResetOTP(String email, String token) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final response = await _supabaseClient.auth.verifyOTP(
+        email: email.trim(),
+        token: token.trim(),
+        type: sb.OtpType.recovery,
+      );
+      _currentUser = response.user;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updatePassword(String newPassword) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _supabaseClient.auth.updateUser(
+        sb.UserAttributes(password: newPassword.trim()),
+      );
+      await _supabaseClient.auth.signOut();
+      _currentUser = null;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> handleSignout() async {
     _isBypassed = false;
     try {
