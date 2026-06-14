@@ -237,7 +237,7 @@ class _FeedScreenState extends State<FeedScreen> {
                             }
 
                             return Column(
-                              children: posts.map((post) => CustomThreadCard(post: post)).toList(),
+                              children: posts.map((post) => CustomThreadCard(key: ValueKey(post.id), post: post)).toList(),
                             );
                           })(),
                         ],

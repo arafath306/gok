@@ -228,7 +228,7 @@ class _TopicFeedScreenState extends State<TopicFeedScreen> with SingleTickerProv
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: posts.length,
-      itemBuilder: (context, i) => CustomThreadCard(post: posts[i]),
+      itemBuilder: (context, i) => CustomThreadCard(key: ValueKey(posts[i].id), post: posts[i]),
     );
   }
 
