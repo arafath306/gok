@@ -1348,7 +1348,7 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
   }
 
   Widget _buildActionTile(_QuickActionItem item) {
-    final color = item.isDanger ? Colors.red[600]! : Colors.black87;
+    final color = item.isDanger ? Colors.red[600]! : context.textPrimary;
     return Material(
       color: Colors.transparent,
       child: InkWell(
