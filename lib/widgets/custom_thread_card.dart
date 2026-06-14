@@ -113,6 +113,7 @@ class CustomThreadCard extends StatelessWidget {
     }
 
     return InkWell(
+      hoverColor: Colors.transparent,
       onTap: () {
         Navigator.push(
           context,
