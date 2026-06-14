@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
+import 'dart:math' as math;
 import '../../services/auth_service.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   late bool _isSignUp;
   int _signUpStep = 1;
 
@@ -43,10 +44,50 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _usernameError;
   Timer? _debounce;
 
+  // ── Animation Controllers ──────────────────────────────────────────────────
+  late AnimationController _cloudController;   // drifting clouds
+  late AnimationController _floatController;   // pigeon bobbing
+  late AnimationController _glowController;    // glow ring pulse
+  late AnimationController _sparkleController; // star twinkle
+
+  late Animation<double> _floatAnimation;
+  late Animation<double> _glowAnimation;
+  // ──────────────────────────────────────────────────────────────────────────
+
   @override
   void initState() {
     super.initState();
     _isSignUp = widget.initialIsSignUp;
+
+    // Slow continuous cloud drift (10s cycle)
+    _cloudController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+
+    // Pigeon gentle float (3s, up↔down, easeInOut)
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat(reverse: true);
+    _floatAnimation = Tween<double>(begin: -8.0, end: 8.0).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+    );
+
+    // Glow ring breathing pulse (2.2s)
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+    _glowAnimation = Tween<double>(begin: 0.88, end: 1.12).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+
+    // Sparkle twinkling (1.8s, each particle staggered)
+    _sparkleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
   }
 
   @override
@@ -60,6 +101,10 @@ class _AuthScreenState extends State<AuthScreen> {
     _confirmPasswordController.dispose();
     _dobController.dispose();
     _debounce?.cancel();
+    _cloudController.dispose();
+    _floatController.dispose();
+    _glowController.dispose();
+    _sparkleController.dispose();
     super.dispose();
   }
 
@@ -400,6 +445,53 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
       ],
     );
+  }
+
+  /// Twinkling sparkle particles that orbit the pigeon mascot.
+  List<Widget> _buildSparkles(double t) {
+    // Sparkle positions within the 215×215 hero SizedBox
+    const positions = [
+      Offset(108, 6),    // top center
+      Offset(192, 40),   // top-right wing tip
+      Offset(210, 105),  // right
+      Offset(188, 172),  // bottom-right
+      Offset(108, 208),  // bottom center
+      Offset(28, 172),   // bottom-left
+      Offset(6, 105),    // left
+      Offset(22, 40),    // top-left wing tip
+    ];
+
+    return positions.asMap().entries.map((entry) {
+      final i = entry.key;
+      final pos = entry.value;
+      // Stagger each dot by 1/8 of full cycle for wave effect
+      final phase = ((t + i / positions.length) % 1.0);
+      final opacity = math.sin(phase * math.pi).clamp(0.0, 1.0);
+      final dotSize = (i % 3 == 0) ? 3.5 : 2.2;
+
+      return Positioned(
+        left: pos.dx,
+        top: pos.dy,
+        child: Opacity(
+          opacity: opacity,
+          child: Container(
+            width: dotSize,
+            height: dotSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFA78BFA).withValues(alpha: opacity * 0.85),
+                  blurRadius: 7,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }).toList();
   }
 
   Widget _buildStepIndicator() {
@@ -826,14 +918,21 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ),
 
-          // 2. Atmospheric decorative top section (programmatic - no image dependency)
+          // 2. Animated atmospheric cloud background
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             height: screenHeight * 0.55,
-            child: CustomPaint(
-              painter: _AtmosphericBackgroundPainter(),
+            child: AnimatedBuilder(
+              animation: _cloudController,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: _AtmosphericBackgroundPainter(
+                    cloudOffset: _cloudController.value,
+                  ),
+                );
+              },
             ),
           ),
 
@@ -866,53 +965,81 @@ class _AuthScreenState extends State<AuthScreen> {
 
                   const SizedBox(height: 8),
 
-                  // HERO: Pigeon mascot — large, prominent, centered
-                  Center(
-                    child: SizedBox(
-                      height: 215,
-                      width: 215,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Programmatic glow ring (no image asset needed)
-                          Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  const Color(0xFF7C3AED).withValues(alpha: 0.4),
-                                  const Color(0xFF4F46E5).withValues(alpha: 0.2),
-                                  const Color(0xFF7C3AED).withValues(alpha: 0.05),
-                                  Colors.transparent,
-                                ],
-                                stops: const [0.0, 0.4, 0.7, 1.0],
-                              ),
+                  // HERO: Animated pigeon — float + glow pulse + sparkle orbit
+                  AnimatedBuilder(
+                    animation: Listenable.merge([
+                      _floatController,
+                      _glowController,
+                      _sparkleController,
+                    ]),
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(0, _floatAnimation.value),
+                        child: Center(
+                          child: SizedBox(
+                            height: 215,
+                            width: 215,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              alignment: Alignment.center,
+                              children: [
+                                // Twinkling sparkle particles (wave orbit)
+                                ..._buildSparkles(_sparkleController.value),
+
+                                // Outer glow — pulsing scale
+                                Transform.scale(
+                                  scale: _glowAnimation.value,
+                                  child: Container(
+                                    width: 200,
+                                    height: 200,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: RadialGradient(
+                                        colors: [
+                                          Color(0xFF7C3AED).withValues(alpha: 0.38),
+                                          Color(0xFF4F46E5).withValues(alpha: 0.18),
+                                          Color(0xFF7C3AED).withValues(alpha: 0.04),
+                                          Colors.transparent,
+                                        ],
+                                        stops: const [0.0, 0.4, 0.7, 1.0],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // Outer ring stroke — fading in/out with glow
+                                Transform.scale(
+                                  scale: _glowAnimation.value * 0.97,
+                                  child: Container(
+                                    width: 195,
+                                    height: 195,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Color(0xFF9B79FF).withValues(
+                                          alpha: (0.12 + 0.22 *
+                                              ((_glowAnimation.value - 0.88) / 0.24)
+                                              .clamp(0.0, 1.0)),
+                                        ),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // Pigeon mascot (float handled by parent)
+                                Image.asset(
+                                  "assets/pigeon_logo.png",
+                                  height: 185,
+                                  width: 210,
+                                  fit: BoxFit.contain,
+                                ),
+                              ],
                             ),
                           ),
-                          // Outer ring stroke
-                          Container(
-                            width: 195,
-                            height: 195,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                          // Main mascot
-                          Image.asset(
-                            "assets/pigeon_logo.png",
-                            height: 185,
-                            width: 210,
-                            fit: BoxFit.contain,
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 8),
@@ -1133,87 +1260,101 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
-/// Custom painter for the atmospheric cloud/nebula background at the top of the auth screen.
-/// Draws dark purple glowing arcs and radial gradients to simulate the dark atmospheric effect
-/// from the Piagoan design — no image assets required.
+/// Animated custom painter for the atmospheric cloud/nebula background.
+/// Accepts [cloudOffset] (0.0–1.0, looping) to drive slow sinusoidal drift
+/// of cloud blobs — creates a living, breathing atmospheric effect.
 class _AtmosphericBackgroundPainter extends CustomPainter {
+  final double cloudOffset;
+
+  _AtmosphericBackgroundPainter({required this.cloudOffset});
+
   @override
   void paint(Canvas canvas, Size size) {
-    // Main top radial glow (large purple nebula)
+    // Sinusoidal drift values for cloud movement
+    final drift = math.sin(cloudOffset * 2 * math.pi);
+    final drift2 = math.cos(cloudOffset * 2 * math.pi);
+
+    // ── 1. Main center nebula glow (breathes with drift) ────────────────────
+    final glowAlpha = 0.42 + 0.13 * drift;
     final centerGlow = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF3D1F8C).withValues(alpha: 0.55),
-          const Color(0xFF1E0F5E).withValues(alpha: 0.3),
-          const Color(0xFF0D0F24).withValues(alpha: 0.0),
+          Color(0xFF3D1F8C).withValues(alpha: glowAlpha.clamp(0.0, 1.0)),
+          Color(0xFF1E0F5E).withValues(alpha: (glowAlpha * 0.5).clamp(0.0, 1.0)),
+          Color(0xFF0D0F24).withValues(alpha: 0.0),
         ],
         stops: const [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(
         center: Offset(size.width / 2, size.height * 0.1),
         radius: size.width * 0.9,
       ));
-
     canvas.drawCircle(
       Offset(size.width / 2, size.height * 0.1),
       size.width * 0.9,
       centerGlow,
     );
 
-    // Left side purple cloud blob
+    // ── 2. Left purple cloud (drifts right ↔ left, slightly vertical) ───────
+    final leftX = size.width * 0.08 + 28.0 * drift;
+    final leftY = size.height * 0.32 + 14.0 * drift2;
     final leftCloud = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF5B21B6).withValues(alpha: 0.2),
+          Color(0xFF5B21B6).withValues(alpha: (0.20 + 0.09 * drift).clamp(0.0, 1.0)),
           Colors.transparent,
         ],
       ).createShader(Rect.fromCircle(
-        center: Offset(size.width * 0.1, size.height * 0.35),
-        radius: size.width * 0.45,
+        center: Offset(leftX, leftY),
+        radius: size.width * 0.48,
       ));
+    canvas.drawCircle(Offset(leftX, leftY), size.width * 0.48, leftCloud);
 
-    canvas.drawCircle(
-      Offset(size.width * 0.1, size.height * 0.35),
-      size.width * 0.45,
-      leftCloud,
-    );
-
-    // Right side teal accent cloud
+    // ── 3. Right blue-teal cloud (opposite drift direction) ──────────────────
+    final rightX = size.width * 0.92 - 22.0 * drift;
+    final rightY = size.height * 0.22 - 12.0 * drift2;
     final rightCloud = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF1E3A8A).withValues(alpha: 0.18),
+          Color(0xFF1E3A8A).withValues(alpha: (0.17 + 0.08 * drift2).clamp(0.0, 1.0)),
           Colors.transparent,
         ],
       ).createShader(Rect.fromCircle(
-        center: Offset(size.width * 0.9, size.height * 0.25),
-        radius: size.width * 0.4,
+        center: Offset(rightX, rightY),
+        radius: size.width * 0.42,
       ));
+    canvas.drawCircle(Offset(rightX, rightY), size.width * 0.42, rightCloud);
 
-    canvas.drawCircle(
-      Offset(size.width * 0.9, size.height * 0.25),
-      size.width * 0.4,
-      rightCloud,
-    );
+    // ── 4. Small bottom-left accent cloud (adds depth) ───────────────────────
+    final accentX = size.width * 0.22 + 18.0 * drift2;
+    final accentY = size.height * 0.72 + 8.0 * drift;
+    final accentCloud = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Color(0xFF7C3AED).withValues(alpha: (0.11 + 0.06 * drift.abs()).clamp(0.0, 1.0)),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromCircle(
+        center: Offset(accentX, accentY),
+        radius: size.width * 0.32,
+      ));
+    canvas.drawCircle(Offset(accentX, accentY), size.width * 0.32, accentCloud);
 
-    // Bottom fade-out gradient to merge with background
+    // ── 5. Bottom fade-out (merges into page background) ────────────────────
     final fadeOut = Paint()
-      ..shader = LinearGradient(
+      ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
           Colors.transparent,
-          const Color(0xFF080A18).withValues(alpha: 0.6),
-          const Color(0xFF080A18),
+          Color(0x99080A18),
+          Color(0xFF080A18),
         ],
-        stops: const [0.5, 0.8, 1.0],
+        stops: [0.42, 0.75, 1.0],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      fadeOut,
-    );
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), fadeOut);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(_AtmosphericBackgroundPainter old) =>
+      old.cloudOffset != cloudOffset;
 }
