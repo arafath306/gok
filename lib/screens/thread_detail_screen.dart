@@ -165,36 +165,45 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    NoTransitionPageRoute(
-                                      child: ProfileScreen(userId: activePost.userId),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        NoTransitionPageRoute(
+                                          child: ProfileScreen(userId: activePost.userId),
+                                        ),
+                                      );
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          activePost.author.fullName,
+                                          style: GoogleFonts.hindSiliguri(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: context.textPrimary,
+                                          ),
+                                        ),
+                                        if (activePost.author.fullName == 'Dak Official') ...[
+                                          const SizedBox(width: 4),
+                                          const Icon(
+                                            Icons.verified,
+                                            color: Colors.blue,
+                                            size: 14,
+                                          ),
+                                        ],
+                                      ],
                                     ),
-                                  );
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      activePost.author.fullName,
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: context.textPrimary,
-                                      ),
-                                    ),
-                                     if (activePost.author.fullName == 'Dak Official') ...[
-                                       const SizedBox(width: 4),
-                                       const Icon(
-                                         Icons.verified,
-                                         color: Colors.blue,
-                                         size: 14,
-                                       ),
-                                     ],
+                                  ),
+                                  if (activePost.userId != dbService.currentUid) ...[
+                                    const SizedBox(width: 8),
+                                    _buildFollowButton(context, dbService, activePost.userId),
                                   ],
-                                ),
+                                ],
                               ),
                               Text(
                                 "@${activePost.author.username}",
@@ -607,6 +616,40 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFollowButton(BuildContext context, DatabaseService dbService, String targetUserId) {
+    final isFollowing = dbService.isFollowingUser(targetUserId);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () => dbService.toggleFollowUser(targetUserId),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: isFollowing 
+              ? Colors.transparent 
+              : (isDark ? Colors.white : Colors.black),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: isFollowing 
+                ? (isDark ? Colors.white24 : Colors.black12) 
+                : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          isFollowing ? 'Following' : 'Follow',
+          style: GoogleFonts.outfit(
+            fontSize: 11.5,
+            fontWeight: FontWeight.bold,
+            color: isFollowing 
+                ? context.textPrimary 
+                : (isDark ? Colors.black : Colors.white),
+          ),
+        ),
       ),
     );
   }
