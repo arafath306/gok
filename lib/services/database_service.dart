@@ -127,7 +127,7 @@ class DatabaseService with ChangeNotifier {
             schema: 'public',
             table: 'threads',
             callback: (payload) {
-              fetchFeed();
+              fetchFeed(silent: true);
               if (_currentUid.isNotEmpty) {
                 fetchMyThreads();
               }
@@ -141,7 +141,7 @@ class DatabaseService with ChangeNotifier {
             schema: 'public',
             table: 'likes',
             callback: (payload) {
-              fetchFeed();
+              fetchFeed(silent: true);
               if (_currentUid.isNotEmpty) {
                 fetchMyThreads();
               }
@@ -155,7 +155,7 @@ class DatabaseService with ChangeNotifier {
             schema: 'public',
             table: 'comments',
             callback: (payload) {
-              fetchFeed();
+              fetchFeed(silent: true);
               if (_currentUid.isNotEmpty) {
                 fetchMyThreads();
               }
@@ -219,7 +219,7 @@ class DatabaseService with ChangeNotifier {
             table: 'blocks',
             callback: (payload) {
               fetchBlockedMutedLists();
-              fetchFeed();
+              fetchFeed(silent: true);
             })
         .subscribe();
 
@@ -231,7 +231,7 @@ class DatabaseService with ChangeNotifier {
             table: 'mutes',
             callback: (payload) {
               fetchBlockedMutedLists();
-              fetchFeed();
+              fetchFeed(silent: true);
             })
         .subscribe();
   }
@@ -597,9 +597,11 @@ class DatabaseService with ChangeNotifier {
 
   // --- Feed / Threads Operations ---
 
-  Future<void> fetchFeed() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> fetchFeed({bool silent = false}) async {
+    if (!silent) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
       final response = await _supabase
