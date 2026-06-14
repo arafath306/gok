@@ -181,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // ── Header ─────────────────────────────────────────────────
   Widget _buildHeader(Profile? profile, DatabaseService db) {
-    final double coverHeight = 160;
+    final double coverHeight = 130;
     final double avatarRadius = 55; // 110px diameter
     final double avatarHeightOffset = coverHeight - avatarRadius;
     final List<ThreadPost> threads = _isOwnProfile ? db.myThreads : _viewedThreads;
