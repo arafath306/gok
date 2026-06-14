@@ -354,4 +354,15 @@ class GeneralSettingsProvider with ChangeNotifier {
       rethrow;
     }
   }
+
+  // Theme Settings
+  bool _isDarkTheme = true; // Default to true (AMOLED dark)
+  bool get isDarkTheme => _isDarkTheme;
+
+  ThemeMode get themeMode => _isDarkTheme ? ThemeMode.dark : ThemeMode.light;
+
+  void toggleTheme(bool val) {
+    _isDarkTheme = val;
+    notifyListeners();
+  }
 }

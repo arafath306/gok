@@ -7,6 +7,7 @@ import '../../services/general_settings_provider.dart';
 import '../../models/profile.dart';
 import '../../models/thread_post.dart';
 import '../../utils/routes.dart';
+import '../../utils/app_theme.dart';
 import '../settings/settings_screen.dart';
 import 'edit_profile_screen.dart';
 import '../messenger/chat_screen.dart';
@@ -101,18 +102,18 @@ class _ProfileScreenState extends State<ProfileScreen>
 
         // While loading own profile for first time
         if (_isOwnProfile && db.myProfile == null) {
-          return const Scaffold(
-            backgroundColor: Colors.white,
-            body: Center(
+          return Scaffold(
+            backgroundColor: context.scaffoldBg,
+            body: const Center(
               child: CircularProgressIndicator(color: Color(0xFF0085FF)),
             ),
           );
         }
 
         if (!_isOwnProfile && _isLoading) {
-          return const Scaffold(
-            backgroundColor: Colors.white,
-            body: Center(
+          return Scaffold(
+            backgroundColor: context.scaffoldBg,
+            body: const Center(
               child: CircularProgressIndicator(color: Color(0xFF0085FF)),
             ),
           );
@@ -140,9 +141,9 @@ class _ProfileScreenState extends State<ProfileScreen>
               Container(
                 width: 320,
                 padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
-                    left: BorderSide(color: Color(0xFFE8E8E8), width: 1),
+                    left: BorderSide(color: context.border, width: 1),
                   ),
                 ),
                 child: SingleChildScrollView(
@@ -156,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         }
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: context.scaffoldBg,
           body: RefreshIndicator(
             color: const Color(0xFF0085FF),
             onRefresh: () async {
@@ -298,7 +299,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ],
               ),
             ),
-
+            
             // Avatar stacked over cover bottom-left
             Positioned(
               top: avatarHeightOffset,
@@ -312,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       height: avatarRadius * 2,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3.5),
+                        border: Border.all(color: context.scaffoldBg, width: 3.5),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.08),
@@ -378,14 +379,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                       style: GoogleFonts.hindSiliguri(
                         fontSize: 21,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: context.textPrimary,
                       ),
                     ),
                     Text(
                       '@${profile?.username ?? ''}',
                       style: GoogleFonts.hindSiliguri(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: context.textSecondary,
                       ),
                     ),
                   ],
@@ -511,12 +512,12 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: GoogleFonts.hindSiliguri(
             fontSize: 15,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: context.textPrimary,
           ),
         ),
         TextSpan(
           text: label,
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: Colors.black54),
+          style: GoogleFonts.hindSiliguri(fontSize: 14, color: context.textSecondary),
         ),
       ]),
     );
@@ -528,15 +529,15 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFD0D0D0)),
+            border: Border.all(color: context.border),
           ),
           child: Text(label,
               style: GoogleFonts.hindSiliguri(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87)),
+                  color: context.textPrimary)),
         ),
       );
 
@@ -547,16 +548,16 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
           decoration: BoxDecoration(
-            color: outlined ? Colors.white : Colors.black,
+            color: outlined ? context.cardBg : (context.isDarkMode ? Colors.white : Colors.black),
             borderRadius: BorderRadius.circular(20),
             border:
-                outlined ? Border.all(color: const Color(0xFFD0D0D0)) : null,
+                outlined ? Border.all(color: context.border) : null,
           ),
           child: Text(label,
               style: GoogleFonts.hindSiliguri(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: outlined ? Colors.black87 : Colors.white)),
+                  color: outlined ? context.textPrimary : (context.isDarkMode ? Colors.black : Colors.white))),
         ),
       );
 
@@ -567,26 +568,26 @@ class _ProfileScreenState extends State<ProfileScreen>
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFD0D0D0)),
+            border: Border.all(color: context.border),
           ),
-          child: Icon(icon, size: 18, color: Colors.black87),
+          child: Icon(icon, size: 18, color: context.textPrimary),
         ),
       );
 
   // ── Tab Bar ────────────────────────────────────────────────
   Widget _buildTabBar() => Container(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFE8E8E8), width: 1)),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: context.border, width: 1)),
         ),
         child: TabBar(
           controller: _tabController,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.black45,
-          indicatorColor: Colors.black,
+          labelColor: context.textPrimary,
+          unselectedLabelColor: context.textSecondary,
+          indicatorColor: context.textPrimary,
           indicatorWeight: 2.5,
           labelStyle: GoogleFonts.hindSiliguri(
               fontSize: 14, fontWeight: FontWeight.bold),

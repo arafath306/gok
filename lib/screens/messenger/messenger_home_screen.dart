@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../models/profile.dart';
+import '../../utils/app_theme.dart';
 import 'chat_screen.dart';
 import 'chat_settings_screen.dart';
 import 'member_search_sheet.dart';
@@ -13,13 +14,13 @@ class MessengerHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Colors.black87, size: 24),
+          icon: Icon(Icons.menu_rounded, color: context.textPrimary, size: 24),
           onPressed: () {
             Scaffold.of(context).openDrawer();
           },
@@ -28,18 +29,18 @@ class MessengerHomeScreen extends StatelessWidget {
         title: Text(
           'Chats',
           style: GoogleFonts.outfit(
-            color: Colors.black87,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.mail_outline_rounded, color: Colors.black87, size: 22),
+            icon: Icon(Icons.mail_outline_rounded, color: context.textPrimary, size: 22),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black87, size: 22),
+            icon: Icon(Icons.settings_outlined, color: context.textPrimary, size: 22),
             onPressed: () {
               Navigator.push(
                 context,
@@ -51,7 +52,7 @@ class MessengerHomeScreen extends StatelessWidget {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: const Color(0xFFEEEEEE), height: 1.0),
+          child: Container(color: context.border, height: 1.0),
         ),
       ),
       body: Consumer<DatabaseService>(
@@ -60,8 +61,8 @@ class MessengerHomeScreen extends StatelessWidget {
             future: dbService.fetchActiveChats(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF1E824C)),
+                return Center(
+                  child: CircularProgressIndicator(color: context.primaryAccent),
                 );
               }
 
@@ -74,7 +75,7 @@ class MessengerHomeScreen extends StatelessWidget {
                     children: [
                       CustomPaint(
                         size: const Size(60, 60),
-                        painter: SpeechBubblePainter(),
+                        painter: SpeechBubblePainter(color: context.textPrimary),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -82,7 +83,7 @@ class MessengerHomeScreen extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: context.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -119,7 +120,7 @@ class MessengerHomeScreen extends StatelessWidget {
               return ListView.separated(
                 itemCount: activeChats.length,
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F1F1)),
+                separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
                 itemBuilder: (context, index) {
                   final chat = activeChats[index];
                   final Profile profile = chat['profile'] as Profile;
@@ -139,7 +140,7 @@ class MessengerHomeScreen extends StatelessWidget {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     leading: CircleAvatar(
                       radius: 24,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: context.border,
                       backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
                           ? NetworkImage(profile.avatarUrl!)
                           : const NetworkImage("https://i.pravatar.cc/150"),
@@ -153,7 +154,7 @@ class MessengerHomeScreen extends StatelessWidget {
                             style: GoogleFonts.hindSiliguri(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
-                              color: Colors.black87,
+                              color: context.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -162,7 +163,7 @@ class MessengerHomeScreen extends StatelessWidget {
                         Text(
                           time,
                           style: GoogleFonts.outfit(
-                            color: unreadCount > 0 ? const Color(0xFF1E824C) : Colors.black38,
+                            color: unreadCount > 0 ? context.primaryAccent : context.textMuted,
                             fontSize: 12,
                             fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
                           ),
@@ -177,7 +178,7 @@ class MessengerHomeScreen extends StatelessWidget {
                             child: Text(
                               lastMsg,
                               style: GoogleFonts.hindSiliguri(
-                                color: unreadCount > 0 ? Colors.black87 : Colors.black45,
+                                color: unreadCount > 0 ? context.textPrimary : context.textSecondary,
                                 fontSize: 13.5,
                                 fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
                               ),
@@ -228,10 +229,13 @@ class MessengerHomeScreen extends StatelessWidget {
 }
 
 class SpeechBubblePainter extends CustomPainter {
+  final Color color;
+  SpeechBubblePainter({required this.color});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black87
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
@@ -248,13 +252,13 @@ class SpeechBubblePainter extends CustomPainter {
     canvas.drawPath(path, paint);
     
     // Draw eyes
-    final eyePaint = Paint()..color = Colors.black87;
+    final eyePaint = Paint()..color = color;
     canvas.drawCircle(Offset(size.width * 0.38, size.height * 0.45), 2.5, eyePaint);
     canvas.drawCircle(Offset(size.width * 0.62, size.height * 0.45), 2.5, eyePaint);
     
     // Draw smile
     final smilePaint = Paint()
-      ..color = Colors.black87
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;

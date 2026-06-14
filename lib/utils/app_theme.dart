@@ -20,13 +20,15 @@ class AppTheme {
   // UI Colors
   static const Color divider = Color(0xFFE0E0E0);
   static const Color error = Color(0xFFD32F2F);
-  
+
   static ThemeData get lightTheme {
     return ThemeData(
+      brightness: Brightness.light,
       primaryColor: primary,
       scaffoldBackgroundColor: background,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
+        brightness: Brightness.light,
         primary: primary,
         secondary: secondary,
         background: background,
@@ -54,4 +56,52 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: primary,
+      scaffoldBackgroundColor: const Color(0xFF000000), // Pure Black for AMOLED
+      colorScheme: const ColorScheme.dark(
+        primary: primary,
+        secondary: secondary,
+        background: Color(0xFF000000),
+        surface: Color(0xFF0D0F1A), // Sleek Dark container background
+        onBackground: Colors.white,
+        onSurface: Colors.white,
+      ),
+      useMaterial3: true,
+      appBarTheme: AppBarTheme(
+        backgroundColor: const Color(0xFF000000),
+        elevation: 0.5,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: GoogleFonts.hindSiliguri(
+          fontSize: 17.5,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      textTheme: GoogleFonts.hindSiliguriTextTheme(
+        ThemeData.dark().textTheme,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF1E293B),
+        space: 1,
+        thickness: 0.5,
+      ),
+    );
+  }
+}
+
+extension AppThemeExtension on BuildContext {
+  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
+
+  Color get scaffoldBg => isDarkMode ? const Color(0xFF000000) : const Color(0xFFF5F6F8);
+  Color get cardBg => isDarkMode ? const Color(0xFF0D0F1A) : Colors.white;
+  Color get border => isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFEEEEEE);
+  Color get textPrimary => isDarkMode ? Colors.white : Colors.black87;
+  Color get textSecondary => isDarkMode ? Colors.white70 : Colors.black54;
+  Color get textMuted => isDarkMode ? Colors.white38 : Colors.black38;
+  Color get primaryAccent => const Color(0xFF1E824C);
 }

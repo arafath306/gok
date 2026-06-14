@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/app_theme.dart';
 
 class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
@@ -55,33 +56,36 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 22),
+          icon: Icon(Icons.arrow_back, color: context.textPrimary, size: 22),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Help Center',
           style: GoogleFonts.outfit(
-            color: Colors.black87,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: const Color(0xFFEEEEEE), height: 1.0),
+          child: Container(color: context.border, height: 1.0),
         ),
       ),
       body: Column(
         children: [
           // Header search banner
           Container(
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: context.cardBg,
+              border: Border(bottom: BorderSide(color: context.border)),
+            ),
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +95,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                   style: GoogleFonts.outfit(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: context.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -103,11 +107,11 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     });
                   },
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search, color: Colors.black38, size: 20),
+                    prefixIcon: Icon(Icons.search, color: context.textMuted, size: 20),
                     hintText: 'Search articles, questions...',
-                    hintStyle: GoogleFonts.outfit(color: Colors.black38, fontSize: 14),
+                    hintStyle: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
                     filled: true,
-                    fillColor: const Color(0xFFF3F4F6),
+                    fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
@@ -115,7 +119,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18, color: Colors.black54),
+                            icon: Icon(Icons.clear, size: 18, color: context.textSecondary),
                             onPressed: () {
                               _searchController.clear();
                               setState(() {
@@ -125,12 +129,11 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                           )
                         : null,
                   ),
-                  style: GoogleFonts.outfit(fontSize: 14),
+                  style: GoogleFonts.outfit(fontSize: 14, color: context.textPrimary),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
 
           // FAQ list
           Expanded(
@@ -141,20 +144,20 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.help_center_outlined, size: 60, color: Colors.black26),
+                          Icon(Icons.help_center_outlined, size: 60, color: context.textMuted),
                           const SizedBox(height: 16),
                           Text(
                             'No articles match your search',
                             style: GoogleFonts.outfit(
                               fontSize: 15.5,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black54,
+                              color: context.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Try different keywords or view all questions.',
-                            style: GoogleFonts.outfit(color: Colors.black38, fontSize: 13),
+                            style: GoogleFonts.outfit(color: context.textMuted, fontSize: 13),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -167,17 +170,17 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     itemBuilder: (context, index) {
                       final faq = filteredFaqs[index];
                       return Container(
-                        color: Colors.white,
+                        color: context.cardBg,
                         margin: const EdgeInsets.only(bottom: 2),
                         child: ExpansionTile(
-                          iconColor: const Color(0xFF1E824C),
-                          collapsedIconColor: Colors.black38,
+                          iconColor: context.primaryAccent,
+                          collapsedIconColor: context.textMuted,
                           title: Text(
                             faq['question']!,
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w600,
                               fontSize: 14.5,
-                              color: Colors.black87,
+                              color: context.textPrimary,
                             ),
                           ),
                           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -187,7 +190,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                               faq['answer']!,
                               style: GoogleFonts.outfit(
                                 fontSize: 13.5,
-                                color: Colors.black54,
+                                color: context.textSecondary,
                                 height: 1.45,
                               ),
                             ),
@@ -200,7 +203,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
 
           // Contact support footer
           Container(
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: context.cardBg,
+              border: Border(top: BorderSide(color: context.border)),
+            ),
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
@@ -214,14 +220,14 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
-                          color: Colors.black87,
+                          color: context.textPrimary,
                         ),
                       ),
                       Text(
                         'Get in touch with support directly.',
                         style: GoogleFonts.outfit(
                           fontSize: 12,
-                          color: Colors.black45,
+                          color: context.textMuted,
                         ),
                       ),
                     ],
@@ -230,7 +236,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 ElevatedButton(
                   onPressed: () => _showContactForm(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E824C),
+                    backgroundColor: context.primaryAccent,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
@@ -258,11 +264,11 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Contact Support',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black87),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -270,20 +276,20 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           children: [
             Text(
               'We will get back to you within 24 hours.',
-              style: GoogleFonts.outfit(color: Colors.black54, fontSize: 13),
+              style: GoogleFonts.outfit(color: context.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: emailCtrl,
               decoration: InputDecoration(
                 hintText: 'Your email address...',
-                hintStyle: GoogleFonts.outfit(color: Colors.black26, fontSize: 14),
+                hintStyle: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
                 filled: true,
-                fillColor: const Color(0xFFF3F4F6),
+                fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
-              style: GoogleFonts.outfit(fontSize: 14),
+              style: GoogleFonts.outfit(fontSize: 14, color: context.textPrimary),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -291,13 +297,13 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               maxLines: 4,
               decoration: InputDecoration(
                 hintText: 'Describe your issue...',
-                hintStyle: GoogleFonts.outfit(color: Colors.black26, fontSize: 14),
+                hintStyle: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
                 filled: true,
-                fillColor: const Color(0xFFF3F4F6),
+                fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                 contentPadding: const EdgeInsets.all(12),
               ),
-              style: GoogleFonts.outfit(fontSize: 14),
+              style: GoogleFonts.outfit(fontSize: 14, color: context.textPrimary),
             ),
           ],
         ),
@@ -306,7 +312,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Cancel',
-              style: GoogleFonts.outfit(color: Colors.black54),
+              style: GoogleFonts.outfit(color: context.textSecondary),
             ),
           ),
           ElevatedButton(
@@ -316,14 +322,14 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               }
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Support ticket submitted successfully!'),
-                  backgroundColor: Color(0xFF1E824C),
+                SnackBar(
+                  content: const Text('Support ticket submitted successfully!'),
+                  backgroundColor: context.primaryAccent,
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E824C),
+              backgroundColor: context.primaryAccent,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),

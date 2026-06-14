@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/database_service.dart';
+import '../utils/app_theme.dart';
 
 class CreateThreadScreen extends StatefulWidget {
   const CreateThreadScreen({super.key});
@@ -621,7 +622,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                             style: GoogleFonts.hindSiliguri(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
-                              color: Colors.black87,
+                              color: context.textPrimary,
                             ),
                           ),
                           if (_isAnonymous) ...[
@@ -642,9 +643,9 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF3F4F6),
+                                color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.black.withOpacity(0.04), width: 0.8),
+                                border: Border.all(color: context.border, width: 0.8),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -656,7 +657,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                             ? Icons.people_alt
                                             : Icons.lock,
                                     size: 11,
-                                    color: Colors.black54,
+                                    color: context.textSecondary,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -668,11 +669,11 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                     style: GoogleFonts.hindSiliguri(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.black54,
+                                      color: context.textSecondary,
                                     ),
                                   ),
                                   const SizedBox(width: 2),
-                                  const Icon(Icons.keyboard_arrow_down_rounded, size: 12, color: Colors.black54),
+                                  Icon(Icons.keyboard_arrow_down_rounded, size: 12, color: context.textSecondary),
                                 ],
                               ),
                             ),
@@ -682,7 +683,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEFF6FF),
+                                color: context.isDarkMode ? const Color(0xFF1A2333) : const Color(0xFFEFF6FF),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.blue.withOpacity(0.2), width: 0.8),
                               ),
@@ -718,12 +719,12 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         minLines: 4,
                         style: GoogleFonts.hindSiliguri(
                           fontSize: 15.5,
-                          color: Colors.black87,
+                          color: context.textPrimary,
                           height: 1.45,
                         ),
                         decoration: InputDecoration(
                           hintText: "আজকে কী ভাবছেন?",
-                          hintStyle: GoogleFonts.hindSiliguri(color: Colors.black38, fontSize: 14.5),
+                          hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14.5),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
@@ -835,7 +836,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           width: 600,
           margin: const EdgeInsets.symmetric(vertical: 24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -844,12 +845,12 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                 offset: const Offset(0, 4),
               ),
             ],
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+            border: Border.all(color: context.border, width: 1),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Scaffold(
-              backgroundColor: Colors.white,
+              backgroundColor: context.cardBg,
               body: bodyContent,
             ),
           ),
@@ -858,7 +859,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     }
 
     return Scaffold(
-      backgroundColor: isWide ? const Color(0xFFF9FAFB) : Colors.white,
+      backgroundColor: isWide ? context.scaffoldBg : context.cardBg,
       body: bodyContent,
     );
   }
@@ -866,10 +867,10 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   Widget _buildUnifiedToolbar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: context.cardBg,
         border: Border(
-          top: BorderSide(color: Color(0xFFE5E7EB), width: 0.8),
+          top: BorderSide(color: context.border, width: 0.8),
         ),
       ),
       child: Row(
@@ -1021,7 +1022,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           ),
           child: Icon(
             icon,
-            color: isActive ? color : Colors.black54,
+            color: isActive ? color : context.textSecondary,
             size: 20,
           ),
         ),

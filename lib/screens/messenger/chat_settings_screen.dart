@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/chat_settings_provider.dart';
+import '../../utils/app_theme.dart';
 
 class ChatSettingsScreen extends StatelessWidget {
   const ChatSettingsScreen({super.key});
@@ -9,26 +10,26 @@ class ChatSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 22),
+          icon: Icon(Icons.arrow_back, color: context.textPrimary, size: 22),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Chat Settings',
           style: GoogleFonts.outfit(
-            color: Colors.black87,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: const Color(0xFFEEEEEE), height: 1.0),
+          child: Container(color: context.border, height: 1.0),
         ),
       ),
       body: Consumer<ChatSettingsProvider>(
@@ -44,7 +45,7 @@ class ChatSettingsScreen extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: context.textPrimary,
                   ),
                 ),
               ),
@@ -55,7 +56,7 @@ class ChatSettingsScreen extends StatelessWidget {
                   'You can continue ongoing conversations regardless of which setting you choose.',
                   style: GoogleFonts.outfit(
                     fontSize: 14,
-                    color: Colors.black45,
+                    color: context.textSecondary,
                     height: 1.3,
                   ),
                 ),
@@ -85,48 +86,48 @@ class ChatSettingsScreen extends StatelessWidget {
                 onTap: () => provider.setDMPermission(DMPermission.none),
               ),
 
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
-                child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Divider(height: 1, color: context.border),
               ),
 
               // Switch for Notification Sounds
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                leading: const Icon(Icons.notifications_none_outlined, color: Colors.black87, size: 24),
+                leading: Icon(Icons.notifications_none_outlined, color: context.textPrimary, size: 24),
                 title: Text(
                   'Notification sounds',
                   style: GoogleFonts.outfit(
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: context.textPrimary,
                   ),
                 ),
                 trailing: Switch(
                   value: provider.notificationSounds,
                   activeColor: const Color(0xFF0085FF),
                   activeTrackColor: const Color(0xFF0085FF).withOpacity(0.25),
-                  inactiveThumbColor: Colors.grey[400],
-                  inactiveTrackColor: Colors.grey[200],
+                  inactiveThumbColor: context.textMuted,
+                  inactiveTrackColor: context.isDarkMode ? const Color(0xFF1E293B) : Colors.grey[200],
                   onChanged: (val) => provider.setNotificationSounds(val),
                 ),
               ),
 
-              const Divider(height: 1, color: Color(0xFFEEEEEE)),
+              Divider(height: 1, color: context.border),
 
               // Export my chat data
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                leading: const Icon(Icons.archive_outlined, color: Colors.black87, size: 24),
+                leading: Icon(Icons.archive_outlined, color: context.textPrimary, size: 24),
                 title: Text(
                   'Export my chat data',
                   style: GoogleFonts.outfit(
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: context.textPrimary,
                   ),
                 ),
-                trailing: const Icon(Icons.chevron_right, color: Colors.black38, size: 22),
+                trailing: Icon(Icons.chevron_right, color: context.textMuted, size: 22),
                 onTap: () {
                   _showExportDialog(context);
                 },
@@ -163,7 +164,7 @@ class ChatSettingsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF0085FF) : Colors.grey[300]!,
+                  color: isSelected ? const Color(0xFF0085FF) : context.border,
                   width: isSelected ? 6.5 : 2,
                 ),
               ),
@@ -174,7 +175,7 @@ class ChatSettingsScreen extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 15.5,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: Colors.black87,
+                color: context.textPrimary,
               ),
             ),
           ],
@@ -187,15 +188,15 @@ class ChatSettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Export Chat Data',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black87),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Text(
           'Your chat data export has been requested. We will prepare the download and notify you soon.',
-          style: GoogleFonts.outfit(color: Colors.black54),
+          style: GoogleFonts.outfit(color: context.textSecondary),
         ),
         actions: [
           TextButton(

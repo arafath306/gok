@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../models/profile.dart';
+import '../utils/app_theme.dart';
 
 class SearchExploreScreen extends StatefulWidget {
   const SearchExploreScreen({super.key});
@@ -100,13 +101,13 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
             // Left: Circular Avatar
             CircleAvatar(
               radius: 20,
-              backgroundColor: const Color(0xFFE8F5E9),
+              backgroundColor: context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE8F5E9),
               backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
               child: user.avatarUrl == null
                   ? Text(
                       user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        color: Color(0xFF1E824C),
+                      style: TextStyle(
+                        color: context.primaryAccent,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -128,7 +129,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
-                          color: Colors.black,
+                          color: context.textPrimary,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -143,7 +144,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   Text(
                     user.fullName,
                     style: GoogleFonts.hindSiliguri(
-                      color: Colors.grey[600],
+                      color: context.textSecondary,
                       fontSize: 13,
                     ),
                   ),
@@ -152,7 +153,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   Text(
                     user.bio ?? "কোন বায়ো নেই",
                     style: GoogleFonts.hindSiliguri(
-                      color: Colors.black87,
+                      color: context.textPrimary,
                       fontSize: 13,
                     ),
                   ),
@@ -161,7 +162,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   Text(
                     "${user.followersCount} জন অনুসারী",
                     style: GoogleFonts.hindSiliguri(
-                      color: Colors.black38,
+                      color: context.textMuted,
                       fontSize: 12,
                     ),
                   ),
@@ -176,7 +177,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                  color: isFollowing ? Colors.grey.shade300 : Colors.black12,
+                  color: isFollowing 
+                      ? (context.isDarkMode ? const Color(0xFF1E293B) : Colors.grey.shade300) 
+                      : context.border,
                   width: 1,
                 ),
                 shape: RoundedRectangleBorder(
@@ -190,7 +193,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
               child: Text(
                 isFollowing ? "Following" : "Follow",
                 style: GoogleFonts.hindSiliguri(
-                  color: isFollowing ? Colors.black38 : Colors.black87,
+                  color: isFollowing ? context.textMuted : context.textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
@@ -208,7 +211,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     final isSearching = _searchController.text.trim().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -218,7 +221,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.menu_rounded, color: Colors.black87),
+                    icon: Icon(Icons.menu_rounded, color: context.textPrimary),
                     padding: EdgeInsets.zero,
                     alignment: Alignment.centerLeft,
                     onPressed: () {
@@ -231,7 +234,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: context.textPrimary,
                     ),
                   ),
                 ],
@@ -245,11 +248,12 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 onSubmitted: (val) {
                   _addToHistory(val);
                 },
+                style: GoogleFonts.outfit(color: context.textPrimary, fontSize: 14),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search, color: Colors.black38, size: 20),
+                  prefixIcon: Icon(Icons.search, color: context.textMuted, size: 20),
                   suffixIcon: isSearching
                       ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.black54, size: 18),
+                          icon: Icon(Icons.clear, color: context.textSecondary, size: 18),
                           onPressed: () {
                             _searchController.clear();
                             _onSearchChanged('');
@@ -257,9 +261,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                         )
                       : null,
                   hintText: "Search...",
-                  hintStyle: GoogleFonts.hindSiliguri(color: Colors.black38, fontSize: 15),
+                  hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 15),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  fillColor: const Color(0xFFF1F1F1),
+                  fillColor: context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF1F1F1),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -272,22 +276,22 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
               // Search History / Recommendations OR Search Results
               Expanded(
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF1E824C)),
+                    ? Center(
+                        child: CircularProgressIndicator(color: context.primaryAccent),
                       )
                     : isSearching
                         ? _searchResults.isEmpty
                             ? Center(
                                 child: Text(
                                   "No results found",
-                                  style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                                  style: GoogleFonts.hindSiliguri(color: context.textMuted),
                                 ),
                               )
                             : ListView.separated(
                                 itemCount: _searchResults.length,
-                                separatorBuilder: (context, index) => const Divider(
+                                separatorBuilder: (context, index) => Divider(
                                   height: 1,
-                                  color: Color(0xFFF5F5F5),
+                                  color: context.border,
                                 ),
                                 itemBuilder: (context, index) {
                                   return _buildUserRow(_searchResults[index], dbService);
@@ -306,7 +310,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                       style: GoogleFonts.hindSiliguri(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.black54,
+                                        color: context.textSecondary,
                                       ),
                                     ),
                                     TextButton(
@@ -323,7 +327,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                       child: Text(
                                         "Clear All",
                                         style: GoogleFonts.hindSiliguri(
-                                          color: const Color(0xFF1E824C),
+                                          color: context.primaryAccent,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 14,
                                         ),
@@ -339,14 +343,14 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                     return Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        border: Border.all(color: Colors.black12),
+                                        color: context.cardBg,
+                                        border: Border.all(color: context.border),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.history, size: 14, color: Colors.grey),
+                                          Icon(Icons.history, size: 14, color: context.textMuted),
                                           const SizedBox(width: 6),
                                           GestureDetector(
                                             onTap: () {
@@ -355,7 +359,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                             },
                                             child: Text(
                                               search,
-                                              style: GoogleFonts.hindSiliguri(fontSize: 13, color: Colors.black87),
+                                              style: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textPrimary),
                                             ),
                                           ),
                                           const SizedBox(width: 6),
@@ -365,7 +369,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                                 _recentSearches.remove(search);
                                               });
                                             },
-                                            child: const Icon(Icons.close, size: 14, color: Colors.grey),
+                                            child: Icon(Icons.close, size: 14, color: context.textMuted),
                                           ),
                                         ],
                                       ),
@@ -381,7 +385,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                 style: GoogleFonts.hindSiliguri(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black54,
+                                  color: context.textSecondary,
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -392,14 +396,14 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                     ? Center(
                                         child: Text(
                                           "No recommendations found",
-                                          style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                                          style: GoogleFonts.hindSiliguri(color: context.textMuted),
                                         ),
                                       )
                                     : ListView.separated(
                                         itemCount: _recommended.length,
-                                        separatorBuilder: (context, index) => const Divider(
+                                        separatorBuilder: (context, index) => Divider(
                                           height: 1,
-                                          color: Color(0xFFF5F5F5),
+                                          color: context.border,
                                         ),
                                         itemBuilder: (context, index) {
                                           return _buildUserRow(_recommended[index], dbService);

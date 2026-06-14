@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/profile.dart';
 import '../../services/database_service.dart';
+import '../../utils/app_theme.dart';
 import 'chat_screen.dart';
 
 class MemberSearchSheet extends StatefulWidget {
@@ -63,19 +64,19 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
     final db = Provider.of<DatabaseService>(context, listen: false);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'New Chat',
           style: GoogleFonts.outfit(
-            color: Colors.black87,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -86,10 +87,10 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
           // Search Input
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.white,
+            color: context.scaffoldBg,
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F5F4),
+                color: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F5F4),
                 borderRadius: BorderRadius.circular(24),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -97,14 +98,14 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                 controller: _searchCtrl,
                 autofocus: true,
                 decoration: InputDecoration(
-                  icon: const Icon(Icons.search, color: Colors.black38, size: 20),
+                  icon: Icon(Icons.search, color: context.textMuted, size: 20),
                   hintText: "নাম বা ইউজারনেম দিয়ে খুঁজুন...",
-                  hintStyle: GoogleFonts.hindSiliguri(color: Colors.black38, fontSize: 14),
+                  hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                style: GoogleFonts.hindSiliguri(fontSize: 14.5),
+                style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary),
                 onChanged: (val) => _onSearchChanged(val, db),
               ),
             ),
@@ -113,19 +114,19 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
           // Search Results
           Expanded(
             child: _isSearching
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E824C)))
+                ? Center(child: CircularProgressIndicator(color: context.primaryAccent))
                 : _searchResults.isEmpty
                     ? Center(
                         child: Text(
                           _searchCtrl.text.isEmpty
                               ? "মেম্বার খুঁজতে টাইপ করুন"
                               : "কোনো মেম্বার পাওয়া যায়নি",
-                          style: GoogleFonts.hindSiliguri(color: Colors.black38, fontSize: 14),
+                          style: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14),
                         ),
                       )
                     : ListView.separated(
                         itemCount: _searchResults.length,
-                        separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
                         itemBuilder: (context, index) {
                           final user = _searchResults[index];
                           
@@ -141,7 +142,7 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             leading: CircleAvatar(
                               radius: 22,
-                              backgroundColor: Colors.grey[200],
+                              backgroundColor: context.border,
                               backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
                                   ? NetworkImage(user.avatarUrl!)
                                   : const NetworkImage("https://i.pravatar.cc/150"),
@@ -151,14 +152,14 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                               style: GoogleFonts.hindSiliguri(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: context.textPrimary,
                               ),
                             ),
                             subtitle: Text(
                               "@${user.username}",
                               style: GoogleFonts.outfit(
                                 fontSize: 12.5,
-                                color: Colors.black45,
+                                color: context.textSecondary,
                               ),
                             ),
                             trailing: canDM
@@ -173,8 +174,8 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                                       );
                                     },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF0085FF),
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: context.isDarkMode ? const Color(0xFF0A1931) : const Color(0xFFE0F2FE),
+                                      foregroundColor: context.isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                       elevation: 0,
@@ -202,8 +203,10 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                                             );
                                           },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: hasSentRequest ? Colors.grey[200] : const Color(0xFF1E824C),
-                                      foregroundColor: hasSentRequest ? Colors.black38 : Colors.white,
+                                      backgroundColor: hasSentRequest 
+                                          ? (context.isDarkMode ? const Color(0xFF1E293B) : Colors.grey[200]) 
+                                          : context.primaryAccent,
+                                      foregroundColor: hasSentRequest ? context.textMuted : Colors.white,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                       elevation: 0,

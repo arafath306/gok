@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/notification_settings_provider.dart';
+import '../../utils/app_theme.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({super.key});
@@ -9,26 +10,26 @@ class NotificationSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 22),
+          icon: Icon(Icons.arrow_back, color: context.textPrimary, size: 22),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Notifications',
           style: GoogleFonts.outfit(
-            color: Colors.black87,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: const Color(0xFFEEEEEE), height: 1.0),
+          child: Container(color: context.border, height: 1.0),
         ),
       ),
       body: Consumer<NotificationSettingsProvider>(
@@ -38,7 +39,7 @@ class NotificationSettingsScreen extends StatelessWidget {
             padding: EdgeInsets.zero,
             itemCount: items.length,
             separatorBuilder: (context, index) =>
-                const Divider(height: 1, color: Color(0xFFF0F0F0), indent: 16, endIndent: 16),
+                Divider(height: 1, color: context.border, indent: 16, endIndent: 16),
             itemBuilder: (context, index) {
               final item = items[index];
               return _NotifSettingTile(item: item, provider: provider);
@@ -59,7 +60,7 @@ class _NotifSettingTile extends StatelessWidget {
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.cardBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -77,7 +78,7 @@ class _NotifSettingTile extends StatelessWidget {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.black12,
+                        color: context.border,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -88,13 +89,13 @@ class _NotifSettingTile extends StatelessWidget {
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
-                      color: Colors.black87,
+                      color: context.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 16),
                   // In-app toggle
                   _buildToggleRow(
-                    ctx,
+                    context,
                     label: 'In-app',
                     value: item.inApp,
                     onChanged: (val) {
@@ -104,7 +105,7 @@ class _NotifSettingTile extends StatelessWidget {
                   ),
                   // Push toggle
                   _buildToggleRow(
-                    ctx,
+                    context,
                     label: 'Push',
                     value: item.push,
                     onChanged: (val) {
@@ -119,13 +120,13 @@ class _NotifSettingTile extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: context.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _buildFromOption(ctx, setModalState, 'everyone', 'Everyone'),
-                    _buildFromOption(ctx, setModalState, 'people_you_follow', 'People you follow'),
-                    _buildFromOption(ctx, setModalState, 'off', 'Off'),
+                    _buildFromOption(context, setModalState, 'everyone', 'Everyone'),
+                    _buildFromOption(context, setModalState, 'people_you_follow', 'People you follow'),
+                    _buildFromOption(context, setModalState, 'off', 'Off'),
                   ],
                 ],
               ),
@@ -147,15 +148,15 @@ class _NotifSettingTile extends StatelessWidget {
             label,
             style: GoogleFonts.outfit(
               fontSize: 15,
-              color: Colors.black87,
+              color: context.textPrimary,
             ),
           ),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: Colors.black87,
-            activeTrackColor: Colors.black87,
-            inactiveTrackColor: Colors.black12,
+            activeColor: Colors.white,
+            activeTrackColor: context.primaryAccent,
+            inactiveTrackColor: context.isDarkMode ? Colors.grey[800] : Colors.black12,
             inactiveThumbColor: Colors.white,
           ),
         ],
@@ -163,7 +164,7 @@ class _NotifSettingTile extends StatelessWidget {
     );
   }
 
-  Widget _buildFromOption(BuildContext ctx, StateSetter setModalState, String value, String label) {
+  Widget _buildFromOption(BuildContext context, StateSetter setModalState, String value, String label) {
     final isSelected = item.from == value;
     return InkWell(
       onTap: () {
@@ -179,11 +180,11 @@ class _NotifSettingTile extends StatelessWidget {
               label,
               style: GoogleFonts.outfit(
                 fontSize: 15,
-                color: Colors.black87,
+                color: context.textPrimary,
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check, color: Colors.black87, size: 20),
+              Icon(Icons.check, color: context.primaryAccent, size: 20),
           ],
         ),
       ),
@@ -198,7 +199,7 @@ class _NotifSettingTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(item.icon, color: Colors.black87, size: 22),
+            Icon(item.icon, color: context.textPrimary, size: 22),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -209,7 +210,7 @@ class _NotifSettingTile extends StatelessWidget {
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w500,
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: context.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -217,13 +218,13 @@ class _NotifSettingTile extends StatelessWidget {
                     item.subtext,
                     style: GoogleFonts.outfit(
                       fontSize: 13,
-                      color: Colors.black45,
+                      color: context.textMuted,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.black26, size: 20),
+            Icon(Icons.chevron_right, color: context.textMuted, size: 20),
           ],
         ),
       ),

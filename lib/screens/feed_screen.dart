@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../widgets/custom_thread_card.dart';
+import '../utils/app_theme.dart';
 import 'main_screen.dart';
 
 class FeedScreen extends StatefulWidget {
@@ -43,14 +44,14 @@ class _FeedScreenState extends State<FeedScreen> {
     final prof = dbService.myProfile;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 16,
         leading: IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Colors.black87, size: 24),
+          icon: Icon(Icons.menu_rounded, color: context.textPrimary, size: 24),
           onPressed: () {
             Scaffold.of(context).openDrawer(); 
           },
@@ -70,10 +71,10 @@ class _FeedScreenState extends State<FeedScreen> {
                 // Horizontal Scrollable Tabs Bar
                 Container(
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: context.scaffoldBg,
                     border: Border(
-                      bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                      bottom: BorderSide(color: context.border, width: 1),
                     ),
                   ),
                   height: 50,
@@ -100,7 +101,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                 style: GoogleFonts.outfit(
                                   fontSize: 15,
                                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                  color: isSelected ? const Color(0xFF1E824C) : Colors.black54,
+                                  color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -136,9 +137,9 @@ class _FeedScreenState extends State<FeedScreen> {
                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: context.cardBg,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+                            border: Border.all(color: context.border, width: 0.8),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.01),
@@ -153,7 +154,7 @@ class _FeedScreenState extends State<FeedScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 16,
-                                  backgroundColor: Colors.grey[200],
+                                  backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
                                   backgroundImage: NetworkImage(
                                     prof?.avatarUrl ?? "https://i.pravatar.cc/150",
                                   ),
@@ -163,13 +164,13 @@ class _FeedScreenState extends State<FeedScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF3F4F6),
+                                      color: context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF3F4F6),
                                       borderRadius: BorderRadius.circular(24),
                                     ),
                                     child: Text(
                                       "আজকে কী ভাবছেন?",
                                       style: GoogleFonts.hindSiliguri(
-                                        color: Colors.black54,
+                                        color: context.textSecondary,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -188,17 +189,17 @@ class _FeedScreenState extends State<FeedScreen> {
                             child: Center(
                               child: Text(
                                 "ভিডিও আপলোড করার সিস্টেম এখনও চালু হয়নি।",
-                                style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                                style: GoogleFonts.hindSiliguri(color: context.textSecondary),
                               ),
                             ),
                           )
                         ] else ...[
                           (() {
                             final posts = _selectedTabIndex == 1
-                                ? dbService.feed
-                                    .where((post) => dbService.isFollowingUser(post.userId))
-                                    .toList()
-                                : dbService.feed;
+                                  ? dbService.feed
+                                      .where((post) => dbService.isFollowingUser(post.userId))
+                                      .toList()
+                                  : dbService.feed;
 
                             if (_selectedTabIndex == 1 && dbService.followingIds.isEmpty) {
                               return SizedBox(
@@ -211,7 +212,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                         "আপনার ফলোয়িং লিস্টে কেউ নেই",
                                         style: GoogleFonts.hindSiliguri(
                                           fontSize: 16,
-                                          color: Colors.black54,
+                                          color: context.textSecondary,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -244,7 +245,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                     _selectedTabIndex == 1
                                         ? "আপনি যাদের ফলো করছেন তাদের কোনো ডাক পাওয়া যায়নি।"
                                         : "কোন ডাক পাওয়া যায়নি।",
-                                    style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                                    style: GoogleFonts.hindSiliguri(color: context.textSecondary),
                                   ),
                                 ),
                               );

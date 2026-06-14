@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
+import '../../services/general_settings_provider.dart';
 import '../../utils/routes.dart';
+import '../../utils/app_theme.dart';
 import '../profile/edit_profile_screen.dart';
 import 'notification_settings_screen.dart';
 import 'privacy_settings_screen.dart';
@@ -23,26 +25,26 @@ class SettingsScreen extends StatelessWidget {
     final myProfile = dbService.myProfile;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 22),
+          icon: Icon(Icons.arrow_back, color: context.textPrimary, size: 22),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Settings',
           style: GoogleFonts.outfit(
-            color: Colors.black87,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: const Color(0xFFEEEEEE), height: 1.0),
+          child: Container(color: context.border, height: 1.0),
         ),
       ),
       body: ListView(
@@ -65,15 +67,15 @@ class SettingsScreen extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.cardBg,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFEEEEEE)),
+                border: Border.all(color: context.border),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: Colors.grey[100],
+                    backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[100],
                     backgroundImage: myProfile?.avatarUrl != null && myProfile!.avatarUrl!.isNotEmpty
                         ? NetworkImage(myProfile.avatarUrl!)
                         : const NetworkImage('https://i.pravatar.cc/150?u=current_user'),
@@ -88,7 +90,7 @@ class SettingsScreen extends StatelessWidget {
                           style: GoogleFonts.outfit(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: Colors.black87,
+                            color: context.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -96,13 +98,13 @@ class SettingsScreen extends StatelessWidget {
                           '@${myProfile?.username ?? 'username'}',
                           style: GoogleFonts.outfit(
                             fontSize: 13,
-                            color: Colors.black45,
+                            color: context.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: Colors.black26, size: 20),
+                  Icon(Icons.chevron_right, color: context.textMuted, size: 20),
                 ],
               ),
             ),
@@ -110,8 +112,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // --- Account Group ---
-          _buildSectionHeader('Account'),
-          _buildSettingsGroup([
+          _buildSectionHeader(context, 'Account'),
+          _buildSettingsGroup(context, [
             _SettingsTileItem(
               icon: Icons.person_outline_rounded,
               title: 'Edit Profile',
@@ -160,9 +162,45 @@ class SettingsScreen extends StatelessWidget {
           ]),
           const SizedBox(height: 20),
 
+          // --- Theme / Display Section ---
+          _buildSectionHeader(context, 'Display & Theme'),
+          Container(
+            decoration: BoxDecoration(
+              color: context.cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.border),
+            ),
+            child: Consumer<GeneralSettingsProvider>(
+              builder: (context, settingsProvider, _) {
+                return SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  secondary: Icon(
+                    settingsProvider.isDarkTheme ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: context.textPrimary,
+                    size: 22,
+                  ),
+                  title: Text(
+                    'Dark Theme',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w500,
+                      color: context.textPrimary,
+                      fontSize: 14.5,
+                    ),
+                  ),
+                  activeColor: context.primaryAccent,
+                  value: settingsProvider.isDarkTheme,
+                  onChanged: (val) {
+                    settingsProvider.toggleTheme(val);
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+
           // --- Content & Activity Group ---
-          _buildSectionHeader('Content & Activity'),
-          _buildSettingsGroup([
+          _buildSectionHeader(context, 'Content & Activity'),
+          _buildSettingsGroup(context, [
             _SettingsTileItem(
               icon: Icons.bookmark_border_rounded,
               title: 'Saved Posts',
@@ -197,8 +235,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // --- Support Group ---
-          _buildSectionHeader('Support'),
-          _buildSettingsGroup([
+          _buildSectionHeader(context, 'Support'),
+          _buildSettingsGroup(context, [
             _SettingsTileItem(
               icon: Icons.help_outline_rounded,
               title: 'Help Center',
@@ -228,9 +266,13 @@ class SettingsScreen extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.cardBg,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFFDEDEC)),
+                border: Border.all(
+                  color: context.isDarkMode
+                      ? const Color(0x33EF4444)
+                      : const Color(0xFFFDEDEC),
+                ),
               ),
               alignment: Alignment.center,
               child: Row(
@@ -256,7 +298,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       child: Text(
@@ -264,39 +306,39 @@ class SettingsScreen extends StatelessWidget {
         style: GoogleFonts.outfit(
           fontSize: 11.5,
           fontWeight: FontWeight.bold,
-          color: Colors.black45,
+          color: context.textSecondary,
           letterSpacing: 0.6,
         ),
       ),
     );
   }
 
-  Widget _buildSettingsGroup(List<_SettingsTileItem> tiles) {
+  Widget _buildSettingsGroup(BuildContext context, List<_SettingsTileItem> tiles) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEEEEE)),
+        border: Border.all(color: context.border),
       ),
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: tiles.length,
-        separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFEEEEEE)),
+        separatorBuilder: (_, __) => Divider(height: 1, color: context.border),
         itemBuilder: (context, index) {
           final tile = tiles[index];
           return ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-            leading: Icon(tile.icon, color: Colors.black87, size: 22),
+            leading: Icon(tile.icon, color: context.textPrimary, size: 22),
             title: Text(
               tile.title,
               style: GoogleFonts.outfit(
                 fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: context.textPrimary,
                 fontSize: 14.5,
               ),
             ),
-            trailing: const Icon(Icons.chevron_right, color: Colors.black26, size: 18),
+            trailing: Icon(Icons.chevron_right, color: context.textMuted, size: 18),
             onTap: tile.onTap,
           );
         },
@@ -308,23 +350,25 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Log Out',
           style: GoogleFonts.outfit(
-              fontWeight: FontWeight.bold, color: Colors.black87),
+            fontWeight: FontWeight.bold,
+            color: context.textPrimary,
+          ),
         ),
         content: Text(
           'Are you sure you want to log out?',
-          style: GoogleFonts.outfit(color: Colors.black54),
+          style: GoogleFonts.outfit(color: context.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Cancel',
-              style: GoogleFonts.outfit(color: Colors.black54),
+              style: GoogleFonts.outfit(color: context.textSecondary),
             ),
           ),
           ElevatedButton(

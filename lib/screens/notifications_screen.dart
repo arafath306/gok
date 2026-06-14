@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import 'settings/notification_settings_screen.dart';
 import '../utils/routes.dart';
+import '../utils/app_theme.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -26,13 +27,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.scaffoldBg,
           elevation: 0,
           scrolledUnderElevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Colors.black87),
+            icon: Icon(Icons.menu_rounded, color: context.textPrimary),
             onPressed: () {
               Scaffold.of(context).openDrawer();
             },
@@ -40,7 +41,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           title: Text(
             "Notifications",
             style: GoogleFonts.outfit(
-              color: Colors.black87,
+              color: context.textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
@@ -67,7 +68,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.settings_outlined, color: Colors.black87),
+              icon: Icon(Icons.settings_outlined, color: context.textPrimary),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -79,8 +80,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           bottom: TabBar(
             indicatorColor: const Color(0xFF0085FF),
             indicatorWeight: 2,
-            labelColor: Colors.black87,
-            unselectedLabelColor: Colors.black38,
+            labelColor: context.textPrimary,
+            unselectedLabelColor: context.textMuted,
             labelStyle: GoogleFonts.outfit(
               fontWeight: FontWeight.bold,
               fontSize: 15,
@@ -121,13 +122,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Icon(
               Icons.notifications_none_outlined,
               size: 90,
-              color: Colors.blueGrey.withValues(alpha: 0.35),
+              color: context.isDarkMode ? Colors.white30 : Colors.blueGrey.withValues(alpha: 0.35),
             ),
             const SizedBox(height: 16),
             Text(
               "No notifications yet!",
               style: GoogleFonts.outfit(
-                color: Colors.black54,
+                color: context.textSecondary,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -142,11 +143,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: ListView.separated(
         itemCount: list.length,
         padding: const EdgeInsets.symmetric(vertical: 8),
-        separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF5F5F5)),
+        separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
         itemBuilder: (context, index) {
           final item = list[index];
           return Material(
-              color: item.read ? Colors.white : const Color(0xFFF0F7FF),
+              color: item.read 
+                  ? context.scaffoldBg 
+                  : (context.isDarkMode ? const Color(0xFF0A1931) : const Color(0xFFF0F7FF)),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 onTap: () {
@@ -157,7 +160,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 },
                 leading: CircleAvatar(
                   radius: 20,
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: context.border,
                   backgroundImage: item.actor.avatarUrl != null && item.actor.avatarUrl.isNotEmpty
                       ? NetworkImage(item.actor.avatarUrl)
                       : const NetworkImage("https://i.pravatar.cc/150?u=actor"),
@@ -166,7 +169,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   text: TextSpan(
                     style: GoogleFonts.outfit(
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: context.textPrimary,
                     ),
                     children: [
                       TextSpan(
@@ -183,7 +186,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     item.createdAt,
                     style: GoogleFonts.outfit(
                       fontSize: 11,
-                      color: Colors.black45,
+                      color: context.textMuted,
                     ),
                   ),
                 ),

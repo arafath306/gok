@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/app_theme.dart';
 
 class AboutSettingsScreen extends StatefulWidget {
   const AboutSettingsScreen({super.key});
@@ -23,22 +24,22 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: context.cardBg,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
             'Check for Updates',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black87),
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
           ),
           content: Text(
             'You are on the latest premium release!\n\nVersion: 2.0.0-Beta\nBuild: 44 (Premium Edition)',
-            style: GoogleFonts.outfit(color: Colors.black54),
+            style: GoogleFonts.outfit(color: context.textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 'Great!',
-                style: GoogleFonts.outfit(color: const Color(0xFF1E824C), fontWeight: FontWeight.bold),
+                style: GoogleFonts.outfit(color: context.primaryAccent, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -50,26 +51,26 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 22),
+          icon: Icon(Icons.arrow_back, color: context.textPrimary, size: 22),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'About Dak',
           style: GoogleFonts.outfit(
-            color: Colors.black87,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: const Color(0xFFEEEEEE), height: 1.0),
+          child: Container(color: context.border, height: 1.0),
         ),
       ),
       body: ListView(
@@ -81,11 +82,12 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.cardBg,
                 shape: BoxShape.circle,
+                border: Border.all(color: context.border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withOpacity(context.isDarkMode ? 0.2 : 0.04),
                     blurRadius: 10,
                     spreadRadius: 2,
                   ),
@@ -106,7 +108,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: context.textPrimary,
               ),
             ),
           ),
@@ -115,7 +117,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               'Version 2.0.0 (Beta-44)',
               style: GoogleFonts.outfit(
                 fontSize: 13,
-                color: Colors.black45,
+                color: context.textMuted,
               ),
             ),
           ),
@@ -125,8 +127,9 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.cardBg,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.border),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,7 +139,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                   style: GoogleFonts.outfit(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: Colors.black87,
+                    color: context.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -144,7 +147,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                   'Dak is engineered to redefine social media networks. With direct message filters, decentralized architectures, high-fidelity layouts, and a zero-clutter experience, we aim to outshine Twitter and Bluesky in performance, utility, and visual excellence.',
                   style: GoogleFonts.outfit(
                     fontSize: 13,
-                    color: Colors.black54,
+                    color: context.textSecondary,
                     height: 1.5,
                   ),
                 ),
@@ -156,37 +159,42 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           // About options
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.cardBg,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.border),
             ),
             child: Column(
               children: [
                 _buildAboutTile(
+                  context: context,
                   icon: Icons.system_update_rounded,
                   title: 'Check for Updates',
                   trailing: _isCheckingUpdates
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E824C)),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: context.primaryAccent),
                         )
                       : null,
                   onTap: _isCheckingUpdates ? null : _checkUpdates,
                 ),
-                const Divider(height: 1, color: Color(0xFFF1F1F1)),
+                Divider(height: 1, color: context.border),
                 _buildAboutTile(
+                  context: context,
                   icon: Icons.code_rounded,
                   title: 'Open Source Licenses',
                   onTap: () => _showLicenses(context),
                 ),
-                const Divider(height: 1, color: Color(0xFFF1F1F1)),
+                Divider(height: 1, color: context.border),
                 _buildAboutTile(
+                  context: context,
                   icon: Icons.description_outlined,
                   title: 'Terms of Service',
                   onTap: () => _showDocument(context, 'Terms of Service', 'Welcome to Dak!\n\n1. Use Dak respectfully.\n2. Respect other users\' privacy settings.\n3. Content violating our policies will be deleted.\n\nThank you for being part of the premium future of social networks.'),
                 ),
-                const Divider(height: 1, color: Color(0xFFF1F1F1)),
+                Divider(height: 1, color: context.border),
                 _buildAboutTile(
+                  context: context,
                   icon: Icons.privacy_tip_outlined,
                   title: 'Privacy Policy',
                   onTap: () => _showDocument(context, 'Privacy Policy', 'Your privacy is paramount:\n\n1. We encrypt DMs locally.\n2. You control DM permission filters (Everyone, Users I Follow, No one).\n3. Session logs are auditable and revocable by you at any time.'),
@@ -201,22 +209,23 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
   }
 
   Widget _buildAboutTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     Widget? trailing,
     VoidCallback? onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: Colors.black54, size: 20),
+      leading: Icon(icon, color: context.textSecondary, size: 20),
       title: Text(
         title,
         style: GoogleFonts.outfit(
           fontWeight: FontWeight.w500,
-          color: Colors.black87,
+          color: context.textPrimary,
           fontSize: 14.5,
         ),
       ),
-      trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.black26, size: 18),
+      trailing: trailing ?? Icon(Icons.chevron_right, color: context.textMuted, size: 18),
       onTap: onTap,
     );
   }
@@ -225,16 +234,16 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           title,
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black87),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: SingleChildScrollView(
           child: Text(
             content,
-            style: GoogleFonts.outfit(color: Colors.black54, height: 1.45),
+            style: GoogleFonts.outfit(color: context.textSecondary, height: 1.45),
           ),
         ),
         actions: [
@@ -242,7 +251,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Close',
-              style: GoogleFonts.outfit(color: const Color(0xFF1E824C), fontWeight: FontWeight.bold),
+              style: GoogleFonts.outfit(color: context.primaryAccent, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -260,7 +269,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.cardBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -276,7 +285,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black12,
+                    color: context.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -287,14 +296,14 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                 style: GoogleFonts.outfit(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Colors.black87,
+                  color: context.textPrimary,
                 ),
               ),
               const SizedBox(height: 16),
               Expanded(
                 child: ListView.separated(
                   itemCount: licenses.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                  separatorBuilder: (_, __) => Divider(height: 1, color: context.border),
                   itemBuilder: (context, index) {
                     final item = licenses[index];
                     return Padding(
@@ -304,12 +313,12 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                         children: [
                           Text(
                             item['package']!,
-                            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14.5, color: Colors.black87),
+                            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14.5, color: context.textPrimary),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             item['desc']!,
-                            style: GoogleFonts.outfit(fontSize: 12.5, color: Colors.black45),
+                            style: GoogleFonts.outfit(fontSize: 12.5, color: context.textSecondary),
                           ),
                         ],
                       ),

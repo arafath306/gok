@@ -39,23 +39,27 @@ class PigeonApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<GeneralSettingsProvider>(context);
+
     return MaterialApp(
       title: 'Pigeon',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: settingsProvider.themeMode,
       builder: (context, child) {
         final double screenWidth = MediaQuery.of(context).size.width;
         final bool isWide = screenWidth > 600;
         if (isWide) {
           const double targetWidth = 500;
           return Container(
-            color: const Color(0xFFF4F6F8), // Premium web background
+            color: settingsProvider.isDarkTheme ? const Color(0xFF000000) : const Color(0xFFF4F6F8), // Premium web background
             child: Center(
               child: Container(
                 width: targetWidth,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
+                decoration: BoxDecoration(
+                  color: settingsProvider.isDarkTheme ? const Color(0xFF0D0F1A) : Colors.white,
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 20,

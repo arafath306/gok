@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/profile.dart';
 import '../../services/database_service.dart';
+import '../../utils/app_theme.dart';
 
 class ChatScreen extends StatefulWidget {
   final Profile otherUser;
@@ -64,13 +65,13 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -78,7 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.grey[200],
+              backgroundColor: context.border,
               backgroundImage: widget.otherUser.avatarUrl != null && widget.otherUser.avatarUrl!.isNotEmpty
                   ? NetworkImage(widget.otherUser.avatarUrl!)
                   : const NetworkImage("https://i.pravatar.cc/150"),
@@ -94,14 +95,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 15.5,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: context.textPrimary,
                     ),
                   ),
                   Text(
                     "@${widget.otherUser.username}",
                     style: GoogleFonts.outfit(
                       fontSize: 11.5,
-                      color: Colors.black45,
+                      color: context.textMuted,
                     ),
                   ),
                 ],
@@ -111,11 +112,11 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.videocam_outlined, color: Colors.black87, size: 22),
+            icon: Icon(Icons.videocam_outlined, color: context.textPrimary, size: 22),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.info_outlined, color: Colors.black87, size: 20),
+            icon: Icon(Icons.info_outlined, color: context.textPrimary, size: 20),
             onPressed: () {},
           ),
           const SizedBox(width: 8),
@@ -129,7 +130,7 @@ class _ChatScreenState extends State<ChatScreen> {
               stream: _messagesStream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFF1E824C)));
+                  return Center(child: CircularProgressIndicator(color: context.primaryAccent));
                 }
                 
                 final messages = snapshot.data ?? [];
@@ -144,11 +145,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Colors.black26),
+                        Icon(Icons.chat_bubble_outline_rounded, size: 48, color: context.textMuted),
                         const SizedBox(height: 12),
                         Text(
                           "কথোপকথন শুরু করতে বার্তা পাঠান।",
-                          style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                          style: GoogleFonts.hindSiliguri(color: context.textMuted),
                         ),
                       ],
                     ),
@@ -170,14 +171,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isMe ? const Color(0xFF1E824C) : Colors.white,
+                          color: isMe ? context.primaryAccent : context.cardBg,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(16),
                             topRight: const Radius.circular(16),
                             bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(0),
                             bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(16),
                           ),
-                          border: isMe ? null : Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+                          border: isMe ? null : Border.all(color: context.border, width: 0.8),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.015),
@@ -194,7 +195,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               msg["text"] as String,
                               style: GoogleFonts.hindSiliguri(
                                 fontSize: 14.5,
-                                color: isMe ? Colors.white : Colors.black87,
+                                color: isMe ? Colors.white : context.textPrimary,
                                 height: 1.4,
                               ),
                             ),
@@ -205,7 +206,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 msg["time"] as String,
                                 style: GoogleFonts.outfit(
                                   fontSize: 10,
-                                  color: isMe ? Colors.white60 : Colors.black38,
+                                  color: isMe ? Colors.white60 : context.textMuted,
                                 ),
                               ),
                             ),
@@ -222,16 +223,16 @@ class _ChatScreenState extends State<ChatScreen> {
           // Message Input Field
           Container(
             padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).padding.bottom + 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: context.cardBg,
               border: Border(
-                top: BorderSide(color: Color(0xFFE5E7EB), width: 0.8),
+                top: BorderSide(color: context.border, width: 0.8),
               ),
             ),
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF1E824C), size: 24),
+                  icon: Icon(Icons.add_photo_alternate_outlined, color: context.primaryAccent, size: 24),
                   onPressed: () {},
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -240,7 +241,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3F5F4),
+                      color: context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF3F5F4),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -248,12 +249,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       controller: _messageCtrl,
                       decoration: InputDecoration(
                         hintText: "বার্তা লিখুন...",
-                        hintStyle: GoogleFonts.hindSiliguri(color: Colors.black38, fontSize: 14),
+                        hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      style: GoogleFonts.hindSiliguri(fontSize: 14.5),
+                      style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary),
                       maxLines: 4,
                       minLines: 1,
                       textInputAction: TextInputAction.send,
@@ -264,7 +265,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 const SizedBox(width: 12),
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: const Color(0xFF1E824C),
+                  backgroundColor: context.primaryAccent,
                   child: IconButton(
                     icon: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
                     onPressed: _sendMessage,

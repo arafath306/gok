@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import 'messenger/messenger_home_screen.dart';
 import 'settings/settings_screen.dart';
+import '../utils/app_theme.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -65,9 +66,9 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.cardBg,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+              border: Border.all(color: context.border, width: 0.8),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.08),
@@ -97,7 +98,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.bold,
                           fontSize: 14.5,
-                          color: Colors.black87,
+                          color: context.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -105,7 +106,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                         event['body'] as String,
                         style: GoogleFonts.hindSiliguri(
                           fontSize: 13,
-                          color: Colors.black54,
+                          color: context.textSecondary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -114,7 +115,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, size: 16, color: Colors.black38),
+                  icon: Icon(Icons.close, size: 16, color: context.textMuted),
                   onPressed: () => overlayEntry.remove(),
                 )
               ],
@@ -149,16 +150,16 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cardBg,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           "$feature coming soon!",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Text(
           "We are actively working on building the $feature feature to match the complete social media experience. Stay tuned!",
-          style: GoogleFonts.outfit(color: Colors.black54),
+          style: GoogleFonts.outfit(color: context.textSecondary),
         ),
         actions: [
           TextButton(
@@ -178,12 +179,12 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cardBg,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           "Submit Feedback",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -191,18 +192,18 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           children: [
             Text(
               "Let us know your thoughts or report any issues:",
-              style: GoogleFonts.outfit(color: Colors.black54),
+              style: GoogleFonts.outfit(color: context.textSecondary),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: feedbackController,
               maxLines: 3,
-              style: GoogleFonts.outfit(fontSize: 14),
+              style: GoogleFonts.outfit(fontSize: 14, color: context.textPrimary),
               decoration: InputDecoration(
                 hintText: "Enter your feedback...",
-                hintStyle: GoogleFonts.outfit(color: Colors.black38),
+                hintStyle: GoogleFonts.outfit(color: context.textMuted),
                 filled: true,
-                fillColor: const Color(0xFFF3F4F6),
+                fillColor: context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF3F4F6),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
@@ -217,7 +218,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             onPressed: () => Navigator.pop(context),
             child: Text(
               "Cancel",
-              style: GoogleFonts.outfit(color: Colors.black54),
+              style: GoogleFonts.outfit(color: context.textSecondary),
             ),
           ),
           ElevatedButton(
@@ -252,16 +253,16 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cardBg,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           "Help & Support",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.black),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Text(
           "Need help? Contact our support team at support@dak.social or check our online documentation.",
-          style: GoogleFonts.outfit(color: Colors.black54),
+          style: GoogleFonts.outfit(color: context.textSecondary),
         ),
         actions: [
           TextButton(
@@ -279,7 +280,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
   void _showModal(BuildContext context, String title, String contentText) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.cardBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -295,7 +296,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                 style: GoogleFonts.outfit(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: context.textPrimary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -306,7 +307,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                     contentText,
                     style: GoogleFonts.outfit(
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: context.textSecondary,
                       height: 1.5,
                     ),
                   ),
@@ -354,7 +355,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             },
             child: CircleAvatar(
               radius: 32,
-              backgroundColor: Colors.grey[200],
+              backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
               backgroundImage: myProfile?.avatarUrl != null && myProfile!.avatarUrl!.isNotEmpty
                   ? NetworkImage(myProfile.avatarUrl!)
                   : const NetworkImage("https://i.pravatar.cc/150?u=current_user"),
@@ -371,7 +372,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: context.textPrimary,
                 letterSpacing: -0.4,
               ),
               maxLines: 1,
@@ -383,7 +384,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             "@${myProfile?.username ?? 'arafath306'}.bsky.social",
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: Colors.black54,
+              color: context.textSecondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -393,17 +394,17 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             text: TextSpan(
               style: GoogleFonts.outfit(
                 fontSize: 14,
-                color: Colors.black54,
+                color: context.textSecondary,
               ),
               children: [
                 TextSpan(
                   text: '${myProfile?.followersCount ?? 0} ',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: context.textPrimary),
                 ),
                 const TextSpan(text: 'followers  ·  '),
                 TextSpan(
                   text: '${myProfile?.followingCount ?? 0} ',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: context.textPrimary),
                 ),
                 const TextSpan(text: 'following'),
               ],
@@ -429,7 +430,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         children: [
           Icon(
             icon,
-            color: isActive ? Colors.black : Colors.black87,
+            color: isActive ? context.primaryAccent : context.textPrimary,
             size: 26,
           ),
           if (badgeCount > 0)
@@ -464,7 +465,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         style: GoogleFonts.outfit(
           fontSize: 18,
           fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-          color: isActive ? Colors.black : Colors.black87,
+          color: isActive ? context.primaryAccent : context.textPrimary,
           letterSpacing: -0.1,
         ),
       ),
@@ -530,17 +531,17 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () => _showFeedbackDialog(context),
-              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: Colors.black87),
+              icon: Icon(Icons.chat_bubble_outline_rounded, size: 16, color: context.textPrimary),
               label: Text(
                 "Feedback",
                 style: GoogleFonts.outfit(
-                  color: Colors.black87,
+                  color: context.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF3F4F6),
+                backgroundColor: context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF3F4F6),
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: const StadiumBorder(),
@@ -553,14 +554,14 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             child: OutlinedButton(
               onPressed: () => _showHelpDialog(context),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.2),
+                side: BorderSide(color: context.border, width: 1.2),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: const StadiumBorder(),
               ),
               child: Text(
                 "Help",
                 style: GoogleFonts.outfit(
-                  color: Colors.black87,
+                  color: context.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -594,7 +595,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                   curve: Curves.easeOutBack,
                   child: Icon(
                     isSelected ? activeIcon : inactiveIcon,
-                    color: isSelected ? const Color(0xFF1E824C) : Colors.black45,
+                    color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,
                     size: 24,
                   ),
                 ),
@@ -662,9 +663,9 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     ];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBg,
       drawer: Drawer(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         child: Consumer<DatabaseService>(
           builder: (context, dbService, _) {
             final myProfile = dbService.myProfile;
@@ -769,7 +770,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                       ),
                     ),
                   ),
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  Divider(height: 1, color: context.border),
                   _buildFooterLinks(context),
                   _buildFooterButtons(context),
                 ],
@@ -828,10 +829,10 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         builder: (context, dbService, _) {
           return Container(
             height: 64,
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: context.cardBg,
               border: Border(
-                top: BorderSide(color: Color(0xFFF1F1F1), width: 1),
+                top: BorderSide(color: context.border, width: 1),
               ),
             ),
             child: SafeArea(

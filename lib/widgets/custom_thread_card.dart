@@ -7,6 +7,7 @@ import '../services/database_service.dart';
 import '../services/general_settings_provider.dart';
 import '../screens/thread_detail_screen.dart';
 import '../utils/routes.dart';
+import '../utils/app_theme.dart';
 import 'comments_sheet.dart';
 import 'reactions_sheet.dart';
 import '../screens/profile/profile_screen.dart';
@@ -125,9 +126,9 @@ class CustomThreadCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+        border: Border.all(color: context.border, width: 0.8),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.01),
@@ -188,7 +189,7 @@ class CustomThreadCard extends StatelessWidget {
                                   style: GoogleFonts.hindSiliguri(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
-                                    color: Colors.black,
+                                    color: context.textPrimary,
                                     height: 1.2,
                                   ),
                                 ),
@@ -209,7 +210,7 @@ class CustomThreadCard extends StatelessWidget {
                           "@${post.author.username} · ${post.createdAt}",
                           style: GoogleFonts.outfit(
                             fontSize: 12,
-                            color: Colors.grey[500],
+                            color: context.textSecondary,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -217,7 +218,7 @@ class CustomThreadCard extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.more_horiz, color: Colors.black54, size: 20),
+                    icon: Icon(Icons.more_horiz, color: context.textSecondary, size: 20),
                     onPressed: () => _showQuickActions(context, dbService),
                   ),
                 ],
@@ -229,7 +230,7 @@ class CustomThreadCard extends StatelessWidget {
                 post.content,
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 14.5,
-                  color: Colors.black87,
+                  color: context.textPrimary,
                   height: 1.45,
                 ),
               ),
@@ -341,10 +342,10 @@ class CustomThreadCard extends StatelessWidget {
                                   key: ValueKey<String>(post.reactionType ?? '❤️'),
                                   style: const TextStyle(fontSize: 18),
                                 )
-                              : const Icon(
+                              : Icon(
                                   Icons.favorite_border,
-                                  key: ValueKey<int>(0),
-                                  color: Colors.black87,
+                                  key: const ValueKey<int>(0),
+                                  color: context.textSecondary,
                                   size: 20,
                                 ),
                         ),
@@ -357,7 +358,7 @@ class CustomThreadCard extends StatelessWidget {
                           "${post.likesCount}",
                           style: GoogleFonts.outfit(
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: context.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -373,9 +374,9 @@ class CustomThreadCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.chat_bubble_outline,
-                          color: Colors.black87,
+                          color: context.textSecondary,
                           size: 20,
                         ),
                         const SizedBox(width: 6),
@@ -383,7 +384,7 @@ class CustomThreadCard extends StatelessWidget {
                           "${post.repliesCount}",
                           style: GoogleFonts.outfit(
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: context.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -406,9 +407,9 @@ class CustomThreadCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.repeat,
-                          color: Colors.black87,
+                          color: context.textSecondary,
                           size: 20,
                         ),
                         const SizedBox(width: 6),
@@ -416,7 +417,7 @@ class CustomThreadCard extends StatelessWidget {
                           "${post.repostsCount}",
                           style: GoogleFonts.outfit(
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: context.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -429,9 +430,9 @@ class CustomThreadCard extends StatelessWidget {
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.ios_share_outlined,
-                      color: Colors.black87,
+                      color: context.textSecondary,
                       size: 20,
                     ),
                     onPressed: () => _sharePost(context),
@@ -442,9 +443,9 @@ class CustomThreadCard extends StatelessWidget {
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.bookmark_border_outlined,
-                      color: Colors.black87,
+                      color: context.textSecondary,
                       size: 20,
                     ),
                     onPressed: () {

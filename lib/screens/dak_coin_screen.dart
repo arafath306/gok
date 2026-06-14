@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/wallet_service.dart';
 import '../utils/routes.dart';
+import '../utils/app_theme.dart';
 import 'settings/subscription_settings_screen.dart';
 
 class DakCoinScreen extends StatefulWidget {
@@ -67,17 +68,17 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
     if (_currentStep == 7) appBarTitle = "Use Coin - Boost Post";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: const Color(0xFFE5E7EB), height: 1.0),
+          child: Container(color: context.border, height: 1.0),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 18),
           onPressed: () {
             setState(() {
               if (_currentStep == 0) {
@@ -101,7 +102,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           style: GoogleFonts.hindSiliguri(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: context.textPrimary,
           ),
         ),
         centerTitle: true,
@@ -344,7 +345,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               style: GoogleFonts.hindSiliguri(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: context.textPrimary,
               ),
             ),
             InkWell(
@@ -357,7 +358,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 "View All",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
-                  color: const Color(0xFF006A4E),
+                  color: context.primaryAccent,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -368,9 +369,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
 
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+            border: Border.all(color: context.border, width: 1.0),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -378,18 +379,22 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: WalletService.transactions.length.clamp(0, 4),
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
               itemBuilder: (context, index) {
                 final tx = WalletService.transactions[index];
                 final isIn = tx["type"] == "in";
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   leading: CircleAvatar(
-                    backgroundColor: isIn ? const Color(0xFFE8F5E9) : const Color(0xFFFDEDEC),
+                    backgroundColor: isIn 
+                        ? (context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE8F5E9)) 
+                        : (context.isDarkMode ? const Color(0xFF4C1C1C) : const Color(0xFFFDEDEC)),
                     radius: 20,
                     child: Icon(
                       isIn ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                      color: isIn ? const Color(0xFF006A4E) : const Color(0xFFE74C3C),
+                      color: isIn 
+                          ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                          : const Color(0xFFE74C3C),
                       size: 18,
                     ),
                   ),
@@ -398,14 +403,14 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 14.5,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: context.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     tx["date"] as String,
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 11.5,
-                      color: Colors.black54,
+                      color: context.textSecondary,
                     ),
                   ),
                   trailing: Text(
@@ -413,7 +418,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: isIn ? const Color(0xFF006A4E) : const Color(0xFFE74C3C),
+                      color: isIn 
+                          ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                          : const Color(0xFFE74C3C),
                     ),
                   ),
                 );
@@ -432,9 +439,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+        border: Border.all(color: context.border, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(0x05),
@@ -454,9 +461,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFFE6F0EC),
+                  backgroundColor: context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE6F0EC),
                   radius: 22,
-                  child: Icon(icon, color: const Color(0xFF006A4E), size: 22),
+                  child: Icon(icon, color: context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E), size: 22),
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -464,7 +471,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                   style: GoogleFonts.hindSiliguri(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: context.textPrimary,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
@@ -491,7 +498,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           "Your Dak Coin Balance",
           style: GoogleFonts.hindSiliguri(
             fontSize: 14,
-            color: Colors.black54,
+            color: context.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -505,7 +512,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: context.textPrimary,
               ),
             ),
             const SizedBox(width: 4),
@@ -520,9 +527,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+            border: Border.all(color: context.border, width: 1.0),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(0x05),
@@ -539,7 +546,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: context.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -547,13 +554,13 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 "Dak Coin is a digital currency for the Dak app. You can use this coin to buy subscriptions, boost posts, and access more premium features.",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
-                  color: Colors.black54,
+                  color: context.textSecondary,
                   height: 1.5,
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16.0),
-                child: Divider(height: 1, color: Color(0xFFE5E7EB)),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Divider(height: 1, color: context.border),
               ),
 
               _buildBenefitBullet(Icons.card_membership_rounded, "Get Subscription"),
@@ -600,16 +607,16 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: const Color(0xFFE6F0EC),
+            backgroundColor: context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE6F0EC),
             radius: 12,
-            child: Icon(icon, color: const Color(0xFF006A4E), size: 14),
+            child: Icon(icon, color: context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E), size: 14),
           ),
           const SizedBox(width: 12),
           Text(
             text,
             style: GoogleFonts.hindSiliguri(
               fontSize: 13.5,
-              color: Colors.black87,
+              color: context.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -634,7 +641,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           style: GoogleFonts.hindSiliguri(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: context.textPrimary,
           ),
         ),
 
@@ -644,7 +651,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Center(
@@ -652,7 +659,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               "Minimum Purchase: Must buy at least 100 Coins",
               style: GoogleFonts.hindSiliguri(
                 fontSize: 12,
-                color: Colors.black54,
+                color: context.textSecondary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -667,10 +674,14 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: isSel ? const Color(0xFFE6F0EC) : Colors.white,
+              color: isSel 
+                  ? (context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE6F0EC)) 
+                  : context.cardBg,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isSel ? const Color(0xFF006A4E) : const Color(0xFFE5E7EB),
+                color: isSel 
+                    ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                    : context.border,
                 width: isSel ? 2.0 : 1.0,
               ),
             ),
@@ -682,7 +693,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: isSel ? const Color(0xFF006A4E) : Colors.black87,
+                  color: isSel 
+                      ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                      : context.textPrimary,
                 ),
               ),
               trailing: Text(
@@ -690,7 +703,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: isSel ? const Color(0xFF006A4E) : Colors.black87,
+                  color: isSel 
+                      ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                      : context.textPrimary,
                 ),
               ),
             ),
@@ -747,16 +762,16 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           style: GoogleFonts.hindSiliguri(
             fontSize: 15,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: context.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
 
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+            border: Border.all(color: context.border, width: 1.0),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -764,24 +779,28 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: methods.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
               itemBuilder: (context, index) {
                 final m = methods[index];
                 final isSel = _selectedPaymentMethod == m["id"];
                 return InkWell(
                   onTap: () => setState(() => _selectedPaymentMethod = m["id"]!),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
                     child: Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: isSel ? const Color(0xFFE6F0EC) : const Color(0xFFF3F4F6),
+                          backgroundColor: isSel 
+                              ? (context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE6F0EC)) 
+                              : (context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF3F4F6)),
                           radius: 18,
                           child: Icon(
                             m["id"] == "bkash" || m["id"] == "nagad" || m["id"] == "rocket" || m["id"] == "upay"
                                 ? Icons.account_balance_wallet_rounded
                                 : (m["id"] == "bank" ? Icons.business_rounded : Icons.credit_card_rounded),
-                            color: isSel ? const Color(0xFF006A4E) : Colors.black54,
+                            color: isSel 
+                                ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                                : context.textSecondary,
                             size: 18,
                           ),
                         ),
@@ -792,7 +811,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                             style: GoogleFonts.hindSiliguri(
                               fontSize: 14.5,
                               fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                              color: isSel ? const Color(0xFF006A4E) : Colors.black87,
+                              color: isSel 
+                                  ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                                  : context.textPrimary,
                             ),
                           ),
                         ),
@@ -802,7 +823,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: isSel ? const Color(0xFF006A4E) : Colors.black38,
+                              color: isSel 
+                                  ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                                  : context.textMuted,
                               width: isSel ? 6.0 : 1.5,
                             ),
                           ),
@@ -885,9 +908,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+            border: Border.all(color: context.border, width: 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -918,7 +941,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 14.5,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: context.textPrimary,
                     ),
                   ),
                 ],
@@ -930,22 +953,22 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 decoration: InputDecoration(
                   isDense: true,
                   filled: true,
-                  fillColor: const Color(0xFFF9FAFB),
+                  fillColor: context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF9FAFB),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: context.border),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: context.border),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: Color(0xFF006A4E), width: 1.5),
                   ),
                 ),
-                style: GoogleFonts.outfit(fontSize: 14, letterSpacing: 1.0),
+                style: GoogleFonts.outfit(fontSize: 14, letterSpacing: 1.0, color: context.textPrimary),
               ),
 
               const SizedBox(height: 16),
@@ -955,7 +978,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black54,
+                  color: context.textSecondary,
                 ),
               ),
               const SizedBox(height: 6),
@@ -963,7 +986,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -971,13 +994,13 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                   style: GoogleFonts.outfit(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: context.textPrimary,
                   ),
                 ),
               ),
 
               const SizedBox(height: 16),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              Divider(height: 1, color: context.border),
               const SizedBox(height: 16),
 
               Text(
@@ -985,7 +1008,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black54,
+                  color: context.textSecondary,
                 ),
               ),
               const SizedBox(height: 10),
@@ -1051,13 +1074,13 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         children: [
           CircleAvatar(
             radius: 10,
-            backgroundColor: const Color(0xFFE6F0EC),
+            backgroundColor: context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE6F0EC),
             child: Text(
               _toBengaliNumber(stepNo),
               style: GoogleFonts.outfit(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF006A4E),
+                color: context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E),
               ),
             ),
           ),
@@ -1067,7 +1090,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               text,
               style: GoogleFonts.hindSiliguri(
                 fontSize: 13,
-                color: Colors.black54,
+                color: context.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1108,7 +1131,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           style: GoogleFonts.hindSiliguri(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: context.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
@@ -1116,7 +1139,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           "আপনার অ্যাকাউন্ট সফলভাবে\n${_toBengaliNumber(_selectedCoinsPack.toString())} Dak Coin যুক্ত করা হয়েছে।",
           style: GoogleFonts.hindSiliguri(
             fontSize: 14,
-            color: Colors.black54,
+            color: context.textSecondary,
             height: 1.4,
           ),
           textAlign: TextAlign.center,
@@ -1128,9 +1151,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+            border: Border.all(color: context.border, width: 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1140,12 +1163,12 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: context.textPrimary,
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
-                child: Divider(height: 1, color: Color(0xFFE5E7EB)),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Divider(height: 1, color: context.border),
               ),
               _buildDetailItem("Coin Purchased", "$_selectedCoinsPack Coin"),
               const SizedBox(height: 10),
@@ -1200,7 +1223,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
             child: Text(
               "View Receipt",
               style: GoogleFonts.hindSiliguri(
-                color: const Color(0xFF006A4E),
+                color: context.primaryAccent,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -1219,7 +1242,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           label,
           style: GoogleFonts.hindSiliguri(
             fontSize: 13,
-            color: Colors.black54,
+            color: context.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -1228,7 +1251,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           style: GoogleFonts.hindSiliguri(
             fontSize: 13,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: context.textPrimary,
           ),
         ),
       ],
@@ -1249,7 +1272,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -1266,9 +1289,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         // History List
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+            border: Border.all(color: context.border, width: 1.0),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -1276,7 +1299,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: filtered.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
               itemBuilder: (context, index) {
                 final tx = filtered[index];
                 final isIn = tx["type"] == "in";
@@ -1286,11 +1309,15 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CircleAvatar(
-                        backgroundColor: isIn ? const Color(0xFFE8F5E9) : const Color(0xFFFDEDEC),
+                        backgroundColor: isIn 
+                            ? (context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE8F5E9)) 
+                            : (context.isDarkMode ? const Color(0xFF4C1C1C) : const Color(0xFFFDEDEC)),
                         radius: 18,
                         child: Icon(
                           isIn ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                          color: isIn ? const Color(0xFF006A4E) : const Color(0xFFE74C3C),
+                          color: isIn 
+                              ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                              : const Color(0xFFE74C3C),
                           size: 16,
                         ),
                       ),
@@ -1304,7 +1331,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                               style: GoogleFonts.hindSiliguri(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: context.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -1312,7 +1339,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                               tx["date"] as String,
                               style: GoogleFonts.hindSiliguri(
                                 fontSize: 11,
-                                color: Colors.black45,
+                                color: context.textMuted,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -1320,7 +1347,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                               tx["id"] as String,
                               style: GoogleFonts.outfit(
                                 fontSize: 10,
-                                color: Colors.black38,
+                                color: context.textMuted,
                               ),
                             ),
                           ],
@@ -1331,7 +1358,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                         style: GoogleFonts.outfit(
                           fontSize: 14.5,
                           fontWeight: FontWeight.bold,
-                          color: isIn ? const Color(0xFF006A4E) : const Color(0xFFE74C3C),
+                          color: isIn 
+                              ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                              : const Color(0xFFE74C3C),
                         ),
                       ),
                     ],
@@ -1358,13 +1387,13 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               );
             },
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFF006A4E)),
+              side: BorderSide(color: context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: Text(
               "Load More",
               style: GoogleFonts.hindSiliguri(
-                color: const Color(0xFF006A4E),
+                color: context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E),
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
@@ -1384,7 +1413,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSel ? Colors.white : Colors.transparent,
+            color: isSel ? context.cardBg : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: isSel
                 ? [
@@ -1402,7 +1431,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               style: GoogleFonts.hindSiliguri(
                 fontSize: 13,
                 fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                color: isSel ? const Color(0xFF006A4E) : Colors.black54,
+                color: isSel 
+                    ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                    : context.textSecondary,
               ),
             ),
           ),
@@ -1426,9 +1457,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+            border: Border.all(color: context.border, width: 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1437,8 +1468,8 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: Colors.grey[200],
-                    child: const Icon(Icons.person, color: Colors.black54),
+                    backgroundColor: context.isDarkMode ? const Color(0xFF151824) : Colors.grey[200],
+                    child: Icon(Icons.person, color: context.textSecondary),
                   ),
                   const SizedBox(width: 10),
                   Column(
@@ -1451,7 +1482,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                             style: GoogleFonts.hindSiliguri(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: context.textPrimary,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -1462,7 +1493,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                         "2h",
                         style: GoogleFonts.hindSiliguri(
                           fontSize: 11,
-                          color: Colors.black45,
+                          color: context.textMuted,
                         ),
                       ),
                     ],
@@ -1474,7 +1505,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 "প্রকৃতির মাঝে হারিয়ে যাওয়া একটা অসাধারণ অনুভূতি!",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 13.5,
-                  color: Colors.black87,
+                  color: context.textPrimary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -1483,9 +1514,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 child: Container(
                   height: 150,
                   width: double.infinity,
-                  color: const Color(0xFFE6F0EC),
-                  child: const Center(
-                    child: Icon(Icons.image_outlined, size: 40, color: Color(0xFF006A4E)),
+                  color: context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE6F0EC),
+                  child: Center(
+                    child: Icon(Icons.image_outlined, size: 40, color: context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)),
                   ),
                 ),
               ),
@@ -1500,14 +1531,14 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           style: GoogleFonts.hindSiliguri(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: context.textPrimary,
           ),
         ),
         Text(
           "আপনার Postকে বেশি মানুষের কাছে পৌঁছে Day",
           style: GoogleFonts.hindSiliguri(
             fontSize: 12,
-            color: Colors.black45,
+            color: context.textMuted,
           ),
         ),
 
@@ -1518,7 +1549,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           style: GoogleFonts.hindSiliguri(
             fontSize: 13.5,
             fontWeight: FontWeight.bold,
-            color: Colors.black54,
+            color: context.textSecondary,
           ),
         ),
         const SizedBox(height: 10),
@@ -1528,10 +1559,14 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
-              color: isSel ? const Color(0xFFE6F0EC) : Colors.white,
+              color: isSel 
+                  ? (context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE6F0EC)) 
+                  : context.cardBg,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isSel ? const Color(0xFF006A4E) : const Color(0xFFE5E7EB),
+                color: isSel 
+                    ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                    : context.border,
                 width: isSel ? 2.0 : 1.0,
               ),
             ),
@@ -1545,7 +1580,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 14.5,
                       fontWeight: FontWeight.bold,
-                      color: isSel ? const Color(0xFF006A4E) : Colors.black87,
+                      color: isSel 
+                          ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                          : context.textPrimary,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1553,7 +1590,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isSel ? const Color(0xFFE8F5E9) : const Color(0xFFF3F4F6),
+                        color: isSel 
+                            ? (context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE8F5E9)) 
+                            : (context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF3F4F6)),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -1561,7 +1600,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                         style: GoogleFonts.hindSiliguri(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF006A4E),
+                          color: context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E),
                         ),
                       ),
                     ),
@@ -1572,7 +1611,9 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: isSel ? const Color(0xFF006A4E) : Colors.black54,
+                  color: isSel 
+                      ? (context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E)) 
+                      : context.textSecondary,
                 ),
               ),
             ),
@@ -1621,6 +1662,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           });
         });
         return AlertDialog(
+          backgroundColor: context.cardBg,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1633,6 +1675,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
+                  color: context.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -1640,7 +1683,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 "Please wait...",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 11.5,
-                  color: Colors.black45,
+                  color: context.textSecondary,
                 ),
               ),
             ],
@@ -1656,12 +1699,14 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
+          backgroundColor: context.cardBg,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
             "ব্যালেন্স অপর্যাপ্ত!",
             style: GoogleFonts.hindSiliguri(
               fontWeight: FontWeight.bold,
               fontSize: 16,
+              color: context.textPrimary,
             ),
           ),
           content: Text(
@@ -1669,6 +1714,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
             style: GoogleFonts.hindSiliguri(
               fontSize: 13.5,
               height: 1.45,
+              color: context.textSecondary,
             ),
           ),
           actions: [
@@ -1676,7 +1722,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 "Cancel",
-                style: GoogleFonts.hindSiliguri(color: Colors.black54),
+                style: GoogleFonts.hindSiliguri(color: context.textSecondary),
               ),
             ),
             ElevatedButton(
@@ -1732,6 +1778,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           );
         });
         return AlertDialog(
+          backgroundColor: context.cardBg,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1744,6 +1791,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
+                  color: context.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -1751,7 +1799,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 "Please wait...",
                 style: GoogleFonts.hindSiliguri(
                   fontSize: 11.5,
-                  color: Colors.black45,
+                  color: context.textSecondary,
                 ),
               ),
             ],

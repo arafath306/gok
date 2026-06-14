@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
+import '../../utils/app_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> profile;
@@ -116,11 +117,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0085FF),
-              onPrimary: Colors.white,
-              onSurface: Colors.black87,
-            ),
+            colorScheme: context.isDarkMode
+                ? const ColorScheme.dark(
+                    primary: Color(0xFF0085FF),
+                    onPrimary: Colors.white,
+                    surface: Color(0xFF0D0F1A),
+                    onSurface: Colors.white,
+                  )
+                : const ColorScheme.light(
+                    primary: Color(0xFF0085FF),
+                    onPrimary: Colors.white,
+                    onSurface: Colors.black87,
+                  ),
           ),
           child: child!,
         );
@@ -171,20 +179,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final fieldBg = context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF5F5F5);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black87),
+          icon: Icon(Icons.close, color: context.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Edit Profile',
           style: GoogleFonts.hindSiliguri(
-              fontWeight: FontWeight.bold, color: Colors.black, fontSize: 17),
+              fontWeight: FontWeight.bold, color: context.textPrimary, fontSize: 17),
         ),
         actions: [
           TextButton(
@@ -209,7 +219,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFEEEEEE), height: 1),
+          child: Container(color: context.border, height: 1),
         ),
       ),
       body: ListView(
@@ -225,14 +235,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Text(_errorMsg!,
                   style: const TextStyle(color: Colors.red, fontSize: 13)),
             ),
-          _field('Display Name', _nameCtrl),
+          _field('Display Name', _nameCtrl, fieldBg),
           const SizedBox(height: 14),
-          _field('Username', _usernameCtrl, prefix: '@'),
+          _field('Username', _usernameCtrl, fieldBg, prefix: '@'),
           const SizedBox(height: 14),
-          _field('Bio', _bioCtrl,
+          _field('Bio', _bioCtrl, fieldBg,
               maxLines: 4, hint: 'Write something about yourself...'),
           const SizedBox(height: 14),
-          _field('Phone', _phoneCtrl, hint: '+880XXXXXXXXXX'),
+          _field('Phone', _phoneCtrl, fieldBg, hint: '+880XXXXXXXXXX'),
           const SizedBox(height: 14),
 
           // Division Dropdown
@@ -240,12 +250,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black54)),
+                  color: context.textSecondary)),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
+            dropdownColor: context.cardBg,
             decoration: InputDecoration(
               filled: true,
-              fillColor: const Color(0xFFF5F5F5),
+              fillColor: fieldBg,
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none),
@@ -254,22 +265,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             value: _selectedDivision,
             hint: Text('Select Division',
-                style: GoogleFonts.hindSiliguri(color: Colors.black26)),
+                style: GoogleFonts.hindSiliguri(color: context.textMuted)),
             items: _divisions
                 .map((div) => DropdownMenuItem(
                     value: div,
-                    child: Text(div, style: GoogleFonts.hindSiliguri())))
+                    child: Text(div, style: GoogleFonts.hindSiliguri(color: context.textPrimary))))
                 .toList(),
             onChanged: (val) => setState(() => _selectedDivision = val),
           ),
           const SizedBox(height: 14),
 
-          _field('City / Town', _cityCtrl, hint: 'e.g. Mirpur, Dhaka'),
+          _field('City / Town', _cityCtrl, fieldBg, hint: 'e.g. Mirpur, Dhaka'),
           const SizedBox(height: 14),
-          _field('Village / Street', _villageCtrl,
+          _field('Village / Street', _villageCtrl, fieldBg,
               hint: 'e.g. Road 5, Block D'),
           const SizedBox(height: 14),
-          _field('ZIP Code', _zipCtrl, hint: 'e.g. 1216'),
+          _field('ZIP Code', _zipCtrl, fieldBg, hint: 'e.g. 1216'),
           const SizedBox(height: 14),
 
           // Gender Dropdown
@@ -277,12 +288,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black54)),
+                  color: context.textSecondary)),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
+            dropdownColor: context.cardBg,
             decoration: InputDecoration(
               filled: true,
-              fillColor: const Color(0xFFF5F5F5),
+              fillColor: fieldBg,
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none),
@@ -291,12 +303,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             value: _selectedGender,
             hint: Text('Select Gender',
-                style: GoogleFonts.hindSiliguri(color: Colors.black26)),
+                style: GoogleFonts.hindSiliguri(color: context.textMuted)),
             items: _genders
                 .map((g) => DropdownMenuItem(
                     value: g['value'],
                     child:
-                        Text(g['label']!, style: GoogleFonts.hindSiliguri())))
+                        Text(g['label']!, style: GoogleFonts.hindSiliguri(color: context.textPrimary))))
                 .toList(),
             onChanged: (val) => setState(() => _selectedGender = val),
           ),
@@ -307,20 +319,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               style: GoogleFonts.hindSiliguri(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black54)),
+                  color: context.textSecondary)),
           const SizedBox(height: 6),
           GestureDetector(
             onTap: () => _selectBirthdate(context),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
+                color: fieldBg,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today_rounded,
-                      size: 16, color: Colors.black54),
+                  Icon(Icons.calendar_today_rounded,
+                      size: 16, color: context.textSecondary),
                   const SizedBox(width: 10),
                   Text(
                     _birthdateString != null && _birthdateString!.isNotEmpty
@@ -330,8 +342,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       fontSize: 14,
                       color: _birthdateString != null &&
                               _birthdateString!.isNotEmpty
-                          ? Colors.black87
-                          : Colors.black26,
+                          ? context.textPrimary
+                          : context.textMuted,
                     ),
                   ),
                 ],
@@ -346,7 +358,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _field(
     String label,
-    TextEditingController ctrl, {
+    TextEditingController ctrl,
+    Color bg, {
     String? prefix,
     String? hint,
     int maxLines = 1,
@@ -358,24 +371,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             style: GoogleFonts.hindSiliguri(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: Colors.black54)),
+                color: context.textSecondary)),
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,
           maxLines: maxLines,
           decoration: InputDecoration(
             prefixText: prefix,
+            prefixStyle: GoogleFonts.hindSiliguri(color: context.textSecondary),
             hintText: hint,
-            hintStyle: GoogleFonts.hindSiliguri(color: Colors.black26),
+            hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted),
             filled: true,
-            fillColor: const Color(0xFFF5F5F5),
+            fillColor: bg,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: Colors.black87),
+          style: GoogleFonts.hindSiliguri(fontSize: 14, color: context.textPrimary),
         ),
       ],
     );

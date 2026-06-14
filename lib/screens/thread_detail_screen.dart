@@ -7,6 +7,7 @@ import '../services/database_service.dart';
 import '../widgets/comments_sheet.dart';
 import '../widgets/reactions_sheet.dart';
 import '../utils/routes.dart';
+import '../utils/app_theme.dart';
 import 'profile/profile_screen.dart';
 import 'package:flutter/services.dart';
 
@@ -126,17 +127,17 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     final activePost = feedIndex != -1 ? dbService.feed[feedIndex] : widget.post;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: context.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share, color: Colors.black87),
+            icon: Icon(Icons.share, color: context.textPrimary),
             onPressed: () {},
           ),
         ],
@@ -182,7 +183,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                       style: GoogleFonts.hindSiliguri(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
-                                        color: Colors.black,
+                                        color: context.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
@@ -196,15 +197,15 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                               ),
                               Text(
                                 "@${activePost.author.username}",
-                                style: const TextStyle(
-                                  color: Colors.grey,
+                                style: TextStyle(
+                                  color: context.textSecondary,
                                   fontSize: 13,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.more_horiz, color: Colors.grey),
+                        Icon(Icons.more_horiz, color: context.textSecondary),
                       ],
                     ),
                   ),
@@ -219,7 +220,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           activePost.content,
                           style: GoogleFonts.hindSiliguri(
                             fontSize: 16,
-                            color: Colors.black,
+                            color: context.textPrimary,
                           ),
                         ),
                         if (activePost.imageUrls != null && activePost.imageUrls!.isNotEmpty) ...[
@@ -237,12 +238,12 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         const SizedBox(height: 12),
                         Text(
                           _formatTime(activePost.createdAt),
-                          style: const TextStyle(
-                            color: Colors.grey,
+                          style: TextStyle(
+                            color: context.textSecondary,
                             fontSize: 12,
                           ),
                         ),
-                        const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                        Divider(height: 24, color: context.border),
 
                         // Likes/Comments Count row
                         Row(
@@ -262,20 +263,20 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                 children: [
                                   Text(
                                     "${activePost.likesCount} ",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: context.textPrimary),
                                   ),
-                                  const Text("পছন্দ (Likes)   ", style: TextStyle(color: Colors.grey)),
+                                  Text("পছন্দ (Likes)   ", style: TextStyle(color: context.textSecondary)),
                                 ],
                               ),
                             ),
                             Text(
                               "${_comments.length} ",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(fontWeight: FontWeight.bold, color: context.textPrimary),
                             ),
-                            const Text("মন্তব্য (Replies)", style: TextStyle(color: Colors.grey)),
+                            Text("মন্তব্য (Replies)", style: TextStyle(color: context.textSecondary)),
                           ],
                         ),
-                        const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                        Divider(height: 24, color: context.border),
 
                         // Quick Actions Bar
                         Row(
@@ -317,15 +318,15 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.chat_bubble_outline, color: Colors.black87),
+                              icon: Icon(Icons.chat_bubble_outline, color: context.textSecondary),
                               onPressed: () {},
                             ),
                             IconButton(
-                              icon: const Icon(Icons.swap_horiz, color: Colors.black87),
+                              icon: Icon(Icons.swap_horiz, color: context.textSecondary),
                               onPressed: () {},
                             ),
                             IconButton(
-                              icon: const Icon(Icons.send_outlined, color: Colors.black87),
+                              icon: Icon(Icons.send_outlined, color: context.textSecondary),
                               onPressed: () {},
                             ),
                           ],
@@ -338,12 +339,12 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                    color: Colors.grey[50],
+                    color: context.isDarkMode ? const Color(0xFF0A0B10) : Colors.grey[50],
                     child: Text(
                       "মন্তব্যসমূহ",
                       style: GoogleFonts.hindSiliguri(
                         fontWeight: FontWeight.bold,
-                        color: Colors.black54,
+                        color: context.textSecondary,
                       ),
                     ),
                   ),
@@ -360,7 +361,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       child: Center(
                         child: Text(
                           "কোন মন্তব্য পাওয়া যায়নি।",
-                          style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                          style: GoogleFonts.hindSiliguri(color: context.textSecondary),
                         ),
                       ),
                     )
@@ -369,7 +370,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _comments.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                      separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
                       itemBuilder: (context, index) {
                         final comment = _comments[index];
                         final Profile author = comment['author'] as Profile;
@@ -409,7 +410,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                               style: GoogleFonts.hindSiliguri(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 14.5,
-                                                color: Colors.black,
+                                                color: context.textPrimary,
                                               ),
                                             ),
                                           ),
@@ -424,10 +425,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                         ],
                                         const SizedBox(width: 4),
                                         Text(
-                                          "@${author.username} · ${comment['created_at']}",
+                                          "@${author.username} · ${_formatTime(comment['created_at'] ?? '')}",
                                           style: GoogleFonts.outfit(
                                             fontSize: 12.5,
-                                            color: Colors.grey[500],
+                                            color: context.textSecondary,
                                           ),
                                         ),
                                         if (isPostAuthor) ...[
@@ -450,7 +451,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                         ],
                                         const Spacer(),
                                         IconButton(
-                                          icon: const Icon(Icons.more_horiz, size: 18, color: Colors.black54),
+                                          icon: Icon(Icons.more_horiz, size: 18, color: context.textSecondary),
                                           padding: EdgeInsets.zero,
                                           constraints: const BoxConstraints(),
                                           onPressed: () => _showQuickActions(context, comment, dbService),
@@ -459,65 +460,48 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      comment['content'] as String,
+                                      comment['content'] as String? ?? '',
                                       style: GoogleFonts.hindSiliguri(
                                         fontSize: 14,
-                                        color: Colors.black87,
-                                        height: 1.45,
+                                        color: context.textPrimary,
+                                        height: 1.4,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 10),
+                                    // Actions inside comment item
                                     Row(
                                       children: [
-                                        // Replies metric
+                                        // Comment Reply
                                         GestureDetector(
                                           onTap: () {},
                                           child: Row(
                                             children: [
-                                              const Icon(Icons.chat_bubble_outline, size: 15, color: Colors.black54),
-                                              const SizedBox(width: 6),
+                                              Icon(Icons.chat_bubble_outline, size: 15, color: context.textSecondary),
+                                              const SizedBox(width: 4),
                                               Text(
-                                                "${comment['replies_count'] ?? 0}",
-                                                style: GoogleFonts.outfit(
-                                                  fontSize: 13, 
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black54,
-                                                ),
+                                                "0",
+                                                style: TextStyle(fontSize: 12, color: context.textSecondary),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        const SizedBox(width: 24),
-                                        // Likes metric - heart outline toggling (without number, exactly like screenshot)
+                                        const SizedBox(width: 20),
+                                        // Comment Like
                                         GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              comment['is_liked_by_me'] = !(comment['is_liked_by_me'] as bool? ?? false);
-                                            });
-                                          },
-                                          child: Icon(
-                                            (comment['is_liked_by_me'] as bool? ?? false)
-                                                ? Icons.favorite
-                                                : Icons.favorite_border,
-                                            size: 15,
-                                            color: (comment['is_liked_by_me'] as bool? ?? false)
-                                                ? Colors.red
-                                                : Colors.black54,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 24),
-                                        // Reply button
-                                        GestureDetector(
-                                          onTap: () {
-                                            _commentController.text = "@${author.username} ";
-                                          },
-                                          child: Text(
-                                            "Reply",
-                                            style: GoogleFonts.outfit(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.black54,
-                                            ),
+                                          onTap: () {},
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.favorite_border,
+                                                size: 15,
+                                                color: context.textSecondary,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                "0",
+                                                style: TextStyle(fontSize: 12, color: context.textSecondary),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
@@ -562,10 +546,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
           // Bottom Input row
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: context.cardBg,
               border: Border(
-                top: BorderSide(color: Color(0xFFF0F0F0)),
+                top: BorderSide(color: context.border),
               ),
             ),
             child: Row(
@@ -573,7 +557,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
+                      color: context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF3F4F6),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -582,10 +566,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         Expanded(
                           child: TextField(
                             controller: _commentController,
-                            style: GoogleFonts.hindSiliguri(fontSize: 14),
+                            style: GoogleFonts.hindSiliguri(fontSize: 14, color: context.textPrimary),
                             decoration: InputDecoration(
                               hintText: "কমেন্ট করুন...",
-                              hintStyle: GoogleFonts.hindSiliguri(color: Colors.black26, fontSize: 14),
+                              hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14),
                               border: InputBorder.none,
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -609,21 +593,21 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.image_outlined, size: 18, color: Colors.black54),
+                                    icon: Icon(Icons.image_outlined, size: 18, color: context.textSecondary),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                     onPressed: () {},
                                   ),
                                   const SizedBox(width: 10),
                                   IconButton(
-                                    icon: const Icon(Icons.gif_box_outlined, size: 18, color: Colors.black54),
+                                    icon: Icon(Icons.gif_box_outlined, size: 18, color: context.textSecondary),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                     onPressed: () {},
                                   ),
                                   const SizedBox(width: 10),
                                   IconButton(
-                                    icon: const Icon(Icons.sentiment_satisfied_alt_outlined, size: 18, color: Colors.black54),
+                                    icon: Icon(Icons.sentiment_satisfied_alt_outlined, size: 18, color: context.textSecondary),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                     onPressed: () {},

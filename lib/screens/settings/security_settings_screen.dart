@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/general_settings_provider.dart';
+import '../../utils/app_theme.dart';
 
 class SecuritySettingsScreen extends StatelessWidget {
   const SecuritySettingsScreen({super.key});
@@ -9,26 +10,26 @@ class SecuritySettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: context.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBg,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 22),
+          icon: Icon(Icons.arrow_back, color: context.textPrimary, size: 22),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Security',
           style: GoogleFonts.outfit(
-            color: Colors.black87,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: const Color(0xFFEEEEEE), height: 1.0),
+          child: Container(color: context.border, height: 1.0),
         ),
       ),
       body: Consumer<GeneralSettingsProvider>(
@@ -37,7 +38,7 @@ class SecuritySettingsScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.symmetric(vertical: 16),
             children: [
-              _buildSectionHeader('Login Protection'),
+              _buildSectionHeader(context, 'Login Protection'),
               _buildSwitchTile(
                 context: context,
                 title: 'Two-Factor Authentication (2FA)',
@@ -48,26 +49,27 @@ class SecuritySettingsScreen extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(val ? '2FA Enabled successfully!' : '2FA Disabled'),
-                      backgroundColor: const Color(0xFF1E824C),
+                      backgroundColor: context.primaryAccent,
                     ),
                   );
                 },
               ),
               _buildActionTile(
+                context,
                 title: 'Change Password',
                 subtitle: 'Update your login credentials regularly.',
                 onTap: () => _showChangePasswordSheet(context),
               ),
               const SizedBox(height: 16),
-              _buildSectionHeader('Active Sessions'),
+              _buildSectionHeader(context, 'Active Sessions'),
               if (sessions.isEmpty)
                 Container(
-                  color: Colors.white,
+                  color: context.cardBg,
                   padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   alignment: Alignment.center,
                   child: Text(
                     'No other active sessions found.',
-                    style: GoogleFonts.outfit(color: Colors.black38, fontSize: 14),
+                    style: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
                   ),
                 )
               else
@@ -79,7 +81,7 @@ class SecuritySettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Text(
@@ -87,7 +89,7 @@ class SecuritySettingsScreen extends StatelessWidget {
         style: GoogleFonts.outfit(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: Colors.black45,
+          color: context.textSecondary,
           letterSpacing: 0.5,
         ),
       ),
@@ -102,7 +104,7 @@ class SecuritySettingsScreen extends StatelessWidget {
     required ValueChanged<bool> onChanged,
   }) {
     return Container(
-      color: Colors.white,
+      color: context.cardBg,
       margin: const EdgeInsets.only(bottom: 1),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -116,7 +118,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.black87,
+                    color: context.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -124,7 +126,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                   subtitle,
                   style: GoogleFonts.outfit(
                     fontSize: 12.5,
-                    color: Colors.black45,
+                    color: context.textMuted,
                   ),
                 ),
               ],
@@ -134,23 +136,24 @@ class SecuritySettingsScreen extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF1E824C),
-            activeTrackColor: const Color(0x331E824C),
+            activeColor: Colors.white,
+            activeTrackColor: context.primaryAccent,
+            inactiveTrackColor: context.isDarkMode ? Colors.grey[800] : Colors.black12,
             inactiveThumbColor: Colors.white,
-            inactiveTrackColor: Colors.black12,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionTile({
+  Widget _buildActionTile(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
     return Container(
-      color: Colors.white,
+      color: context.cardBg,
       margin: const EdgeInsets.only(bottom: 1),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -159,17 +162,17 @@ class SecuritySettingsScreen extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.w600,
             fontSize: 15,
-            color: Colors.black87,
+            color: context.textPrimary,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: GoogleFonts.outfit(
             fontSize: 12.5,
-            color: Colors.black45,
+            color: context.textMuted,
           ),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.black26, size: 20),
+        trailing: Icon(Icons.chevron_right, color: context.textMuted, size: 20),
         onTap: onTap,
       ),
     );
@@ -178,7 +181,7 @@ class SecuritySettingsScreen extends StatelessWidget {
   Widget _buildSessionTile(BuildContext context, GeneralSettingsProvider provider, Map<String, String> session) {
     final isCurrent = session['status'] == 'Active now';
     return Container(
-      color: Colors.white,
+      color: context.cardBg,
       margin: const EdgeInsets.only(bottom: 1),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -187,7 +190,7 @@ class SecuritySettingsScreen extends StatelessWidget {
             session['device']!.contains('iPhone') || session['device']!.contains('Pixel')
                 ? Icons.phone_android_rounded
                 : Icons.computer_rounded,
-            color: Colors.black54,
+            color: context.textSecondary,
             size: 24,
           ),
           const SizedBox(width: 16),
@@ -202,7 +205,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w600,
                         fontSize: 14.5,
-                        color: Colors.black87,
+                        color: context.textPrimary,
                       ),
                     ),
                     if (isCurrent) ...[
@@ -210,13 +213,13 @@ class SecuritySettingsScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0x1A1E824C),
+                          color: context.isDarkMode ? const Color(0xFF0C2517) : const Color(0x1A1E824C),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           'Current',
                           style: GoogleFonts.outfit(
-                            color: const Color(0xFF1E824C),
+                            color: context.primaryAccent,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -230,7 +233,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                   '${session['location']}  ·  ${session['status']}',
                   style: GoogleFonts.outfit(
                     fontSize: 12.5,
-                    color: Colors.black45,
+                    color: context.textMuted,
                   ),
                 ),
               ],
@@ -243,7 +246,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Session revoked: ${session['device']}'),
-                    backgroundColor: const Color(0xFF1E824C),
+                    backgroundColor: context.primaryAccent,
                   ),
                 );
               },
@@ -268,7 +271,7 @@ class SecuritySettingsScreen extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.cardBg,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -285,7 +288,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black12,
+                    color: context.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -296,15 +299,15 @@ class SecuritySettingsScreen extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Colors.black87,
+                  color: context.textPrimary,
                 ),
               ),
               const SizedBox(height: 16),
-              _buildPasswordField('Old Password', oldPasswordController),
+              _buildPasswordField(context, 'Old Password', oldPasswordController),
               const SizedBox(height: 12),
-              _buildPasswordField('New Password', newPasswordController),
+              _buildPasswordField(context, 'New Password', newPasswordController),
               const SizedBox(height: 12),
-              _buildPasswordField('Confirm New Password', confirmPasswordController),
+              _buildPasswordField(context, 'Confirm New Password', confirmPasswordController),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -331,14 +334,14 @@ class SecuritySettingsScreen extends StatelessWidget {
                     // Success!
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Password updated successfully!'),
-                        backgroundColor: Color(0xFF1E824C),
+                      SnackBar(
+                        content: const Text('Password updated successfully!'),
+                        backgroundColor: context.primaryAccent,
                       ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E824C),
+                    backgroundColor: context.primaryAccent,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 0,
                   ),
@@ -359,7 +362,7 @@ class SecuritySettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPasswordField(String label, TextEditingController controller) {
+  Widget _buildPasswordField(BuildContext context, String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -368,7 +371,7 @@ class SecuritySettingsScreen extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.black54,
+            color: context.textSecondary,
           ),
         ),
         const SizedBox(height: 6),
@@ -377,14 +380,14 @@ class SecuritySettingsScreen extends StatelessWidget {
           obscureText: true,
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xFFF3F4F6),
+            fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
-          style: GoogleFonts.outfit(fontSize: 14, color: Colors.black87),
+          style: GoogleFonts.outfit(fontSize: 14, color: context.textPrimary),
         ),
       ],
     );
