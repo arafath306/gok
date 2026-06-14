@@ -192,24 +192,18 @@ class CustomThreadCard extends StatelessWidget {
               ),
           ],
         ),
-        if (hasReplies) ...[
-          const SizedBox(height: 8),
-          Expanded(
-            child: Container(
-              width: 1.5,
-              color: context.border,
-            ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: Container(
+            width: 1.5,
+            color: context.border,
           ),
-          const SizedBox(height: 8),
+        ),
+        const SizedBox(height: 8),
+        if (hasReplies) ...[
           _buildRepliesAvatars(context),
         ] else ...[
-          const SizedBox(height: 8),
-          Expanded(
-            child: Container(
-              width: 1.5,
-              color: Colors.transparent,
-            ),
-          ),
+          const SizedBox(height: 12),
         ],
       ],
     );
@@ -459,29 +453,6 @@ class CustomThreadCard extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ],
-        if (tags.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: tags.map((tag) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: context.border, width: 0.5),
-              ),
-              child: Text(
-                tag,
-                style: GoogleFonts.outfit(
-                  color: context.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )).toList(),
           ),
         ],
         const SizedBox(height: 10),

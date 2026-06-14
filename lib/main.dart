@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
@@ -42,6 +43,7 @@ class PigeonApp extends StatelessWidget {
     final settingsProvider = Provider.of<GeneralSettingsProvider>(context);
 
     return MaterialApp(
+      scrollBehavior: MyCustomScrollBehavior(),
       title: 'Pigeon',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
@@ -149,4 +151,13 @@ class _AuthGateState extends State<AuthGate> {
       },
     );
   }
+}
+
+class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+      };
 }
