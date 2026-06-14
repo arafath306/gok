@@ -132,21 +132,13 @@ class _FeedScreenState extends State<FeedScreen> {
                       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       children: [
-                        // Composer Panel Card
+                        // Composer Panel Card (Flat & Borderless)
                         Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: context.cardBg,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: context.border, width: 0.8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.01),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            border: Border(
+                              bottom: BorderSide(color: context.border, width: 0.5),
+                            ),
                           ),
                           child: GestureDetector(
                             onTap: widget.onNavigateToCreate,
@@ -159,20 +151,13 @@ class _FeedScreenState extends State<FeedScreen> {
                                     prof?.avatarUrl ?? "https://i.pravatar.cc/150",
                                   ),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 12),
                                 Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF3F4F6),
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    child: Text(
-                                      "আজকে কী ভাবছেন?",
-                                      style: GoogleFonts.hindSiliguri(
-                                        color: context.textSecondary,
-                                        fontSize: 13,
-                                      ),
+                                  child: Text(
+                                    "আজকে কী ভাবছেন?",
+                                    style: GoogleFonts.hindSiliguri(
+                                      color: context.textMuted,
+                                      fontSize: 13.5,
                                     ),
                                   ),
                                 ),

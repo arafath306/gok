@@ -186,12 +186,14 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                         color: context.textPrimary,
                                       ),
                                     ),
-                                    const SizedBox(width: 4),
-                                    const Icon(
-                                      Icons.verified,
-                                      color: Colors.blue,
-                                      size: 14,
-                                    ),
+                                     if (activePost.author.fullName == 'Dak Official') ...[
+                                       const SizedBox(width: 4),
+                                       const Icon(
+                                         Icons.verified,
+                                         color: Colors.blue,
+                                         size: 14,
+                                       ),
+                                     ],
                                   ],
                                 ),
                               ),

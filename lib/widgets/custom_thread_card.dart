@@ -123,344 +123,461 @@ class CustomThreadCard extends StatelessWidget {
       tags = ['Bangladesh', 'Trending'];
     }
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
-      decoration: BoxDecoration(
-        color: context.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.border, width: 0.8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.01),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          NoTransitionPageRoute(
+            child: ThreadDetailScreen(post: post),
           ),
+        );
+      },
+      onLongPress: () => _showQuickActions(context, dbService),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Left Column: Avatar + vertical line + small avatars pile
+                  _buildLeftColumn(context, dbService),
+                  const SizedBox(width: 12),
+                  // Right Column: username, content, action row, stats
+                  Expanded(
+                    child: _buildRightColumn(context, dbService, isVerified, tags),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Divider(height: 1, thickness: 0.5, color: context.border),
         ],
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            NoTransitionPageRoute(
-              child: ThreadDetailScreen(post: post),
+    );
+  }
+
+  Widget _buildLeftColumn(BuildContext context, DatabaseService dbService) {
+    final isFollowing = dbService.isFollowingUser(post.userId);
+    final hasReplies = post.repliesCount > 0;
+    return Column(
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.grey[200],
+              backgroundImage: NetworkImage(
+                post.author.avatarUrl ?? "https://i.pravatar.cc/150",
+              ),
             ),
-          );
-        },
-        onLongPress: () => _showQuickActions(context, dbService),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+            if (post.userId != dbService.currentUid && !isFollowing)
+              Positioned(
+                bottom: -2,
+                right: -2,
+                child: Container(
+                  padding: const EdgeInsets.all(1),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1E824C),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    color: Colors.white,
+                    size: 10,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (hasReplies) ...[
+          const SizedBox(height: 8),
+          Expanded(
+            child: Container(
+              width: 1.5,
+              color: context.border,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildRepliesAvatars(context),
+        ] else ...[
+          const SizedBox(height: 8),
+          Expanded(
+            child: Container(
+              width: 1.5,
+              color: Colors.transparent,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildRepliesAvatars(BuildContext context) {
+    final count = post.repliesCount;
+    if (count == 0) return const SizedBox.shrink();
+
+    final List<String> mockAvatars = [
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100",
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100",
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",
+    ];
+
+    if (count == 1) {
+      return Container(
+        width: 18,
+        height: 18,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: context.scaffoldBg, width: 1.5),
+        ),
+        child: ClipOval(
+          child: Image.network(mockAvatars[0], fit: BoxFit.cover),
+        ),
+      );
+    } else if (count == 2) {
+      return SizedBox(
+        width: 24,
+        height: 18,
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              bottom: 0,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.scaffoldBg, width: 1.5),
+                ),
+                child: ClipOval(
+                  child: Image.network(mockAvatars[0], fit: BoxFit.cover),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              top: 0,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.scaffoldBg, width: 1.5),
+                ),
+                child: ClipOval(
+                  child: Image.network(mockAvatars[1], fit: BoxFit.cover),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return SizedBox(
+        width: 28,
+        height: 22,
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              top: 2,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.scaffoldBg, width: 1.2),
+                ),
+                child: ClipOval(
+                  child: Image.network(mockAvatars[0], fit: BoxFit.cover),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 13,
+                height: 13,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.scaffoldBg, width: 1.2),
+                ),
+                child: ClipOval(
+                  child: Image.network(mockAvatars[1], fit: BoxFit.cover),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 9,
+              bottom: 6,
+              child: Container(
+                width: 11,
+                height: 11,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.scaffoldBg, width: 1.2),
+                ),
+                child: ClipOval(
+                  child: Image.network(mockAvatars[2], fit: BoxFit.cover),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildRightColumn(
+    BuildContext context,
+    DatabaseService dbService,
+    bool isVerified,
+    List<String> tags,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: () {
+                final isOwn = post.userId == dbService.currentUid;
+                Navigator.push(
+                  context,
+                  NoTransitionPageRoute(
+                    child: ProfileScreen(userId: isOwn ? null : post.userId),
+                  ),
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.grey[200],
-                    backgroundImage: NetworkImage(
-                      post.author.avatarUrl ?? "https://i.pravatar.cc/150",
+                  Text(
+                    post.author.username,
+                    style: GoogleFonts.hindSiliguri(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.5,
+                      color: context.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            final isOwn = post.userId == dbService.currentUid;
-                            Navigator.push(
-                              context,
-                              NoTransitionPageRoute(
-                                child: ProfileScreen(userId: isOwn ? null : post.userId),
-                              ),
-                            );
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  post.author.fullName,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.hindSiliguri(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: context.textPrimary,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ),
-                              if (isVerified) ...[
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.verified,
-                                  color: Colors.blue,
-                                  size: 15,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          "@${post.author.username} · ${post.createdAt}",
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            color: context.textSecondary,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
+                  if (isVerified) ...[
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.verified,
+                      color: Colors.blue,
+                      size: 14,
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.more_horiz, color: context.textSecondary, size: 20),
-                    onPressed: () => _showQuickActions(context, dbService),
-                  ),
+                  ],
                 ],
               ),
-              const SizedBox(height: 12),
-
-              // Post Body Content Text
-              Text(
-                post.content,
-                style: GoogleFonts.hindSiliguri(
-                  fontSize: 14.5,
-                  color: context.textPrimary,
-                  height: 1.45,
+            ),
+            const Spacer(),
+            Text(
+              post.createdAt,
+              style: GoogleFonts.outfit(
+                fontSize: 12.5,
+                color: context.textMuted,
+              ),
+            ),
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: () => _showQuickActions(context, dbService),
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Icon(
+                  Icons.more_horiz,
+                  color: context.textSecondary,
+                  size: 18,
                 ),
               ),
-
-              // Image attachment
-              if (post.imageUrls != null && post.imageUrls!.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16.0),
-                  child: Image.network(
-                    post.imageUrls!.first,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ],
-
-              // Video attachment
-              if (post.videoUrl != null && post.videoUrl!.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: () => _sharePost(context),
-                  child: Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(16.0),
-                      image: const DecorationImage(
-                        image: NetworkImage("https://images.unsplash.com/photo-1492691527719-9d1e07e534b4"),
-                        fit: BoxFit.cover,
-                        opacity: 0.6,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.white70,
-                          child: Icon(Icons.play_arrow, color: Colors.black, size: 24),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          color: Colors.black54,
-                          child: Text(
-                            post.videoUrl!,
-                            style: const TextStyle(color: Colors.white, fontSize: 10),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-
-              // Tags Display
-              if (tags.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: tags.map((tag) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      tag,
-                      style: GoogleFonts.outfit(
-                        color: const Color(0xFF374151),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  )).toList(),
-                ),
-              ],
-
-              const SizedBox(height: 16),
-
-              // Actions Footer Row
-              Row(
-                children: [
-                  // Likes Action (Heart icon / Custom emoji)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          dbService.toggleLike(post.id, !post.isLikedByMe);
-                        },
-                        onLongPress: () => _showReactionsPopup(context, dbService),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          transitionBuilder: (child, animation) =>
-                              ScaleTransition(scale: animation, child: child),
-                          child: post.isLikedByMe
-                              ? Text(
-                                  post.reactionType ?? '❤️',
-                                  key: ValueKey<String>(post.reactionType ?? '❤️'),
-                                  style: const TextStyle(fontSize: 18),
-                                )
-                              : Icon(
-                                  Icons.favorite_border,
-                                  key: const ValueKey<int>(0),
-                                  color: context.textSecondary,
-                                  size: 20,
-                                ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _showReactionsPopup(context, dbService),
-                        child: Text(
-                          "${post.likesCount}",
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            color: context.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 24),
-
-                  // Comment/Reply Action
-                  GestureDetector(
-                    onTap: () => _showCommentsBottomSheet(context),
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          color: context.textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          "${post.repliesCount}",
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            color: context.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-
-                  // Repost/Quote Action
-                  GestureDetector(
-                    onTap: () async {
-                      final success = await dbService.repostThread(post.id);
-                      if (success && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Post status updated")),
-                        );
-                      }
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.repeat,
-                          color: context.textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          "${post.repostsCount}",
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            color: context.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-
-                  // Send/Share Action
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: Icon(
-                      Icons.ios_share_outlined,
-                      color: context.textSecondary,
-                      size: 20,
-                    ),
-                    onPressed: () => _sharePost(context),
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Bookmark Save Action
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: Icon(
-                      Icons.bookmark_border_outlined,
-                      color: context.textSecondary,
-                      size: 20,
-                    ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Saved to bookmarks")),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          post.content,
+          style: GoogleFonts.hindSiliguri(
+            fontSize: 14,
+            color: context.textPrimary,
+            height: 1.4,
           ),
         ),
-      ),
+        if (post.imageUrls != null && post.imageUrls!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.0),
+            child: Image.network(
+              post.imageUrls!.first,
+              height: 200,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ],
+        if (post.videoUrl != null && post.videoUrl!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => _sharePost(context),
+            child: Container(
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(12.0),
+                image: const DecorationImage(
+                  image: NetworkImage("https://images.unsplash.com/photo-1492691527719-9d1e07e534b4"),
+                  fit: BoxFit.cover,
+                  opacity: 0.6,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white70,
+                    child: Icon(Icons.play_arrow, color: Colors.black, size: 24),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    color: Colors.black54,
+                    child: Text(
+                      post.videoUrl!,
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        ],
+        if (tags.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: tags.map((tag) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: context.border, width: 0.5),
+              ),
+              child: Text(
+                tag,
+                style: GoogleFonts.outfit(
+                  color: context.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )).toList(),
+          ),
+        ],
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                dbService.toggleLike(post.id, !post.isLikedByMe);
+              },
+              onLongPress: () => _showReactionsPopup(context, dbService),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) =>
+                    ScaleTransition(scale: animation, child: child),
+                child: post.isLikedByMe
+                    ? Text(
+                        post.reactionType ?? '❤️',
+                        key: ValueKey<String>(post.reactionType ?? '❤️'),
+                        style: const TextStyle(fontSize: 18),
+                      )
+                    : Icon(
+                        Icons.favorite_border,
+                        key: const ValueKey<int>(0),
+                        color: context.textSecondary,
+                        size: 20,
+                      ),
+              ),
+            ),
+            const SizedBox(width: 20),
+            GestureDetector(
+              onTap: () => _showCommentsBottomSheet(context),
+              behavior: HitTestBehavior.opaque,
+              child: Icon(
+                Icons.chat_bubble_outline,
+                color: context.textSecondary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 20),
+            GestureDetector(
+              onTap: () async {
+                final success = await dbService.repostThread(post.id);
+                if (success && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Post status updated")),
+                  );
+                }
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Icon(
+                Icons.repeat,
+                color: context.textSecondary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 20),
+            GestureDetector(
+              onTap: () => _sharePost(context),
+              child: Icon(
+                Icons.send_outlined,
+                color: context.textSecondary,
+                size: 20,
+              ),
+            ),
+          ],
+        ),
+        if (post.repliesCount > 0 || post.likesCount > 0) ...[
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => _showReactionsPopup(context, dbService),
+            child: Text(
+              _buildCombinedStatsString(),
+              style: GoogleFonts.outfit(
+                fontSize: 12.5,
+                color: context.textMuted,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
+  }
+
+  String _buildCombinedStatsString() {
+    final repCount = post.repliesCount;
+    final lkCount = post.likesCount;
+    if (repCount > 0 && lkCount > 0) {
+      return "$repCount ${repCount == 1 ? 'reply' : 'replies'} · $lkCount ${lkCount == 1 ? 'like' : 'likes'}";
+    } else if (repCount > 0) {
+      return "$repCount ${repCount == 1 ? 'reply' : 'replies'}";
+    } else {
+      return "$lkCount ${lkCount == 1 ? 'like' : 'likes'}";
+    }
   }
 }
 
@@ -665,9 +782,9 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
     ];
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         child: Column(
@@ -678,7 +795,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: context.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -707,7 +824,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
   }
 
   Widget _buildActionTile(_QuickActionItem item) {
-    final color = item.isDanger ? Colors.red[600]! : Colors.black87;
+    final color = item.isDanger ? Colors.red[600]! : context.textPrimary;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -748,7 +865,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
         ),
         content: Text(
           'They will not be able to follow you, see your posts, or contact you on Dak.',
-          style: GoogleFonts.outfit(fontSize: 14, color: Colors.black54, height: 1.4),
+          style: GoogleFonts.outfit(fontSize: 14, color: context.textSecondary, height: 1.4),
         ),
         actions: [
           TextButton(
@@ -797,9 +914,9 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (reportCtx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: context.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           child: Column(
@@ -812,7 +929,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: context.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -825,7 +942,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                   style: GoogleFonts.outfit(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.black,
+                    color: context.textPrimary,
                   ),
                 ),
               ),
@@ -834,11 +951,11 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Why are you reporting this post?',
-                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[500]),
+                  style: GoogleFonts.outfit(fontSize: 13, color: context.textSecondary),
                 ),
               ),
               const SizedBox(height: 12),
-              const Divider(height: 1),
+              Divider(height: 1, color: context.border),
               ...reasons.map((reason) => Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -864,12 +981,12 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                                 style: GoogleFonts.outfit(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                                  color: context.textPrimary,
                                 ),
                               ),
                             ),
                             Icon(Icons.chevron_right,
-                                color: Colors.grey[400], size: 20),
+                                color: context.textSecondary, size: 20),
                           ],
                         ),
                       ),
@@ -1040,9 +1157,9 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
             bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
           ),
           child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            decoration: BoxDecoration(
+              color: context.cardBg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -1057,10 +1174,11 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
+                        color: context.textPrimary,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: Icon(Icons.close, color: context.textPrimary),
                       onPressed: () => Navigator.pop(sheetContext),
                     ),
                   ],
@@ -1069,13 +1187,19 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
                 TextField(
                   controller: textController,
                   maxLines: 5,
-                  style: GoogleFonts.hindSiliguri(fontSize: 15),
+                  style: GoogleFonts.hindSiliguri(fontSize: 15, color: context.textPrimary),
                   decoration: InputDecoration(
                     hintText: "What's on your mind?",
-                    hintStyle: GoogleFonts.hindSiliguri(color: Colors.grey),
+                    hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted),
+                    filled: true,
+                    fillColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.black12),
+                      borderSide: BorderSide(color: context.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: context.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1211,9 +1335,9 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
     ];
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         child: Column(
@@ -1224,7 +1348,7 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: context.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1340,9 +1464,9 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         child: Column(
@@ -1352,7 +1476,7 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: context.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1367,6 +1491,7 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
+                      color: context.textPrimary,
                     ),
                   ),
                   TextButton(
@@ -1400,13 +1525,14 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: TextField(
                 onChanged: _filterFriends,
+                style: GoogleFonts.outfit(color: context.textPrimary),
                 decoration: InputDecoration(
                   hintText: "Search friends...",
-                  hintStyle: GoogleFonts.outfit(color: Colors.grey, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+                  hintStyle: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
+                  prefixIcon: Icon(Icons.search, color: context.textMuted, size: 20),
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -1421,7 +1547,7 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                       ? Center(
                           child: Text(
                             _searchQuery.isEmpty ? "You are not following any friends yet" : "No friends found matching '$_searchQuery'",
-                            style: GoogleFonts.outfit(color: Colors.grey, fontSize: 14),
+                            style: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
                             textAlign: TextAlign.center,
                           ),
                         )
@@ -1452,12 +1578,13 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                                 style: GoogleFonts.hindSiliguri(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
+                                  color: context.textPrimary,
                                 ),
                               ),
                               subtitle: Text(
                                 "@${friend.username}",
                                 style: GoogleFonts.outfit(
-                                  color: Colors.grey[500],
+                                  color: context.textSecondary,
                                   fontSize: 12,
                                 ),
                               ),

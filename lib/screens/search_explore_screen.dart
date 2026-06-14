@@ -132,12 +132,14 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                           color: context.textPrimary,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.verified,
-                        color: Colors.blue,
-                        size: 13,
-                      ),
+                      if (user.fullName == 'Dak Official') ...[
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.verified,
+                          color: Colors.blue,
+                          size: 13,
+                        ),
+                      ],
                     ],
                   ),
                   // Name
