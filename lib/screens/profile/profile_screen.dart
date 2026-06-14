@@ -465,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               profile.bio!,
               style: GoogleFonts.hindSiliguri(
                 fontSize: 14,
-                color: Colors.black87,
+                color: context.textPrimary,
                 height: 1.45,
               ),
             ),
@@ -483,7 +483,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFFE5E5E5), width: 1.0),
+        border: Border.all(color: context.border, width: 1.0),
       ),
       child: ClipOval(
         child: url != null && url.isNotEmpty
@@ -622,17 +622,17 @@ class _ProfileScreenState extends State<ProfileScreen>
               width: 70,
               height: 70,
               decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFCCCCCC), width: 1.5),
+                border: Border.all(color: context.border, width: 1.5),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.edit_outlined,
-                  size: 34, color: Colors.black26),
+              child: Icon(Icons.edit_outlined,
+                  size: 34, color: context.textMuted),
             ),
             const SizedBox(height: 14),
             Text('No posts yet',
                 style: GoogleFonts.hindSiliguri(
                     fontSize: 16,
-                    color: Colors.black45,
+                    color: context.textSecondary,
                     fontWeight: FontWeight.w500)),
             if (_isOwnProfile) ...[
               const SizedBox(height: 16),
@@ -662,7 +662,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       physics: const BouncingScrollPhysics(),
       itemCount: threads.length,
       separatorBuilder: (_, __) =>
-          const Divider(height: 1, color: Color(0xFFF2F2F2)),
+          Divider(height: 1, color: context.border),
       itemBuilder: (context, i) => _threadTile(threads[i], profile),
     );
   }
@@ -689,25 +689,25 @@ class _ProfileScreenState extends State<ProfileScreen>
                           style: GoogleFonts.hindSiliguri(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              color: Colors.black),
+                              color: context.textPrimary),
                         ),
                         TextSpan(
                           text: '@${profile?.username ?? ''}',
                           style: GoogleFonts.hindSiliguri(
-                              fontSize: 13, color: Colors.black45),
+                              fontSize: 13, color: context.textSecondary),
                         ),
                       ]),
                     ),
                   ),
                   Text(age,
                       style: GoogleFonts.hindSiliguri(
-                          fontSize: 12, color: Colors.black38)),
+                          fontSize: 12, color: context.textMuted)),
                 ]),
                 const SizedBox(height: 6),
                 Text(post.content,
                     style: GoogleFonts.hindSiliguri(
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: context.textPrimary,
                         height: 1.4)),
                 const SizedBox(height: 10),
                 Row(children: [
@@ -729,17 +729,17 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _postAction(IconData icon, String count) => Row(children: [
-        Icon(icon, size: 16, color: Colors.black38),
+        Icon(icon, size: 16, color: context.textSecondary),
         const SizedBox(width: 4),
         Text(count,
             style: GoogleFonts.hindSiliguri(
-                fontSize: 12, color: Colors.black38)),
+                fontSize: 12, color: context.textSecondary)),
       ]);
 
   Widget _emptyTab(String msg) => Center(
         child: Text(msg,
             style: GoogleFonts.hindSiliguri(
-                fontSize: 15, color: Colors.black38)),
+                fontSize: 15, color: context.textSecondary)),
       );
 
   // ── More Options ───────────────────────────────────────────
@@ -748,7 +748,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       context: context,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      backgroundColor: Colors.white,
+      backgroundColor: context.cardBg,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -758,7 +758,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                  color: Colors.black26,
+                  color: context.border,
                   borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 12),

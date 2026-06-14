@@ -308,10 +308,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                           key: ValueKey<String>(activePost.reactionType ?? '❤️'),
                                           style: const TextStyle(fontSize: 22),
                                         )
-                                      : const Icon(
+                                      : Icon(
                                           Icons.favorite_border,
-                                          key: ValueKey<int>(0),
-                                          color: Colors.black87,
+                                          key: const ValueKey<int>(0),
+                                          color: context.textSecondary,
                                           size: 24,
                                         ),
                                 ),
