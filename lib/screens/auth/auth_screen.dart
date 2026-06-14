@@ -826,26 +826,14 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ),
 
-          // 2. Atmospheric cloud image at top (fading out at bottom)
+          // 2. Atmospheric decorative top section (programmatic - no image dependency)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: screenHeight * 0.52,
-            child: ShaderMask(
-              shaderCallback: (rect) {
-                return const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black, Colors.black, Colors.transparent],
-                  stops: [0.0, 0.5, 1.0],
-                ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
-              },
-              blendMode: BlendMode.dstIn,
-              child: Image.asset(
-                "assets/auth_clouds.png",
-                fit: BoxFit.cover,
-              ),
+            height: screenHeight * 0.55,
+            child: CustomPaint(
+              painter: _AtmosphericBackgroundPainter(),
             ),
           ),
 
@@ -880,24 +868,50 @@ class _AuthScreenState extends State<AuthScreen> {
 
                   // HERO: Pigeon mascot — large, prominent, centered
                   Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Glow halo behind pigeon
-                        Image.asset(
-                          "assets/auth_glow_ring.png",
-                          height: 200,
-                          width: 200,
-                          fit: BoxFit.contain,
-                        ),
-                        // Main mascot
-                        Image.asset(
-                          "assets/pigeon_logo.png",
-                          height: 185,
-                          width: 210,
-                          fit: BoxFit.contain,
-                        ),
-                      ],
+                    child: SizedBox(
+                      height: 215,
+                      width: 215,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Programmatic glow ring (no image asset needed)
+                          Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                                  const Color(0xFF4F46E5).withValues(alpha: 0.2),
+                                  const Color(0xFF7C3AED).withValues(alpha: 0.05),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.4, 0.7, 1.0],
+                              ),
+                            ),
+                          ),
+                          // Outer ring stroke
+                          Container(
+                            width: 195,
+                            height: 195,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          // Main mascot
+                          Image.asset(
+                            "assets/pigeon_logo.png",
+                            height: 185,
+                            width: 210,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -1117,4 +1131,89 @@ class _AuthScreenState extends State<AuthScreen> {
       ),
     );
   }
+}
+
+/// Custom painter for the atmospheric cloud/nebula background at the top of the auth screen.
+/// Draws dark purple glowing arcs and radial gradients to simulate the dark atmospheric effect
+/// from the Piagoan design — no image assets required.
+class _AtmosphericBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Main top radial glow (large purple nebula)
+    final centerGlow = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF3D1F8C).withValues(alpha: 0.55),
+          const Color(0xFF1E0F5E).withValues(alpha: 0.3),
+          const Color(0xFF0D0F24).withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(
+        center: Offset(size.width / 2, size.height * 0.1),
+        radius: size.width * 0.9,
+      ));
+
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height * 0.1),
+      size.width * 0.9,
+      centerGlow,
+    );
+
+    // Left side purple cloud blob
+    final leftCloud = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF5B21B6).withValues(alpha: 0.2),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromCircle(
+        center: Offset(size.width * 0.1, size.height * 0.35),
+        radius: size.width * 0.45,
+      ));
+
+    canvas.drawCircle(
+      Offset(size.width * 0.1, size.height * 0.35),
+      size.width * 0.45,
+      leftCloud,
+    );
+
+    // Right side teal accent cloud
+    final rightCloud = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF1E3A8A).withValues(alpha: 0.18),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromCircle(
+        center: Offset(size.width * 0.9, size.height * 0.25),
+        radius: size.width * 0.4,
+      ));
+
+    canvas.drawCircle(
+      Offset(size.width * 0.9, size.height * 0.25),
+      size.width * 0.4,
+      rightCloud,
+    );
+
+    // Bottom fade-out gradient to merge with background
+    final fadeOut = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.transparent,
+          const Color(0xFF080A18).withValues(alpha: 0.6),
+          const Color(0xFF080A18),
+        ],
+        stops: const [0.5, 0.8, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      fadeOut,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
