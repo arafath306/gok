@@ -417,7 +417,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
 
         // Stats
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
