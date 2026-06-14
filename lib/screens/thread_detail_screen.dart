@@ -5,7 +5,6 @@ import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../widgets/comments_sheet.dart';
-import '../widgets/reactions_sheet.dart';
 import '../utils/routes.dart';
 import '../utils/app_theme.dart';
 import 'profile/profile_screen.dart';
@@ -250,26 +249,15 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         // Likes/Comments Count row
                         Row(
                           children: [
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => ReactionsListSheet(post: activePost),
-                                );
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    "${activePost.likesCount} ",
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: context.textPrimary),
-                                  ),
-                                  Text("পছন্দ (Likes)   ", style: TextStyle(color: context.textSecondary)),
-                                ],
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "${activePost.likesCount} ",
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: context.textPrimary),
+                                ),
+                                Text("পছন্দ (Likes)   ", style: TextStyle(color: context.textSecondary)),
+                              ],
                             ),
                             Text(
                               "${_comments.length} ",
@@ -289,14 +277,6 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 dbService.toggleLike(activePost.id, !activePost.isLikedByMe);
-                              },
-                              onLongPress: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => ReactionsListSheet(post: activePost),
-                                );
                               },
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),

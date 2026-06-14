@@ -9,7 +9,6 @@ import '../screens/thread_detail_screen.dart';
 import '../utils/routes.dart';
 import '../utils/app_theme.dart';
 import 'comments_sheet.dart';
-import 'reactions_sheet.dart';
 import '../screens/profile/profile_screen.dart';
 
 class CustomThreadCard extends StatelessWidget {
@@ -86,16 +85,6 @@ class CustomThreadCard extends StatelessWidget {
           );
         }
       },
-    );
-  }
-
-
-  void _showReactionsPopup(BuildContext context, DatabaseService dbService) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ReactionsListSheet(post: post),
     );
   }
 
@@ -464,7 +453,6 @@ class CustomThreadCard extends StatelessWidget {
                 HapticFeedback.lightImpact();
                 dbService.toggleLike(post.id, !post.isLikedByMe);
               },
-              onLongPress: () => _showReactionsPopup(context, dbService),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 transitionBuilder: (child, animation) =>
@@ -523,15 +511,12 @@ class CustomThreadCard extends StatelessWidget {
         ),
         if (post.repliesCount > 0 || post.likesCount > 0) ...[
           const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => _showReactionsPopup(context, dbService),
-            child: Text(
-              _buildCombinedStatsString(),
-              style: GoogleFonts.outfit(
-                fontSize: 12.5,
-                color: context.textMuted,
-                fontWeight: FontWeight.w400,
-              ),
+          Text(
+            _buildCombinedStatsString(),
+            style: GoogleFonts.outfit(
+              fontSize: 12.5,
+              color: context.textMuted,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],
