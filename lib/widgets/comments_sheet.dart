@@ -5,6 +5,7 @@ import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../screens/profile/profile_screen.dart';
+import '../utils/app_theme.dart';
 
 class CommentsSheet extends StatefulWidget {
   final ThreadPost post;
@@ -110,9 +111,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -122,7 +123,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: context.isDarkMode ? Colors.grey[800] : Colors.grey[300],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -139,18 +140,18 @@ class _CommentsSheetState extends State<CommentsSheet> {
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
-                    color: Colors.black,
+                    color: context.textPrimary,
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.black54),
+                  icon: Icon(Icons.close, color: context.textSecondary),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
 
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Divider(height: 1, color: context.border),
 
           // Sort Filter Dropdown
           Padding(
@@ -160,16 +161,20 @@ class _CommentsSheetState extends State<CommentsSheet> {
                 DropdownButton<String>(
                   value: _sortBy,
                   underline: const SizedBox(),
-                  icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.black87),
+                  dropdownColor: context.cardBg,
+                  icon: Icon(Icons.keyboard_arrow_down, size: 18, color: context.textPrimary),
                   style: GoogleFonts.inter(
-                    color: Colors.black87,
+                    color: context.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                   items: ["Most relevant", "Newest", "Oldest"].map((val) {
                     return DropdownMenuItem<String>(
                       value: val,
-                      child: Text(val),
+                      child: Text(
+                        val,
+                        style: GoogleFonts.inter(color: context.textPrimary),
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -196,7 +201,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                     ? Center(
                         child: Text(
                           "কোন মন্তব্য পাওয়া যায়নি।",
-                          style: GoogleFonts.hindSiliguri(color: Colors.black45),
+                          style: GoogleFonts.hindSiliguri(color: context.textMuted),
                         ),
                       )
                     : ListView.builder(
@@ -258,7 +263,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                 style: GoogleFonts.hindSiliguri(
                                                   fontWeight: FontWeight.w700,
                                                   fontSize: 14.5,
-                                                  color: Colors.black,
+                                                  color: context.textPrimary,
                                                 ),
                                               ),
                                             ),
@@ -276,7 +281,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                             "@${author.username} · ${comment['created_at']}",
                                             style: GoogleFonts.inter(
                                               fontSize: 12.5,
-                                              color: Colors.grey[500],
+                                              color: context.textSecondary,
                                             ),
                                           ),
                                           if (isPostAuthor) ...[
@@ -299,7 +304,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                           ],
                                           const Spacer(),
                                           IconButton(
-                                            icon: const Icon(Icons.more_horiz, size: 18, color: Colors.black54),
+                                            icon: Icon(Icons.more_horiz, size: 18, color: context.textSecondary),
                                             padding: EdgeInsets.zero,
                                             constraints: const BoxConstraints(),
                                             onPressed: () => _showQuickActions(context, comment, dbService),
@@ -313,7 +318,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                         comment['content'] as String,
                                         style: GoogleFonts.hindSiliguri(
                                           fontSize: 14,
-                                          color: Colors.black87,
+                                          color: context.textPrimary,
                                           height: 1.45,
                                         ),
                                       ),
@@ -327,14 +332,14 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                             onTap: () {},
                                             child: Row(
                                               children: [
-                                                const Icon(Icons.chat_bubble_outline, size: 15, color: Colors.black54),
+                                                Icon(Icons.chat_bubble_outline, size: 15, color: context.textSecondary),
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   "${comment['replies_count'] ?? 0}",
                                                   style: GoogleFonts.inter(
                                                     fontSize: 13, 
                                                     fontWeight: FontWeight.w500,
-                                                    color: Colors.black54,
+                                                    color: context.textSecondary,
                                                   ),
                                                 ),
                                               ],
@@ -363,7 +368,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               size: 15,
                                               color: (comment['is_liked_by_me'] as bool? ?? false)
                                                   ? Colors.red
-                                                  : Colors.black54,
+                                                  : context.textSecondary,
                                             ),
                                           ),
                                           const SizedBox(width: 24),
@@ -380,7 +385,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               style: GoogleFonts.inter(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
-                                                color: Colors.black54,
+                                                color: context.textSecondary,
                                               ),
                                             ),
                                           ),
@@ -429,17 +434,17 @@ class _CommentsSheetState extends State<CommentsSheet> {
           SafeArea(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: context.cardBg,
                 border: Border(
-                  top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                  top: BorderSide(color: context.border, width: 1),
                 ),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 16,
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
                     backgroundImage: NetworkImage(
                       myProf?.avatarUrl ?? "https://i.pravatar.cc/150",
                     ),
@@ -448,7 +453,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
+                        color: context.isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -457,10 +462,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
                           Expanded(
                             child: TextField(
                               controller: _commentController,
-                              style: GoogleFonts.hindSiliguri(fontSize: 14),
+                              style: GoogleFonts.hindSiliguri(fontSize: 14, color: context.textPrimary),
                               decoration: InputDecoration(
                                 hintText: "Write a comment...",
-                                hintStyle: GoogleFonts.inter(color: Colors.black38, fontSize: 14),
+                                hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -474,7 +479,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                               final text = value.text.trim();
                               if (text.isNotEmpty) {
                                 return IconButton(
-                                  icon: const Icon(Icons.send, color: Color(0xFF1E824C), size: 18),
+                                  icon: const Icon(Icons.send, color: Color(0xFF7C4DFF), size: 18),
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
                                   onPressed: _submitComment,
@@ -484,21 +489,21 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.image_outlined, size: 18, color: Colors.black54),
+                                      icon: Icon(Icons.image_outlined, size: 18, color: context.textSecondary),
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(),
                                       onPressed: () {},
                                     ),
                                     const SizedBox(width: 10),
                                     IconButton(
-                                      icon: const Icon(Icons.gif_box_outlined, size: 18, color: Colors.black54),
+                                      icon: Icon(Icons.gif_box_outlined, size: 18, color: context.textSecondary),
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(),
                                       onPressed: () {},
                                     ),
                                     const SizedBox(width: 10),
                                     IconButton(
-                                      icon: const Icon(Icons.sentiment_satisfied_alt_outlined, size: 18, color: Colors.black54),
+                                      icon: Icon(Icons.sentiment_satisfied_alt_outlined, size: 18, color: context.textSecondary),
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(),
                                       onPressed: () {},
@@ -697,9 +702,9 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
     ];
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         child: Column(
@@ -710,7 +715,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: context.isDarkMode ? Colors.grey[800] : Colors.grey[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -739,13 +744,13 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
   }
 
   Widget _buildActionTile(_CommentQuickActionItem item) {
-    final color = item.isDanger ? Colors.red[600]! : Colors.black87;
+    final color = item.isDanger ? Colors.red[600]! : context.textPrimary;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: item.onTap,
-        splashColor: const Color(0xFF1E824C).withOpacity(0.08),
-        highlightColor: const Color(0xFF1E824C).withOpacity(0.04),
+        splashColor: const Color(0xFF7C4DFF).withOpacity(0.08),
+        highlightColor: const Color(0xFF7C4DFF).withOpacity(0.04),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Row(
@@ -773,21 +778,22 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
+        backgroundColor: context.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Block @$username?',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18, color: context.textPrimary),
         ),
         content: Text(
           'They will not be able to follow you, see your posts, or contact you on Dak.',
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.black54, height: 1.4),
+          style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text('Cancel',
                 style: GoogleFonts.inter(
-                    color: Colors.grey[600], fontWeight: FontWeight.w600)),
+                    color: context.textSecondary, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -823,9 +829,9 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (reportCtx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: context.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           child: Column(
@@ -838,7 +844,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: context.isDarkMode ? Colors.grey[800] : Colors.grey[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -851,7 +857,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.black,
+                    color: context.textPrimary,
                   ),
                 ),
               ),
@@ -860,11 +866,11 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Why are you reporting this comment?',
-                  style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[500]),
+                  style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
                 ),
               ),
               const SizedBox(height: 12),
-              const Divider(height: 1),
+              Divider(height: 1, color: context.border),
               ...reasons.map((reason) => Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -889,12 +895,12 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                                 style: GoogleFonts.inter(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                                  color: context.textPrimary,
                                 ),
                               ),
                             ),
                             Icon(Icons.chevron_right,
-                                color: Colors.grey[400], size: 20),
+                                color: context.textSecondary, size: 20),
                           ],
                         ),
                       ),
