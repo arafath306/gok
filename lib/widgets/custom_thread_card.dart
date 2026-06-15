@@ -337,7 +337,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -771,7 +771,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
           ),
         ],
-        const SizedBox(height: 12), // Buffer to prevent font rendering/subpixel layout overflows
+        const SizedBox(height: 4), // Buffer to prevent font rendering/subpixel layout overflows
       ],
     );
   }
