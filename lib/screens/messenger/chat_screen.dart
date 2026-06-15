@@ -82,7 +82,7 @@ class _ChatScreenState extends State<ChatScreen> {
               backgroundColor: context.border,
               backgroundImage: widget.otherUser.avatarUrl != null && widget.otherUser.avatarUrl!.isNotEmpty
                   ? NetworkImage(widget.otherUser.avatarUrl!)
-                  : const NetworkImage("https://i.pravatar.cc/150"),
+                  : const NetworkImage(""),
             ),
             const SizedBox(width: 12),
             Expanded(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:ui';
 import 'feed_screen.dart';
 import 'search_explore_screen.dart';
 import 'notifications_screen.dart';
@@ -26,6 +27,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
   late PageController _pageController;
   late AnimationController _fabAnimationController;
   StreamSubscription? _notificationSubscription;
+  bool _showBars = true;
 
   @override
   void initState() {
@@ -359,7 +361,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
               backgroundImage: myProfile?.avatarUrl != null && myProfile!.avatarUrl!.isNotEmpty
                   ? NetworkImage(myProfile.avatarUrl!)
-                  : const NetworkImage("https://i.pravatar.cc/150?u=current_user"),
+                  : const NetworkImage(""),
             ),
           ),
           const SizedBox(height: 16),
@@ -424,6 +426,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     int badgeCount = 0,
   }) {
     return ListTile(
+      tileColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
       minLeadingWidth: 28,
       leading: Stack(
@@ -586,18 +589,18 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Spacer(flex: 3),
+            const SizedBox(height: 6),
             Stack(
               clipBehavior: Clip.none,
               children: [
                 AnimatedScale(
-                  scale: isSelected ? 1.18 : 1.0,
+                  scale: isSelected ? 1.12 : 1.0,
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutBack,
                   child: Icon(
                     isSelected ? activeIcon : inactiveIcon,
                     color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,
-                    size: 24,
+                    size: 22,
                   ),
                 ),
                 if (badgeCount > 0)
@@ -627,18 +630,18 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                   ),
               ],
             ),
-            const Spacer(flex: 2),
+            const SizedBox(height: 4),
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeInOut,
-              width: isSelected ? 5 : 0,
-              height: 5,
+              width: isSelected ? 4 : 0,
+              height: 4,
               decoration: const BoxDecoration(
                 color: Color(0xFF1E824C),
                 shape: BoxShape.circle,
               ),
             ),
-            const Spacer(flex: 2),
+            const SizedBox(height: 4),
           ],
         ),
       ),
@@ -665,6 +668,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
 
     return Scaffold(
       backgroundColor: context.scaffoldBg,
+      extendBody: true,
       drawer: Drawer(
         backgroundColor: context.scaffoldBg,
         child: Consumer<DatabaseService>(
@@ -784,84 +788,141 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         ),
       ),
       body: SafeArea(
-        child: PageView(
-          controller: _pageController,
-          physics: const BouncingScrollPhysics(),
-          onPageChanged: (index) {
-            if (index != _currentIndex) {
-              setState(() {
-                _currentIndex = index;
-              });
+        bottom: false,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification notification) {
+            if (notification is ScrollUpdateNotification) {
+              if (notification.metrics.axis == Axis.vertical) {
+                final double scrollDelta = notification.scrollDelta ?? 0;
+                if (scrollDelta > 5.0 && _showBars) {
+                  setState(() {
+                    _showBars = false;
+                  });
+                } else if (scrollDelta < -5.0 && !_showBars) {
+                  setState(() {
+                    _showBars = true;
+                  });
+                }
+                if (notification.metrics.pixels <= 0 && !_showBars) {
+                  setState(() {
+                    _showBars = true;
+                  });
+                }
+              }
             }
+            return false;
           },
-          children: screens,
+          child: PageView(
+            controller: _pageController,
+            physics: const BouncingScrollPhysics(),
+            onPageChanged: (index) {
+              if (index != _currentIndex) {
+                setState(() {
+                  _currentIndex = index;
+                  _showBars = true;
+                });
+              }
+            },
+            children: screens,
+          ),
         ),
       ),
       floatingActionButton: (_currentIndex == 0 || _currentIndex == 4)
-          ? FloatingActionButton(
-              heroTag: 'main_fab',
-              backgroundColor: const Color(0xFF1E824C),
-              shape: const CircleBorder(),
-              elevation: 4,
-              onPressed: () {
-                _fabAnimationController.forward(from: 0.0);
-                Future.delayed(const Duration(milliseconds: 150), () {
-                  if (context.mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const CreateThreadScreen()),
-                    );
-                  }
-                });
-              },
-              child: RotationTransition(
-                turns: Tween<double>(begin: 0.0, end: 1.0).animate(
-                  CurvedAnimation(
-                    parent: _fabAnimationController,
-                    curve: Curves.easeInOut,
+          ? AnimatedScale(
+              scale: _showBars ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: FloatingActionButton(
+                heroTag: 'main_fab',
+                backgroundColor: const Color(0xFF1E824C),
+                shape: const CircleBorder(),
+                elevation: 4,
+                onPressed: () {
+                  _fabAnimationController.forward(from: 0.0);
+                  Future.delayed(const Duration(milliseconds: 150), () {
+                    if (context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CreateThreadScreen()),
+                      );
+                    }
+                  });
+                },
+                child: RotationTransition(
+                  turns: Tween<double>(begin: 0.0, end: 1.0).animate(
+                    CurvedAnimation(
+                      parent: _fabAnimationController,
+                      curve: Curves.easeInOut,
+                    ),
                   ),
-                ),
-                child: const Icon(
-                  Icons.add,
-                  color: Colors.white,
-                  size: 28,
+                  child: const Icon(
+                    Icons.add,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
               ),
             )
           : null,
-      bottomNavigationBar: Consumer<DatabaseService>(
-        builder: (context, dbService, _) {
-          return Container(
-            height: 64,
-            decoration: BoxDecoration(
-              color: context.cardBg,
-              border: Border(
-                top: BorderSide(color: context.border, width: 1),
+      bottomNavigationBar: AnimatedSlide(
+        offset: _showBars ? Offset.zero : const Offset(0, 1.2),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        child: Consumer<DatabaseService>(
+          builder: (context, dbService, _) {
+            final double bottomPadding = MediaQuery.of(context).padding.bottom;
+            return ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
               ),
-            ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  _buildBottomNavItem(0, Icons.home_rounded, Icons.home_outlined),
-                  _buildBottomNavItem(1, Icons.search_rounded, Icons.search_rounded),
-                  _buildBottomNavItem(
-                    2, 
-                    Icons.chat_bubble_rounded, 
-                    Icons.chat_bubble_outline_rounded,
-                    badgeCount: dbService.unreadMessagesCount,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 25.0, sigmaY: 25.0),
+                child: Container(
+                  height: 52 + bottomPadding,
+                  decoration: BoxDecoration(
+                    color: context.isDarkMode
+                        ? Colors.black.withOpacity(0.8)
+                        : Colors.white.withOpacity(0.85),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    border: Border(
+                      top: BorderSide(
+                        color: context.isDarkMode
+                            ? Colors.white.withOpacity(0.12)
+                            : Colors.black.withOpacity(0.08),
+                        width: 0.5,
+                      ),
+                    ),
                   ),
-                  _buildBottomNavItem(
-                    3, 
-                    Icons.notifications_rounded, 
-                    Icons.notifications_outlined,
-                    badgeCount: dbService.unreadNotificationsCount,
+                  child: SafeArea(
+                    child: Row(
+                      children: [
+                        _buildBottomNavItem(0, Icons.home_rounded, Icons.home_outlined),
+                        _buildBottomNavItem(1, Icons.search_rounded, Icons.search_rounded),
+                        _buildBottomNavItem(
+                          2, 
+                          Icons.chat_bubble_rounded, 
+                          Icons.chat_bubble_outline_rounded,
+                          badgeCount: dbService.unreadMessagesCount,
+                        ),
+                        _buildBottomNavItem(
+                          3, 
+                          Icons.notifications_rounded, 
+                          Icons.notifications_outlined,
+                          badgeCount: dbService.unreadNotificationsCount,
+                        ),
+                        _buildBottomNavItem(4, Icons.person_rounded, Icons.person_outline_rounded),
+                      ],
+                    ),
                   ),
-                  _buildBottomNavItem(4, Icons.person_rounded, Icons.person_outline_rounded),
-                ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

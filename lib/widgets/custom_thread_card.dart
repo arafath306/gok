@@ -7,10 +7,12 @@ import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../services/general_settings_provider.dart';
 import '../screens/thread_detail_screen.dart';
+import '../screens/create_thread_screen.dart';
 import '../utils/routes.dart';
 import '../utils/app_theme.dart';
 import 'comments_sheet.dart';
 import '../screens/profile/profile_screen.dart';
+import 'share_post_sheet.dart';
 
 class CustomThreadCard extends StatefulWidget {
   final ThreadPost post;
@@ -33,13 +35,19 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
   @override
   void didUpdateWidget(CustomThreadCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.post.id != widget.post.id || oldWidget.post.repliesCount != widget.post.repliesCount) {
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final livePost = dbService.getLatestPost(widget.post);
+    final oldLivePost = dbService.getLatestPost(oldWidget.post);
+    if (oldWidget.post.id != widget.post.id ||
+        oldLivePost.repliesCount != livePost.repliesCount) {
       _loadCommenterProfiles();
     }
   }
 
   Future<void> _loadCommenterProfiles() async {
-    if (widget.post.repliesCount == 0) {
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final livePost = dbService.getLatestPost(widget.post);
+    if (livePost.repliesCount == 0) {
       if (mounted) {
         setState(() {
           _commenterProfiles = [];
@@ -69,54 +77,16 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
   }
 
   void _sharePost(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Share Post", style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.share, size: 40, color: Color(0xFF1E824C)),
-            const SizedBox(height: 16),
-            Text("Copy post link or share.", style: GoogleFonts.hindSiliguri(fontSize: 14)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black12),
-              ),
-              child: Text(
-                "https://dak.ngst.app/thread/${widget.post.id}",
-                style: const TextStyle(fontSize: 12, color: Colors.blue),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Link copied")),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E824C),
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-            child: Text("Copy Link", style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => SharePostSheet(post: widget.post),
     );
   }
 
-  void _showQuickActions(BuildContext context, DatabaseService dbService) {
-    final isAuthor = widget.post.userId == dbService.currentUid;
+  void _showQuickActions(BuildContext context, DatabaseService dbService, ThreadPost post) {
+    final isAuthor = post.userId == dbService.currentUid;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -124,13 +94,13 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
       builder: (sheetContext) {
         if (isAuthor) {
           return _AuthorActionsSheet(
-            post: widget.post,
+            post: post,
             dbService: dbService,
             parentContext: context,
           );
         } else {
           return _QuickActionsSheet(
-            post: widget.post,
+            post: post,
             dbService: dbService,
             parentContext: context,
           );
@@ -139,33 +109,231 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
     );
   }
 
-  void _showCommentsBottomSheet(BuildContext context) {
+  void _showCommentsBottomSheet(BuildContext context, ThreadPost post) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CommentsSheet(post: widget.post),
+      builder: (context) => CommentsSheet(post: post),
     ).then((_) {
       _loadCommenterProfiles();
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    final isVerified = widget.post.author.fullName == 'Dak Official';
+  void _showRepostOptions(BuildContext context, DatabaseService dbService, ThreadPost post) {
+    final targetPostId = post.isRepost && post.repostedPost != null ? post.repostedPost!.id : post.id;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: BoxDecoration(
+          color: context.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: context.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: Icon(Icons.repeat_rounded, color: context.textPrimary),
+                title: Text('Repost', style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
+                subtitle: Text('Instantly share this post to your feed', style: TextStyle(color: context.textSecondary, fontSize: 12)),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final success = await dbService.repostThread(targetPostId);
+                  if (success && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Post status updated")),
+                    );
+                  }
+                },
+              ),
+              Divider(height: 1, color: context.border),
+              ListTile(
+                leading: Icon(Icons.edit_note, color: context.textPrimary),
+                title: Text('Quote Post', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
+                subtitle: Text('Share this post and add your own comment', style: TextStyle(color: context.textSecondary, fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  final targetPost = post.isRepost && post.repostedPost != null ? post.repostedPost! : post;
+                  Navigator.push(
+                    context,
+                    NoTransitionPageRoute(
+                      child: CreateThreadScreen(quotePost: targetPost),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    return InkWell(
-      hoverColor: Colors.transparent,
+  void _showQuoteInputDialog(BuildContext context, DatabaseService dbService, ThreadPost post) {
+    final controller = TextEditingController();
+    final targetPostId = post.isRepost && post.repostedPost != null ? post.repostedPost!.id : post.id;
+    final displayContent = post.isRepost && post.repostedPost != null ? post.repostedPost!.content : post.content;
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: context.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text("Quote Post", style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: controller,
+              style: GoogleFonts.hindSiliguri(color: context.textPrimary),
+              decoration: const InputDecoration(
+                hintText: "Add a comment...",
+                border: InputBorder.none,
+              ),
+              maxLines: 4,
+              autofocus: true,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                border: Border.all(color: context.border),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                displayContent,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.hindSiliguri(fontSize: 12, color: context.textSecondary),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              final text = controller.text.trim();
+              if (text.isNotEmpty) {
+                Navigator.pop(dialogCtx);
+                final success = await dbService.repostThread(targetPostId, quoteText: text);
+                if (success && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Post status updated")),
+                  );
+                }
+              }
+            },
+            child: const Text("Post", style: TextStyle(color: Color(0xFF1E824C))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNestedOriginalPost(BuildContext context, DatabaseService dbService, ThreadPost origPost) {
+    return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           NoTransitionPageRoute(
-            child: ThreadDetailScreen(post: widget.post),
+            child: ThreadDetailScreen(post: origPost),
           ),
         );
       },
-      onLongPress: () => _showQuickActions(context, dbService),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Divider(height: 16, thickness: 0.5, color: context.border),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 10,
+                backgroundImage: origPost.author.avatarUrl != null && origPost.author.avatarUrl!.isNotEmpty
+                    ? NetworkImage(origPost.author.avatarUrl!)
+                    : null,
+                child: origPost.author.avatarUrl == null || origPost.author.avatarUrl!.isEmpty
+                    ? const Icon(Icons.person, size: 10)
+                    : null,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                origPost.author.fullName,
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12, color: context.textPrimary),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                "@${origPost.author.username}",
+                style: TextStyle(fontSize: 10, color: context.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            origPost.content,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(fontSize: 13, color: context.textPrimary),
+          ),
+          if (origPost.imageUrls != null && origPost.imageUrls!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: Image.network(
+                origPost.imageUrls!.first,
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dbService = Provider.of<DatabaseService>(context);
+    // Resolve live post from cache so mutations (like, comment, edit, delete)
+    // are reflected immediately without a full feed refresh.
+    final post = dbService.getLatestPost(widget.post);
+
+    // If this post was deleted, render nothing.
+    if (dbService.isPostDeleted(post.id)) return const SizedBox.shrink();
+
+    final isVerified = post.author.fullName == 'Dak Official';
+
+    return InkWell(
+      hoverColor: Colors.transparent,
+      onTap: () {
+        final targetPost = (post.isRepost && (post.quoteText == null || post.quoteText!.isEmpty)) 
+            ? post.repostedPost! 
+            : post;
+        Navigator.push(
+          context,
+          NoTransitionPageRoute(
+            child: ThreadDetailScreen(post: targetPost),
+          ),
+        );
+      },
+      onLongPress: () => _showQuickActions(context, dbService, post),
       child: Column(
         children: [
           Padding(
@@ -174,10 +342,10 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildLeftColumn(context, dbService),
+                  _buildLeftColumn(context, dbService, post),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildRightColumn(context, dbService, isVerified),
+                    child: _buildRightColumn(context, dbService, post, isVerified),
                   ),
                 ],
               ),
@@ -189,9 +357,9 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
     );
   }
 
-  Widget _buildLeftColumn(BuildContext context, DatabaseService dbService) {
-    final isFollowing = dbService.isFollowingUser(widget.post.userId);
-    final hasReplies = widget.post.repliesCount > 0 && _commenterProfiles.isNotEmpty;
+  Widget _buildLeftColumn(BuildContext context, DatabaseService dbService, ThreadPost post) {
+    final isFollowing = dbService.isFollowingUser(post.userId);
+    final hasReplies = post.repliesCount > 0 && _commenterProfiles.isNotEmpty;
     return Column(
       children: [
         Stack(
@@ -199,12 +367,15 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: Colors.grey[200],
-              backgroundImage: NetworkImage(
-                widget.post.author.avatarUrl ?? "https://i.pravatar.cc/150",
-              ),
+              backgroundColor: Colors.grey[800],
+              backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
+                  ? NetworkImage(post.author.avatarUrl!)
+                  : null,
+              child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
+                  ? const Icon(Icons.person, size: 20, color: Colors.white54)
+                  : null,
             ),
-            if (widget.post.userId != dbService.currentUid && !isFollowing)
+            if (post.userId != dbService.currentUid && !isFollowing)
               Positioned(
                 bottom: -2,
                 right: -2,
@@ -374,6 +545,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
   Widget _buildRightColumn(
     BuildContext context,
     DatabaseService dbService,
+    ThreadPost post,
     bool isVerified,
   ) {
     return Column(
@@ -384,11 +556,11 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           children: [
             GestureDetector(
               onTap: () {
-                final isOwn = widget.post.userId == dbService.currentUid;
+                final isOwn = post.userId == dbService.currentUid;
                 Navigator.push(
                   context,
                   NoTransitionPageRoute(
-                    child: ProfileScreen(userId: isOwn ? null : widget.post.userId),
+                    child: ProfileScreen(userId: isOwn ? null : post.userId),
                   ),
                 );
               },
@@ -396,7 +568,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    widget.post.author.username,
+                    post.author.username,
                     style: GoogleFonts.hindSiliguri(
                       fontWeight: FontWeight.bold,
                       fontSize: 14.5,
@@ -416,7 +588,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
             const Spacer(),
             Text(
-              widget.post.createdAt,
+              post.createdAt,
               style: GoogleFonts.inter(
                 fontSize: 12.5,
                 color: context.textMuted,
@@ -424,7 +596,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
             const SizedBox(width: 4),
             GestureDetector(
-              onTap: () => _showQuickActions(context, dbService),
+              onTap: () => _showQuickActions(context, dbService, post),
               child: Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: Icon(
@@ -438,26 +610,28 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
         ),
         const SizedBox(height: 2),
         Text(
-          widget.post.content,
+          post.content,
           style: GoogleFonts.hindSiliguri(
             fontSize: 14,
             color: context.textPrimary,
             height: 1.4,
           ),
         ),
-        if (widget.post.imageUrls != null && widget.post.imageUrls!.isNotEmpty) ...[
+        if (post.isRepost && post.repostedPost != null)
+          _buildNestedOriginalPost(context, dbService, post.repostedPost!),
+        if (post.imageUrls != null && post.imageUrls!.isNotEmpty) ...[
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
             child: Image.network(
-              widget.post.imageUrls!.first,
+              post.imageUrls!.first,
               height: 200,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
           ),
         ],
-        if (widget.post.videoUrl != null && widget.post.videoUrl!.isNotEmpty) ...[
+        if (post.videoUrl != null && post.videoUrl!.isNotEmpty) ...[
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () => _sharePost(context),
@@ -487,7 +661,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     color: Colors.black54,
                     child: Text(
-                      widget.post.videoUrl!,
+                      post.videoUrl!,
                       style: const TextStyle(color: Colors.white, fontSize: 10),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -505,13 +679,13 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               behavior: HitTestBehavior.opaque,
               onTap: () {
                 HapticFeedback.lightImpact();
-                dbService.toggleLike(widget.post.id, !widget.post.isLikedByMe);
+                dbService.toggleLike(post.id, !post.isLikedByMe);
               },
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 transitionBuilder: (child, animation) =>
                     ScaleTransition(scale: animation, child: child),
-                child: widget.post.isLikedByMe
+                child: post.isLikedByMe
                     ? Icon(
                         Icons.favorite,
                         key: const ValueKey<int>(1),
@@ -528,7 +702,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
             const SizedBox(width: 20),
             GestureDetector(
-              onTap: () => _showCommentsBottomSheet(context),
+              onTap: () => _showCommentsBottomSheet(context, post),
               behavior: HitTestBehavior.opaque,
               child: Icon(
                 Icons.chat_bubble_outline_rounded,
@@ -538,18 +712,37 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
             const SizedBox(width: 20),
             GestureDetector(
-              onTap: () async {
-                final success = await dbService.repostThread(widget.post.id);
-                if (success && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Post status updated")),
-                  );
-                }
-              },
+              onTap: () => _showRepostOptions(context, dbService, post),
               behavior: HitTestBehavior.opaque,
               child: Icon(
                 Icons.repeat_rounded,
                 color: context.textSecondary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 20),
+            GestureDetector(
+              onTap: () async {
+                final wasSaved = dbService.isSaved(post.id);
+                await dbService.toggleSaveThread(post.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        wasSaved ? "Removed from bookmarks" : "Post saved to bookmarks",
+                        style: GoogleFonts.inter(),
+                      ),
+                      duration: const Duration(seconds: 2),
+                      backgroundColor: wasSaved ? Colors.grey[700] : const Color(0xFF1E824C),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                }
+              },
+              child: Icon(
+                dbService.isSaved(post.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
+                color: dbService.isSaved(post.id) ? const Color(0xFF1E824C) : context.textSecondary,
                 size: 20,
               ),
             ),
@@ -562,38 +755,12 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 size: 20,
               ),
             ),
-            const SizedBox(width: 20),
-            GestureDetector(
-              onTap: () async {
-                final wasSaved = dbService.isSaved(widget.post.id);
-                await dbService.toggleSaveThread(widget.post.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        wasSaved ? "সেভ থেকে রিমুভ করা হয়েছে" : "পোস্টটি সেভ করা হয়েছে",
-                        style: GoogleFonts.hindSiliguri(),
-                      ),
-                      duration: const Duration(seconds: 2),
-                      backgroundColor: wasSaved ? Colors.grey[700] : const Color(0xFF1E824C),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  );
-                }
-              },
-              child: Icon(
-                dbService.isSaved(widget.post.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
-                color: dbService.isSaved(widget.post.id) ? const Color(0xFF1E824C) : context.textSecondary,
-                size: 20,
-              ),
-            ),
           ],
         ),
-        if (widget.post.repliesCount > 0 || widget.post.likesCount > 0) ...[
+        if (post.repliesCount > 0 || post.likesCount > 0) ...[
           const SizedBox(height: 8),
           Text(
-            _buildCombinedStatsString(),
+            _buildCombinedStatsString(post),
             style: GoogleFonts.inter(
               fontSize: 12.5,
               color: context.textMuted,
@@ -601,13 +768,14 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
           ),
         ],
+        const SizedBox(height: 12), // Buffer to prevent font rendering/subpixel layout overflows
       ],
     );
   }
 
-  String _buildCombinedStatsString() {
-    final repCount = widget.post.repliesCount;
-    final lkCount = widget.post.likesCount;
+  String _buildCombinedStatsString(ThreadPost post) {
+    final repCount = post.repliesCount;
+    final lkCount = post.likesCount;
     if (repCount > 0 && lkCount > 0) {
       return "$repCount ${repCount == 1 ? 'reply' : 'replies'} · $lkCount ${lkCount == 1 ? 'like' : 'likes'}";
     } else if (repCount > 0) {
@@ -1138,6 +1306,45 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
     );
   }
 
+  void _showEditRepostDialog(BuildContext ctx, ThreadPost post) {
+    final controller = TextEditingController(text: post.quoteText);
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: ctx.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text("Edit Quote", style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: ctx.textPrimary)),
+        content: TextField(
+          controller: controller,
+          style: GoogleFonts.hindSiliguri(color: ctx.textPrimary),
+          decoration: const InputDecoration(
+            hintText: "Edit your comment...",
+          ),
+          maxLines: null,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newText = controller.text.trim();
+              if (newText.isNotEmpty) {
+                Navigator.pop(dialogCtx);
+                final success = await widget.dbService.editRepost(post.id, newText);
+                if (success) {
+                  _showSuccessSnackBar(ctx, "Quote updated successfully");
+                }
+              }
+            },
+            child: const Text("Save", style: TextStyle(color: Color(0xFF1E824C))),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showDeleteConfirm(BuildContext ctx) {
     showDialog(
       context: ctx,
@@ -1301,75 +1508,116 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
     final isMuted = widget.post.muteNotifications;
     final isHiddenFromProfile = widget.post.hideFromProfile;
 
-    final actions = <_QuickActionItem>[
-      _QuickActionItem(
-        icon: isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-        label: isPinned ? 'Unpin from profile' : 'Pin to profile',
-        onTap: () async {
-          Navigator.pop(context);
-          final success = await widget.dbService.togglePinPost(widget.post.id, !isPinned);
-          if (success) {
-            _showSuccessSnackBar(
-              widget.parentContext,
-              isPinned ? 'Post unpinned from profile' : 'Post pinned to profile',
-            );
-          }
-        },
-      ),
-      _QuickActionItem(
-        icon: isMuted ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
-        label: isMuted ? 'Unmute notifications' : 'Mute notifications for this post',
-        onTap: () async {
-          Navigator.pop(context);
-          final success = await widget.dbService.toggleMutePostNotifications(widget.post.id, !isMuted);
-          if (success) {
-            _showSuccessSnackBar(
-              widget.parentContext,
-              isMuted ? 'Notifications unmuted' : 'Notifications muted for this post',
-            );
-          }
-        },
-      ),
-      _QuickActionItem(
-        icon: Icons.edit_outlined,
-        label: 'Edit post',
-        onTap: () {
-          Navigator.pop(context);
-          _showEditPostSheet(widget.parentContext);
-        },
-      ),
-      _QuickActionItem(
-        icon: isHiddenFromProfile ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-        label: isHiddenFromProfile ? 'Show on profile' : 'Hide from my profile',
-        onTap: () async {
-          Navigator.pop(context);
-          final success = await widget.dbService.toggleHidePostFromProfile(widget.post.id, !isHiddenFromProfile);
-          if (success) {
-            _showSuccessSnackBar(
-              widget.parentContext,
-              isHiddenFromProfile ? 'Post is now visible on your profile' : 'Post hidden from your profile feed',
-            );
-          }
-        },
-      ),
-      _QuickActionItem(
-        icon: Icons.person_off_outlined,
-        label: 'Hide for specific users',
-        onTap: () {
-          Navigator.pop(context);
-          _showHideSpecificUsersSheet(widget.parentContext);
-        },
-      ),
-      _QuickActionItem(
-        icon: Icons.delete_outline,
-        label: 'Delete post',
-        isDanger: true,
-        onTap: () {
-          Navigator.pop(context);
-          _showDeleteConfirm(widget.parentContext);
-        },
-      ),
-    ];
+    final actions = <_QuickActionItem>[];
+    if (widget.post.isRepost) {
+      actions.addAll([
+        _QuickActionItem(
+          icon: Icons.delete_outline,
+          label: 'Remove repost',
+          isDanger: true,
+          onTap: () async {
+            Navigator.pop(context);
+            final success = await widget.dbService.deleteRepost(widget.post.id, widget.post.repostedPost?.id ?? '');
+            if (success) {
+              _showSuccessSnackBar(widget.parentContext, 'Repost removed');
+            }
+          },
+        ),
+        _QuickActionItem(
+          icon: isMuted ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
+          label: isMuted ? 'Unmute notifications' : 'Mute notifications for this post',
+          onTap: () async {
+            Navigator.pop(context);
+            final success = await widget.dbService.toggleMutePostNotifications(widget.post.id, !isMuted);
+            if (success) {
+              _showSuccessSnackBar(
+                widget.parentContext,
+                isMuted ? 'Notifications unmuted' : 'Notifications muted for this post',
+              );
+            }
+          },
+        ),
+        if (widget.post.quoteText != null && widget.post.quoteText!.isNotEmpty)
+          _QuickActionItem(
+            icon: Icons.edit_outlined,
+            label: 'Edit post',
+            onTap: () {
+              Navigator.pop(context);
+              _showEditRepostDialog(widget.parentContext, widget.post);
+            },
+          ),
+      ]);
+    } else {
+      actions.addAll([
+        _QuickActionItem(
+          icon: isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+          label: isPinned ? 'Unpin from profile' : 'Pin to profile',
+          onTap: () async {
+            Navigator.pop(context);
+            final success = await widget.dbService.togglePinPost(widget.post.id, !isPinned);
+            if (success) {
+              _showSuccessSnackBar(
+                widget.parentContext,
+                isPinned ? 'Post unpinned from profile' : 'Post pinned to profile',
+              );
+            }
+          },
+        ),
+        _QuickActionItem(
+          icon: isMuted ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
+          label: isMuted ? 'Unmute notifications' : 'Mute notifications for this post',
+          onTap: () async {
+            Navigator.pop(context);
+            final success = await widget.dbService.toggleMutePostNotifications(widget.post.id, !isMuted);
+            if (success) {
+              _showSuccessSnackBar(
+                widget.parentContext,
+                isMuted ? 'Notifications unmuted' : 'Notifications muted for this post',
+              );
+            }
+          },
+        ),
+        _QuickActionItem(
+          icon: Icons.edit_outlined,
+          label: 'Edit post',
+          onTap: () {
+            Navigator.pop(context);
+            _showEditPostSheet(widget.parentContext);
+          },
+        ),
+        _QuickActionItem(
+          icon: isHiddenFromProfile ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          label: isHiddenFromProfile ? 'Show on profile' : 'Hide from my profile',
+          onTap: () async {
+            Navigator.pop(context);
+            final success = await widget.dbService.toggleHidePostFromProfile(widget.post.id, !isHiddenFromProfile);
+            if (success) {
+              _showSuccessSnackBar(
+                widget.parentContext,
+                isHiddenFromProfile ? 'Post is now visible on your profile' : 'Post hidden from your profile feed',
+              );
+            }
+          },
+        ),
+        _QuickActionItem(
+          icon: Icons.person_off_outlined,
+          label: 'Hide for specific users',
+          onTap: () {
+            Navigator.pop(context);
+            _showHideSpecificUsersSheet(widget.parentContext);
+          },
+        ),
+        _QuickActionItem(
+          icon: Icons.delete_outline,
+          label: 'Delete post',
+          isDanger: true,
+          onTap: () {
+            Navigator.pop(context);
+            _showDeleteConfirm(widget.parentContext);
+          },
+        ),
+      ]);
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -1607,7 +1855,7 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                               },
                               secondary: CircleAvatar(
                                 backgroundImage: NetworkImage(
-                                  friend.avatarUrl ?? "https://i.pravatar.cc/150",
+                                  friend.avatarUrl ?? "",
                                 ),
                               ),
                               title: Text(

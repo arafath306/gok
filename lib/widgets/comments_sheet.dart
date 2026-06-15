@@ -5,6 +5,7 @@ import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../screens/profile/profile_screen.dart';
+import 'package:flutter/services.dart';
 import '../utils/app_theme.dart';
 
 class CommentsSheet extends StatefulWidget {
@@ -95,9 +96,23 @@ class _CommentsSheetState extends State<CommentsSheet> {
       builder: (sheetContext) => CommentQuickActionsSheet(
         comment: comment,
         dbService: dbService,
+        parentContext: context,
         onCommentHidden: (id) {
           setState(() {
-            _comments.removeWhere((c) => c['id'] == id);
+            _comments.removeWhere((c) => c['id'] == id || c['parent_id'] == id);
+          });
+        },
+        onCommentDeleted: (id) {
+          setState(() {
+            _comments.removeWhere((c) => c['id'] == id || c['parent_id'] == id);
+          });
+        },
+        onCommentEdited: (id, newContent) {
+          setState(() {
+            final idx = _comments.indexWhere((c) => c['id'] == id);
+            if (idx != -1) {
+              _comments[idx]['content'] = newContent;
+            }
           });
         },
       ),
@@ -230,10 +245,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                   },
                                   child: CircleAvatar(
                                     radius: 18,
-                                    backgroundColor: Colors.grey[200],
-                                    backgroundImage: NetworkImage(
-                                      author.avatarUrl ?? "https://i.pravatar.cc/150",
-                                    ),
+                                    backgroundColor: Colors.grey[800],
+                                    backgroundImage: (author.avatarUrl != null && author.avatarUrl!.isNotEmpty)
+                                        ? NetworkImage(author.avatarUrl!)
+                                        : null,
+                                    child: (author.avatarUrl == null || author.avatarUrl!.isEmpty)
+                                        ? const Icon(Icons.person, size: 18, color: Colors.white54)
+                                        : null,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -445,9 +463,12 @@ class _CommentsSheetState extends State<CommentsSheet> {
                   CircleAvatar(
                     radius: 16,
                     backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                    backgroundImage: NetworkImage(
-                      myProf?.avatarUrl ?? "https://i.pravatar.cc/150",
-                    ),
+                    backgroundImage: (myProf?.avatarUrl != null && myProf!.avatarUrl!.isNotEmpty)
+                        ? NetworkImage(myProf.avatarUrl!)
+                        : null,
+                    child: (myProf?.avatarUrl == null || myProf!.avatarUrl!.isEmpty)
+                        ? const Icon(Icons.person, size: 16, color: Colors.white54)
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -531,13 +552,19 @@ class _CommentsSheetState extends State<CommentsSheet> {
 class CommentQuickActionsSheet extends StatefulWidget {
   final Map<String, dynamic> comment;
   final DatabaseService dbService;
+  final BuildContext parentContext;
   final Function(String) onCommentHidden;
+  final Function(String)? onCommentDeleted;
+  final Function(String, String)? onCommentEdited;
 
   const CommentQuickActionsSheet({
     super.key,
     required this.comment,
     required this.dbService,
+    required this.parentContext,
     required this.onCommentHidden,
+    this.onCommentDeleted,
+    this.onCommentEdited,
   });
 
   @override
@@ -553,7 +580,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
   bool _isBlocked = false;
   bool _isFollowing = false;
 
-  static const int _itemCount = 6;
+  static const int _itemCount = 8;
 
   @override
   void initState() {
@@ -626,80 +653,206 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
     );
   }
 
+  void _showEditCommentDialog(BuildContext ctx, String commentId, String currentContent) {
+    final controller = TextEditingController(text: currentContent);
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: context.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text("Edit Comment", style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
+        content: TextField(
+          controller: controller,
+          style: GoogleFonts.hindSiliguri(color: context.textPrimary),
+          decoration: const InputDecoration(
+            hintText: "Edit your comment...",
+          ),
+          maxLines: null,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newContent = controller.text.trim();
+              if (newContent.isNotEmpty) {
+                Navigator.pop(dialogCtx);
+                if (widget.onCommentEdited != null) {
+                  widget.onCommentEdited!(commentId, newContent);
+                }
+                final success = await widget.dbService.editComment(commentId, newContent);
+                if (success) {
+                  _showSuccessSnackBar(ctx, "Comment updated successfully");
+                }
+              }
+            },
+            child: const Text("Save", style: TextStyle(color: Color(0xFF1E824C))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteCommentConfirm(BuildContext ctx, String commentId) {
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: context.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Delete Comment?',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18, color: context.textPrimary),
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete this comment?',
+          style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text('Cancel',
+                style: GoogleFonts.inter(
+                    color: context.textSecondary, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              if (widget.onCommentDeleted != null) {
+                widget.onCommentDeleted!(commentId);
+              }
+              final threadId = widget.comment['thread_id'] as String? ?? '';
+              final success = await widget.dbService.deleteComment(commentId, threadId);
+              if (success) {
+                _showSuccessSnackBar(ctx, 'Comment deleted successfully');
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Delete',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Profile author = widget.comment['author'] as Profile;
     final username = author.username;
     final commentId = widget.comment['id'] as String;
+    final isMyComment = author.id == widget.dbService.currentUid;
 
-    final actions = <_CommentQuickActionItem>[
-      _CommentQuickActionItem(
-        icon: Icons.sentiment_dissatisfied_outlined,
-        label: 'Not interested in this comment',
-        onTap: () {
-          Navigator.pop(context);
-          widget.onCommentHidden(commentId);
-          _showSuccessSnackBar(context, 'Comment hidden from view',
-              undoLabel: 'Undo', onUndo: () {});
-        },
-      ),
-      _CommentQuickActionItem(
-        icon: _isFollowing
-            ? Icons.person_remove_outlined
-            : Icons.person_add_alt_1_outlined,
-        label: _isFollowing ? 'Unfollow @$username' : 'Follow @$username',
-        onTap: () {
-          setState(() => _isFollowing = !_isFollowing);
-          Navigator.pop(context);
-          _showSuccessSnackBar(
-            context,
-            _isFollowing
-                ? 'You unfollowed @$username'
-                : 'You are now following @$username',
-          );
-        },
-      ),
-      _CommentQuickActionItem(
-        icon: Icons.playlist_add_outlined,
-        label: 'Add/remove from Lists',
-        onTap: () {
-          Navigator.pop(context);
-          _showSuccessSnackBar(context, 'List updated for @$username');
-        },
-      ),
-      _CommentQuickActionItem(
-        icon: _isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
-        label: _isMuted ? 'Unmute @$username' : 'Mute @$username',
-        onTap: () {
-          setState(() => _isMuted = !_isMuted);
-          Navigator.pop(context);
-          _showSuccessSnackBar(
-            context,
-            _isMuted ? '@$username unmuted' : '@$username has been muted',
-            undoLabel: 'Undo',
-            onUndo: () {},
-          );
-        },
-      ),
-      _CommentQuickActionItem(
-        icon: Icons.block_outlined,
-        label: _isBlocked ? 'Unblock @$username' : 'Block @$username',
-        isDanger: true,
-        onTap: () {
-          Navigator.pop(context);
-          _showBlockConfirm(context, username);
-        },
-      ),
-      _CommentQuickActionItem(
-        icon: Icons.flag_outlined,
-        label: 'Report comment',
-        isDanger: true,
-        onTap: () {
-          Navigator.pop(context);
-          _showReportSheet(context, commentId);
-        },
-      ),
-    ];
+    final List<_CommentQuickActionItem> actions;
+
+    if (isMyComment) {
+      actions = [
+        _CommentQuickActionItem(
+          icon: Icons.copy_rounded,
+          label: 'Copy comment text',
+          onTap: () {
+            Navigator.pop(context);
+            Clipboard.setData(ClipboardData(text: widget.comment['content'] as String? ?? ''));
+            _showSuccessSnackBar(widget.parentContext, 'Comment text copied');
+          },
+        ),
+        _CommentQuickActionItem(
+          icon: Icons.edit_outlined,
+          label: 'Edit comment',
+          onTap: () {
+            final parentCtx = widget.parentContext;
+            Navigator.pop(context);
+            _showEditCommentDialog(parentCtx, commentId, widget.comment['content'] as String? ?? '');
+          },
+        ),
+        _CommentQuickActionItem(
+          icon: Icons.delete_outline,
+          label: 'Delete comment',
+          isDanger: true,
+          onTap: () {
+            final parentCtx = widget.parentContext;
+            Navigator.pop(context);
+            _showDeleteCommentConfirm(parentCtx, commentId);
+          },
+        ),
+      ];
+    } else {
+      actions = [
+        _CommentQuickActionItem(
+          icon: Icons.sentiment_dissatisfied_outlined,
+          label: 'Not interested in this comment',
+          onTap: () {
+            Navigator.pop(context);
+            widget.onCommentHidden(commentId);
+            _showSuccessSnackBar(context, 'Comment hidden from view',
+                undoLabel: 'Undo', onUndo: () {});
+          },
+        ),
+        _CommentQuickActionItem(
+          icon: _isFollowing
+              ? Icons.person_remove_outlined
+              : Icons.person_add_alt_1_outlined,
+          label: _isFollowing ? 'Unfollow @$username' : 'Follow @$username',
+          onTap: () {
+            setState(() => _isFollowing = !_isFollowing);
+            Navigator.pop(context);
+            _showSuccessSnackBar(
+              context,
+              _isFollowing
+                  ? 'You unfollowed @$username'
+                  : 'You are now following @$username',
+            );
+          },
+        ),
+        _CommentQuickActionItem(
+          icon: Icons.playlist_add_outlined,
+          label: 'Add/remove from Lists',
+          onTap: () {
+            Navigator.pop(context);
+            _showSuccessSnackBar(context, 'List updated for @$username');
+          },
+        ),
+        _CommentQuickActionItem(
+          icon: _isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
+          label: _isMuted ? 'Unmute @$username' : 'Mute @$username',
+          onTap: () {
+            setState(() => _isMuted = !_isMuted);
+            Navigator.pop(context);
+            _showSuccessSnackBar(
+              context,
+              _isMuted ? '@$username unmuted' : '@$username has been muted',
+              undoLabel: 'Undo',
+              onUndo: () {},
+            );
+          },
+        ),
+        _CommentQuickActionItem(
+          icon: Icons.block_outlined,
+          label: _isBlocked ? 'Unblock @$username' : 'Block @$username',
+          isDanger: true,
+          onTap: () {
+            Navigator.pop(context);
+            _showBlockConfirm(context, username);
+          },
+        ),
+        _CommentQuickActionItem(
+          icon: Icons.flag_outlined,
+          label: 'Report comment',
+          isDanger: true,
+          onTap: () {
+            Navigator.pop(context);
+            _showReportSheet(context, commentId);
+          },
+        ),
+      ];
+    }
 
     return Container(
       decoration: BoxDecoration(

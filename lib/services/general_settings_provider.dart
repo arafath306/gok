@@ -64,7 +64,7 @@ class GeneralSettingsProvider with ChangeNotifier {
             'id': profile['id'] as String,
             'name': profile['full_name'] as String? ?? '',
             'username': profile['username'] as String? ?? '',
-            'avatar': profile['avatar_url'] as String? ?? 'https://i.pravatar.cc/150?u=${profile['username']}',
+            'avatar': profile['avatar_url'] as String? ?? '',
           });
         }
       }
@@ -90,7 +90,7 @@ class GeneralSettingsProvider with ChangeNotifier {
             'id': profile['id'] as String,
             'name': profile['full_name'] as String? ?? '',
             'username': profile['username'] as String? ?? '',
-            'avatar': profile['avatar_url'] as String? ?? 'https://i.pravatar.cc/150?u=${profile['username']}',
+            'avatar': profile['avatar_url'] as String? ?? '',
           });
         }
       }
@@ -159,7 +159,7 @@ class GeneralSettingsProvider with ChangeNotifier {
       'id': 's1',
       'author_name': 'Tasnim Rahman',
       'author_username': 'tasnim_dev',
-      'author_avatar': 'https://i.pravatar.cc/150?u=tasnim',
+      'author_avatar': '',
       'content': 'ফ্ল্যাটার দিয়ে যখন কোনো কমপ্লেক্স ইউজার ইন্টারফেস ডিজাইন করবেন, তখন রেসপন্সিভনেস এবং থিমিংয়ের দিকে সবসময় আলাদা নজর রাখা উচিত। ডাক সামাজিক যোগাযোগ মাধ্যমটি তারই একটা চমৎকার উদাহরণ হতে যাচ্ছে!',
       'time_ago': '২ ঘণ্টা আগে',
       'likes': 42,
@@ -169,7 +169,7 @@ class GeneralSettingsProvider with ChangeNotifier {
       'id': 's2',
       'author_name': 'Zakir Hossain',
       'author_username': 'zakir30',
-      'author_avatar': 'https://i.pravatar.cc/150?u=zakir',
+      'author_avatar': '',
       'content': 'আমাদের ডাক অ্যাপটির ডিজাইন টুইটার এবং ব্লু-স্কাইকে ছাড়িয়ে যাবে ইনশাআল্লাহ। আমরা প্রতিটি ফিচার খুবই প্রিমিয়াম এবং ইন্টারেক্টিভ করছি।',
       'time_ago': '৫ ঘণ্টা আগে',
       'likes': 118,
@@ -239,7 +239,7 @@ class GeneralSettingsProvider with ChangeNotifier {
         'id': targetId,
         'name': searchRes['full_name'] as String? ?? '',
         'username': searchRes['username'] as String? ?? '',
-        'avatar': searchRes['avatar_url'] as String? ?? 'https://i.pravatar.cc/150?u=${searchRes['username']}',
+        'avatar': searchRes['avatar_url'] as String? ?? '',
       });
 
       notifyListeners();
@@ -306,7 +306,7 @@ class GeneralSettingsProvider with ChangeNotifier {
         'id': targetId,
         'name': searchRes['full_name'] as String? ?? '',
         'username': searchRes['username'] as String? ?? '',
-        'avatar': searchRes['avatar_url'] as String? ?? 'https://i.pravatar.cc/150?u=${searchRes['username']}',
+        'avatar': searchRes['avatar_url'] as String? ?? '',
       });
 
       notifyListeners();

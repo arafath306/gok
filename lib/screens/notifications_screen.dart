@@ -115,22 +115,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildNotificationList(List<dynamic> list) {
     if (list.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      return RefreshIndicator(
+        onRefresh: () => Provider.of<DatabaseService>(context, listen: false).fetchNotifications(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
-            Icon(
-              Icons.notifications_none_outlined,
-              size: 90,
-              color: context.isDarkMode ? Colors.white30 : Colors.blueGrey.withValues(alpha: 0.35),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "No notifications yet!",
-              style: GoogleFonts.inter(
-                color: context.textSecondary,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.notifications_none_outlined,
+                      size: 90,
+                      color: context.isDarkMode ? Colors.white30 : Colors.blueGrey.withValues(alpha: 0.35),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "No notifications yet!",
+                      style: GoogleFonts.inter(
+                        color: context.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -142,7 +153,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       onRefresh: () => Provider.of<DatabaseService>(context, listen: false).fetchNotifications(),
       child: ListView.separated(
         itemCount: list.length,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 72),
         separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
         itemBuilder: (context, index) {
           final item = list[index];
@@ -163,7 +174,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   backgroundColor: context.border,
                   backgroundImage: item.actor.avatarUrl != null && item.actor.avatarUrl.isNotEmpty
                       ? NetworkImage(item.actor.avatarUrl)
-                      : const NetworkImage("https://i.pravatar.cc/150?u=actor"),
+                      : const NetworkImage(""),
                 ),
                 title: RichText(
                   text: TextSpan(

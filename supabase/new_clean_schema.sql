@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS public.threads (
     likes_count INTEGER DEFAULT 0 NOT NULL,
     replies_count INTEGER DEFAULT 0 NOT NULL,
     reposts_count INTEGER DEFAULT 0 NOT NULL,
+    views_count INTEGER DEFAULT 0 NOT NULL,
     is_pinned BOOLEAN DEFAULT false NOT NULL,
     mute_notifications BOOLEAN DEFAULT false NOT NULL,
     hide_from_profile BOOLEAN DEFAULT false NOT NULL,

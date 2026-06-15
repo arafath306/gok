@@ -277,143 +277,161 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
 
               // Search History / Recommendations OR Search Results
               Expanded(
-                child: _isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(color: context.primaryAccent),
-                      )
-                    : isSearching
-                        ? _searchResults.isEmpty
-                            ? Center(
-                                child: Text(
-                                  "No results found",
-                                  style: GoogleFonts.hindSiliguri(color: context.textMuted),
-                                ),
-                              )
-                            : ListView.separated(
-                                itemCount: _searchResults.length,
-                                separatorBuilder: (context, index) => Divider(
-                                  height: 1,
-                                  color: context.border,
-                                ),
-                                itemBuilder: (context, index) {
-                                  return _buildUserRow(_searchResults[index], dbService);
-                                },
-                              )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Recent Searches Section
-                              if (_recentSearches.isNotEmpty) ...[
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: RefreshIndicator(
+                  color: context.primaryAccent,
+                  onRefresh: () async {
+                    _loadRecommendations();
+                    await Future.delayed(const Duration(milliseconds: 600));
+                  },
+                  child: _isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(color: context.primaryAccent),
+                        )
+                      : isSearching
+                          ? _searchResults.isEmpty
+                              ? ListView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
                                   children: [
-                                    Text(
-                                      "Recent Searches",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: context.textSecondary,
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _recentSearches.clear();
-                                        });
-                                      },
-                                      style: TextButton.styleFrom(
-                                        padding: EdgeInsets.zero,
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      child: Text(
-                                        "Clear All",
-                                        style: GoogleFonts.hindSiliguri(
-                                          color: context.primaryAccent,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
+                                    SizedBox(
+                                      height: 300,
+                                      child: Center(
+                                        child: Text(
+                                          "No results found",
+                                          style: GoogleFonts.hindSiliguri(color: context.textMuted),
                                         ),
                                       ),
                                     ),
                                   ],
-                                ),
-                                const SizedBox(height: 10),
-                                Wrap(
-                                  spacing: 8.0,
-                                  runSpacing: 8.0,
-                                  children: _recentSearches.map((search) {
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: context.cardBg,
-                                        border: Border.all(color: context.border),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.history, size: 14, color: context.textMuted),
-                                          const SizedBox(width: 6),
-                                          GestureDetector(
-                                            onTap: () {
-                                              _searchController.text = search;
-                                              _onSearchChanged(search);
-                                            },
-                                            child: Text(
-                                              search,
-                                              style: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textPrimary),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                _recentSearches.remove(search);
-                                              });
-                                            },
-                                            child: Icon(Icons.close, size: 14, color: context.textMuted),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                                const SizedBox(height: 24),
-                              ],
-
-                              // Recommendations Header
-                              Text(
-                                "Recommended for you",
-                                style: GoogleFonts.hindSiliguri(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: context.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-
-                              // Recommendations List
-                              Expanded(
-                                child: _recommended.isEmpty
-                                    ? Center(
-                                        child: Text(
-                                          "No recommendations found",
-                                          style: GoogleFonts.hindSiliguri(color: context.textMuted),
+                                )
+                              : ListView.separated(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.only(bottom: 72),
+                                  itemCount: _searchResults.length,
+                                  separatorBuilder: (context, index) => Divider(
+                                    height: 1,
+                                    color: context.border,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    return _buildUserRow(_searchResults[index], dbService);
+                                  },
+                                )
+                          : ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.only(bottom: 72),
+                              children: [
+                                // Recent Searches Section
+                                if (_recentSearches.isNotEmpty) ...[
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Recent Searches",
+                                        style: GoogleFonts.hindSiliguri(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: context.textSecondary,
                                         ),
-                                      )
-                                    : ListView.separated(
-                                        itemCount: _recommended.length,
-                                        separatorBuilder: (context, index) => Divider(
-                                          height: 1,
-                                          color: context.border,
-                                        ),
-                                        itemBuilder: (context, index) {
-                                          return _buildUserRow(_recommended[index], dbService);
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _recentSearches.clear();
+                                          });
                                         },
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: Size.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: Text(
+                                          "Clear All",
+                                          style: GoogleFonts.hindSiliguri(
+                                            color: context.primaryAccent,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
                                       ),
-                              ),
-                            ],
-                          ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8.0,
+                                    runSpacing: 8.0,
+                                    children: _recentSearches.map((search) {
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: context.cardBg,
+                                          border: Border.all(color: context.border),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.history, size: 14, color: context.textMuted),
+                                            const SizedBox(width: 6),
+                                            GestureDetector(
+                                              onTap: () {
+                                                _searchController.text = search;
+                                                _onSearchChanged(search);
+                                              },
+                                              child: Text(
+                                                search,
+                                                style: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textPrimary),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  _recentSearches.remove(search);
+                                                });
+                                              },
+                                              child: Icon(Icons.close, size: 14, color: context.textMuted),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                ],
+
+                                // Recommendations Header
+                                Text(
+                                  "Recommended for you",
+                                  style: GoogleFonts.hindSiliguri(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+
+                                // Recommendations List
+                                if (_recommended.isEmpty)
+                                  SizedBox(
+                                    height: 200,
+                                    child: Center(
+                                      child: Text(
+                                        "No recommendations found",
+                                        style: GoogleFonts.hindSiliguri(color: context.textMuted),
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ..._recommended.map((user) {
+                                    return Column(
+                                      children: [
+                                        _buildUserRow(user, dbService),
+                                        Divider(height: 1, color: context.border),
+                                      ],
+                                    );
+                                  }),
+                              ],
+                            ),
+                ),
               ),
             ],
           ),

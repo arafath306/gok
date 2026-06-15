@@ -7,9 +7,11 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/database_service.dart';
 import '../utils/app_theme.dart';
+import '../models/thread_post.dart';
 
 class CreateThreadScreen extends StatefulWidget {
-  const CreateThreadScreen({super.key});
+  final ThreadPost? quotePost;
+  const CreateThreadScreen({super.key, this.quotePost});
 
   @override
   State<CreateThreadScreen> createState() => _CreateThreadScreenState();
@@ -27,6 +29,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   bool _isAnonymous = false;
 
   Uint8List? _selectedImageBytes;
+  // ignore: unused_field
   String? _selectedImageName;
   bool _isUploadingImage = false;
 
@@ -113,7 +116,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           .where((t) => t.isNotEmpty)
           .toList();
       if (filledOptions.isNotEmpty) {
-        finalContent += "\n\n📊 ভোট দিন:\n" + filledOptions.map((opt) => "◽ $opt").join("\n");
+        finalContent += "\n\n📊 Vote:\n" + filledOptions.map((opt) => "◽ $opt").join("\n");
       }
     }
 
@@ -140,11 +143,19 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       uploadedUrls = [imageUrl];
     }
 
-    final success = await db.createThread(
-      finalContent,
-      imageUrls: uploadedUrls,
-      videoUrl: videoUrl.isNotEmpty ? videoUrl : null,
-    );
+    final bool success;
+    if (widget.quotePost != null) {
+      success = await db.repostThread(
+        widget.quotePost!.id,
+        quoteText: finalContent,
+      );
+    } else {
+      success = await db.createThread(
+        finalContent,
+        imageUrls: uploadedUrls,
+        videoUrl: videoUrl.isNotEmpty ? videoUrl : null,
+      );
+    }
 
     if (mounted) {
       setState(() => _isUploadingImage = false);
@@ -154,8 +165,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              "ডাক পোস্ট করতে ব্যর্থ হয়েছে",
-              style: GoogleFonts.hindSiliguri(),
+              "Failed to publish post",
+              style: GoogleFonts.inter(),
             ),
           ),
         );
@@ -176,8 +187,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           children: [
             const SizedBox(height: 12),
             Text(
-              "ছবি যুক্ত করুন (Add Image)",
-              style: GoogleFonts.hindSiliguri(
+              "Add Image",
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: context.textPrimary,
@@ -186,7 +197,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             const SizedBox(height: 8),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined, color: Color(0xFF1E824C)),
-              title: Text("গ্যালারি থেকে আপলোড করুন", style: GoogleFonts.hindSiliguri(fontSize: 14.5)),
+              title: Text("Upload from Gallery", style: GoogleFonts.inter(fontSize: 14.5)),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage();
@@ -194,7 +205,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.link_rounded, color: Color(0xFF1E824C)),
-              title: Text("ছবির লিঙ্ক পেস্ট করুন (Paste URL)", style: GoogleFonts.hindSiliguri(fontSize: 14.5)),
+              title: Text("Paste Image URL", style: GoogleFonts.inter(fontSize: 14.5)),
               onTap: () {
                 Navigator.pop(context);
                 setState(() {
@@ -222,8 +233,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           children: [
             const SizedBox(height: 12),
             Text(
-              "কে ডাক দেখতে পাবে?",
-              style: GoogleFonts.hindSiliguri(
+              "Who can see this post?",
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: context.textPrimary,
@@ -232,8 +243,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             Divider(color: context.border),
             ListTile(
               leading: const Icon(Icons.public, color: Color(0xFF1E824C)),
-              title: Text("সবাই (Public)", style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
-              subtitle: Text("যে কেউ এই ডাকটি দেখতে পারবে", style: GoogleFonts.hindSiliguri(fontSize: 12, color: context.textSecondary)),
+              title: Text("Everyone (Public)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
+              subtitle: Text("Anyone can see this post", style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary)),
               trailing: _privacy == "Public" ? const Icon(Icons.check, color: Color(0xFF1E824C)) : null,
               onTap: () {
                 setState(() => _privacy = "Public");
@@ -242,8 +253,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.people_outline, color: Color(0xFF1E824C)),
-              title: Text("বন্ধুরা (Friends)", style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
-              subtitle: Text("শুধুমাত্র আপনার বন্ধুরা দেখতে পারবে", style: GoogleFonts.hindSiliguri(fontSize: 12, color: context.textSecondary)),
+              title: Text("Friends", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
+              subtitle: Text("Only your friends can see this", style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary)),
               trailing: _privacy == "Friends" ? const Icon(Icons.check, color: Color(0xFF1E824C)) : null,
               onTap: () {
                 setState(() => _privacy = "Friends");
@@ -252,8 +263,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.lock_outline, color: Color(0xFF1E824C)),
-              title: Text("শুধুমাত্র আমি (Only Me)", style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
-              subtitle: Text("কেউ দেখতে পারবে না", style: GoogleFonts.hindSiliguri(fontSize: 12, color: context.textSecondary)),
+              title: Text("Only Me", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
+              subtitle: Text("No one else can see this", style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary)),
               trailing: _privacy == "Only Me" ? const Icon(Icons.check, color: Color(0xFF1E824C)) : null,
               onTap: () {
                 setState(() => _privacy = "Only Me");
@@ -269,15 +280,15 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
 
   void _showLocationPicker() {
     final locations = [
-      "ঢাকা (Dhaka)",
-      "চট্টগ্রাম (Chattogram)",
-      "সিলেট (Sylhet)",
-      "রাজশাহী (Rajshahi)",
-      "খুলনা (Khulna)",
-      "বরিশাল (Barishal)",
-      "রংপুর (Rangpur)",
-      "ময়মনসিংহ (Mymensingh)",
-      "কক্সবাজার (Cox's Bazar)"
+      "Dhaka",
+      "Chattogram",
+      "Sylhet",
+      "Rajshahi",
+      "Khulna",
+      "Barishal",
+      "Rangpur",
+      "Mymensingh",
+      "Cox's Bazar"
     ];
     showModalBottomSheet(
       context: context,
@@ -291,8 +302,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           children: [
             const SizedBox(height: 12),
             Text(
-              "অবস্থান যোগ করুন (Add Location)",
-              style: GoogleFonts.hindSiliguri(
+              "Add Location",
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: context.textPrimary,
@@ -304,7 +315,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                 itemCount: locations.length,
                 itemBuilder: (context, i) => ListTile(
                   leading: const Icon(Icons.location_on_outlined, color: Color(0xFF1E824C)),
-                  title: Text(locations[i], style: GoogleFonts.hindSiliguri(color: context.textPrimary)),
+                  title: Text(locations[i], style: GoogleFonts.inter(color: context.textPrimary)),
                   onTap: () {
                     setState(() {
                       _selectedLocation = locations[i];
@@ -325,13 +336,13 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     Future.delayed(const Duration(seconds: 1200 ~/ 1000), () {
       String generated = "";
       final p = prompt.trim();
-      final topic = p.isNotEmpty ? p : "জীবন";
+      final topic = p.isNotEmpty ? p : "Life";
       if (style == "Poetic") {
-        generated = "নীল আকাশের মেঘে মেঘে,\nভাসে আমার মন যে জেগে।\n$topic নিয়ে ভাবছি বসে,\nস্বপ্নগুলো যাচ্ছে ভেসে।\n#ডাক #কবিতা";
+        generated = "Floating in the clouds of the blue sky,\nMy mind wakes up and starts to fly.\nSitting and thinking about $topic,\nDreams are drifting, beautiful and tropic.\n#Dak #Poetry";
       } else if (style == "Funny") {
-        generated = "আরে ভাই! $topic নিয়ে কি বলবো আর? সকাল থেকে ভাবতে ভাবতে মাথার সব চুল উড়ে যাওয়ার উপক্রম! 🤣 কার কার এমন অবস্থা কমেন্টে জানান। #হাস্যকর #ডাক";
+        generated = "Hey guys! What can I say about $topic? Thinking about it since morning has almost made me lose all my hair! 🤣 Who else is in this situation? Let me know in the comments. #Funny #Dak";
       } else {
-        generated = "আসসালামু আলাইকুম। আজকে $topic নিয়ে কিছু গুরুত্বপূর্ণ আলোচনা করতে চাই। আমাদের সমাজে এর প্রভাব এবং কিভাবে আমরা এটি উন্নত করতে পারি, তা নিয়ে বিস্তারিত মতামত শেয়ার করুন। #মতামত #আলোচনা";
+        generated = "Hello everyone. Today I would like to discuss some important thoughts about $topic. Please share your detailed feedback on its impact on our community and how we can improve. #Discussion #Thoughts";
       }
       setState(() {
         _contentController.text = generated;
@@ -368,8 +379,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "এআই রাইটার অ্যাসিস্ট্যান্ট (AI Writer)",
-                      style: GoogleFonts.hindSiliguri(
+                      "AI Writer Assistant",
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         color: const Color(0xFF1E824C),
@@ -383,15 +394,15 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "আপনি কি বিষয় নিয়ে ডাক তৈরি করতে চান? নিচে লিখুন বা স্টাইল নির্বাচন করুন:",
-                  style: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textSecondary),
+                  "What topic would you like to write about? Type below or select a style:",
+                  style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: promptController,
                   decoration: InputDecoration(
-                    hintText: "যেমন: প্রাকৃতিক সৌন্দর্য, পরীক্ষার অনুপ্রেরণা...",
-                    hintStyle: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textMuted),
+                    hintText: "e.g. Natural beauty, exam motivation...",
+                    hintStyle: GoogleFonts.inter(fontSize: 13, color: context.textMuted),
                     filled: true,
                     fillColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
                     border: OutlineInputBorder(
@@ -403,21 +414,21 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                       borderSide: BorderSide(color: context.border),
                     ),
                   ),
-                  style: GoogleFonts.hindSiliguri(fontSize: 14, color: context.textPrimary),
+                  style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "রাইটিং স্টাইল নির্বাচন করুন (Style):",
-                  style: GoogleFonts.hindSiliguri(fontSize: 13, fontWeight: FontWeight.bold),
+                  "Select Writing Style:",
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _buildStyleChip("কবিতা (Poetic)", "Poetic", setSheetState),
+                    _buildStyleChip("Poetic", "Poetic", setSheetState),
                     const SizedBox(width: 8),
-                    _buildStyleChip("হাস্যকর (Funny)", "Funny", setSheetState),
+                    _buildStyleChip("Funny", "Funny", setSheetState),
                     const SizedBox(width: 8),
-                    _buildStyleChip("পেশাদারী (Professional)", "Professional", setSheetState),
+                    _buildStyleChip("Professional", "Professional", setSheetState),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -447,8 +458,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : Text(
-                            "লেখা তৈরি করুন (Generate)",
-                            style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold),
+                            "Generate Text",
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                           ),
                   ),
                 ),
@@ -481,7 +492,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.hindSiliguri(
+          style: GoogleFonts.inter(
             fontSize: 12,
             color: isSel ? const Color(0xFF1E824C) : context.textPrimary,
             fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
@@ -539,8 +550,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
               ),
               const Spacer(),
               Text(
-                "নতুন ডাক তৈরি করুন",
-                style: GoogleFonts.hindSiliguri(
+                widget.quotePost != null ? "Quote Post" : "Create New Post",
+                style: GoogleFonts.inter(
                   color: context.textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 17,
@@ -567,8 +578,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : Text(
-                        "পোস্ট",
-                        style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, fontSize: 13.5),
+                        "Post",
+                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
               )
             ],
@@ -592,7 +603,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                       backgroundImage: NetworkImage(
                         _isAnonymous 
                           ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150" // Cool anonymous avatar placeholder
-                          : (prof?.avatarUrl ?? "https://i.pravatar.cc/150"),
+                          : (prof?.avatarUrl ?? ""),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -625,8 +636,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                       Row(
                         children: [
                           Text(
-                            _isAnonymous ? "বেনামী ব্যবহারকারী" : (prof?.fullName ?? "ডাক ব্যবহারকারী"),
-                            style: GoogleFonts.hindSiliguri(
+                            _isAnonymous ? "Anonymous User" : (prof?.fullName ?? "User"),
+                            style: GoogleFonts.inter(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                               color: context.textPrimary,
@@ -669,11 +680,11 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                   const SizedBox(width: 4),
                                   Text(
                                     _privacy == "Public" 
-                                        ? "সবাই" 
+                                        ? "Public" 
                                         : _privacy == "Friends" 
-                                            ? "বন্ধুরা" 
-                                            : "শুধুমাত্র আমি",
-                                    style: GoogleFonts.hindSiliguri(
+                                            ? "Friends" 
+                                            : "Only Me",
+                                    style: GoogleFonts.inter(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w600,
                                       color: context.textSecondary,
@@ -701,7 +712,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                   const SizedBox(width: 4),
                                   Text(
                                     _selectedLocation!,
-                                    style: GoogleFonts.hindSiliguri(
+                                    style: GoogleFonts.inter(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.blue[700],
@@ -724,19 +735,77 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         controller: _contentController,
                         maxLines: null,
                         minLines: 4,
-                        style: GoogleFonts.hindSiliguri(
+                        style: GoogleFonts.inter(
                           fontSize: 15.5,
                           color: context.textPrimary,
                           height: 1.45,
                         ),
                         decoration: InputDecoration(
-                          hintText: "আজকে কী ভাবছেন?",
-                          hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14.5),
+                          hintText: "What's on your mind?",
+                          hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14.5),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
+
+                      // If it's a quote post, show the quoted post
+                      if (widget.quotePost != null) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border(top: BorderSide(color: context.border, width: 0.8)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 12,
+                                    backgroundImage: widget.quotePost!.author.avatarUrl != null && widget.quotePost!.author.avatarUrl!.isNotEmpty
+                                        ? NetworkImage(widget.quotePost!.author.avatarUrl!)
+                                        : null,
+                                    child: widget.quotePost!.author.avatarUrl == null || widget.quotePost!.author.avatarUrl!.isEmpty
+                                        ? const Icon(Icons.person, size: 12)
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    widget.quotePost!.author.fullName,
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: context.textPrimary),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "@${widget.quotePost!.author.username}",
+                                    style: TextStyle(fontSize: 11, color: context.textSecondary),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                widget.quotePost!.content,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary),
+                              ),
+                              if (widget.quotePost!.imageUrls != null && widget.quotePost!.imageUrls!.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                  child: Image.network(
+                                    widget.quotePost!.imageUrls!.first,
+                                    height: 120,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
 
                       // Image Selection preview box
                       if (_selectedImageBytes != null) ...[
@@ -784,8 +853,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         TextField(
                           controller: _imageUrlController,
                           decoration: InputDecoration(
-                            labelText: "ছবির লিঙ্ক (Image URL)",
-                            labelStyle: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textSecondary),
+                            labelText: "Image URL",
+                            labelStyle: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
                             prefixIcon: Icon(Icons.image_outlined, size: 18, color: context.textSecondary),
                             isDense: true,
                             filled: true,
@@ -796,7 +865,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                               borderSide: BorderSide(color: context.border),
                             ),
                           ),
-                          style: GoogleFonts.hindSiliguri(fontSize: 14, color: context.textPrimary),
+                          style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
                         ),
                       ],
 
@@ -806,8 +875,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         TextField(
                           controller: _videoUrlController,
                           decoration: InputDecoration(
-                            labelText: "ভিডিও লিঙ্ক (Video URL)",
-                            labelStyle: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textSecondary),
+                            labelText: "Video URL",
+                            labelStyle: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
                             prefixIcon: Icon(Icons.video_collection_outlined, size: 18, color: context.textSecondary),
                             isDense: true,
                             filled: true,
@@ -818,7 +887,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                               borderSide: BorderSide(color: context.border),
                             ),
                           ),
-                          style: GoogleFonts.hindSiliguri(fontSize: 14, color: context.textPrimary),
+                          style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
                         ),
                       ],
 
@@ -897,14 +966,14 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                 children: [
                   _buildToolbarIcon(
                     icon: Icons.image_outlined,
-                    tooltip: "ছবি যোগ করুন",
+                    tooltip: "Add Image",
                     color: const Color(0xFF1E824C),
                     isActive: _selectedImageBytes != null || _imageUrlController.text.isNotEmpty || _showImageInput,
                     onTap: _showImageSourceDialog,
                   ),
                   _buildToolbarIcon(
                     icon: Icons.camera_alt_outlined,
-                    tooltip: "ক্যামেরা ছবি",
+                    tooltip: "Camera Capture",
                     color: Colors.deepOrange,
                     isActive: false,
                     onTap: () async {
@@ -929,42 +998,42 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                   ),
                   _buildToolbarIcon(
                     icon: Icons.play_circle_outline,
-                    tooltip: "ভিডিও লিঙ্ক",
+                    tooltip: "Video URL",
                     color: Colors.purple,
                     isActive: _showVideoInput || _videoUrlController.text.isNotEmpty,
                     onTap: () => setState(() => _showVideoInput = !_showVideoInput),
                   ),
                   _buildToolbarIcon(
                     icon: Icons.bar_chart_outlined,
-                    tooltip: "পোল তৈরি করুন",
+                    tooltip: "Create Poll",
                     color: Colors.orange,
                     isActive: _showPollInput,
                     onTap: () => setState(() => _showPollInput = !_showPollInput),
                   ),
                   _buildToolbarIcon(
                     icon: Icons.mic_outlined,
-                    tooltip: "ভয়েস মেসেজ",
+                    tooltip: "Voice Message",
                     color: Colors.teal,
                     isActive: _showVoiceRecorder,
                     onTap: () => setState(() => _showVoiceRecorder = !_showVoiceRecorder),
                   ),
                   _buildToolbarIcon(
                     icon: Icons.location_on_outlined,
-                    tooltip: "অবস্থান যোগ করুন",
+                    tooltip: "Add Location",
                     color: Colors.blue,
                     isActive: _selectedLocation != null,
                     onTap: _showLocationPicker,
                   ),
                   _buildToolbarIcon(
                     icon: Icons.security_outlined,
-                    tooltip: "বেনামী পোস্ট",
+                    tooltip: "Anonymous Post",
                     color: Colors.indigo,
                     isActive: _isAnonymous,
                     onTap: () => setState(() => _isAnonymous = !_isAnonymous),
                   ),
                   _buildToolbarIcon(
                     icon: Icons.auto_awesome_outlined,
-                    tooltip: "এআই রাইটার",
+                    tooltip: "AI Writer",
                     color: Colors.pink,
                     isActive: false,
                     onTap: _showAIAssistant,
@@ -1018,7 +1087,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   }) {
     return Tooltip(
       message: tooltip,
-      textStyle: GoogleFonts.hindSiliguri(color: Colors.white, fontSize: 11),
+      textStyle: GoogleFonts.inter(color: Colors.white, fontSize: 11),
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
@@ -1063,8 +1132,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                   const Icon(Icons.bar_chart, color: Colors.orange, size: 16),
                   const SizedBox(width: 6),
                   Text(
-                    "পোল তৈরি করুন (Create Poll)",
-                    style: GoogleFonts.hindSiliguri(
+                    "Create Poll",
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       color: Colors.orange[800],
                       fontSize: 13,
@@ -1092,8 +1161,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
               child: TextField(
                 controller: _pollControllers[index],
                 decoration: InputDecoration(
-                  hintText: "অপশন ${index + 1}",
-                  hintStyle: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textMuted),
+                  hintText: "Option ${index + 1}",
+                  hintStyle: GoogleFonts.inter(fontSize: 13, color: context.textMuted),
                   filled: true,
                   fillColor: context.isDarkMode ? const Color(0xFF1E2030) : Colors.white,
                   isDense: true,
@@ -1107,7 +1176,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     borderSide: const BorderSide(color: Colors.orange),
                   ),
                 ),
-                style: GoogleFonts.hindSiliguri(fontSize: 13.5, color: context.textPrimary),
+                style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary),
               ),
             );
           }),
@@ -1120,8 +1189,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
               },
               icon: const Icon(Icons.add, size: 14, color: Colors.orange),
               label: Text(
-                "অপশন যোগ করুন",
-                style: GoogleFonts.hindSiliguri(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
+                "Add Option",
+                style: GoogleFonts.inter(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
               ),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
@@ -1154,8 +1223,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            _isRecording ? "রেকর্ড হচ্ছে... ($minutes:$seconds)" : "ভয়েস রেকর্ড প্রস্তুত",
-            style: GoogleFonts.hindSiliguri(
+            _isRecording ? "Recording... ($minutes:$seconds)" : "Voice recorder ready",
+            style: GoogleFonts.inter(
               color: Colors.teal,
               fontSize: 12.5,
               fontWeight: FontWeight.bold,
@@ -1171,8 +1240,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                _isRecording ? "থামান" : "শুরু করুন",
-                style: GoogleFonts.hindSiliguri(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                _isRecording ? "Stop" : "Start",
+                style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
               ),
             ),
           ),

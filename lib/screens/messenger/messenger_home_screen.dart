@@ -8,8 +8,18 @@ import 'chat_screen.dart';
 import 'chat_settings_screen.dart';
 import 'member_search_sheet.dart';
 
-class MessengerHomeScreen extends StatelessWidget {
+class MessengerHomeScreen extends StatefulWidget {
   const MessengerHomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<MessengerHomeScreen> createState() => _MessengerHomeScreenState();
+}
+
+class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
+  Future<void> _handleRefresh() async {
+    setState(() {});
+    await Future.delayed(const Duration(milliseconds: 600));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,71 +65,83 @@ class MessengerHomeScreen extends StatelessWidget {
           child: Container(color: context.border, height: 1.0),
         ),
       ),
-      body: Consumer<DatabaseService>(
-        builder: (context, dbService, _) {
-          return FutureBuilder<List<Map<String, dynamic>>>(
-            future: dbService.fetchActiveChats(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return Center(
-                  child: CircularProgressIndicator(color: context.primaryAccent),
-                );
-              }
+      body: RefreshIndicator(
+        color: context.primaryAccent,
+        onRefresh: _handleRefresh,
+        child: Consumer<DatabaseService>(
+          builder: (context, dbService, _) {
+            return FutureBuilder<List<Map<String, dynamic>>>(
+              future: dbService.fetchActiveChats(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                  return Center(
+                    child: CircularProgressIndicator(color: context.primaryAccent),
+                  );
+                }
 
-              final activeChats = snapshot.data ?? [];
+                final activeChats = snapshot.data ?? [];
 
-              if (activeChats.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                if (activeChats.isEmpty) {
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
-                      CustomPaint(
-                        size: const Size(60, 60),
-                        painter: SpeechBubblePainter(color: context.textPrimary),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Say hi to someone',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0085FF),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          elevation: 0,
-                        ),
-                        icon: const Icon(Icons.add_comment_rounded, size: 18),
-                        label: Text(
-                          'New chat',
-                          style: GoogleFonts.inter(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.bold,
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CustomPaint(
+                                size: const Size(60, 60),
+                                painter: SpeechBubblePainter(color: context.textPrimary),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Say hi to someone',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: context.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0085FF),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  elevation: 0,
+                                ),
+                                icon: const Icon(Icons.add_comment_rounded, size: 18),
+                                label: Text(
+                                  'New chat',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
-                  ),
-                );
-              }
+                  );
+                }
 
-              return ListView.separated(
+                return ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: activeChats.length,
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.fromLTRB(0, 8, 0, 72),
                 separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
                 itemBuilder: (context, index) {
                   final chat = activeChats[index];
@@ -129,6 +151,7 @@ class MessengerHomeScreen extends StatelessWidget {
                   final int unreadCount = chat['unread_count'] as int;
 
                   return ListTile(
+                    tileColor: Colors.transparent,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -143,7 +166,7 @@ class MessengerHomeScreen extends StatelessWidget {
                       backgroundColor: context.border,
                       backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
                           ? NetworkImage(profile.avatarUrl!)
-                          : const NetworkImage("https://i.pravatar.cc/150"),
+                          : const NetworkImage(""),
                     ),
                     title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -212,6 +235,7 @@ class MessengerHomeScreen extends StatelessWidget {
           );
         },
       ),
+     ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(

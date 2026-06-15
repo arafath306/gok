@@ -55,9 +55,9 @@ class SettingsScreen extends StatelessWidget {
           GestureDetector(
             onTap: () {
               final profileMap = myProfile?.toJson() ?? {
-                'full_name': 'Arafath',
-                'username': 'arafath306',
-                'bio': 'Social developer',
+                'full_name': '',
+                'username': '',
+                'bio': '',
               };
               Navigator.push(
                 context,
@@ -78,7 +78,10 @@ class SettingsScreen extends StatelessWidget {
                     backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[100],
                     backgroundImage: myProfile?.avatarUrl != null && myProfile!.avatarUrl!.isNotEmpty
                         ? NetworkImage(myProfile.avatarUrl!)
-                        : const NetworkImage('https://i.pravatar.cc/150?u=current_user'),
+                        : null,
+                    child: (myProfile?.avatarUrl == null || myProfile!.avatarUrl!.isEmpty)
+                        ? Icon(Icons.person, color: context.textPrimary)
+                        : null,
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -95,7 +98,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '@${myProfile?.username ?? 'username'}',
+                          myProfile?.username != null ? '@${myProfile!.username}' : '',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             color: context.textSecondary,
@@ -119,9 +122,9 @@ class SettingsScreen extends StatelessWidget {
               title: 'Edit Profile',
               onTap: () {
                 final profileMap = myProfile?.toJson() ?? {
-                  'full_name': 'Arafath',
-                  'username': 'arafath306',
-                  'bio': 'Social developer',
+                  'full_name': '',
+                  'username': '',
+                  'bio': '',
                 };
                 Navigator.push(
                   context,
@@ -187,7 +190,8 @@ class SettingsScreen extends StatelessWidget {
                       fontSize: 14.5,
                     ),
                   ),
-                  activeColor: context.primaryAccent,
+                  activeThumbColor: context.primaryAccent,
+                  activeTrackColor: context.primaryAccent.withOpacity(0.38),
                   value: settingsProvider.isDarkTheme,
                   onChanged: (val) {
                     settingsProvider.toggleTheme(val);
@@ -324,7 +328,7 @@ class SettingsScreen extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: tiles.length,
-        separatorBuilder: (_, __) => Divider(height: 1, color: context.border),
+        separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
         itemBuilder: (context, index) {
           final tile = tiles[index];
           return ListTile(

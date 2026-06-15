@@ -18,6 +18,29 @@ class DatabaseService with ChangeNotifier {
   List<ThreadPost> _myThreads = [];
   List<ThreadPost> get myThreads => _myThreads;
 
+  List<ThreadPost> _myReplies = [];
+  List<ThreadPost> get myReplies => _myReplies;
+
+  final Map<String, ThreadPost> _postsCache = {};
+  final Set<String> _deletedPostIds = {};
+
+  bool isPostDeleted(String id) => _deletedPostIds.contains(id);
+
+  void _updateCache(List<ThreadPost> posts) {
+    for (final post in posts) {
+      _postsCache[post.id] = post;
+    }
+  }
+
+  ThreadPost getLatestPost(ThreadPost fallbackPost) {
+    final cached = _postsCache[fallbackPost.id];
+    if (cached == null) {
+      _postsCache[fallbackPost.id] = fallbackPost;
+      return fallbackPost;
+    }
+    return cached;
+  }
+
   List<AppNotification> _notifications = [];
   List<AppNotification> get notifications => _notifications;
 
@@ -114,6 +137,7 @@ class DatabaseService with ChangeNotifier {
           }
         }
       }
+      _updateCache(posts);
       _savedPosts = posts;
       _savedThreadIds = posts.map((p) => p.id).toSet();
       notifyListeners();
@@ -187,10 +211,12 @@ class DatabaseService with ChangeNotifier {
   }
 
   void _onUserReady() async {
+    _isLoading = true;
+    notifyListeners();
     await fetchBlockedMutedLists();
     fetchMyProfile();
     fetchFollowingList();
-    fetchFeed();
+    fetchFeed(silent: true);
     fetchNotifications();
     fetchUnreadCounts();
     fetchSavedThreadIds();
@@ -700,13 +726,78 @@ class DatabaseService with ChangeNotifier {
     }
 
     try {
+      // 1. Fetch normal threads
       final response = await _supabase
           .from('threads')
           .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
-      final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+
+      // 2. Fetch reposts/quotes
+      final repostsRes = await _supabase
+          .from('reposts')
+          .select('*, profiles(*), threads(*, profiles(*), likes(user_id), thread_hides(user_id))')
+          .order('created_at', ascending: false);
+
+      final List<dynamic> repostsData = repostsRes as List<dynamic>;
+
+      // Merge raw items
+      final List<Map<String, dynamic>> combinedRaw = [];
+      for (final thread in data) {
+        combinedRaw.add({
+          'type': 'thread',
+          'created_at': thread['created_at'] as String,
+          'data': thread,
+        });
+      }
+      for (final repost in repostsData) {
+        if (repost['threads'] != null) {
+          combinedRaw.add({
+            'type': 'repost',
+            'created_at': repost['created_at'] as String,
+            'data': repost,
+          });
+        }
+      }
+
+      // Sort combined raw by created_at descending
+      combinedRaw.sort((a, b) => (b['created_at'] as String).compareTo(a['created_at'] as String));
+
+      // Map to ThreadPost
+      final List<ThreadPost> posts = [];
+      for (final item in combinedRaw) {
+        final type = item['type'] as String;
+        final map = item['data'] as Map<String, dynamic>;
+        if (type == 'thread') {
+          posts.add(ThreadPost.fromJson(map, currentUid: _currentUid));
+        } else {
+          final threadMap = map['threads'] as Map<String, dynamic>;
+          final reposterProfileMap = map['profiles'] as Map<String, dynamic>?;
+          final reposterProfile = reposterProfileMap != null
+              ? Profile.fromJson(reposterProfileMap)
+              : Profile(id: map['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+
+          final originalPost = ThreadPost.fromJson(threadMap, currentUid: _currentUid);
+
+          posts.add(ThreadPost(
+            id: map['id'] as String,
+            userId: map['user_id'] as String,
+            author: reposterProfile,
+            content: map['quote_text'] as String? ?? '',
+            createdAt: ThreadPost.formatRelativeTime(map['created_at'] as String?),
+            isRepost: true,
+            repostedPost: originalPost,
+            quoteText: map['quote_text'] as String?,
+            likesCount: 0,
+            repliesCount: 0,
+            repostsCount: 0,
+            viewsCount: 0,
+          ));
+        }
+      }
+
+      _updateCache(posts);
       
       // Apply block, mute, custom hidden, and private account privacy filters
       posts.removeWhere((post) {
@@ -746,6 +837,7 @@ class DatabaseService with ChangeNotifier {
 
       final List<dynamic> data = response as List<dynamic>;
       final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      _updateCache(posts);
       
       // Sort pinned threads to the top
       posts.sort((a, b) {
@@ -770,7 +862,7 @@ class DatabaseService with ChangeNotifier {
         'image_urls': imageUrls,
         'video_url': videoUrl,
       });
-      await fetchFeed();
+      await fetchFeed(silent: true);
       await fetchMyThreads();
       return true;
     } catch (e) {
@@ -783,6 +875,19 @@ class DatabaseService with ChangeNotifier {
 
   Future<void> toggleLike(String threadId, bool shouldLike, {String? reactionType}) async {
     if (_currentUid.isEmpty) return;
+
+    // Optimistic update cache
+    final cached = _postsCache[threadId];
+    if (cached != null) {
+      final int countDelta = shouldLike 
+          ? (cached.isLikedByMe ? 0 : 1) 
+          : -1;
+      _postsCache[threadId] = cached.copyWith(
+        likesCount: cached.likesCount + countDelta,
+        isLikedByMe: shouldLike,
+        reactionType: shouldLike ? (reactionType ?? '❤️') : null,
+      );
+    }
 
     // Local state optimistic update for instant UX feedback
     final feedIndex = _feed.indexWhere((p) => p.id == threadId);
@@ -833,31 +938,6 @@ class DatabaseService with ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> fetchThreadReactors(String threadId) async {
     final List<Map<String, dynamic>> reactors = [];
-    
-    // Always include our mock users to keep the reactions list populated and beautiful
-    reactors.addAll([
-      {
-        'id': 'mock-tamim',
-        'name': 'Tamim Hossain',
-        'handle': '@tamim_hossain',
-        'avatar': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&fit=crop',
-        'isFollowing': isFollowingUser('mock-tamim'),
-      },
-      {
-        'id': 'mock-nusrat',
-        'name': 'Nusrat Jahan',
-        'handle': '@nusrat.jahan',
-        'avatar': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&fit=crop',
-        'isFollowing': isFollowingUser('mock-nusrat'),
-      },
-      {
-        'id': 'mock-mehedi',
-        'name': 'Mehedi Hasan',
-        'handle': '@mehedi.hasan',
-        'avatar': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&fit=crop',
-        'isFollowing': isFollowingUser('mock-mehedi'),
-      },
-    ]);
 
     try {
       final response = await _supabase
@@ -906,33 +986,6 @@ class DatabaseService with ChangeNotifier {
 
   Future<List<ThreadPost>> fetchUserThreads(String userId) async {
     try {
-      if (userId.startsWith('mock-')) {
-        final profile = await fetchProfile(userId);
-        if (profile == null) return [];
-        return [
-          ThreadPost(
-            id: 'mock-thread-${userId}-1',
-            userId: userId,
-            author: profile,
-            content: 'ডাক অ্যাপের এই চমৎকার ডিজাইন দেখে ভালো লাগলো। একদম সিম্পল এবং আধুনিক! 🚀✨',
-            createdAt: '2ঘ',
-            likesCount: 12,
-            repliesCount: 4,
-            isLikedByMe: false,
-          ),
-          ThreadPost(
-            id: 'mock-thread-${userId}-2',
-            userId: userId,
-            author: profile,
-            content: 'ডিজাইন সৌন্দর্যের চেয়ে ইউজার এক্সপেরিয়েন্স বেশি গুরুত্বপূর্ণ। আপনাদের কি মত?',
-            createdAt: '1দিন',
-            likesCount: 34,
-            repliesCount: 9,
-            isLikedByMe: true,
-            reactionType: '👍',
-          ),
-        ];
-      }
 
       final response = await _supabase
           .from('threads')
@@ -964,9 +1017,59 @@ class DatabaseService with ChangeNotifier {
         return 0;
       });
 
+      _updateCache(posts);
       return posts;
     } catch (e) {
       debugPrint("Fetch user threads error: $e");
+      return [];
+    }
+  }
+
+  Future<List<ThreadPost>> fetchUserRepliedThreads(String userId) async {
+    try {
+      if (userId.startsWith('mock-')) {
+        return [];
+      }
+
+      // Fetch distinct thread_ids from comments table where user_id = userId
+      final commentsRes = await _supabase
+          .from('comments')
+          .select('thread_id')
+          .eq('user_id', userId);
+      
+      final List<dynamic> commentsData = commentsRes as List<dynamic>;
+      final threadIds = commentsData.map((c) => c['thread_id'] as String).toSet().toList();
+      
+      if (threadIds.isEmpty) return [];
+
+      // Fetch those threads
+      final response = await _supabase
+          .from('threads')
+          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
+          .inFilter('id', threadIds)
+          .order('created_at', ascending: false);
+
+      final List<dynamic> data = response as List<dynamic>;
+      final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      
+      // Filter out hidden posts
+      posts.removeWhere((post) {
+        if (post.hideFromProfile && post.userId != _currentUid) {
+          return true;
+        }
+        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
+          return true;
+        }
+        if (post.isHiddenFromMe) {
+          return true;
+        }
+        return false;
+      });
+
+      _updateCache(posts);
+      return posts;
+    } catch (e) {
+      debugPrint("Fetch user replied threads error: $e");
       return [];
     }
   }
@@ -978,6 +1081,12 @@ class DatabaseService with ChangeNotifier {
     try {
       await _supabase.from('threads').update({'is_pinned': isPinned}).eq('id', threadId);
       
+      // Update cache
+      final cached = _postsCache[threadId];
+      if (cached != null) {
+        _postsCache[threadId] = cached.copyWith(isPinned: isPinned);
+      }
+
       // Update local feed
       final feedIdx = _feed.indexWhere((p) => p.id == threadId);
       if (feedIdx != -1) {
@@ -1006,6 +1115,12 @@ class DatabaseService with ChangeNotifier {
     try {
       await _supabase.from('threads').update({'mute_notifications': mute}).eq('id', threadId);
       
+      // Update cache
+      final cached = _postsCache[threadId];
+      if (cached != null) {
+        _postsCache[threadId] = cached.copyWith(muteNotifications: mute);
+      }
+
       final feedIdx = _feed.indexWhere((p) => p.id == threadId);
       if (feedIdx != -1) {
         _feed[feedIdx] = _feed[feedIdx].copyWith(muteNotifications: mute);
@@ -1027,6 +1142,12 @@ class DatabaseService with ChangeNotifier {
     try {
       await _supabase.from('threads').update({'hide_from_profile': hide}).eq('id', threadId);
       
+      // Update cache
+      final cached = _postsCache[threadId];
+      if (cached != null) {
+        _postsCache[threadId] = cached.copyWith(hideFromProfile: hide);
+      }
+
       final feedIdx = _feed.indexWhere((p) => p.id == threadId);
       if (feedIdx != -1) {
         _feed[feedIdx] = _feed[feedIdx].copyWith(hideFromProfile: hide);
@@ -1048,6 +1169,12 @@ class DatabaseService with ChangeNotifier {
     try {
       await _supabase.from('threads').update({'content': content}).eq('id', threadId);
       
+      // Update cache
+      final cached = _postsCache[threadId];
+      if (cached != null) {
+        _postsCache[threadId] = cached.copyWith(content: content);
+      }
+
       final feedIdx = _feed.indexWhere((p) => p.id == threadId);
       if (feedIdx != -1) {
         _feed[feedIdx] = _feed[feedIdx].copyWith(content: content);
@@ -1071,6 +1198,8 @@ class DatabaseService with ChangeNotifier {
       
       _feed.removeWhere((p) => p.id == threadId);
       _myThreads.removeWhere((p) => p.id == threadId);
+      _deletedPostIds.add(threadId);
+      _postsCache.remove(threadId);
       notifyListeners();
       return true;
     } catch (e) {
@@ -1109,7 +1238,7 @@ class DatabaseService with ChangeNotifier {
       }
       
       // Refresh feed so visibility filters take effect
-      fetchFeed();
+      fetchFeed(silent: true);
       return true;
     } catch (e) {
       debugPrint("Update thread hides error: $e");
@@ -1447,6 +1576,7 @@ class DatabaseService with ChangeNotifier {
           'author': author,
           'content': json['content'] as String,
           'created_at': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
+          'created_at_raw': json['created_at'] as String,
           'likes_count': (json['likes_count'] as int?) ?? 0,
           'parent_id': json['parent_id'] as String?,
           'is_liked_by_me': likedCommentIds.contains(json['id'] as String),
@@ -1469,7 +1599,16 @@ class DatabaseService with ChangeNotifier {
         'content': content,
         'parent_id': parentId,
       });
-      fetchFeed();
+
+      // Optimistic update cache for comments count
+      final cached = _postsCache[threadId];
+      if (cached != null) {
+        _postsCache[threadId] = cached.copyWith(
+          repliesCount: cached.repliesCount + 1,
+        );
+      }
+
+      fetchFeed(silent: true);
       return true;
     } catch (e) {
       debugPrint("Add comment error: $e");
@@ -1508,26 +1647,63 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  Future<bool> deleteComment(String commentId, String threadId) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('comments').delete().eq('id', commentId).eq('user_id', _currentUid);
+      
+      final cached = _postsCache[threadId];
+      if (cached != null) {
+        _postsCache[threadId] = cached.copyWith(
+          repliesCount: cached.repliesCount - 1 < 0 ? 0 : cached.repliesCount - 1,
+        );
+      }
+      fetchFeed(silent: true);
+      return true;
+    } catch (e) {
+      debugPrint("Delete comment error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> editComment(String commentId, String content) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('comments').update({'content': content}).eq('id', commentId).eq('user_id', _currentUid);
+      return true;
+    } catch (e) {
+      debugPrint("Edit comment error: $e");
+      return false;
+    }
+  }
+
   int GREATEST(int a, int b) => a > b ? a : b;
 
   // --- Reposts Operation ---
 
-  Future<bool> repostThread(String threadId) async {
+  Future<bool> repostThread(String threadId, {String? quoteText}) async {
     if (_currentUid.isEmpty) return false;
     try {
       // Check if already reposted
       final existing = await _supabase
           .from('reposts')
-          .select('id')
+          .select('id, quote_text')
           .eq('user_id', _currentUid)
           .eq('thread_id', threadId)
           .maybeSingle();
 
-      if (existing != null) {
+      if (existing != null && quoteText == null) {
         // Remove repost
         await _supabase
             .from('reposts')
             .delete()
+            .eq('user_id', _currentUid)
+            .eq('thread_id', threadId);
+      } else if (existing != null && quoteText != null) {
+        // Update quote repost
+        await _supabase
+            .from('reposts')
+            .update({'quote_text': quoteText})
             .eq('user_id', _currentUid)
             .eq('thread_id', threadId);
       } else {
@@ -1535,13 +1711,89 @@ class DatabaseService with ChangeNotifier {
         await _supabase.from('reposts').insert({
           'user_id': _currentUid,
           'thread_id': threadId,
+          'quote_text': quoteText,
         });
       }
-      fetchFeed();
+      fetchFeed(silent: true);
       return true;
     } catch (e) {
       debugPrint("Repost thread error: $e");
       return false;
+    }
+  }
+
+  Future<bool> editRepost(String repostId, String newQuoteText) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase
+          .from('reposts')
+          .update({'quote_text': newQuoteText})
+          .eq('id', repostId)
+          .eq('user_id', _currentUid);
+      fetchFeed(silent: true);
+      return true;
+    } catch (e) {
+      debugPrint("Edit repost error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteRepost(String repostId, String threadId) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase
+          .from('reposts')
+          .delete()
+          .eq('id', repostId)
+          .eq('user_id', _currentUid);
+      fetchFeed(silent: true);
+      return true;
+    } catch (e) {
+      debugPrint("Delete repost error: $e");
+      return false;
+    }
+  }
+
+  Future<List<ThreadPost>> fetchUserReposts(String userId) async {
+    try {
+      final response = await _supabase
+          .from('reposts')
+          .select('*, profiles(*), threads(*, profiles(*), likes(user_id), thread_hides(user_id))')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      final List<dynamic> repostsData = response as List<dynamic>;
+      final List<ThreadPost> repostPosts = [];
+      for (final row in repostsData) {
+        final threadMap = row['threads'] as Map<String, dynamic>?;
+        if (threadMap != null) {
+          final reposterProfileMap = row['profiles'] as Map<String, dynamic>?;
+          final reposterProfile = reposterProfileMap != null
+              ? Profile.fromJson(reposterProfileMap)
+              : Profile(id: row['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+
+          final originalPost = ThreadPost.fromJson(threadMap, currentUid: _currentUid);
+
+          repostPosts.add(ThreadPost(
+            id: row['id'] as String,
+            userId: row['user_id'] as String,
+            author: reposterProfile,
+            content: row['quote_text'] as String? ?? '',
+            createdAt: ThreadPost.formatRelativeTime(row['created_at'] as String?),
+            isRepost: true,
+            repostedPost: originalPost,
+            quoteText: row['quote_text'] as String?,
+            likesCount: 0,
+            repliesCount: 0,
+            repostsCount: 0,
+            viewsCount: 0,
+          ));
+        }
+      }
+      return repostPosts;
+    } catch (e) {
+      debugPrint("Fetch user reposts error: $e");
+      return [];
     }
   }
 
@@ -1581,7 +1833,7 @@ class DatabaseService with ChangeNotifier {
         'thread_id': threadId,
         'user_id': _currentUid,
       });
-      fetchFeed();
+      fetchFeed(silent: true);
       return true;
     } catch (e) {
       debugPrint("Hide thread for current user error: $e");
@@ -1597,7 +1849,7 @@ class DatabaseService with ChangeNotifier {
           .delete()
           .eq('thread_id', threadId)
           .eq('user_id', _currentUid);
-      fetchFeed();
+      fetchFeed(silent: true);
       return true;
     } catch (e) {
       debugPrint("Unhide thread for current user error: $e");
@@ -1630,6 +1882,38 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+
+  Future<void> incrementThreadViews(String threadId) async {
+    try {
+      await _supabase.rpc('increment_thread_views', params: {'thread_id': threadId});
+      
+      // Update local cache views count optimistically
+      final cached = _postsCache[threadId];
+      if (cached != null) {
+        _postsCache[threadId] = cached.copyWith(
+          viewsCount: cached.viewsCount + 1,
+        );
+      }
+    } catch (rpcError) {
+      debugPrint("RPC increment_thread_views failed: $rpcError");
+      try {
+        final response = await _supabase.from('threads').select('views_count').eq('id', threadId).maybeSingle();
+        if (response != null) {
+          final int currentViews = response['views_count'] as int? ?? 0;
+          await _supabase.from('threads').update({'views_count': currentViews + 1}).eq('id', threadId);
+          
+          final cached = _postsCache[threadId];
+          if (cached != null) {
+            _postsCache[threadId] = cached.copyWith(
+              viewsCount: currentViews + 1,
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint("Direct update views count failed: $e");
+      }
+    }
+  }
 
   @override
   void dispose() {

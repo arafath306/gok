@@ -17,6 +17,11 @@ class ThreadPost {
   final bool muteNotifications;
   final bool hideFromProfile;
   final bool isHiddenFromMe;
+  final int viewsCount;
+
+  final bool isRepost;
+  final ThreadPost? repostedPost;
+  final String? quoteText;
 
   ThreadPost({
     required this.id,
@@ -28,6 +33,7 @@ class ThreadPost {
     this.likesCount = 0,
     this.repliesCount = 0,
     this.repostsCount = 0,
+    this.viewsCount = 0,
     required this.createdAt,
     this.isLikedByMe = false,
     this.reactionType,
@@ -35,20 +41,23 @@ class ThreadPost {
     this.muteNotifications = false,
     this.hideFromProfile = false,
     this.isHiddenFromMe = false,
+    this.isRepost = false,
+    this.repostedPost,
+    this.quoteText,
   });
 
-  static String _formatRelativeTime(String? isoString) {
-    if (isoString == null || isoString.isEmpty) return 'এখনই';
+  static String formatRelativeTime(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return 'now';
     try {
       final dt = DateTime.parse(isoString).toLocal();
       final diff = DateTime.now().difference(dt);
-      if (diff.inMinutes < 1) return 'এখনই';
-      if (diff.inMinutes < 60) return '${diff.inMinutes}মি';
-      if (diff.inHours < 24) return '${diff.inHours}ঘ';
-      if (diff.inDays < 7) return '${diff.inDays}দ';
+      if (diff.inMinutes < 1) return 'now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+      if (diff.inHours < 24) return '${diff.inHours}h';
+      if (diff.inDays < 7) return '${diff.inDays}d';
       return '${dt.day}/${dt.month}/${dt.year}';
     } catch (_) {
-      return 'এখনই';
+      return 'now';
     }
   }
 
@@ -94,13 +103,19 @@ class ThreadPost {
       likesCount: (json['likes_count'] as int?) ?? 0,
       repliesCount: (json['replies_count'] as int?) ?? 0,
       repostsCount: (json['reposts_count'] as int?) ?? 0,
-      createdAt: _formatRelativeTime(json['created_at'] as String?),
+      viewsCount: (json['views_count'] as int?) ?? 0,
+      createdAt: formatRelativeTime(json['created_at'] as String?),
       isLikedByMe: isLiked,
       reactionType: isLiked ? '❤️' : null,
       isPinned: json['is_pinned'] as bool? ?? false,
       muteNotifications: json['mute_notifications'] as bool? ?? false,
       hideFromProfile: json['hide_from_profile'] as bool? ?? false,
       isHiddenFromMe: isHidden,
+      isRepost: json['is_repost'] as bool? ?? false,
+      repostedPost: json['reposted_post'] != null 
+          ? ThreadPost.fromJson(json['reposted_post'] as Map<String, dynamic>, currentUid: currentUid)
+          : null,
+      quoteText: json['quote_text'] as String?,
     );
   }
 
@@ -114,6 +129,7 @@ class ThreadPost {
     int? likesCount,
     int? repliesCount,
     int? repostsCount,
+    int? viewsCount,
     String? createdAt,
     bool? isLikedByMe,
     String? reactionType,
@@ -121,6 +137,9 @@ class ThreadPost {
     bool? muteNotifications,
     bool? hideFromProfile,
     bool? isHiddenFromMe,
+    bool? isRepost,
+    ThreadPost? repostedPost,
+    String? quoteText,
   }) {
     return ThreadPost(
       id: id ?? this.id,
@@ -132,6 +151,7 @@ class ThreadPost {
       likesCount: likesCount ?? this.likesCount,
       repliesCount: repliesCount ?? this.repliesCount,
       repostsCount: repostsCount ?? this.repostsCount,
+      viewsCount: viewsCount ?? this.viewsCount,
       createdAt: createdAt ?? this.createdAt,
       isLikedByMe: isLikedByMe ?? this.isLikedByMe,
       reactionType: reactionType ?? this.reactionType,
@@ -139,6 +159,9 @@ class ThreadPost {
       muteNotifications: muteNotifications ?? this.muteNotifications,
       hideFromProfile: hideFromProfile ?? this.hideFromProfile,
       isHiddenFromMe: isHiddenFromMe ?? this.isHiddenFromMe,
+      isRepost: isRepost ?? this.isRepost,
+      repostedPost: repostedPost ?? this.repostedPost,
+      quoteText: quoteText ?? this.quoteText,
     );
   }
 }

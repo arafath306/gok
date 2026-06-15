@@ -139,13 +139,14 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                           final hasSentRequest = _sentRequests.contains(user.id);
 
                           return ListTile(
+                            tileColor: Colors.transparent,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             leading: CircleAvatar(
                               radius: 22,
                               backgroundColor: context.border,
                               backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
                                   ? NetworkImage(user.avatarUrl!)
-                                  : const NetworkImage("https://i.pravatar.cc/150"),
+                                  : const NetworkImage(""),
                             ),
                             title: Text(
                               user.fullName,

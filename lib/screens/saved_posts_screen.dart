@@ -49,13 +49,19 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
   @override
   Widget build(BuildContext context) {
     final dbService = Provider.of<DatabaseService>(context);
-    final savedPosts = dbService.savedPosts;
+    // Filter out posts deleted during this session
+    final savedPosts = dbService.savedPosts
+        .where((p) => !dbService.isPostDeleted(p.id))
+        .toList();
 
     return Scaffold(
       backgroundColor: context.scaffoldBg,
-      body: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
+      body: RefreshIndicator(
+        color: const Color(0xFF1E824C),
+        onRefresh: () => _refresh(dbService),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           // ── Sliver AppBar ──
           SliverAppBar(
             expandedHeight: 130,
@@ -266,6 +272,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                 ),
         ],
       ),
+     ),
     );
   }
 

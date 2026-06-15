@@ -11,6 +11,7 @@ import '../../utils/app_theme.dart';
 import '../settings/settings_screen.dart';
 import 'edit_profile_screen.dart';
 import '../messenger/chat_screen.dart';
+import '../../widgets/custom_thread_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   /// Pass userId to view another user's profile. Leave null for own profile.
@@ -28,10 +29,12 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Profile? _viewedProfile;
   List<ThreadPost> _viewedThreads = [];
+  List<ThreadPost> _replies = [];
+  List<ThreadPost> _reposts = [];
   bool _isLoading = false;
 
   final List<String> _tabs = [
-    'Posts', 'Replies', 'Media',
+    'Posts', 'Replies', 'Reposts', 'Media',
   ];
 
   /// Own profile if userId is null OR matches the current user's Supabase UID
@@ -51,11 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
 
-    // If viewing another user's profile, fetch their data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isOwnProfile) {
-        _fetchOtherProfile();
-      }
+      _loadProfileData();
     });
   }
 
@@ -67,17 +67,27 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   bool _doesFollowMe = false;
 
-  Future<void> _fetchOtherProfile() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadProfileData() async {
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
     final dbService = Provider.of<DatabaseService>(context, listen: false);
-    final profile = await dbService.fetchProfile(widget.userId!);
-    final threads = await dbService.fetchUserThreads(widget.userId!);
-    final doesFollowMe = await dbService.doesUserFollowMe(widget.userId!);
+    final targetId = _isOwnProfile ? dbService.currentUid : widget.userId!;
+
+    if (_isOwnProfile) {
+      await dbService.fetchMyProfile();
+      await dbService.fetchMyThreads();
+    } else {
+      _viewedProfile = await dbService.fetchProfile(targetId);
+      _viewedThreads = await dbService.fetchUserThreads(targetId);
+      _doesFollowMe = await dbService.doesUserFollowMe(targetId);
+    }
+
+    _replies = await dbService.fetchUserRepliedThreads(targetId);
+    _reposts = await dbService.fetchUserReposts(targetId);
+
     if (mounted) {
       setState(() {
-        _viewedProfile = profile;
-        _viewedThreads = threads;
-        _doesFollowMe = doesFollowMe;
         _isLoading = false;
       });
     }
@@ -119,8 +129,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           );
         }
 
-        final double screenWidth = MediaQuery.of(context).size.width;
-        final bool isWide = screenWidth > 800;
 
         Widget tabSection = Column(
           children: [
@@ -135,14 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           backgroundColor: context.scaffoldBg,
           body: RefreshIndicator(
             color: const Color(0xFF0085FF),
-            onRefresh: () async {
-              if (_isOwnProfile) {
-                await db.fetchMyProfile();
-                await db.fetchMyThreads();
-              } else {
-                await _fetchOtherProfile();
-              }
-            },
+            onRefresh: _loadProfileData,
             child: NestedScrollView(
               headerSliverBuilder: (context, _) => [
                 SliverToBoxAdapter(
@@ -243,7 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               right: 8,
               child: Row(
                 children: [
-                  if (Navigator.canPop(context))
+                  if (ModalRoute.of(context)?.isFirst == false)
                     CircleAvatar(
                       backgroundColor: Colors.black38,
                       radius: 18,
@@ -452,27 +453,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildAvatar(String? url, {double size = 40}) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: context.border, width: 1.0),
-      ),
-      child: ClipOval(
-        child: url != null && url.isNotEmpty
-            ? Image.network(
-                url,
-                fit: BoxFit.cover,
-                loadingBuilder: (_, child, progress) =>
-                    progress == null ? child : _defaultAvatar(size: size),
-                errorBuilder: (_, __, ___) => _defaultAvatar(size: size),
-              )
-            : _defaultAvatar(size: size),
-      ),
-    );
-  }
 
   Widget _defaultAvatar({double size = 40}) => Container(
         color: const Color(0xFF0085FF),
@@ -572,19 +552,23 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       );
 
-  // ── Tab Views ──────────────────────────────────────────────
   Widget _buildTabViews(Profile? profile, List<ThreadPost> threads) =>
       TabBarView(
         controller: _tabController,
         children: [
           KeepAliveWrapper(child: _postsTab(profile, threads)),
-          KeepAliveWrapper(child: _emptyTab('No replies yet')),
+          KeepAliveWrapper(child: _repliesTab(profile)),
+          KeepAliveWrapper(child: _repostsTab(profile)),
           KeepAliveWrapper(child: _emptyTab('No media yet')),
         ],
       );
 
   Widget _postsTab(Profile? profile, List<ThreadPost> threads) {
-    if (threads.isEmpty) {
+    // Filter out posts that have been deleted during this session
+    final db = Provider.of<DatabaseService>(context, listen: false);
+    final visibleThreads = threads.where((p) => !db.isPostDeleted(p.id)).toList();
+
+    if (visibleThreads.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -629,83 +613,108 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     return ListView.separated(
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.only(bottom: 72),
       physics: const BouncingScrollPhysics(),
-      itemCount: threads.length,
+      itemCount: visibleThreads.length,
       separatorBuilder: (_, __) =>
           Divider(height: 1, color: context.border),
-      itemBuilder: (context, i) => _threadTile(threads[i], profile),
-    );
-  }
-
-  Widget _threadTile(ThreadPost post, Profile? profile) {
-    final age = post.createdAt; // already formatted by ThreadPost.fromJson
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildAvatar(profile?.avatarUrl, size: 40),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Expanded(
-                    child: RichText(
-                      text: TextSpan(children: [
-                        TextSpan(
-                          text: '${profile?.fullName ?? ''} ',
-                          style: GoogleFonts.hindSiliguri(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: context.textPrimary),
-                        ),
-                        TextSpan(
-                          text: '@${profile?.username ?? ''}',
-                          style: GoogleFonts.hindSiliguri(
-                              fontSize: 13, color: context.textSecondary),
-                        ),
-                      ]),
-                    ),
-                  ),
-                  Text(age,
-                      style: GoogleFonts.hindSiliguri(
-                          fontSize: 12, color: context.textMuted)),
-                ]),
-                const SizedBox(height: 6),
-                Text(post.content,
-                    style: GoogleFonts.hindSiliguri(
-                        fontSize: 14,
-                        color: context.textPrimary,
-                        height: 1.4)),
-                const SizedBox(height: 10),
-                Row(children: [
-                  _postAction(Icons.chat_bubble_outline_rounded,
-                      post.repliesCount.toString()),
-                  const SizedBox(width: 22),
-                  _postAction(
-                      Icons.repeat_rounded, post.repostsCount.toString()),
-                  const SizedBox(width: 22),
-                  _postAction(Icons.favorite_border_rounded,
-                      post.likesCount.toString()),
-                ]),
-              ],
-            ),
-          ),
-        ],
+      itemBuilder: (context, i) => CustomThreadCard(
+        key: ValueKey(visibleThreads[i].id),
+        post: visibleThreads[i],
       ),
     );
   }
 
-  Widget _postAction(IconData icon, String count) => Row(children: [
-        Icon(icon, size: 16, color: context.textSecondary),
-        const SizedBox(width: 4),
-        Text(count,
-            style: GoogleFonts.hindSiliguri(
-                fontSize: 12, color: context.textSecondary)),
-      ]);
+  Widget _repliesTab(Profile? profile) {
+    // Filter out posts that have been deleted during this session
+    final db = Provider.of<DatabaseService>(context, listen: false);
+    final visibleReplies = _replies.where((p) => !db.isPostDeleted(p.id)).toList();
+
+    if (visibleReplies.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                border: Border.all(color: context.border, width: 1.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.forum_outlined,
+                  size: 34, color: context.textMuted),
+            ),
+            const SizedBox(height: 14),
+            Text('No replies yet',
+                style: GoogleFonts.hindSiliguri(
+                    fontSize: 16,
+                    color: context.textSecondary,
+                    fontWeight: FontWeight.w500)),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 72),
+      physics: const BouncingScrollPhysics(),
+      itemCount: visibleReplies.length,
+      separatorBuilder: (_, __) =>
+          Divider(height: 1, color: context.border),
+      itemBuilder: (context, i) => CustomThreadCard(
+        key: ValueKey(visibleReplies[i].id),
+        post: visibleReplies[i],
+      ),
+    );
+  }
+
+
+
+  Widget _repostsTab(Profile? profile) {
+    // Filter out posts that have been deleted during this session
+    final db = Provider.of<DatabaseService>(context, listen: false);
+    final visibleReposts = _reposts.where((p) => !db.isPostDeleted(p.id)).toList();
+
+    if (visibleReposts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                border: Border.all(color: context.border, width: 1.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.repeat_rounded,
+                  size: 34, color: context.textMuted),
+            ),
+            const SizedBox(height: 14),
+            Text('No reposts yet',
+                style: GoogleFonts.hindSiliguri(
+                    fontSize: 16,
+                    color: context.textSecondary,
+                    fontWeight: FontWeight.w500)),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 72),
+      physics: const BouncingScrollPhysics(),
+      itemCount: visibleReposts.length,
+      separatorBuilder: (_, __) =>
+          Divider(height: 1, color: context.border),
+      itemBuilder: (context, i) => CustomThreadCard(
+        key: ValueKey(visibleReposts[i].id),
+        post: visibleReposts[i],
+      ),
+    );
+  }
+
 
   Widget _emptyTab(String msg) => Center(
         child: Text(msg,
