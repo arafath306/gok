@@ -28,7 +28,6 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _animController.forward();
 
-    // Refresh saved posts when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
       dbService.fetchSavedPosts();
@@ -179,7 +178,6 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         if (index == 0) {
-                          // Refresh pull helper
                           return GestureDetector(
                             onTap: () => _refresh(dbService),
                             child: Container(
@@ -223,7 +221,6 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                           child: Stack(
                             children: [
                               CustomThreadCard(post: post),
-                              // Saved badge
                               Positioned(
                                 top: 12,
                                 right: 16,
@@ -234,8 +231,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                                     color: const Color(0xFF1E824C).withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color:
-                                          const Color(0xFF1E824C).withOpacity(0.3),
+                                      color: const Color(0xFF1E824C).withOpacity(0.3),
                                       width: 0.8,
                                     ),
                                   ),
@@ -321,24 +317,10 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
             ),
           ),
           const SizedBox(height: 32),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E824C),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF1E824C).withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0xFF1E824C),
                 borderRadius: BorderRadius.circular(24),
@@ -356,15 +338,23 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                   const Icon(
                     Icons.bookmark_add_rounded,
                     color: Colors.white,
-                onTap: () => Navigator.pop(context),
-                child: w,
-              )),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'ফিডে ফিরে যান',
+                    style: GoogleFonts.hindSiliguri(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
-}
-
-extension on Widget {
-  Widget also(Widget Function(Widget) builder) => builder(this);
 }
