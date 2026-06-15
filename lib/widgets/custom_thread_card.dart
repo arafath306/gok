@@ -345,7 +345,10 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                   _buildLeftColumn(context, dbService, post),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildRightColumn(context, dbService, post, isVerified),
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: _buildRightColumn(context, dbService, post, isVerified),
+                    ),
                   ),
                 ],
               ),
