@@ -30,8 +30,21 @@ class DatabaseService with ChangeNotifier {
   Set<String> _mutedUserIds = {};
   Set<String> get mutedUserIds => _mutedUserIds;
 
+  Set<String> _savedThreadIds = {};
+  Set<String> get savedThreadIds => _savedThreadIds;
+
   bool isBlocked(String targetUserId) => _blockedUserIds.contains(targetUserId);
   bool isMuted(String targetUserId) => _mutedUserIds.contains(targetUserId);
+  bool isSaved(String threadId) => _savedThreadIds.contains(threadId);
+
+  void toggleSaveThread(String threadId) {
+    if (_savedThreadIds.contains(threadId)) {
+      _savedThreadIds.remove(threadId);
+    } else {
+      _savedThreadIds.add(threadId);
+    }
+    notifyListeners();
+  }
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;

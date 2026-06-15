@@ -11,11 +11,61 @@ import '../utils/app_theme.dart';
 import 'comments_sheet.dart';
 import '../screens/profile/profile_screen.dart';
 
-class CustomThreadCard extends StatelessWidget {
+class CustomThreadCard extends StatefulWidget {
   final ThreadPost post;
 
   const CustomThreadCard({super.key, required this.post});
 
+  @override
+  State<CustomThreadCard> createState() => _CustomThreadCardState();
+}
+
+class _CustomThreadCardState extends State<CustomThreadCard> {
+  List<Profile> _commenterProfiles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCommenterProfiles();
+  }
+
+  @override
+  void didUpdateWidget(CustomThreadCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.post.id != widget.post.id || oldWidget.post.repliesCount != widget.post.repliesCount) {
+      _loadCommenterProfiles();
+    }
+  }
+
+  Future<void> _loadCommenterProfiles() async {
+    if (widget.post.repliesCount == 0) {
+      if (mounted) {
+        setState(() {
+          _commenterProfiles = [];
+        });
+      }
+      return;
+    }
+    try {
+      final dbService = Provider.of<DatabaseService>(context, listen: false);
+      final comments = await dbService.fetchComments(widget.post.id);
+      if (mounted) {
+        final List<Profile> profiles = [];
+        for (var comment in comments) {
+          final author = comment['author'] as Profile?;
+          if (author != null && !profiles.any((p) => p.id == author.id)) {
+            profiles.add(author);
+          }
+          if (profiles.length >= 3) break;
+        }
+        setState(() {
+          _commenterProfiles = profiles;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading commenter profiles: $e");
+    }
+  }
 
   void _sharePost(BuildContext context) {
     showDialog(
@@ -37,7 +87,7 @@ class CustomThreadCard extends StatelessWidget {
                 border: Border.all(color: Colors.black12),
               ),
               child: Text(
-                "https://dak.ngst.app/thread/${post.id}",
+                "https://dak.ngst.app/thread/${widget.post.id}",
                 style: const TextStyle(fontSize: 12, color: Colors.blue),
                 textAlign: TextAlign.center,
               ),
@@ -65,7 +115,7 @@ class CustomThreadCard extends StatelessWidget {
   }
 
   void _showQuickActions(BuildContext context, DatabaseService dbService) {
-    final isAuthor = post.userId == dbService.currentUid;
+    final isAuthor = widget.post.userId == dbService.currentUid;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -73,13 +123,13 @@ class CustomThreadCard extends StatelessWidget {
       builder: (sheetContext) {
         if (isAuthor) {
           return _AuthorActionsSheet(
-            post: post,
+            post: widget.post,
             dbService: dbService,
             parentContext: context,
           );
         } else {
           return _QuickActionsSheet(
-            post: post,
+            post: widget.post,
             dbService: dbService,
             parentContext: context,
           );
@@ -93,20 +143,21 @@ class CustomThreadCard extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CommentsSheet(post: post),
-    );
+      builder: (context) => CommentsSheet(post: widget.post),
+    ).then((_) {
+      _loadCommenterProfiles();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context, listen: false);
-    final isVerified = post.author.fullName == 'Dak Official';
+    final dbService = Provider.of<DatabaseService>(context);
+    final isVerified = widget.post.author.fullName == 'Dak Official';
 
-    // Mock category tags mapping based on post content
     List<String> tags = [];
-    if (post.content.contains('প্রকৃতি') || post.content.contains('nature') || post.content.contains('Mountain') || post.imageUrls != null) {
+    if (widget.post.content.contains('প্রকৃতি') || widget.post.content.contains('nature') || widget.post.content.contains('Mountain') || widget.post.imageUrls != null) {
       tags = ['Bangladesh', 'Nature'];
-    } else if (post.content.contains('ডিজাইন') || post.content.contains('Dak')) {
+    } else if (widget.post.content.contains('ডিজাইন') || widget.post.content.contains('Dak')) {
       tags = ['Bangladesh', 'Design'];
     } else {
       tags = ['Bangladesh', 'Trending'];
@@ -118,7 +169,7 @@ class CustomThreadCard extends StatelessWidget {
         Navigator.push(
           context,
           NoTransitionPageRoute(
-            child: ThreadDetailScreen(post: post),
+            child: ThreadDetailScreen(post: widget.post),
           ),
         );
       },
@@ -131,10 +182,8 @@ class CustomThreadCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Left Column: Avatar + vertical line + small avatars pile
                   _buildLeftColumn(context, dbService),
                   const SizedBox(width: 12),
-                  // Right Column: username, content, action row, stats
                   Expanded(
                     child: _buildRightColumn(context, dbService, isVerified, tags),
                   ),
@@ -149,8 +198,8 @@ class CustomThreadCard extends StatelessWidget {
   }
 
   Widget _buildLeftColumn(BuildContext context, DatabaseService dbService) {
-    final isFollowing = dbService.isFollowingUser(post.userId);
-    final hasReplies = post.repliesCount > 0;
+    final isFollowing = dbService.isFollowingUser(widget.post.userId);
+    final hasReplies = widget.post.repliesCount > 0 && _commenterProfiles.isNotEmpty;
     return Column(
       children: [
         Stack(
@@ -160,10 +209,10 @@ class CustomThreadCard extends StatelessWidget {
               radius: 20,
               backgroundColor: Colors.grey[200],
               backgroundImage: NetworkImage(
-                post.author.avatarUrl ?? "https://i.pravatar.cc/150",
+                widget.post.author.avatarUrl ?? "https://i.pravatar.cc/150",
               ),
             ),
-            if (post.userId != dbService.currentUid && !isFollowing)
+            if (widget.post.userId != dbService.currentUid && !isFollowing)
               Positioned(
                 bottom: -2,
                 right: -2,
@@ -200,16 +249,12 @@ class CustomThreadCard extends StatelessWidget {
   }
 
   Widget _buildRepliesAvatars(BuildContext context) {
-    final count = post.repliesCount;
-    if (count == 0) return const SizedBox.shrink();
+    if (_commenterProfiles.isEmpty) return const SizedBox.shrink();
 
-    final List<String> mockAvatars = [
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100",
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100",
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",
-    ];
+    final count = _commenterProfiles.length;
 
     if (count == 1) {
+      final avatarUrl = _commenterProfiles[0].avatarUrl;
       return Container(
         width: 18,
         height: 18,
@@ -218,10 +263,14 @@ class CustomThreadCard extends StatelessWidget {
           border: Border.all(color: context.scaffoldBg, width: 1.5),
         ),
         child: ClipOval(
-          child: Image.network(mockAvatars[0], fit: BoxFit.cover),
+          child: avatarUrl != null && avatarUrl.isNotEmpty
+              ? Image.network(avatarUrl, fit: BoxFit.cover)
+              : Container(color: const Color(0xFF1E824C)),
         ),
       );
     } else if (count == 2) {
+      final avatarUrl0 = _commenterProfiles[0].avatarUrl;
+      final avatarUrl1 = _commenterProfiles[1].avatarUrl;
       return SizedBox(
         width: 24,
         height: 18,
@@ -238,7 +287,9 @@ class CustomThreadCard extends StatelessWidget {
                   border: Border.all(color: context.scaffoldBg, width: 1.5),
                 ),
                 child: ClipOval(
-                  child: Image.network(mockAvatars[0], fit: BoxFit.cover),
+                  child: avatarUrl0 != null && avatarUrl0.isNotEmpty
+                      ? Image.network(avatarUrl0, fit: BoxFit.cover)
+                      : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
             ),
@@ -253,7 +304,9 @@ class CustomThreadCard extends StatelessWidget {
                   border: Border.all(color: context.scaffoldBg, width: 1.5),
                 ),
                 child: ClipOval(
-                  child: Image.network(mockAvatars[1], fit: BoxFit.cover),
+                  child: avatarUrl1 != null && avatarUrl1.isNotEmpty
+                      ? Image.network(avatarUrl1, fit: BoxFit.cover)
+                      : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
             ),
@@ -261,6 +314,9 @@ class CustomThreadCard extends StatelessWidget {
         ),
       );
     } else {
+      final avatarUrl0 = _commenterProfiles[0].avatarUrl;
+      final avatarUrl1 = _commenterProfiles[1].avatarUrl;
+      final avatarUrl2 = _commenterProfiles[2].avatarUrl;
       return SizedBox(
         width: 28,
         height: 22,
@@ -277,7 +333,9 @@ class CustomThreadCard extends StatelessWidget {
                   border: Border.all(color: context.scaffoldBg, width: 1.2),
                 ),
                 child: ClipOval(
-                  child: Image.network(mockAvatars[0], fit: BoxFit.cover),
+                  child: avatarUrl0 != null && avatarUrl0.isNotEmpty
+                      ? Image.network(avatarUrl0, fit: BoxFit.cover)
+                      : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
             ),
@@ -292,7 +350,9 @@ class CustomThreadCard extends StatelessWidget {
                   border: Border.all(color: context.scaffoldBg, width: 1.2),
                 ),
                 child: ClipOval(
-                  child: Image.network(mockAvatars[1], fit: BoxFit.cover),
+                  child: avatarUrl1 != null && avatarUrl1.isNotEmpty
+                      ? Image.network(avatarUrl1, fit: BoxFit.cover)
+                      : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
             ),
@@ -307,7 +367,9 @@ class CustomThreadCard extends StatelessWidget {
                   border: Border.all(color: context.scaffoldBg, width: 1.2),
                 ),
                 child: ClipOval(
-                  child: Image.network(mockAvatars[2], fit: BoxFit.cover),
+                  child: avatarUrl2 != null && avatarUrl2.isNotEmpty
+                      ? Image.network(avatarUrl2, fit: BoxFit.cover)
+                      : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
             ),
@@ -331,11 +393,11 @@ class CustomThreadCard extends StatelessWidget {
           children: [
             GestureDetector(
               onTap: () {
-                final isOwn = post.userId == dbService.currentUid;
+                final isOwn = widget.post.userId == dbService.currentUid;
                 Navigator.push(
                   context,
                   NoTransitionPageRoute(
-                    child: ProfileScreen(userId: isOwn ? null : post.userId),
+                    child: ProfileScreen(userId: isOwn ? null : widget.post.userId),
                   ),
                 );
               },
@@ -343,7 +405,7 @@ class CustomThreadCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    post.author.username,
+                    widget.post.author.username,
                     style: GoogleFonts.hindSiliguri(
                       fontWeight: FontWeight.bold,
                       fontSize: 14.5,
@@ -363,7 +425,7 @@ class CustomThreadCard extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              post.createdAt,
+              widget.post.createdAt,
               style: GoogleFonts.outfit(
                 fontSize: 12.5,
                 color: context.textMuted,
@@ -385,26 +447,26 @@ class CustomThreadCard extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          post.content,
+          widget.post.content,
           style: GoogleFonts.hindSiliguri(
             fontSize: 14,
             color: context.textPrimary,
             height: 1.4,
           ),
         ),
-        if (post.imageUrls != null && post.imageUrls!.isNotEmpty) ...[
+        if (widget.post.imageUrls != null && widget.post.imageUrls!.isNotEmpty) ...[
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
             child: Image.network(
-              post.imageUrls!.first,
+              widget.post.imageUrls!.first,
               height: 200,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
           ),
         ],
-        if (post.videoUrl != null && post.videoUrl!.isNotEmpty) ...[
+        if (widget.post.videoUrl != null && widget.post.videoUrl!.isNotEmpty) ...[
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () => _sharePost(context),
@@ -434,7 +496,7 @@ class CustomThreadCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     color: Colors.black54,
                     child: Text(
-                      post.videoUrl!,
+                      widget.post.videoUrl!,
                       style: const TextStyle(color: Colors.white, fontSize: 10),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -452,17 +514,18 @@ class CustomThreadCard extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               onTap: () {
                 HapticFeedback.lightImpact();
-                dbService.toggleLike(post.id, !post.isLikedByMe);
+                dbService.toggleLike(widget.post.id, !widget.post.isLikedByMe);
               },
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 transitionBuilder: (child, animation) =>
                     ScaleTransition(scale: animation, child: child),
-                child: post.isLikedByMe
-                    ? Text(
-                        post.reactionType ?? '❤️',
-                        key: ValueKey<String>(post.reactionType ?? '❤️'),
-                        style: const TextStyle(fontSize: 18),
+                child: widget.post.isLikedByMe
+                    ? Icon(
+                        Icons.favorite,
+                        key: const ValueKey<int>(1),
+                        color: Colors.red,
+                        size: 20,
                       )
                     : Icon(
                         Icons.favorite_border,
@@ -477,7 +540,7 @@ class CustomThreadCard extends StatelessWidget {
               onTap: () => _showCommentsBottomSheet(context),
               behavior: HitTestBehavior.opaque,
               child: Icon(
-                Icons.chat_bubble_outline,
+                Icons.chat_bubble_outline_rounded,
                 color: context.textSecondary,
                 size: 20,
               ),
@@ -485,7 +548,7 @@ class CustomThreadCard extends StatelessWidget {
             const SizedBox(width: 20),
             GestureDetector(
               onTap: () async {
-                final success = await dbService.repostThread(post.id);
+                final success = await dbService.repostThread(widget.post.id);
                 if (success && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Post status updated")),
@@ -494,7 +557,7 @@ class CustomThreadCard extends StatelessWidget {
               },
               behavior: HitTestBehavior.opaque,
               child: Icon(
-                Icons.repeat,
+                Icons.repeat_rounded,
                 color: context.textSecondary,
                 size: 20,
               ),
@@ -508,9 +571,30 @@ class CustomThreadCard extends StatelessWidget {
                 size: 20,
               ),
             ),
+            const SizedBox(width: 20),
+            GestureDetector(
+              onTap: () {
+                dbService.toggleSaveThread(widget.post.id);
+                final isSaved = dbService.isSaved(widget.post.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isSaved ? "পোস্টটি সেভ করা হয়েছে" : "সেভ থেকে রিমুভ করা হয়েছে",
+                      style: GoogleFonts.hindSiliguri(),
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+              child: Icon(
+                dbService.isSaved(widget.post.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
+                color: dbService.isSaved(widget.post.id) ? const Color(0xFF1E824C) : context.textSecondary,
+                size: 20,
+              ),
+            ),
           ],
         ),
-        if (post.repliesCount > 0 || post.likesCount > 0) ...[
+        if (widget.post.repliesCount > 0 || widget.post.likesCount > 0) ...[
           const SizedBox(height: 8),
           Text(
             _buildCombinedStatsString(),
@@ -526,8 +610,8 @@ class CustomThreadCard extends StatelessWidget {
   }
 
   String _buildCombinedStatsString() {
-    final repCount = post.repliesCount;
-    final lkCount = post.likesCount;
+    final repCount = widget.post.repliesCount;
+    final lkCount = widget.post.likesCount;
     if (repCount > 0 && lkCount > 0) {
       return "$repCount ${repCount == 1 ? 'reply' : 'replies'} · $lkCount ${lkCount == 1 ? 'like' : 'likes'}";
     } else if (repCount > 0) {

@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import 'messenger/messenger_home_screen.dart';
 import 'settings/settings_screen.dart';
+import 'saved_posts_screen.dart';
 import '../utils/app_theme.dart';
 
 class MainScreen extends StatefulWidget {
@@ -742,7 +743,10 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                             isActive: false,
                             onTap: () {
                               Navigator.pop(context);
-                              _showMockFeatureDialog(context, "Saved");
+                              Navigator.push(
+                                context,
+                                NoTransitionPageRoute(child: const SavedPostsScreen()),
+                              );
                             },
                           ),
                           _buildDrawerItem(
