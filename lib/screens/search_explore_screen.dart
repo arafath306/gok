@@ -126,7 +126,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                     children: [
                       Text(
                         user.username,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                           color: context.textPrimary,
@@ -250,7 +250,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 onSubmitted: (val) {
                   _addToHistory(val);
                 },
-                style: GoogleFonts.outfit(color: context.textPrimary, fontSize: 14),
+                style: GoogleFonts.inter(color: context.textPrimary, fontSize: 14),
                 decoration: InputDecoration(
                   prefixIcon: Icon(Icons.search, color: context.textMuted, size: 20),
                   suffixIcon: isSearching

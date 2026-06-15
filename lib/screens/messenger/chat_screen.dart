@@ -100,7 +100,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   Text(
                     "@${widget.otherUser.username}",
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 11.5,
                       color: context.textMuted,
                     ),
@@ -204,7 +204,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               alignment: Alignment.bottomRight,
                               child: Text(
                                 msg["time"] as String,
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.inter(
                                   fontSize: 10,
                                   color: isMe ? Colors.white60 : context.textMuted,
                                 ),

@@ -75,7 +75,7 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
         ),
         title: Text(
           'New Chat',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -157,7 +157,7 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                             ),
                             subtitle: Text(
                               "@${user.username}",
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.inter(
                                 fontSize: 12.5,
                                 color: context.textSecondary,
                               ),
@@ -183,7 +183,7 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                                     ),
                                     child: Text(
                                       "Message",
-                                      style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold),
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
                                     ),
                                   )
                                 : ElevatedButton(
@@ -214,7 +214,7 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                                     ),
                                     child: Text(
                                       hasSentRequest ? "Requested" : "Follow Request",
-                                      style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold),
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                           );

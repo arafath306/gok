@@ -36,7 +36,7 @@ class SettingsScreen extends StatelessWidget {
         ),
         title: Text(
           'Settings',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -87,7 +87,7 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         Text(
                           myProfile?.fullName ?? 'User',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             color: context.textPrimary,
@@ -96,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           '@${myProfile?.username ?? 'username'}',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
                             color: context.textSecondary,
                           ),
@@ -181,7 +181,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   title: Text(
                     'Dark Theme',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w500,
                       color: context.textPrimary,
                       fontSize: 14.5,
@@ -282,7 +282,7 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Log Out',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       color: Colors.redAccent,
                       fontSize: 15,
@@ -303,7 +303,7 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.inter(
           fontSize: 11.5,
           fontWeight: FontWeight.bold,
           color: context.textSecondary,
@@ -332,7 +332,7 @@ class SettingsScreen extends StatelessWidget {
             leading: Icon(tile.icon, color: context.textPrimary, size: 22),
             title: Text(
               tile.title,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontWeight: FontWeight.w500,
                 color: context.textPrimary,
                 fontSize: 14.5,
@@ -354,21 +354,21 @@ class SettingsScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Log Out',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
             color: context.textPrimary,
           ),
         ),
         content: Text(
           'Are you sure you want to log out?',
-          style: GoogleFonts.outfit(color: context.textSecondary),
+          style: GoogleFonts.inter(color: context.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Cancel',
-              style: GoogleFonts.outfit(color: context.textSecondary),
+              style: GoogleFonts.inter(color: context.textSecondary),
             ),
           ),
           ElevatedButton(
@@ -383,7 +383,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             child: Text(
               'Log Out',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),

@@ -96,7 +96,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                     children: [
                       Text(
                         event['title'] as String,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.bold,
                           fontSize: 14.5,
                           color: context.textPrimary,
@@ -156,18 +156,18 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           "$feature coming soon!",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Text(
           "We are actively working on building the $feature feature to match the complete social media experience. Stay tuned!",
-          style: GoogleFonts.outfit(color: context.textSecondary),
+          style: GoogleFonts.inter(color: context.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               "Dismiss",
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
             ),
           ),
         ],
@@ -185,7 +185,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           "Submit Feedback",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -193,16 +193,16 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           children: [
             Text(
               "Let us know your thoughts or report any issues:",
-              style: GoogleFonts.outfit(color: context.textSecondary),
+              style: GoogleFonts.inter(color: context.textSecondary),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: feedbackController,
               maxLines: 3,
-              style: GoogleFonts.outfit(fontSize: 14, color: context.textPrimary),
+              style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
               decoration: InputDecoration(
                 hintText: "Enter your feedback...",
-                hintStyle: GoogleFonts.outfit(color: context.textMuted),
+                hintStyle: GoogleFonts.inter(color: context.textMuted),
                 filled: true,
                 fillColor: context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF3F4F6),
                 border: OutlineInputBorder(
@@ -219,7 +219,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             onPressed: () => Navigator.pop(context),
             child: Text(
               "Cancel",
-              style: GoogleFonts.outfit(color: context.textSecondary),
+              style: GoogleFonts.inter(color: context.textSecondary),
             ),
           ),
           ElevatedButton(
@@ -230,7 +230,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                   backgroundColor: const Color(0xFF1E824C),
                   content: Text(
                     "Thank you for your feedback!",
-                    style: GoogleFonts.outfit(color: Colors.white),
+                    style: GoogleFonts.inter(color: Colors.white),
                   ),
                 ),
               );
@@ -242,7 +242,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             ),
             child: Text(
               "Submit",
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
         ],
@@ -259,18 +259,18 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           "Help & Support",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Text(
           "Need help? Contact our support team at support@dak.social or check our online documentation.",
-          style: GoogleFonts.outfit(color: context.textSecondary),
+          style: GoogleFonts.inter(color: context.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               "Close",
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
             ),
           ),
         ],
@@ -294,7 +294,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             children: [
               Text(
                 title,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: context.textPrimary,
@@ -306,7 +306,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                   physics: const BouncingScrollPhysics(),
                   child: Text(
                     contentText,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 14,
                       color: context.textSecondary,
                       height: 1.5,
@@ -328,7 +328,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                   ),
                   child: Text(
                     "Accept",
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -370,7 +370,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             },
             child: Text(
               myProfile?.fullName ?? "Arafath",
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: context.textPrimary,
@@ -383,7 +383,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           const SizedBox(height: 2),
           Text(
             "@${myProfile?.username ?? 'arafath306'}.bsky.social",
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               fontSize: 14,
               color: context.textSecondary,
             ),
@@ -393,7 +393,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           const SizedBox(height: 12),
           RichText(
             text: TextSpan(
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 color: context.textSecondary,
               ),
@@ -463,7 +463,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
       ),
       title: Text(
         title,
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
           color: isActive ? context.primaryAccent : context.textPrimary,
@@ -492,7 +492,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             ),
             child: Text(
               "Terms of Service",
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 color: const Color(0xFF0085FF),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -512,7 +512,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             ),
             child: Text(
               "Privacy Policy",
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 color: const Color(0xFF0085FF),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -535,7 +535,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               icon: Icon(Icons.chat_bubble_outline_rounded, size: 16, color: context.textPrimary),
               label: Text(
                 "Feedback",
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                   color: context.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -561,7 +561,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               ),
               child: Text(
                 "Help",
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                   color: context.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

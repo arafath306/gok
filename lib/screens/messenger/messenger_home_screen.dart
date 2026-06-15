@@ -28,7 +28,7 @@ class MessengerHomeScreen extends StatelessWidget {
         titleSpacing: 0,
         title: Text(
           'Chats',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -80,7 +80,7 @@ class MessengerHomeScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         'Say hi to someone',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: context.textPrimary,
@@ -106,7 +106,7 @@ class MessengerHomeScreen extends StatelessWidget {
                         icon: const Icon(Icons.add_comment_rounded, size: 18),
                         label: Text(
                           'New chat',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             fontSize: 14.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -162,7 +162,7 @@ class MessengerHomeScreen extends StatelessWidget {
                         ),
                         Text(
                           time,
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             color: unreadCount > 0 ? context.primaryAccent : context.textMuted,
                             fontSize: 12,
                             fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,

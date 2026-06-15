@@ -154,7 +154,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         backgroundColor: const Color(0xFF1E293B),
         content: Text(
           message,
-          style: GoogleFonts.outfit(color: Colors.white),
+          style: GoogleFonts.inter(color: Colors.white),
         ),
       ),
     );
@@ -273,10 +273,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         onTap: onTap,
         readOnly: readOnly,
         onChanged: onChanged,
-        style: GoogleFonts.outfit(color: Colors.white, fontSize: 15),
+        style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.outfit(color: Colors.white38, fontSize: 14),
+          hintStyle: GoogleFonts.inter(color: Colors.white38, fontSize: 14),
           prefixIcon: Icon(prefixIcon, color: Colors.white38, size: 20),
           suffixIcon: suffixIcon,
           filled: true,
@@ -346,7 +346,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 children: [
                   Text(
                     label,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -372,7 +372,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       },
       child: Text(
         "G",
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.inter(
           fontWeight: FontWeight.w900,
           fontSize: 22,
           color: Colors.white,
@@ -402,7 +402,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   const SizedBox(width: 8),
                   Text(
                     "Google",
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -432,7 +432,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   const SizedBox(width: 8),
                   Text(
                     "Apple",
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -513,7 +513,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         const SizedBox(height: 4),
         Text(
           "Step $_signUpStep of 3",
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: Colors.white54,
@@ -542,7 +542,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ? const Icon(Icons.check, color: Colors.white, size: 16)
           : Text(
               "$step",
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 color: isCompleted || isActive ? Colors.white : Colors.white38,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
@@ -601,7 +601,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.only(bottom: 8, left: 4),
             child: Text(
               _usernameError!,
-              style: GoogleFonts.outfit(color: Colors.red[400], fontSize: 12),
+              style: GoogleFonts.inter(color: Colors.red[400], fontSize: 12),
             ),
           )
         else if (_usernameAvailable == true)
@@ -609,7 +609,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.only(bottom: 8, left: 4),
             child: Text(
               "Username is available",
-              style: GoogleFonts.outfit(color: Colors.green[400], fontSize: 12),
+              style: GoogleFonts.inter(color: Colors.green[400], fontSize: 12),
             ),
           ),
         _buildDarkTextField(
@@ -744,11 +744,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           child: Text.rich(
             TextSpan(
               text: "By creating an account, you agree to our\n",
-              style: GoogleFonts.outfit(color: Colors.white54, fontSize: 11, height: 1.4),
+              style: GoogleFonts.inter(color: Colors.white54, fontSize: 11, height: 1.4),
               children: [
                 TextSpan(
                   text: "Terms of Service",
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     color: const Color(0xFF8B5CF6),
                     decoration: TextDecoration.underline,
                   ),
@@ -756,7 +756,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 const TextSpan(text: " and "),
                 TextSpan(
                   text: "Privacy Policy",
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     color: const Color(0xFF8B5CF6),
                     decoration: TextDecoration.underline,
                   ),
@@ -785,7 +785,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       children: [
         Text(
           "Already have an account? ",
-          style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+          style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
         ),
         GestureDetector(
           onTap: () {
@@ -797,7 +797,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           },
           child: Text(
             "Login",
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               color: const Color(0xFF9B79FF),
               fontWeight: FontWeight.bold,
               fontSize: 13,
@@ -818,12 +818,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           children: [
             Text(
               label,
-              style: GoogleFonts.outfit(color: Colors.white38, fontSize: 11),
+              style: GoogleFonts.inter(color: Colors.white38, fontSize: 11),
             ),
             const SizedBox(height: 2),
             Text(
               value,
-              style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+              style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -852,7 +852,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           const SizedBox(height: 24),
           Text(
             "Congratulations!",
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF05D782),
@@ -862,7 +862,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           Text(
             "Your Dak account has been created successfully.\nPlease verify your email before logging in.",
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               fontSize: 14,
               color: Colors.white70,
               height: 1.4,
@@ -1049,9 +1049,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                         if (!_isSignUp || _signUpStep < 3) ...[
                           Text(
                             "Piagoan",
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.poppins(
                               fontSize: 24,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w800,
                               color: Colors.white,
                               letterSpacing: 0.5,
                             ),
@@ -1059,7 +1059,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           const SizedBox(height: 2),
                           Text(
                             "Messages. Moments. Together.",
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               color: Colors.white60,
                               letterSpacing: 0.4,
@@ -1073,7 +1073,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                         const SizedBox(height: 6),
                         Text(
                           "Create your account",
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF8B5CF6),
@@ -1087,7 +1087,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                               : _signUpStep == 2
                                   ? "Set a strong password to secure your account."
                                   : "Review your info and create your account.",
-                          style: GoogleFonts.outfit(fontSize: 13, color: Colors.white54),
+                          style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 6),
@@ -1107,7 +1107,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           ),
                           child: Text(
                             authService.errorMessage!,
-                            style: GoogleFonts.outfit(color: Colors.red[100], fontSize: 12),
+                            style: GoogleFonts.inter(color: Colors.red[100], fontSize: 12),
                           ),
                         ),
                     ],
@@ -1135,7 +1135,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                   children: [
                                     Text(
                                       "Welcome back! 👋",
-                                      style: GoogleFonts.outfit(
+                                      style: GoogleFonts.inter(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
                                         color: const Color(0xFF9B79FF),
@@ -1144,7 +1144,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                     const SizedBox(height: 4),
                                     Text(
                                       "Login to continue your journey",
-                                      style: GoogleFonts.outfit(fontSize: 13, color: Colors.white54),
+                                      style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
                                     ),
                                     const SizedBox(height: 16),
                                     _buildDarkTextField(
@@ -1185,7 +1185,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                         ),
                                         child: Text(
                                           "Forgot password?",
-                                          style: GoogleFonts.outfit(
+                                          style: GoogleFonts.inter(
                                             color: const Color(0xFF9B79FF),
                                             fontWeight: FontWeight.w600,
                                             fontSize: 13,
@@ -1208,7 +1208,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                           padding: const EdgeInsets.symmetric(horizontal: 12.0),
                                           child: Text(
                                             "or continue with",
-                                            style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
+                                            style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
                                           ),
                                         ),
                                         Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
@@ -1222,7 +1222,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                       children: [
                                         Text(
                                           "Don't have an account? ",
-                                          style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                                          style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
                                         ),
                                         GestureDetector(
                                           onTap: () {
@@ -1234,7 +1234,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                           },
                                           child: Text(
                                             "Register >",
-                                            style: GoogleFonts.outfit(
+                                            style: GoogleFonts.inter(
                                               color: const Color(0xFF9B79FF),
                                               fontWeight: FontWeight.bold,
                                               fontSize: 13,

@@ -21,7 +21,7 @@ class SavedThreadsScreen extends StatelessWidget {
         ),
         title: Text(
           'Saved Posts',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -44,7 +44,7 @@ class SavedThreadsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     'No saved posts yet',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: context.textPrimary,
@@ -53,7 +53,7 @@ class SavedThreadsScreen extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     'Save posts to read them later.',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 13.5,
                       color: context.textSecondary,
                     ),
@@ -103,7 +103,7 @@ class SavedThreadsScreen extends StatelessWidget {
                   children: [
                     Text(
                       thread['author_name'],
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
                         fontSize: 14.5,
                         color: context.textPrimary,
@@ -111,7 +111,7 @@ class SavedThreadsScreen extends StatelessWidget {
                     ),
                     Text(
                       '@${thread['author_username']}  ·  ${thread['time_ago']}',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.inter(
                         fontSize: 12.5,
                         color: context.textMuted,
                       ),
@@ -150,14 +150,14 @@ class SavedThreadsScreen extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${thread['likes']}',
-                style: GoogleFonts.outfit(fontSize: 12.5, color: context.textSecondary),
+                style: GoogleFonts.inter(fontSize: 12.5, color: context.textSecondary),
               ),
               const SizedBox(width: 16),
               Icon(Icons.chat_bubble_outline_rounded, size: 16, color: context.textMuted),
               const SizedBox(width: 4),
               Text(
                 '${thread['replies']}',
-                style: GoogleFonts.outfit(fontSize: 12.5, color: context.textSecondary),
+                style: GoogleFonts.inter(fontSize: 12.5, color: context.textSecondary),
               ),
             ],
           ),

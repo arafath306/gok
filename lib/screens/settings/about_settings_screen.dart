@@ -28,18 +28,18 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
             'Check for Updates',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
           ),
           content: Text(
             'You are on the latest premium release!\n\nVersion: 2.0.0-Beta\nBuild: 44 (Premium Edition)',
-            style: GoogleFonts.outfit(color: context.textSecondary),
+            style: GoogleFonts.inter(color: context.textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 'Great!',
-                style: GoogleFonts.outfit(color: context.primaryAccent, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(color: context.primaryAccent, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -62,7 +62,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
         ),
         title: Text(
           'About Dak',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -105,7 +105,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           Center(
             child: Text(
               'Dak Social',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: context.textPrimary,
@@ -115,7 +115,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           Center(
             child: Text(
               'Version 2.0.0 (Beta-44)',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 13,
                 color: context.textMuted,
               ),
@@ -136,7 +136,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               children: [
                 Text(
                   'Our Vision',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: context.textPrimary,
@@ -145,7 +145,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Dak is engineered to redefine social media networks. With direct message filters, decentralized architectures, high-fidelity layouts, and a zero-clutter experience, we aim to outshine Twitter and Bluesky in performance, utility, and visual excellence.',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
                     color: context.textSecondary,
                     height: 1.5,
@@ -219,7 +219,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
       leading: Icon(icon, color: context.textSecondary, size: 20),
       title: Text(
         title,
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.inter(
           fontWeight: FontWeight.w500,
           color: context.textPrimary,
           fontSize: 14.5,
@@ -238,12 +238,12 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           title,
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: SingleChildScrollView(
           child: Text(
             content,
-            style: GoogleFonts.outfit(color: context.textSecondary, height: 1.45),
+            style: GoogleFonts.inter(color: context.textSecondary, height: 1.45),
           ),
         ),
         actions: [
@@ -251,7 +251,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Close',
-              style: GoogleFonts.outfit(color: context.primaryAccent, fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(color: context.primaryAccent, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -293,7 +293,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               const SizedBox(height: 20),
               Text(
                 'Open Source Licenses',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                   color: context.textPrimary,
@@ -313,12 +313,12 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                         children: [
                           Text(
                             item['package']!,
-                            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14.5, color: context.textPrimary),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14.5, color: context.textPrimary),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             item['desc']!,
-                            style: GoogleFonts.outfit(fontSize: 12.5, color: context.textSecondary),
+                            style: GoogleFonts.inter(fontSize: 12.5, color: context.textSecondary),
                           ),
                         ],
                       ),

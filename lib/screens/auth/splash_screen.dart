@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -34,14 +35,13 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             // App Name
-            const Text(
+            Text(
               'Pigeon',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 32,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
-                color: Color(0xFF1E824C),
-                fontFamily: 'Outfit',
+                color: const Color(0xFF7C4DFF),
               ),
             ),
             const Spacer(),

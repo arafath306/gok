@@ -37,7 +37,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         ),
         title: Text(
           'Privacy Settings',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -149,7 +149,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: context.textSecondary,
@@ -178,7 +178,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                     color: context.textPrimary,
@@ -187,7 +187,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 12.5,
                     color: context.textMuted,
                   ),
@@ -222,7 +222,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         title: Text(
           title,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             fontSize: 15,
             color: context.textPrimary,
@@ -230,7 +230,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontSize: 12.5,
             color: context.textMuted,
           ),
@@ -254,7 +254,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         title: Text(
           title,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             fontSize: 15,
             color: context.textPrimary,
@@ -262,7 +262,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontSize: 12.5,
             color: context.primaryAccent,
             fontWeight: FontWeight.w500,
@@ -303,7 +303,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   const SizedBox(height: 20),
                   Text(
                     'Who can mention you',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                       color: context.textPrimary,
@@ -336,7 +336,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           children: [
             Text(
               label,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 15,
                 color: context.textPrimary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

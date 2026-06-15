@@ -417,7 +417,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             const Spacer(),
             Text(
               widget.post.createdAt,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 12.5,
                 color: context.textMuted,
               ),
@@ -594,7 +594,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           const SizedBox(height: 8),
           Text(
             _buildCombinedStatsString(),
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               fontSize: 12.5,
               color: context.textMuted,
               fontWeight: FontWeight.w400,
@@ -700,7 +700,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -877,7 +877,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
               Expanded(
                 child: Text(
                   item.label,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: color,
@@ -898,17 +898,17 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Block @$username?',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         content: Text(
           'They will not be able to follow you, see your posts, or contact you on Dak.',
-          style: GoogleFonts.outfit(fontSize: 14, color: context.textSecondary, height: 1.4),
+          style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text('Cancel',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                     color: Colors.grey[600], fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
@@ -930,7 +930,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                   borderRadius: BorderRadius.circular(10)),
             ),
             child: Text('Block',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -976,7 +976,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Report post',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                     color: context.textPrimary,
@@ -988,7 +988,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Why are you reporting this post?',
-                  style: GoogleFonts.outfit(fontSize: 13, color: context.textSecondary),
+                  style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1015,7 +1015,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                             Expanded(
                               child: Text(
                                 reason,
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.inter(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
                                   color: context.textPrimary,
@@ -1125,7 +1125,7 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -1145,17 +1145,17 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Delete Post?',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         content: Text(
           'This action is permanent and cannot be undone.',
-          style: GoogleFonts.outfit(fontSize: 14, color: Colors.black54, height: 1.4),
+          style: GoogleFonts.inter(fontSize: 14, color: Colors.black54, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text('Cancel',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                     color: Colors.grey[600], fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
@@ -1175,7 +1175,7 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
                   borderRadius: BorderRadius.circular(10)),
             ),
             child: Text('Delete',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1208,7 +1208,7 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
                   children: [
                     Text(
                       "Edit Post",
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                         color: context.textPrimary,
@@ -1271,7 +1271,7 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
                     ),
                     child: Text(
                       "Save Changes",
-                      style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ),
                 ),
@@ -1430,7 +1430,7 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
               Expanded(
                 child: Text(
                   item.label,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: color,
@@ -1525,7 +1525,7 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                 children: [
                   Text(
                     "Hide Post From",
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                       color: context.textPrimary,
@@ -1546,7 +1546,7 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                     },
                     child: Text(
                       "Save",
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E824C),
                         fontSize: 16,
@@ -1562,10 +1562,10 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: TextField(
                 onChanged: _filterFriends,
-                style: GoogleFonts.outfit(color: context.textPrimary),
+                style: GoogleFonts.inter(color: context.textPrimary),
                 decoration: InputDecoration(
                   hintText: "Search friends...",
-                  hintStyle: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
+                  hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                   prefixIcon: Icon(Icons.search, color: context.textMuted, size: 20),
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   filled: true,
@@ -1584,7 +1584,7 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                       ? Center(
                           child: Text(
                             _searchQuery.isEmpty ? "You are not following any friends yet" : "No friends found matching '$_searchQuery'",
-                            style: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
+                            style: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                             textAlign: TextAlign.center,
                           ),
                         )
@@ -1620,7 +1620,7 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                               ),
                               subtitle: Text(
                                 "@${friend.username}",
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.inter(
                                   color: context.textSecondary,
                                   fontSize: 12,
                                 ),

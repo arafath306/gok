@@ -77,7 +77,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
         ),
         title: Text(
           'Blocked Accounts',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -107,7 +107,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                         controller: _controller,
                         decoration: InputDecoration(
                           hintText: 'Enter name or @username to block...',
-                          hintStyle: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
+                          hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                           filled: true,
                           fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
                           border: OutlineInputBorder(
@@ -116,7 +116,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         ),
-                        style: GoogleFonts.outfit(fontSize: 14, color: context.textPrimary),
+                        style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
                         onSubmitted: (_) => _blockNewUser(provider),
                       ),
                     ),
@@ -131,7 +131,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                       ),
                       child: Text(
                         'Block',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           fontSize: 14,
@@ -159,7 +159,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                 const SizedBox(height: 16),
                                 Text(
                                   'No blocked accounts',
-                                  style: GoogleFonts.outfit(
+                                  style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     color: context.textSecondary,
@@ -190,7 +190,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                         children: [
                                           Text(
                                             user['name']!,
-                                            style: GoogleFonts.outfit(
+                                            style: GoogleFonts.inter(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 14.5,
                                               color: context.textPrimary,
@@ -198,7 +198,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                           ),
                                           Text(
                                             '@${user['username']!}',
-                                            style: GoogleFonts.outfit(
+                                            style: GoogleFonts.inter(
                                               fontSize: 12.5,
                                               color: context.textMuted,
                                             ),
@@ -224,7 +224,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                       ),
                                       child: Text(
                                         'Unblock',
-                                        style: GoogleFonts.outfit(
+                                        style: GoogleFonts.inter(
                                           color: context.textPrimary,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,

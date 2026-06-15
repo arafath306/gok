@@ -21,7 +21,7 @@ class ChatSettingsScreen extends StatelessWidget {
         ),
         title: Text(
           'Chat Settings',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -42,7 +42,7 @@ class ChatSettingsScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
                   'Allow direct messages from',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: context.textPrimary,
@@ -54,7 +54,7 @@ class ChatSettingsScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
                   'You can continue ongoing conversations regardless of which setting you choose.',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 14,
                     color: context.textSecondary,
                     height: 1.3,
@@ -97,7 +97,7 @@ class ChatSettingsScreen extends StatelessWidget {
                 leading: Icon(Icons.notifications_none_outlined, color: context.textPrimary, size: 24),
                 title: Text(
                   'Notification sounds',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
                     color: context.textPrimary,
@@ -121,7 +121,7 @@ class ChatSettingsScreen extends StatelessWidget {
                 leading: Icon(Icons.archive_outlined, color: context.textPrimary, size: 24),
                 title: Text(
                   'Export my chat data',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
                     color: context.textPrimary,
@@ -172,7 +172,7 @@ class ChatSettingsScreen extends StatelessWidget {
             const SizedBox(width: 16),
             Text(
               title,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 15.5,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: context.textPrimary,
@@ -192,18 +192,18 @@ class ChatSettingsScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Export Chat Data',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: context.textPrimary),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Text(
           'Your chat data export has been requested. We will prepare the download and notify you soon.',
-          style: GoogleFonts.outfit(color: context.textSecondary),
+          style: GoogleFonts.inter(color: context.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'OK',
-              style: GoogleFonts.outfit(color: const Color(0xFF0085FF), fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(color: const Color(0xFF0085FF), fontWeight: FontWeight.bold),
             ),
           ),
         ],

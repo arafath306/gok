@@ -234,7 +234,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                             children: [
                               Text(
                                 "$balance",
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.inter(
                                   fontSize: 34,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -415,7 +415,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                   ),
                   trailing: Text(
                     "${isIn ? '+' : '-'}${tx['amount']}",
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: isIn 
@@ -509,7 +509,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
           children: [
             Text(
               "$balance",
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
                 color: context.textPrimary,
@@ -968,7 +968,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                     borderSide: const BorderSide(color: Color(0xFF006A4E), width: 1.5),
                   ),
                 ),
-                style: GoogleFonts.outfit(fontSize: 14, letterSpacing: 1.0, color: context.textPrimary),
+                style: GoogleFonts.inter(fontSize: 14, letterSpacing: 1.0, color: context.textPrimary),
               ),
 
               const SizedBox(height: 16),
@@ -991,7 +991,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                 ),
                 child: Text(
                   "$_selectedCoinsPack ৳",
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: context.textPrimary,
@@ -1077,7 +1077,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
             backgroundColor: context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE6F0EC),
             child: Text(
               _toBengaliNumber(stepNo),
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: context.isDarkMode ? const Color(0xFF2ECC71) : const Color(0xFF006A4E),
@@ -1345,7 +1345,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                             const SizedBox(height: 2),
                             Text(
                               tx["id"] as String,
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.inter(
                                 fontSize: 10,
                                 color: context.textMuted,
                               ),
@@ -1355,7 +1355,7 @@ class _DakCoinScreenState extends State<DakCoinScreen> {
                       ),
                       Text(
                         "${isIn ? '+' : '-'}${tx['amount']}",
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.inter(
                           fontSize: 14.5,
                           fontWeight: FontWeight.bold,
                           color: isIn 

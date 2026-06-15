@@ -21,7 +21,7 @@ class SecuritySettingsScreen extends StatelessWidget {
         ),
         title: Text(
           'Security',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -69,7 +69,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     'No other active sessions found.',
-                    style: GoogleFonts.outfit(color: context.textMuted, fontSize: 14),
+                    style: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                   ),
                 )
               else
@@ -86,7 +86,7 @@ class SecuritySettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: context.textSecondary,
@@ -115,7 +115,7 @@ class SecuritySettingsScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                     color: context.textPrimary,
@@ -124,7 +124,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 12.5,
                     color: context.textMuted,
                   ),
@@ -159,7 +159,7 @@ class SecuritySettingsScreen extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         title: Text(
           title,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             fontSize: 15,
             color: context.textPrimary,
@@ -167,7 +167,7 @@ class SecuritySettingsScreen extends StatelessWidget {
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontSize: 12.5,
             color: context.textMuted,
           ),
@@ -202,7 +202,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       session['device']!,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
                         fontSize: 14.5,
                         color: context.textPrimary,
@@ -218,7 +218,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                         ),
                         child: Text(
                           'Current',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             color: context.primaryAccent,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -231,7 +231,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${session['location']}  ·  ${session['status']}',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 12.5,
                     color: context.textMuted,
                   ),
@@ -252,7 +252,7 @@ class SecuritySettingsScreen extends StatelessWidget {
               },
               child: Text(
                 'Revoke',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                   color: Colors.redAccent,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
@@ -296,7 +296,7 @@ class SecuritySettingsScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 'Change Password',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                   color: context.textPrimary,
@@ -347,7 +347,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                   ),
                   child: Text(
                     'Update Password',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                       color: Colors.white,
@@ -368,7 +368,7 @@ class SecuritySettingsScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: context.textSecondary,
@@ -387,7 +387,7 @@ class SecuritySettingsScreen extends StatelessWidget {
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
-          style: GoogleFonts.outfit(fontSize: 14, color: context.textPrimary),
+          style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
         ),
       ],
     );

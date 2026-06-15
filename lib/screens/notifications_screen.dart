@@ -40,7 +40,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           title: Text(
             "Notifications",
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               color: context.textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -57,7 +57,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         onPressed: () => dbService.markAllNotificationsRead(),
                         child: Text(
                           'Mark all',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             color: const Color(0xFF0085FF),
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
@@ -82,11 +82,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             indicatorWeight: 2,
             labelColor: context.textPrimary,
             unselectedLabelColor: context.textMuted,
-            labelStyle: GoogleFonts.outfit(
+            labelStyle: GoogleFonts.inter(
               fontWeight: FontWeight.bold,
               fontSize: 15,
             ),
-            unselectedLabelStyle: GoogleFonts.outfit(
+            unselectedLabelStyle: GoogleFonts.inter(
               fontWeight: FontWeight.normal,
               fontSize: 15,
             ),
@@ -127,7 +127,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 16),
             Text(
               "No notifications yet!",
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 color: context.textSecondary,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -167,7 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
                 title: RichText(
                   text: TextSpan(
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 14,
                       color: context.textPrimary,
                     ),
@@ -184,7 +184,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(
                     item.createdAt,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 11,
                       color: context.textMuted,
                     ),

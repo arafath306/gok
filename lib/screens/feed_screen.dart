@@ -96,7 +96,7 @@ class _FeedScreenState extends State<FeedScreen> {
                             children: [
                               Text(
                                 _tabs[index],
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.inter(
                                   fontSize: 15,
                                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                   color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,

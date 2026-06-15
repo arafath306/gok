@@ -136,7 +136,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
               children: [
                 Text(
                   "Comments",
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
                     color: Colors.black,
@@ -161,7 +161,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                   value: _sortBy,
                   underline: const SizedBox(),
                   icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.black87),
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     color: Colors.black87,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -274,7 +274,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                           const SizedBox(width: 4),
                                           Text(
                                             "@${author.username} · ${comment['created_at']}",
-                                            style: GoogleFonts.outfit(
+                                            style: GoogleFonts.inter(
                                               fontSize: 12.5,
                                               color: Colors.grey[500],
                                             ),
@@ -289,7 +289,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               ),
                                               child: Text(
                                                 "Author",
-                                                style: GoogleFonts.outfit(
+                                                style: GoogleFonts.inter(
                                                   color: const Color(0xFF1E824C),
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.bold,
@@ -331,7 +331,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   "${comment['replies_count'] ?? 0}",
-                                                  style: GoogleFonts.outfit(
+                                                  style: GoogleFonts.inter(
                                                     fontSize: 13, 
                                                     fontWeight: FontWeight.w500,
                                                     color: Colors.black54,
@@ -377,7 +377,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                             },
                                             child: Text(
                                               "Reply",
-                                              style: GoogleFonts.outfit(
+                                              style: GoogleFonts.inter(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
                                                 color: Colors.black54,
@@ -402,7 +402,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               const SizedBox(width: 6),
                                               Text(
                                                 "View 2 more replies",
-                                                style: GoogleFonts.outfit(
+                                                style: GoogleFonts.inter(
                                                   color: const Color(0xFF1E824C),
                                                   fontSize: 13,
                                                   fontWeight: FontWeight.w700,
@@ -460,7 +460,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                               style: GoogleFonts.hindSiliguri(fontSize: 14),
                               decoration: InputDecoration(
                                 hintText: "Write a comment...",
-                                hintStyle: GoogleFonts.outfit(color: Colors.black38, fontSize: 14),
+                                hintStyle: GoogleFonts.inter(color: Colors.black38, fontSize: 14),
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -601,7 +601,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -755,7 +755,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
               Expanded(
                 child: Text(
                   item.label,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: color,
@@ -776,17 +776,17 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Block @$username?',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         content: Text(
           'They will not be able to follow you, see your posts, or contact you on Dak.',
-          style: GoogleFonts.outfit(fontSize: 14, color: Colors.black54, height: 1.4),
+          style: GoogleFonts.inter(fontSize: 14, color: Colors.black54, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text('Cancel',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                     color: Colors.grey[600], fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
@@ -802,7 +802,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                   borderRadius: BorderRadius.circular(10)),
             ),
             child: Text('Block',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -848,7 +848,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Report comment',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                     color: Colors.black,
@@ -860,7 +860,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Why are you reporting this comment?',
-                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[500]),
+                  style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[500]),
                 ),
               ),
               const SizedBox(height: 12),
@@ -886,7 +886,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                             Expanded(
                               child: Text(
                                 reason,
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.inter(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black87,

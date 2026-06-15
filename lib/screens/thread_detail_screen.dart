@@ -417,7 +417,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                         const SizedBox(width: 4),
                                         Text(
                                           "@${author.username} · ${_formatTime(comment['created_at'] ?? '')}",
-                                          style: GoogleFonts.outfit(
+                                          style: GoogleFonts.inter(
                                             fontSize: 12.5,
                                             color: context.textSecondary,
                                           ),
@@ -432,7 +432,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                             ),
                                             child: Text(
                                               "Author",
-                                              style: GoogleFonts.outfit(
+                                              style: GoogleFonts.inter(
                                                 color: const Color(0xFF1E824C),
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
@@ -511,7 +511,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                             const SizedBox(width: 6),
                                             Text(
                                               "View 2 more replies",
-                                              style: GoogleFonts.outfit(
+                                              style: GoogleFonts.inter(
                                                 color: const Color(0xFF1E824C),
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w700,
@@ -642,7 +642,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
         ),
         child: Text(
           isFollowing ? 'Following' : 'Follow',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontSize: 11.5,
             fontWeight: FontWeight.bold,
             color: isFollowing 

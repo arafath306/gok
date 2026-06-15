@@ -981,7 +981,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             children: [
               Text(
                 "$_charCount/500",
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.inter(
                   fontSize: 12,
                   color: _charCount > 500 ? Colors.red : context.textSecondary,
                   fontWeight: FontWeight.w600,

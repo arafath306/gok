@@ -138,7 +138,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         backgroundColor: const Color(0xFF1E293B),
         content: Text(
           message,
-          style: GoogleFonts.outfit(color: Colors.white),
+          style: GoogleFonts.inter(color: Colors.white),
         ),
       ),
     );
@@ -188,10 +188,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         keyboardType: keyboardType,
         onTap: onTap,
         readOnly: readOnly,
-        style: GoogleFonts.outfit(color: Colors.white, fontSize: 15),
+        style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.outfit(color: Colors.white38, fontSize: 14),
+          hintStyle: GoogleFonts.inter(color: Colors.white38, fontSize: 14),
           prefixIcon: Icon(prefixIcon, color: Colors.white38, size: 20),
           suffixIcon: suffixIcon,
           filled: true,
@@ -261,7 +261,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                 children: [
                   Text(
                     label,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -339,7 +339,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         const SizedBox(height: 4),
         Text(
           "Step $_step of 3",
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: Colors.white54,
@@ -366,7 +366,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           ? const Icon(Icons.check, color: Colors.white, size: 16)
           : Text(
               "$step",
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 color: isCompleted || isActive ? Colors.white : Colors.white38,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
@@ -417,7 +417,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       children: [
         Text(
           "We sent a 6-digit recovery code to ${_emailController.text}. Please check your email inbox or spam.",
-          style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70, height: 1.4),
+          style: GoogleFonts.inter(fontSize: 12, color: Colors.white70, height: 1.4),
         ),
         const SizedBox(height: 14),
         _buildDarkTextField(
@@ -442,7 +442,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
               child: Text(
                 "< Edit Email",
-                style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
               ),
             ),
             TextButton(
@@ -450,7 +450,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
               child: Text(
                 "Resend Code",
-                style: GoogleFonts.outfit(color: const Color(0xFF9B79FF), fontSize: 13),
+                style: GoogleFonts.inter(color: const Color(0xFF9B79FF), fontSize: 13),
               ),
             ),
           ],
@@ -525,7 +525,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           const SizedBox(height: 24),
           Text(
             "Success!",
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF05D782),
@@ -535,7 +535,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           Text(
             "Your password has been reset successfully.\nYou can now login with your new password.",
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               fontSize: 14,
               color: Colors.white70,
               height: 1.4,
@@ -559,7 +559,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       children: [
         Text(
           "Remembered password? ",
-          style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+          style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
         ),
         GestureDetector(
           onTap: () {
@@ -567,7 +567,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           },
           child: Text(
             "Login",
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               color: const Color(0xFF9B79FF),
               fontWeight: FontWeight.bold,
               fontSize: 13,
@@ -725,9 +725,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                         const SizedBox(height: 4),
                         Text(
                           "Piagoan",
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.poppins(
                             fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w800,
                             color: Colors.white,
                             letterSpacing: 0.5,
                           ),
@@ -735,7 +735,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                         const SizedBox(height: 2),
                         Text(
                           "Messages. Moments. Together.",
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             color: Colors.white60,
                             letterSpacing: 0.4,
@@ -748,7 +748,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                         const SizedBox(height: 6),
                         Text(
                           "Reset Password",
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF8B5CF6),
@@ -762,7 +762,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                               : _step == 2
                                   ? "Enter the code sent to your email"
                                   : "Type your new strong password",
-                          style: GoogleFonts.outfit(fontSize: 13, color: Colors.white54),
+                          style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 6),
@@ -782,7 +782,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                           ),
                           child: Text(
                             authService.errorMessage!,
-                            style: GoogleFonts.outfit(color: Colors.red[100], fontSize: 12),
+                            style: GoogleFonts.inter(color: Colors.red[100], fontSize: 12),
                           ),
                         ),
                     ],

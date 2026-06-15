@@ -21,7 +21,7 @@ class NotificationSettingsScreen extends StatelessWidget {
         ),
         title: Text(
           'Notifications',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -86,7 +86,7 @@ class _NotifSettingTile extends StatelessWidget {
                   const SizedBox(height: 20),
                   Text(
                     item.title,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                       color: context.textPrimary,
@@ -117,7 +117,7 @@ class _NotifSettingTile extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       'From',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                         color: context.textSecondary,
@@ -146,7 +146,7 @@ class _NotifSettingTile extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.inter(
               fontSize: 15,
               color: context.textPrimary,
             ),
@@ -178,7 +178,7 @@ class _NotifSettingTile extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.inter(
                 fontSize: 15,
                 color: context.textPrimary,
               ),
@@ -207,7 +207,7 @@ class _NotifSettingTile extends StatelessWidget {
                 children: [
                   Text(
                     item.title,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w500,
                       fontSize: 15,
                       color: context.textPrimary,
@@ -216,7 +216,7 @@ class _NotifSettingTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     item.subtext,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       color: context.textMuted,
                     ),
