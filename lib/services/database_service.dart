@@ -33,17 +33,96 @@ class DatabaseService with ChangeNotifier {
   Set<String> _savedThreadIds = {};
   Set<String> get savedThreadIds => _savedThreadIds;
 
+  List<ThreadPost> _savedPosts = [];
+  List<ThreadPost> get savedPosts => _savedPosts;
+
   bool isBlocked(String targetUserId) => _blockedUserIds.contains(targetUserId);
   bool isMuted(String targetUserId) => _mutedUserIds.contains(targetUserId);
   bool isSaved(String threadId) => _savedThreadIds.contains(threadId);
 
-  void toggleSaveThread(String threadId) {
-    if (_savedThreadIds.contains(threadId)) {
+  Future<void> toggleSaveThread(String threadId) async {
+    final wasAlreadySaved = _savedThreadIds.contains(threadId);
+    // Optimistic update
+    if (wasAlreadySaved) {
       _savedThreadIds.remove(threadId);
+      _savedPosts.removeWhere((p) => p.id == threadId);
     } else {
       _savedThreadIds.add(threadId);
     }
     notifyListeners();
+
+    if (_currentUid.isEmpty) return;
+    try {
+      if (wasAlreadySaved) {
+        await _supabase
+            .from('saved_posts')
+            .delete()
+            .eq('user_id', _currentUid)
+            .eq('thread_id', threadId);
+      } else {
+        await _supabase.from('saved_posts').upsert({
+          'user_id': _currentUid,
+          'thread_id': threadId,
+        });
+        // Fetch that post and add to savedPosts
+        await fetchSavedPosts();
+      }
+    } catch (e) {
+      debugPrint('Toggle save thread error: $e');
+      // Rollback optimistic update
+      if (wasAlreadySaved) {
+        _savedThreadIds.add(threadId);
+      } else {
+        _savedThreadIds.remove(threadId);
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchSavedThreadIds() async {
+    if (_currentUid.isEmpty) return;
+    try {
+      final response = await _supabase
+          .from('saved_posts')
+          .select('thread_id')
+          .eq('user_id', _currentUid);
+      final List<dynamic> data = response as List<dynamic>;
+      _savedThreadIds = data.map((json) => json['thread_id'] as String).toSet();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Fetch saved thread ids error: $e');
+    }
+  }
+
+  Future<void> fetchSavedPosts() async {
+    if (_currentUid.isEmpty) return;
+    try {
+      final response = await _supabase
+          .from('saved_posts')
+          .select('thread_id, threads(*, profiles(*), likes(user_id), thread_hides(user_id))')
+          .eq('user_id', _currentUid)
+          .order('created_at', ascending: false);
+      final List<dynamic> data = response as List<dynamic>;
+      final List<ThreadPost> posts = [];
+      for (final row in data) {
+        final threadMap = row['threads'] as Map<String, dynamic>?;
+        if (threadMap != null) {
+          try {
+            posts.add(ThreadPost.fromJson(threadMap, currentUid: _currentUid));
+          } catch (e) {
+            debugPrint('Error parsing saved post: $e');
+          }
+        }
+      }
+      _savedPosts = posts;
+      _savedThreadIds = posts.map((p) => p.id).toSet();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Fetch saved posts error: $e');
+      // Fallback: filter from feed
+      _savedPosts = _feed.where((p) => _savedThreadIds.contains(p.id)).toList();
+      notifyListeners();
+    }
   }
 
   bool _isLoading = false;
@@ -114,6 +193,8 @@ class DatabaseService with ChangeNotifier {
     fetchFeed();
     fetchNotifications();
     fetchUnreadCounts();
+    fetchSavedThreadIds();
+    fetchSavedPosts();
     subscribeToRealtime();
   }
 
@@ -125,6 +206,8 @@ class DatabaseService with ChangeNotifier {
     _followingIds = {};
     _blockedUserIds = {};
     _mutedUserIds = {};
+    _savedThreadIds = {};
+    _savedPosts = [];
     unsubscribeRealtime();
     notifyListeners();
   }

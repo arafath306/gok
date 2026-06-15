@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
+import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../services/general_settings_provider.dart';
 import '../screens/thread_detail_screen.dart';
@@ -573,18 +574,23 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
             const SizedBox(width: 20),
             GestureDetector(
-              onTap: () {
-                dbService.toggleSaveThread(widget.post.id);
-                final isSaved = dbService.isSaved(widget.post.id);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isSaved ? "পোস্টটি সেভ করা হয়েছে" : "সেভ থেকে রিমুভ করা হয়েছে",
-                      style: GoogleFonts.hindSiliguri(),
+              onTap: () async {
+                final wasSaved = dbService.isSaved(widget.post.id);
+                await dbService.toggleSaveThread(widget.post.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        wasSaved ? "সেভ থেকে রিমুভ করা হয়েছে" : "পোস্টটি সেভ করা হয়েছে",
+                        style: GoogleFonts.hindSiliguri(),
+                      ),
+                      duration: const Duration(seconds: 2),
+                      backgroundColor: wasSaved ? Colors.grey[700] : const Color(0xFF1E824C),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
+                  );
+                }
               },
               child: Icon(
                 dbService.isSaved(widget.post.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
