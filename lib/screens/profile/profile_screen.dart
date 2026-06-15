@@ -591,12 +591,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     }
 
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.only(bottom: 72),
       physics: const BouncingScrollPhysics(),
       itemCount: visibleThreads.length,
-      separatorBuilder: (_, __) =>
-          Divider(height: 1, color: context.border),
       itemBuilder: (context, i) => CustomThreadCard(
         key: ValueKey(visibleThreads[i].id),
         post: visibleThreads[i],
@@ -635,12 +633,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     }
 
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.only(bottom: 72),
       physics: const BouncingScrollPhysics(),
       itemCount: visibleReplies.length,
-      separatorBuilder: (_, __) =>
-          Divider(height: 1, color: context.border),
       itemBuilder: (context, i) => CustomThreadCard(
         key: ValueKey(visibleReplies[i].id),
         post: visibleReplies[i],
@@ -681,12 +677,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     }
 
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.only(bottom: 72),
       physics: const BouncingScrollPhysics(),
       itemCount: visibleReposts.length,
-      separatorBuilder: (_, __) =>
-          Divider(height: 1, color: context.border),
       itemBuilder: (context, i) => CustomThreadCard(
         key: ValueKey(visibleReposts[i].id),
         post: visibleReposts[i],
