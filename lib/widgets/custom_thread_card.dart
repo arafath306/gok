@@ -155,15 +155,6 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
     final dbService = Provider.of<DatabaseService>(context);
     final isVerified = widget.post.author.fullName == 'Dak Official';
 
-    List<String> tags = [];
-    if (widget.post.content.contains('প্রকৃতি') || widget.post.content.contains('nature') || widget.post.content.contains('Mountain') || widget.post.imageUrls != null) {
-      tags = ['Bangladesh', 'Nature'];
-    } else if (widget.post.content.contains('ডিজাইন') || widget.post.content.contains('Dak')) {
-      tags = ['Bangladesh', 'Design'];
-    } else {
-      tags = ['Bangladesh', 'Trending'];
-    }
-
     return InkWell(
       hoverColor: Colors.transparent,
       onTap: () {
@@ -186,7 +177,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                   _buildLeftColumn(context, dbService),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildRightColumn(context, dbService, isVerified, tags),
+                    child: _buildRightColumn(context, dbService, isVerified),
                   ),
                 ],
               ),
@@ -384,7 +375,6 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
     BuildContext context,
     DatabaseService dbService,
     bool isVerified,
-    List<String> tags,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
