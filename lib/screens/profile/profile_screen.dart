@@ -153,28 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               body: bodyContent,
             ),
           ),
-          floatingActionButton: _isOwnProfile
-              ? FloatingActionButton(
-                  heroTag: 'profile_fab',
-                  onPressed: () async {
-                    if (profile != null) {
-                      await Navigator.push(
-                        context,
-                        NoTransitionPageRoute(
-                          child: EditProfileScreen(
-                            profile: profile.toJson(),
-                          ),
-                        ),
-                      );
-                      db.fetchMyProfile();
-                    }
-                  },
-                  backgroundColor: const Color(0xFF0085FF),
-                  shape: const CircleBorder(),
-                  elevation: 3,
-                  child: const Icon(Icons.edit_rounded, color: Colors.white),
-                )
-              : null,
+          floatingActionButton: null,
         );
       },
     );
