@@ -219,11 +219,20 @@ class _CommentsSheetState extends State<CommentsSheet> {
                           style: GoogleFonts.hindSiliguri(color: context.textMuted),
                         ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _comments.length,
-                        itemBuilder: (context, index) {
-                          final comment = _comments[index];
+                    : (() {
+                        final sortedComments = List<Map<String, dynamic>>.from(_comments);
+                        if (_sortBy == "Newest") {
+                          sortedComments.sort((a, b) => (b['created_at_raw'] ?? b['created_at'] ?? '').compareTo(a['created_at_raw'] ?? a['created_at'] ?? ''));
+                        } else if (_sortBy == "Oldest") {
+                          sortedComments.sort((a, b) => (a['created_at_raw'] ?? a['created_at'] ?? '').compareTo(b['created_at_raw'] ?? b['created_at'] ?? ''));
+                        } else {
+                          sortedComments.sort((a, b) => (b['likes_count'] ?? 0).compareTo(a['likes_count'] ?? 0));
+                        }
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: sortedComments.length,
+                          itemBuilder: (context, index) {
+                            final comment = sortedComments[index];
                           final Profile author = comment['author'] as Profile;
                           final isPostAuthor = author.id == widget.post.userId;
 
@@ -445,7 +454,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
                             ),
                           );
                         },
-                      ),
+                      );
+                    })(),
           ),
 
           // Sticky Bottom Input Composer

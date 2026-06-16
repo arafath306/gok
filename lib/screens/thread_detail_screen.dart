@@ -28,7 +28,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
   List<Map<String, dynamic>> _comments = [];
   bool _isLoadingComments = false;
   bool _scrolledHeader = false;
-  String _sortBy = 'top';
+  String _sortBy = "Most relevant";
   String? _replyToCommentId;
   String? _replyToUsername;
 
@@ -612,8 +612,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
 
     // Sort comments based on selected sort option
     final sortedComments = List<Map<String, dynamic>>.from(_comments);
-    if (_sortBy == 'recent') {
-      sortedComments.sort((a, b) => (b['created_at_raw'] ?? '').compareTo(a['created_at_raw'] ?? ''));
+    if (_sortBy == "Newest") {
+      sortedComments.sort((a, b) => (b['created_at_raw'] ?? b['created_at'] ?? '').compareTo(a['created_at_raw'] ?? a['created_at'] ?? ''));
+    } else if (_sortBy == "Oldest") {
+      sortedComments.sort((a, b) => (a['created_at_raw'] ?? a['created_at'] ?? '').compareTo(b['created_at_raw'] ?? b['created_at'] ?? ''));
     } else {
       sortedComments.sort((a, b) => (b['likes_count'] ?? 0).compareTo(a['likes_count'] ?? 0));
     }
@@ -881,7 +883,12 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                               icon: Icons.chat_bubble_outline_rounded,
                               label: _formatCount(_comments.length),
                               onTap: () {
-                                FocusScope.of(context).requestFocus(_commentFocusNode);
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (sheetContext) => CommentsSheet(post: activePost),
+                                ).then((_) => _loadComments(silent: true));
                               },
                             ),
                             // Repost Button
@@ -932,73 +939,39 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                     ),
                   ),
 
-                  // Comments section header with filter buttons
+                  // Comments section header with filter dropdown
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
                     color: context.isDarkMode ? const Color(0xFF0A0B10) : Colors.grey[50],
                     child: Row(
                       children: [
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _sortBy = 'top';
-                            });
-                          },
-                          child: Text(
-                            "Top",
-                            style: GoogleFonts.inter(
-                              fontSize: 12.0,
-                              fontWeight: _sortBy == 'top' ? FontWeight.bold : FontWeight.normal,
-                              color: _sortBy == 'top' ? const Color(0xFF1E824C) : context.textSecondary,
-                            ),
+                        DropdownButton<String>(
+                          value: _sortBy,
+                          underline: const SizedBox(),
+                          dropdownColor: context.cardBg,
+                          icon: Icon(Icons.keyboard_arrow_down, size: 18, color: context.textPrimary),
+                          style: GoogleFonts.inter(
+                            color: context.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _sortBy = _sortBy == 'top' ? 'recent' : 'top';
-                            });
-                          },
-                          child: Container(
-                            width: 32,
-                            height: 17,
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8.5),
-                              color: context.isDarkMode ? Colors.grey[800] : Colors.grey[300],
-                            ),
-                            child: AnimatedAlign(
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeInOut,
-                              alignment: _sortBy == 'top' ? Alignment.centerLeft : Alignment.centerRight,
-                              child: Container(
-                                width: 13,
-                                height: 13,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF1E824C),
-                                ),
+                          items: ["Most relevant", "Newest", "Oldest"].map((val) {
+                            return DropdownMenuItem<String>(
+                              value: val,
+                              child: Text(
+                                val,
+                                style: GoogleFonts.inter(color: context.textPrimary),
                               ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _sortBy = 'recent';
-                            });
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _sortBy = val;
+                              });
+                            }
                           },
-                          child: Text(
-                            "Recent",
-                            style: GoogleFonts.inter(
-                              fontSize: 12.0,
-                              fontWeight: _sortBy == 'recent' ? FontWeight.bold : FontWeight.normal,
-                              color: _sortBy == 'recent' ? const Color(0xFF1E824C) : context.textSecondary,
-                            ),
-                          ),
                         ),
                       ],
                     ),
