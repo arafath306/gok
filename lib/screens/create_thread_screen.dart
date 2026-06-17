@@ -299,6 +299,40 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     });
   }
 
+  void _showComingSoonDialog(String featureName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: context.cardBg,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline, color: Color(0xFF1E824C)),
+            const SizedBox(width: 8),
+            Text(
+              "Coming Soon!",
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
+            ),
+          ],
+        ),
+        content: Text(
+          "$featureName feature is under development. Stay tuned for updates!",
+          style: GoogleFonts.inter(color: context.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Dismiss",
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAIAssistant() {
     final promptController = TextEditingController();
     showModalBottomSheet(
@@ -524,7 +558,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : Text(
-                        "Post",
+                        "Release",
                         style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
               )
@@ -753,7 +787,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                           height: 1.45,
                         ),
                         decoration: InputDecoration(
-                          hintText: "What's on your mind?",
+                          hintText: "Send your thoughts...",
                           hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14.5),
                           border: InputBorder.none,
                           isDense: true,
@@ -1012,8 +1046,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     icon: Icons.play_circle_outline,
                     tooltip: "Video URL",
                     color: Colors.purple,
-                    isActive: _showVideoInput || _videoUrlController.text.isNotEmpty,
-                    onTap: () => setState(() => _showVideoInput = !_showVideoInput),
+                    isActive: false,
+                    onTap: () => _showComingSoonDialog("Video upload/embed"),
                   ),
                   _buildToolbarIcon(
                     icon: Icons.bar_chart_outlined,
@@ -1026,29 +1060,29 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     icon: Icons.mic_outlined,
                     tooltip: "Voice Message",
                     color: Colors.teal,
-                    isActive: _showVoiceRecorder,
-                    onTap: () => setState(() => _showVoiceRecorder = !_showVoiceRecorder),
+                    isActive: false,
+                    onTap: () => _showComingSoonDialog("Voice messaging"),
                   ),
                   _buildToolbarIcon(
                     icon: Icons.location_on_outlined,
                     tooltip: "Add Location",
                     color: Colors.blue,
-                    isActive: _selectedLocation != null,
-                    onTap: _showLocationPicker,
+                    isActive: false,
+                    onTap: () => _showComingSoonDialog("Location pinning"),
                   ),
                   _buildToolbarIcon(
                     icon: Icons.security_outlined,
                     tooltip: "Anonymous Post",
                     color: Colors.indigo,
-                    isActive: _isAnonymous,
-                    onTap: () => setState(() => _isAnonymous = !_isAnonymous),
+                    isActive: false,
+                    onTap: () => _showComingSoonDialog("Anonymous posting"),
                   ),
                   _buildToolbarIcon(
                     icon: Icons.auto_awesome_outlined,
                     tooltip: "AI Writer",
                     color: Colors.pink,
                     isActive: false,
-                    onTap: _showAIAssistant,
+                    onTap: () => _showComingSoonDialog("AI writer assistant"),
                   ),
                 ],
               ),
