@@ -67,68 +67,73 @@ class _NotifSettingTile extends StatelessWidget {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: context.border,
-                        borderRadius: BorderRadius.circular(2),
+            return SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: context.border,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    item.title,
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: context.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // In-app toggle
-                  _buildToggleRow(
-                    context,
-                    label: 'In-app',
-                    value: item.inApp,
-                    onChanged: (val) {
-                      setModalState(() {});
-                      provider.updateSetting(id: item.id, inApp: val);
-                    },
-                  ),
-                  // Push toggle
-                  _buildToggleRow(
-                    context,
-                    label: 'Push',
-                    value: item.push,
-                    onChanged: (val) {
-                      setModalState(() {});
-                      provider.updateSetting(id: item.id, push: val);
-                    },
-                  ),
-                  if (item.hasFromOption) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      'From',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: context.textSecondary,
+                      const SizedBox(height: 20),
+                      Text(
+                        item.title,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: context.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildFromOption(context, setModalState, 'everyone', 'Everyone'),
-                    _buildFromOption(context, setModalState, 'people_you_follow', 'People you follow'),
-                    _buildFromOption(context, setModalState, 'off', 'Off'),
-                  ],
-                ],
+                      const SizedBox(height: 16),
+                      // In-app toggle
+                      _buildToggleRow(
+                        context,
+                        label: 'In-app',
+                        value: item.inApp,
+                        onChanged: (val) {
+                          setModalState(() {});
+                          provider.updateSetting(id: item.id, inApp: val);
+                        },
+                      ),
+                      // Push toggle
+                      _buildToggleRow(
+                        context,
+                        label: 'Push',
+                        value: item.push,
+                        onChanged: (val) {
+                          setModalState(() {});
+                          provider.updateSetting(id: item.id, push: val);
+                        },
+                      ),
+                      if (item.hasFromOption) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          'From',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: context.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildFromOption(context, setModalState, 'everyone', 'Everyone'),
+                        _buildFromOption(context, setModalState, 'people_you_follow', 'People you follow'),
+                        _buildFromOption(context, setModalState, 'off', 'Off'),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             );
           },
