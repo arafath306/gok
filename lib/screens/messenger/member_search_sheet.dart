@@ -99,13 +99,13 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                 autofocus: true,
                 decoration: InputDecoration(
                   icon: Icon(Icons.search, color: context.textMuted, size: 20),
-                  hintText: "নাম বা ইউজারনেম দিয়ে খুঁজুন...",
-                  hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14),
+                  hintText: "Search by name or username...",
+                  hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary),
+                style: GoogleFonts.inter(fontSize: 14.5, color: context.textPrimary),
                 onChanged: (val) => _onSearchChanged(val, db),
               ),
             ),
@@ -119,9 +119,9 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                     ? Center(
                         child: Text(
                           _searchCtrl.text.isEmpty
-                              ? "মেম্বার খুঁজতে টাইপ করুন"
-                              : "কোনো মেম্বার পাওয়া যায়নি",
-                          style: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14),
+                              ? "Type to search members"
+                              : "No members found",
+                          style: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                         ),
                       )
                     : ListView.separated(
@@ -197,8 +197,8 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               SnackBar(
                                                 content: Text(
-                                                  '${user.fullName} কে ফলো রিকোয়েস্ট পাঠানো হয়েছে।',
-                                                  style: GoogleFonts.hindSiliguri(),
+                                                  'Follow request sent to ${user.fullName}.',
+                                                  style: GoogleFonts.inter(),
                                                 ),
                                               ),
                                             );

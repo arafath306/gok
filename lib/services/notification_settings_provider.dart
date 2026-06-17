@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationSettingItem {
   final String id;
@@ -52,7 +53,9 @@ class NotificationSettingsProvider with ChangeNotifier {
     return _instance;
   }
 
-  NotificationSettingsProvider._internal();
+  NotificationSettingsProvider._internal() {
+    _loadFromPrefs();
+  }
 
   final Map<String, NotificationSettingItem> _settings = {
     'likes': NotificationSettingItem(
@@ -141,18 +144,42 @@ class NotificationSettingsProvider with ChangeNotifier {
 
   NotificationSettingItem? getSetting(String id) => _settings[id];
 
-  void updateSetting({
+  Future<void> _loadFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final key in _settings.keys) {
+        final item = _settings[key]!;
+        item.inApp = prefs.getBool('notif_${key}_inApp') ?? item.inApp;
+        item.push = prefs.getBool('notif_${key}_push') ?? item.push;
+        item.from = prefs.getString('notif_${key}_from') ?? item.from;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading notification settings: $e');
+    }
+  }
+
+  Future<void> updateSetting({
     required String id,
     bool? inApp,
     bool? push,
     String? from,
-  }) {
+  }) async {
     final item = _settings[id];
     if (item != null) {
       if (inApp != null) item.inApp = inApp;
       if (push != null) item.push = push;
       if (from != null) item.from = from;
       notifyListeners();
+
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (inApp != null) await prefs.setBool('notif_${id}_inApp', inApp);
+        if (push != null) await prefs.setBool('notif_${id}_push', push);
+        if (from != null) await prefs.setString('notif_${id}_from', from);
+      } catch (e) {
+        debugPrint('Error saving notification setting $id: $e');
+      }
     }
   }
 }

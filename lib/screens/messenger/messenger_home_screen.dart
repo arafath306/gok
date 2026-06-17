@@ -236,17 +236,20 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
         },
       ),
      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
-          );
-        },
-        backgroundColor: const Color(0xFF0085FF),
-        shape: const CircleBorder(),
-        elevation: 3,
-        child: const Icon(Icons.add_comment_rounded, color: Colors.white, size: 24),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton.small(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
+            );
+          },
+          backgroundColor: const Color(0xFF0085FF),
+          shape: const CircleBorder(),
+          elevation: 3,
+          child: const Icon(Icons.add, color: Colors.white, size: 20),
+        ),
       ),
     );
   }
