@@ -5,6 +5,7 @@ import '../services/database_service.dart';
 import '../models/profile.dart';
 import '../utils/app_theme.dart';
 import 'profile/profile_screen.dart';
+import 'topic/topic_threads_screen.dart';
 
 class SearchExploreScreen extends StatefulWidget {
   const SearchExploreScreen({super.key});
@@ -20,11 +21,17 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
   bool _isLoading = false;
   final _searchController = TextEditingController();
 
+  List<Map<String, dynamic>> _trendingTopics = [];
+  List<Map<String, dynamic>> _risingTopics = [];
+  List<Map<String, dynamic>> _discussedTopics = [];
+  bool _isTopicsLoading = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecommendations();
+      _loadTopics();
     });
   }
 
@@ -40,6 +47,23 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     if (mounted) {
       setState(() {
         _recommended = recs;
+      });
+    }
+  }
+
+  void _loadTopics() async {
+    if (!mounted) return;
+    setState(() => _isTopicsLoading = true);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final trending = await dbService.fetchTrendingTopics();
+    final rising = await dbService.fetchRisingTopics();
+    final discussed = await dbService.fetchMostDiscussedTopics();
+    if (mounted) {
+      setState(() {
+        _trendingTopics = trending;
+        _risingTopics = rising;
+        _discussedTopics = discussed;
+        _isTopicsLoading = false;
       });
     }
   }
@@ -221,8 +245,10 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
   Widget _buildTrendingItem(String rank, String tag, String postsCount) {
     return InkWell(
       onTap: () {
-        _searchController.text = tag;
-        _onSearchChanged(tag);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => TopicThreadsScreen(topicName: tag)),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -271,8 +297,10 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
   Widget _buildRisingTopicItem(String topic, String growth) {
     return InkWell(
       onTap: () {
-        _searchController.text = topic;
-        _onSearchChanged(topic);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => TopicThreadsScreen(topicName: topic)),
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -320,8 +348,10 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
   Widget _buildDiscussedItem(String topic, String replies) {
     return InkWell(
       onTap: () {
-        _searchController.text = topic;
-        _onSearchChanged(topic);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => TopicThreadsScreen(topicName: topic)),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -441,6 +471,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   color: context.primaryAccent,
                   onRefresh: () async {
                     _loadRecommendations();
+                    _loadTopics();
                     await Future.delayed(const Duration(milliseconds: 600));
                   },
                   child: _isLoading
@@ -560,26 +591,87 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
 
                                 // 1- Trending Now 🔥
                                 _buildSectionHeader("Trending Now 🔥"),
-                                _buildTrendingItem("1", "#Piagoan", "12.4k posts"),
-                                _buildTrendingItem("2", "#FlutterDev", "8.2k posts"),
-                                _buildTrendingItem("3", "#SupabaseGlow", "5.1k posts"),
-                                _buildTrendingItem("4", "#Glassmorphism", "3.9k posts"),
+                                if (_isTopicsLoading)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(20.0),
+                                      child: CircularProgressIndicator(color: Color(0xFF1E824C)),
+                                    ),
+                                  )
+                                else if (_trendingTopics.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: Text(
+                                      "No trending topics right now",
+                                      style: GoogleFonts.inter(color: context.textMuted, fontSize: 13),
+                                    ),
+                                  )
+                                else
+                                  ..._trendingTopics.mapIndexed((index, item) {
+                                    final posts = item['post_count'] as int? ?? 0;
+                                    return _buildTrendingItem(
+                                      (index + 1).toString(),
+                                      item['topic_name'] as String? ?? '',
+                                      "$posts ${posts == 1 ? 'post' : 'posts'}",
+                                    );
+                                  }),
                                 const SizedBox(height: 12),
                                 Divider(height: 1, color: context.border),
 
                                 // 2- Rising Topics 🚀
                                 _buildSectionHeader("Rising Topics 🚀"),
-                                _buildRisingTopicItem("Dart 3.5 Features", "+180% growth"),
-                                _buildRisingTopicItem("Artificial Intelligence UI", "+120% growth"),
-                                _buildRisingTopicItem("Web3 Social Networks", "+85% growth"),
+                                if (_isTopicsLoading)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(20.0),
+                                      child: CircularProgressIndicator(color: Color(0xFF1E824C)),
+                                    ),
+                                  )
+                                else if (_risingTopics.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: Text(
+                                      "No rising topics right now",
+                                      style: GoogleFonts.inter(color: context.textMuted, fontSize: 13),
+                                    ),
+                                  )
+                                else
+                                  ..._risingTopics.map((item) {
+                                    final growth = item['growth_percentage'] ?? 0;
+                                    final sign = growth >= 0 ? '+' : '';
+                                    return _buildRisingTopicItem(
+                                      item['topic_name'] as String? ?? '',
+                                      "$sign$growth% growth",
+                                    );
+                                  }),
                                 const SizedBox(height: 12),
                                 Divider(height: 1, color: context.border),
 
                                 // 3- Most Discussed 👑
                                 _buildSectionHeader("Most Discussed 👑"),
-                                _buildDiscussedItem("Is remote work here to stay?", "142 replies today"),
-                                _buildDiscussedItem("Best practices for Flutter state management", "98 replies today"),
-                                _buildDiscussedItem("Supabase vs Firebase in 2026", "76 replies today"),
+                                if (_isTopicsLoading)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(20.0),
+                                      child: CircularProgressIndicator(color: Color(0xFF1E824C)),
+                                    ),
+                                  )
+                                else if (_discussedTopics.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: Text(
+                                      "No discussed topics right now",
+                                      style: GoogleFonts.inter(color: context.textMuted, fontSize: 13),
+                                    ),
+                                  )
+                                else
+                                  ..._discussedTopics.map((item) {
+                                    final replies = item['discussion_count'] as int? ?? 0;
+                                    return _buildDiscussedItem(
+                                      item['topic_name'] as String? ?? '',
+                                      "$replies ${replies == 1 ? 'reply' : 'replies'} today",
+                                    );
+                                  }),
                                 const SizedBox(height: 12),
                                 Divider(height: 1, color: context.border),
 

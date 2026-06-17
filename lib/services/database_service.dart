@@ -1933,6 +1933,64 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  // --- Topic System Fetch Methods ---
+
+  Future<List<Map<String, dynamic>>> fetchTrendingTopics() async {
+    try {
+      final response = await _supabase.rpc('get_trending_topics', params: {'limit_val': 10});
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      debugPrint("Fetch trending topics error: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchRisingTopics() async {
+    try {
+      final response = await _supabase.rpc('get_rising_topics', params: {'limit_val': 10});
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      debugPrint("Fetch rising topics error: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMostDiscussedTopics() async {
+    try {
+      final response = await _supabase.rpc('get_most_discussed_topics', params: {'limit_val': 10});
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      debugPrint("Fetch most discussed topics error: $e");
+      return [];
+    }
+  }
+
+  Future<List<ThreadPost>> fetchTopicThreads(String topicName) async {
+    try {
+      final response = await _supabase.rpc('get_topic_threads', params: {'topic_name': topicName.replaceAll('#', '')});
+      final List<dynamic> data = response as List<dynamic>;
+      
+      final List<String> threadIds = data.map((json) => json['id'] as String).toList();
+      if (threadIds.isEmpty) return [];
+
+      final threadsRes = await _supabase
+          .from('threads')
+          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
+          .inFilter('id', threadIds);
+      
+      final List<dynamic> threadsData = threadsRes as List<dynamic>;
+      final posts = threadsData.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      
+      posts.sort((a, b) => threadIds.indexOf(a.id).compareTo(threadIds.indexOf(b.id)));
+      
+      _updateCache(posts);
+      return posts;
+    } catch (e) {
+      debugPrint("Fetch topic threads error: $e");
+      return [];
+    }
+  }
+
   @override
   void dispose() {
     _supabaseAuthSub?.cancel();
