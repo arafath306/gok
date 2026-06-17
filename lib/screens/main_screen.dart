@@ -832,38 +832,39 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               scale: _showBars ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeInOut,
-              child: FloatingActionButton(
-                heroTag: 'main_fab',
-                backgroundColor: const Color(0xFF1E824C),
-                shape: const CircleBorder(),
-                elevation: 4,
-                onPressed: () {
-                  _fabAnimationController.forward(from: 0.0);
-                  Future.delayed(const Duration(milliseconds: 150), () {
-                    if (context.mounted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const CreateThreadScreen()),
-                      );
-                    }
-                  });
-                },
-                child: RotationTransition(
-                  turns: Tween<double>(begin: 0.0, end: 1.0).animate(
-                    CurvedAnimation(
-                      parent: _fabAnimationController,
-                      curve: Curves.easeInOut,
-                    ),
-                  ),
+              child: ScaleTransition(
+                scale: TweenSequence<double>([
+                  TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.88), weight: 25),
+                  TweenSequenceItem(tween: Tween(begin: 0.88, end: 1.12), weight: 45),
+                  TweenSequenceItem(tween: Tween(begin: 1.12, end: 1.0), weight: 30),
+                ]).animate(_fabAnimationController),
+                child: FloatingActionButton(
+                  heroTag: 'main_fab',
+                  backgroundColor: const Color(0xFF1E824C),
+                  shape: const CircleBorder(),
+                  elevation: 3,
+                  mini: true,
+                  onPressed: () {
+                    _fabAnimationController.forward(from: 0.0);
+                    Future.delayed(const Duration(milliseconds: 180), () {
+                      if (context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const CreateThreadScreen()),
+                        );
+                      }
+                    });
+                  },
                   child: const Icon(
-                    Icons.add,
+                    Icons.edit_rounded,
                     color: Colors.white,
-                    size: 28,
+                    size: 22,
                   ),
                 ),
               ),
             )
           : null,
+
       bottomNavigationBar: AnimatedSlide(
         offset: _showBars ? Offset.zero : const Offset(0, 1.2),
         duration: const Duration(milliseconds: 300),

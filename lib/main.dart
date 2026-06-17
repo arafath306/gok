@@ -160,4 +160,10 @@ class MyCustomScrollBehavior extends MaterialScrollBehavior {
         PointerDeviceKind.mouse,
         PointerDeviceKind.trackpad,
       };
+
+  // Remove scrollbar from all scrollable widgets
+  @override
+  Widget buildScrollbar(BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
+  }
 }

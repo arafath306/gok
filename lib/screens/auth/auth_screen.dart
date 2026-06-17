@@ -860,7 +860,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 12),
           Text(
-            "Your Dak account has been created successfully.\nPlease verify your email before logging in.",
+            "Your Pigeon account has been created successfully.\nPlease verify your email before logging in.",
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
@@ -1048,7 +1048,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                         // Only show App Name and Subtitle on Login or step 1 & 2 of signup
                         if (!_isSignUp || _signUpStep < 3) ...[
                           Text(
-                            "Piagoan",
+                            "Pigeon",
                             style: GoogleFonts.poppins(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
@@ -1134,7 +1134,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "Welcome back! 👋",
+                                      "Welcome back!",
                                       style: GoogleFonts.inter(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,

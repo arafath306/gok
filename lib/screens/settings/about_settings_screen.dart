@@ -61,7 +61,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'About Dak',
+          'About Pigeon',
           style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
@@ -76,7 +76,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         children: [
-          // Logo placeholder or image
+          // Logo
           Center(
             child: Container(
               width: 90,
@@ -104,7 +104,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              'Dak Social',
+              'Pigeon Social',
               style: GoogleFonts.inter(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -144,7 +144,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Dak is engineered to redefine social media networks. With direct message filters, decentralized architectures, high-fidelity layouts, and a zero-clutter experience, we aim to outshine Twitter and Bluesky in performance, utility, and visual excellence.',
+                  'Pigeon is engineered to redefine social media networks. With direct message filters, decentralized architectures, high-fidelity layouts, and a zero-clutter experience, we aim to outshine Twitter and Bluesky in performance, utility, and visual excellence.',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: context.textSecondary,
@@ -190,14 +190,22 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                   context: context,
                   icon: Icons.description_outlined,
                   title: 'Terms of Service',
-                  onTap: () => _showDocument(context, 'Terms of Service', 'Welcome to Dak!\n\n1. Use Dak respectfully.\n2. Respect other users\' privacy settings.\n3. Content violating our policies will be deleted.\n\nThank you for being part of the premium future of social networks.'),
+                  onTap: () => _showDocument(
+                    context,
+                    'Terms of Service',
+                    'Welcome to Pigeon!\n\n1. Use Pigeon respectfully.\n2. Respect other users\' privacy settings.\n3. Content violating our policies will be deleted.\n\nThank you for being part of the premium future of social networks.',
+                  ),
                 ),
                 Divider(height: 1, color: context.border),
                 _buildAboutTile(
                   context: context,
                   icon: Icons.privacy_tip_outlined,
                   title: 'Privacy Policy',
-                  onTap: () => _showDocument(context, 'Privacy Policy', 'Your privacy is paramount:\n\n1. We encrypt DMs locally.\n2. You control DM permission filters (Everyone, Users I Follow, No one).\n3. Session logs are auditable and revocable by you at any time.'),
+                  onTap: () => _showDocument(
+                    context,
+                    'Privacy Policy',
+                    'Your privacy is paramount:\n\n1. We encrypt DMs locally.\n2. You control DM permission filters (Everyone, Users I Follow, No one).\n3. Session logs are auditable and revocable by you at any time.',
+                  ),
                 ),
               ],
             ),

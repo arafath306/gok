@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
@@ -678,10 +679,12 @@ class DatabaseService with ChangeNotifier {
     notifyListeners();
 
     try {
-      final bucket = isAvatar ? 'avatars' : 'covers';
-      final path = '$_currentUid/img_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-      final publicUrl = await _uploadToStorage(bucket, path, bytes);
+      // Both avatar and cover use the same 'avatars' bucket but with path prefixes
+      // to avoid needing a separate 'covers' bucket in Supabase storage.
+      final subFolder = isAvatar ? 'avatars' : 'covers';
+      final path = '$subFolder/$_currentUid/img_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      final publicUrl = await _uploadToStorage('avatars', path, bytes);
       if (publicUrl != null) {
         final updateField = isAvatar ? 'avatar_url' : 'cover_url';
         await _supabase.from('profiles').update({updateField: publicUrl}).eq('id', _currentUid);
@@ -696,6 +699,19 @@ class DatabaseService with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Uploads a photo for a thread post. Uses the 'avatars' bucket with a
+  /// 'posts/' subfolder prefix to avoid needing a separate storage bucket.
+  Future<String?> uploadPostImage(Uint8List bytes) async {
+    if (_currentUid.isEmpty) return null;
+    try {
+      final path = 'posts/$_currentUid/thread_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      return await _uploadToStorage('avatars', path, bytes);
+    } catch (e) {
+      debugPrint("Upload post image error: $e");
+      return null;
     }
   }
 
@@ -853,7 +869,7 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
-  Future<bool> createThread(String content, {List<String>? imageUrls, String? videoUrl}) async {
+  Future<bool> createThread(String content, {List<String>? imageUrls, String? videoUrl, String? audience}) async {
     if (_currentUid.isEmpty) return false;
     try {
       await _supabase.from('threads').insert({
@@ -861,6 +877,7 @@ class DatabaseService with ChangeNotifier {
         'content': content,
         'image_urls': imageUrls,
         'video_url': videoUrl,
+        if (audience != null) 'audience': audience,
       });
       await fetchFeed(silent: true);
       await fetchMyThreads();
@@ -1292,6 +1309,7 @@ class DatabaseService with ChangeNotifier {
           content: json['content'] as String,
           createdAt: relativeTime,
           read: json['is_read'] as bool? ?? false,
+          createdAtDateTime: createdAtTime,
         );
       }).toList();
       notifyListeners();

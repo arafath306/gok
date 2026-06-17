@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../models/profile.dart';
 import '../utils/app_theme.dart';
+import 'profile/profile_screen.dart';
 
 class SearchExploreScreen extends StatefulWidget {
   const SearchExploreScreen({super.key});
@@ -85,18 +86,22 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
 
   Widget _buildUserRow(Profile user, DatabaseService dbService) {
     final isFollowing = dbService.isFollowingUser(user.id);
+    final currentUid = dbService.myProfile?.id;
     
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: InkWell(
         onTap: () {
           _addToHistory(user.fullName);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("${user.fullName} এর প্রোফাইল ট্যাপ করা হয়েছে")),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProfileScreen(userId: user.id == currentUid ? null : user.id),
+            ),
           );
         },
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Left: Circular Avatar
             CircleAvatar(
@@ -120,6 +125,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Username
                   Row(
@@ -150,20 +156,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  // Bio
-                  Text(
-                    user.bio ?? "কোন বায়ো নেই",
-                    style: GoogleFonts.hindSiliguri(
-                      color: context.textPrimary,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   // Followers
                   Text(
-                    "${user.followersCount} জন অনুসারী",
-                    style: GoogleFonts.hindSiliguri(
+                    "${user.followersCount} ${user.followersCount == 1 ? 'follower' : 'followers'}",
+                    style: GoogleFonts.inter(
                       color: context.textMuted,
                       fontSize: 12,
                     ),

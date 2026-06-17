@@ -188,7 +188,7 @@ class AuthService with ChangeNotifier {
       debugPrint("isUsernameTaken error: $e");
       // Fallback/Mock behavior if database fails
       await Future.delayed(const Duration(milliseconds: 300));
-      return ["admin", "test", "dak", "system"].contains(username.trim().toLowerCase());
+      return ["admin", "test", "pigeon", "system"].contains(username.trim().toLowerCase());
     }
   }
 

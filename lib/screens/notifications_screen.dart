@@ -5,6 +5,28 @@ import '../services/database_service.dart';
 import 'settings/notification_settings_screen.dart';
 import '../utils/routes.dart';
 import '../utils/app_theme.dart';
+import 'profile/profile_screen.dart';
+import '../models/notification.dart';
+
+class GroupedNotification {
+  final String id;
+  final String type;
+  final List<AppNotification> rawNotifications;
+  final String displayTitle;
+  final String displayContent;
+  final String displayTime;
+  final bool read;
+
+  GroupedNotification({
+    required this.id,
+    required this.type,
+    required this.rawNotifications,
+    required this.displayTitle,
+    required this.displayContent,
+    required this.displayTime,
+    required this.read,
+  });
+}
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -20,6 +42,81 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<DatabaseService>(context, listen: false).fetchNotifications();
     });
+  }
+
+  List<GroupedNotification> _groupNotifications(List<AppNotification> list) {
+    final List<GroupedNotification> grouped = [];
+    final Set<String> processedIds = {};
+
+    for (int i = 0; i < list.length; i++) {
+      final item = list[i];
+      if (processedIds.contains(item.id)) continue;
+
+      if (item.type.toLowerCase() == 'follow') {
+        // Find other follow notifications within a 3-minute window (180 seconds)
+        final List<AppNotification> group = [item];
+        processedIds.add(item.id);
+
+        final DateTime? currentParsed = item.createdAtDateTime;
+        if (currentParsed != null) {
+          for (int j = i + 1; j < list.length; j++) {
+            final other = list[j];
+            if (processedIds.contains(other.id)) continue;
+            if (other.type.toLowerCase() == 'follow') {
+              final DateTime? otherParsed = other.createdAtDateTime;
+              if (otherParsed != null) {
+                final diff = currentParsed.difference(otherParsed).inSeconds.abs();
+                if (diff <= 180) { // 3 minutes
+                  group.add(other);
+                  processedIds.add(other.id);
+                }
+              }
+            }
+          }
+        }
+
+        // Format display
+        final isGroupRead = group.every((n) => n.read);
+        String displayTitle;
+        String displayContent;
+
+        if (group.length == 1) {
+          displayTitle = item.actor.fullName;
+          displayContent = "followed you";
+        } else if (group.length == 2) {
+          displayTitle = "${group[0].actor.fullName} and ${group[1].actor.fullName}";
+          displayContent = "followed you";
+        } else {
+          final extraCount = group.length - 2;
+          displayTitle = "${group[0].actor.fullName}, ${group[1].actor.fullName}";
+          displayContent = "and $extraCount others followed you";
+        }
+
+        grouped.add(GroupedNotification(
+          id: item.id,
+          type: 'follow',
+          rawNotifications: group,
+          displayTitle: displayTitle,
+          displayContent: displayContent,
+          displayTime: item.createdAt,
+          read: isGroupRead,
+        ));
+      } else {
+        // Non-follow notification
+        processedIds.add(item.id);
+        grouped.add(GroupedNotification(
+          id: item.id,
+          type: item.type,
+          rawNotifications: [item],
+          displayTitle: item.actor.fullName,
+          displayContent: item.content,
+          displayTime: item.createdAt,
+          read: item.read,
+        ));
+      }
+    }
+
+    return grouped;
   }
 
   @override
@@ -101,10 +198,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             final notifications = dbService.notifications;
             final mentions = notifications.where((n) => n.type == 'mention').toList();
 
+            final groupedNotifications = _groupNotifications(notifications);
+            final groupedMentions = _groupNotifications(mentions);
+
             return TabBarView(
               children: [
-                _buildNotificationList(notifications),
-                _buildNotificationList(mentions),
+                _buildNotificationList(groupedNotifications),
+                _buildNotificationList(groupedMentions),
               ],
             );
           },
@@ -113,7 +213,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationList(List<dynamic> list) {
+  Widget _buildNotificationList(List<GroupedNotification> list) {
     if (list.isEmpty) {
       return RefreshIndicator(
         onRefresh: () => Provider.of<DatabaseService>(context, listen: false).fetchNotifications(),
@@ -157,62 +257,85 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
         itemBuilder: (context, index) {
           final item = list[index];
+          final firstActor = item.rawNotifications[0].actor;
+          final avatarUrl = firstActor.avatarUrl;
+
           return Material(
-              color: item.read 
-                  ? context.scaffoldBg 
-                  : (context.isDarkMode ? const Color(0xFF0A1931) : const Color(0xFFF0F7FF)),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                onTap: () {
-                  if (!item.read) {
-                    Provider.of<DatabaseService>(context, listen: false)
-                        .markNotificationRead(item.id);
+            color: item.read 
+                ? context.scaffoldBg 
+                : (context.isDarkMode ? const Color(0xFF0A1931) : const Color(0xFFF0F7FF)),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              onTap: () {
+                final db = Provider.of<DatabaseService>(context, listen: false);
+                for (final n in item.rawNotifications) {
+                  if (!n.read) {
+                    db.markNotificationRead(n.id);
                   }
-                },
-                leading: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: context.border,
-                  backgroundImage: item.actor.avatarUrl != null && item.actor.avatarUrl.isNotEmpty
-                      ? NetworkImage(item.actor.avatarUrl)
-                      : const NetworkImage(""),
-                ),
-                title: RichText(
-                  text: TextSpan(
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: context.textPrimary,
+                }
+                if (item.type.toLowerCase() == 'follow') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ProfileScreen(),
                     ),
-                    children: [
-                      TextSpan(
-                        text: "${item.actor.fullName} ",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(text: item.content),
-                    ],
-                  ),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    item.createdAt,
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: context.textMuted,
-                    ),
-                  ),
-                ),
-                trailing: !item.read
-                    ? Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF0085FF),
-                          shape: BoxShape.circle,
+                  );
+                }
+              },
+              leading: CircleAvatar(
+                radius: 20,
+                backgroundColor: context.border,
+                backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl == null || avatarUrl.isEmpty
+                    ? Text(
+                        firstActor.fullName.isNotEmpty ? firstActor.fullName[0].toUpperCase() : '?',
+                        style: TextStyle(
+                          color: context.primaryAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       )
                     : null,
               ),
-            );
+              title: RichText(
+                text: TextSpan(
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: context.textPrimary,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: "${item.displayTitle} ",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(text: item.displayContent),
+                  ],
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  item.displayTime,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: context.textMuted,
+                  ),
+                ),
+              ),
+              trailing: !item.read
+                  ? Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0085FF),
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : null,
+            ),
+          );
         },
       ),
     );

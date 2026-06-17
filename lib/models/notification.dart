@@ -9,6 +9,7 @@ class AppNotification {
   final String content;
   final String createdAt;
   final bool read;
+  final DateTime? createdAtDateTime;
 
   AppNotification({
     required this.id,
@@ -19,6 +20,7 @@ class AppNotification {
     required this.content,
     required this.createdAt,
     this.read = false,
+    this.createdAtDateTime,
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,13 @@ class AppNotification {
     final actorProfile = actorMap != null 
         ? Profile.fromJson(actorMap) 
         : Profile(id: json['actor_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+
+    DateTime? parsedTime;
+    if (json['created_at'] != null) {
+      try {
+        parsedTime = DateTime.parse(json['created_at'] as String);
+      } catch (_) {}
+    }
 
     return AppNotification(
       id: json['id'] as String,
@@ -36,6 +45,7 @@ class AppNotification {
       content: json['content'] as String,
       createdAt: json['created_at'] as String? ?? 'এখনই',
       read: json['is_read'] as bool? ?? false,
+      createdAtDateTime: parsedTime,
     );
   }
 }

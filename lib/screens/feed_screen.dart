@@ -134,7 +134,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
-                    height: _showFullHeader ? 50 : 0,
+                    height: _showFullHeader ? 40 : 0,
                     child: AnimatedOpacity(
                       opacity: _showFullHeader ? 1.0 : 0.0,
                       duration: const Duration(milliseconds: 200),
@@ -145,10 +145,10 @@ class _FeedScreenState extends State<FeedScreen> {
                           decoration: BoxDecoration(
                             color: context.scaffoldBg,
                             border: Border(
-                              bottom: BorderSide(color: context.border, width: 1),
+                              bottom: BorderSide(color: context.border, width: 0.5),
                             ),
                           ),
-                          height: 50,
+                          height: 40,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(_tabs.length, (index) {
@@ -160,7 +160,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                   });
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
                                   alignment: Alignment.center,
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -168,19 +168,19 @@ class _FeedScreenState extends State<FeedScreen> {
                                       Text(
                                         _tabs[index],
                                         style: GoogleFonts.inter(
-                                          fontSize: 15,
-                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                          fontSize: 13.5,
+                                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                                           color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,
                                         ),
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 4),
                                       AnimatedContainer(
                                         duration: const Duration(milliseconds: 200),
-                                        height: 3,
-                                        width: isSelected ? 32 : 0,
+                                        height: 2,
+                                        width: isSelected ? 24 : 0,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF1E824C),
-                                          borderRadius: BorderRadius.circular(1.5),
+                                          borderRadius: BorderRadius.circular(1),
                                         ),
                                       ),
                                     ],
@@ -201,37 +201,59 @@ class _FeedScreenState extends State<FeedScreen> {
                     color: const Color(0xFF1E824C),
                     child: ListView(
                       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                      padding: const EdgeInsets.fromLTRB(0, 8, 0, 72),
+                      padding: const EdgeInsets.fromLTRB(0, 4, 0, 72),
                       children: [
                         // Composer Panel Card (Flat & Borderless)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: context.border, width: 0.5),
-                            ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          decoration: const BoxDecoration(
+                            color: Colors.transparent,
                           ),
                           child: GestureDetector(
                             onTap: widget.onNavigateToCreate,
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  radius: 16,
+                                  radius: 14,
                                   backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
                                   backgroundImage: (prof?.avatarUrl != null && prof!.avatarUrl!.isNotEmpty)
                                       ? NetworkImage(prof.avatarUrl!)
                                       : null,
                                   child: (prof?.avatarUrl == null || prof!.avatarUrl!.isEmpty)
-                                      ? Icon(Icons.person, size: 16, color: context.isDarkMode ? Colors.white54 : Colors.black38)
+                                      ? Icon(Icons.person, size: 14, color: context.isDarkMode ? Colors.white54 : Colors.black38)
                                       : null,
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 10),
                                 Expanded(
-                                  child: Text(
-                                    "আজকে কী ভাবছেন?",
-                                    style: GoogleFonts.hindSiliguri(
-                                      color: context.textMuted,
-                                      fontSize: 13.5,
+                                  child: Container(
+                                    height: 32,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    alignment: Alignment.centerLeft,
+                                    decoration: BoxDecoration(
+                                      color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: context.border.withOpacity(0.5),
+                                        width: 0.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            "Send your thoughts...",
+                                            style: GoogleFonts.inter(
+                                              color: context.textMuted,
+                                              fontSize: 12.5,
+                                            ),
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.flutter_dash,
+                                          size: 15,
+                                          color: context.textMuted,
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),

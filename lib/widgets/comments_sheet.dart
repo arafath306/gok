@@ -295,7 +295,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               ),
                                             ),
                                           ),
-                                          if (author.fullName == 'Dak Official') ...[
+                                          if (author.fullName == 'Pigeon Official') ...[
                                             const SizedBox(width: 4),
                                             const Icon(
                                               Icons.verified,
@@ -948,7 +948,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18, color: context.textPrimary),
         ),
         content: Text(
-          'They will not be able to follow you, see your posts, or contact you on Dak.',
+          'They will not be able to follow you, see your posts, or contact you on Pigeon.',
           style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary, height: 1.4),
         ),
         actions: [
@@ -1043,7 +1043,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                         if (!mounted) return;
                         _showSuccessSnackBar(
                           ctx,
-                          'Report submitted. Thank you for helping keep Dak safe.',
+                          'Report submitted. Thank you for helping keep Pigeon safe.',
                         );
                       },
                       splashColor: Colors.red.withOpacity(0.06),

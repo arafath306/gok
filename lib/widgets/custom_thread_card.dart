@@ -318,7 +318,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
     // If this post was deleted, render nothing.
     if (dbService.isPostDeleted(post.id)) return const SizedBox.shrink();
 
-    final isVerified = post.author.fullName == 'Dak Official';
+    final isVerified = post.author.fullName == 'Pigeon Official';
 
     return InkWell(
       hoverColor: Colors.transparent,
@@ -1072,7 +1072,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         content: Text(
-          'They will not be able to follow you, see your posts, or contact you on Dak.',
+          'They will not be able to follow you, see your posts, or contact you on Pigeon.',
           style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary, height: 1.4),
         ),
         actions: [
@@ -1173,7 +1173,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                         if (success) {
                           _showSuccessSnackBar(
                             ctx,
-                            'Report submitted. Thank you for helping keep Dak safe.',
+                            'Report submitted. Thank you for helping keep Pigeon safe.',
                           );
                         }
                       },

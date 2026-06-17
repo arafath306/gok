@@ -724,7 +724,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Piagoan",
+                          "Pigeon",
                           style: GoogleFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,

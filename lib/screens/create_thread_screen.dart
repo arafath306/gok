@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/database_service.dart';
 import '../utils/app_theme.dart';
 import '../models/thread_post.dart';
@@ -22,7 +21,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   final _imageUrlController = TextEditingController();
   final _videoUrlController = TextEditingController();
   
-  String _privacy = "Friends";
+  String _privacy = "Public";
+  bool _privacyOpen = false;
   int _charCount = 0;
   bool _showImageInput = false;
   bool _showVideoInput = false;
@@ -123,21 +123,23 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     List<String>? uploadedUrls;
     if (_selectedImageBytes != null) {
       try {
-        final supabase = Supabase.instance.client;
-        final path = '${supabase.auth.currentUser?.id ?? 'anon'}/thread_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        
-        await supabase.storage.from('avatars').uploadBinary(
-          path,
-          _selectedImageBytes!,
-          fileOptions: const FileOptions(
-            contentType: 'image/jpeg',
-            upsert: true,
-          ),
-        );
-        final publicUrl = supabase.storage.from('avatars').getPublicUrl(path);
-        uploadedUrls = [publicUrl];
+        final imagePublicUrl = await db.uploadPostImage(_selectedImageBytes!);
+        if (imagePublicUrl != null) {
+          uploadedUrls = [imagePublicUrl];
+        } else {
+          debugPrint("Post image upload returned null URL");
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Image upload failed. Posting without image.", style: GoogleFonts.inter()),
+                backgroundColor: Colors.orange[700],
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
       } catch (uploadError) {
-        debugPrint("Supabase storage upload failed: $uploadError");
+        debugPrint("Post image upload failed: $uploadError");
       }
     } else if (imageUrl.isNotEmpty) {
       uploadedUrls = [imageUrl];
@@ -154,6 +156,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
         finalContent,
         imageUrls: uploadedUrls,
         videoUrl: videoUrl.isNotEmpty ? videoUrl : null,
+        audience: _privacy,
       );
     }
 
@@ -220,63 +223,6 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     );
   }
 
-  void _showPrivacyPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.cardBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Text(
-              "Who can see this post?",
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: context.textPrimary,
-              ),
-            ),
-            Divider(color: context.border),
-            ListTile(
-              leading: const Icon(Icons.public, color: Color(0xFF1E824C)),
-              title: Text("Everyone (Public)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
-              subtitle: Text("Anyone can see this post", style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary)),
-              trailing: _privacy == "Public" ? const Icon(Icons.check, color: Color(0xFF1E824C)) : null,
-              onTap: () {
-                setState(() => _privacy = "Public");
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people_outline, color: Color(0xFF1E824C)),
-              title: Text("Friends", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
-              subtitle: Text("Only your friends can see this", style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary)),
-              trailing: _privacy == "Friends" ? const Icon(Icons.check, color: Color(0xFF1E824C)) : null,
-              onTap: () {
-                setState(() => _privacy = "Friends");
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.lock_outline, color: Color(0xFF1E824C)),
-              title: Text("Only Me", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
-              subtitle: Text("No one else can see this", style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary)),
-              trailing: _privacy == "Only Me" ? const Icon(Icons.check, color: Color(0xFF1E824C)) : null,
-              onTap: () {
-                setState(() => _privacy = "Only Me");
-                Navigator.pop(context);
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _showLocationPicker() {
     final locations = [
@@ -651,81 +597,147 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                       ),
                       const SizedBox(height: 4),
                       
-                      // Meta Row: Privacy and Location indicators
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
+                      // Meta Row: Privacy chip + inline dropdown
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          GestureDetector(
-                            onTap: _showPrivacyPicker,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: context.border, width: 0.8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _privacy == "Public"
-                                        ? Icons.public
-                                        : _privacy == "Friends"
-                                            ? Icons.people_alt
-                                            : Icons.lock,
-                                    size: 11,
-                                    color: context.textSecondary,
+                          // Top row: chip + location
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              GestureDetector(
+                                onTap: () => setState(() => _privacyOpen = !_privacyOpen),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: context.border, width: 0.8),
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _privacy == "Public" 
-                                        ? "Public" 
-                                        : _privacy == "Friends" 
-                                            ? "Friends" 
-                                            : "Only Me",
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: context.textSecondary,
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _privacy == "Public"
+                                            ? Icons.public
+                                            : _privacy == "Friends"
+                                                ? Icons.people_alt
+                                                : Icons.lock_outline,
+                                        size: 11,
+                                        color: context.textSecondary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _privacy,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w500,
+                                          color: context.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      AnimatedRotation(
+                                        turns: _privacyOpen ? 0.5 : 0,
+                                        duration: const Duration(milliseconds: 150),
+                                        child: Icon(Icons.keyboard_arrow_down_rounded, size: 12, color: context.textMuted),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 2),
-                                  Icon(Icons.keyboard_arrow_down_rounded, size: 12, color: context.textSecondary),
-                                ],
+                                ),
                               ),
-                            ),
+                              if (_selectedLocation != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: context.isDarkMode ? const Color(0xFF1A2333) : const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.blue.withOpacity(0.2), width: 0.8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.location_on, size: 11, color: Colors.blue),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _selectedLocation!,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blue[700],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      GestureDetector(
+                                        onTap: () => setState(() => _selectedLocation = null),
+                                        child: const Icon(Icons.close, size: 11, color: Colors.blue),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
-                          
-                          if (_selectedLocation != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: context.isDarkMode ? const Color(0xFF1A2333) : const Color(0xFFEFF6FF),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.blue.withOpacity(0.2), width: 0.8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.location_on, size: 11, color: Colors.blue),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _selectedLocation!,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.blue[700],
+                          // Inline animated dropdown
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOut,
+                            child: _privacyOpen
+                                ? Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    decoration: BoxDecoration(
+                                      color: context.cardBg,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: context.border, width: 0.8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.08),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 3),
-                                  GestureDetector(
-                                    onTap: () => setState(() => _selectedLocation = null),
-                                    child: const Icon(Icons.close, size: 11, color: Colors.blue),
-                                  ),
-                                ],
-                              ),
-                            ),
+                                    child: Column(
+                                      children: [
+                                        {"label": "Public", "icon": Icons.public},
+                                        {"label": "Friends", "icon": Icons.people_alt},
+                                        {"label": "Only Me", "icon": Icons.lock_outline},
+                                      ].map((opt) {
+                                        final label = opt["label"] as String;
+                                        final icon = opt["icon"] as IconData;
+                                        final isSel = _privacy == label;
+                                        return InkWell(
+                                          onTap: () => setState(() {
+                                            _privacy = label;
+                                            _privacyOpen = false;
+                                          }),
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                                            child: Row(
+                                              children: [
+                                                Icon(icon, size: 14, color: isSel ? const Color(0xFF1E824C) : context.textSecondary),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  label,
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 12.5,
+                                                    fontWeight: isSel ? FontWeight.w600 : FontWeight.w400,
+                                                    color: isSel ? const Color(0xFF1E824C) : context.textPrimary,
+                                                  ),
+                                                ),
+                                                if (isSel) ...[
+                                                  const Spacer(),
+                                                  const Icon(Icons.check_rounded, size: 13, color: Color(0xFF1E824C)),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
