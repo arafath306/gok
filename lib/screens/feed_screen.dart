@@ -225,36 +225,43 @@ class _FeedScreenState extends State<FeedScreen> {
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: Container(
-                                    height: 32,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    alignment: Alignment.centerLeft,
-                                    decoration: BoxDecoration(
-                                      color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: context.border.withOpacity(0.5),
-                                        width: 0.5,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            "Send your thoughts...",
-                                            style: GoogleFonts.inter(
-                                              color: context.textMuted,
-                                              fontSize: 12.5,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          height: 32,
+                                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                                          alignment: Alignment.centerLeft,
+                                          decoration: BoxDecoration(
+                                            color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: context.border.withOpacity(0.5),
+                                              width: 0.5,
                                             ),
                                           ),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  "Send your thoughts...",
+                                                  style: GoogleFonts.inter(
+                                                    color: context.textMuted,
+                                                    fontSize: 12.5,
+                                                  ),
+                                                ),
+                                              ),
+                                              Icon(
+                                                Icons.flutter_dash,
+                                                size: 15,
+                                                color: context.textMuted,
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        Icon(
-                                          Icons.flutter_dash,
-                                          size: 15,
-                                          color: context.textMuted,
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                      const Spacer(),
+                                    ],
                                   ),
                                 ),
                               ],
