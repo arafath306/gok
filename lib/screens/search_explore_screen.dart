@@ -204,6 +204,169 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     );
   }
 
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.hindSiliguri(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: context.textPrimary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrendingItem(String rank, String tag, String postsCount) {
+    return InkWell(
+      onTap: () {
+        _searchController.text = tag;
+        _onSearchChanged(tag);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              rank,
+              style: GoogleFonts.inter(
+                color: context.textMuted,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tag,
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.5,
+                      color: context.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    postsCount,
+                    style: GoogleFonts.inter(
+                      color: context.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.more_horiz, color: context.textMuted, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRisingTopicItem(String topic, String growth) {
+    return InkWell(
+      onTap: () {
+        _searchController.text = topic;
+        _onSearchChanged(topic);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: context.cardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.border, width: 0.8),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.trending_up, color: Colors.blue, size: 18),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                topic,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: context.textPrimary,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                growth,
+                style: GoogleFonts.inter(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiscussedItem(String topic, String replies) {
+    return InkWell(
+      onTap: () {
+        _searchController.text = topic;
+        _onSearchChanged(topic);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.orange, size: 16),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    topic,
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: context.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    replies,
+                    style: GoogleFonts.inter(
+                      color: context.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbService = Provider.of<DatabaseService>(context);
@@ -229,7 +392,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    "Search",
+                    "Explorer",
                     style: GoogleFonts.hindSiliguri(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -392,21 +555,36 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                       );
                                     }).toList(),
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 16),
                                 ],
 
-                                // Recommendations Header
-                                Text(
-                                  "Recommended for you",
-                                  style: GoogleFonts.hindSiliguri(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: context.textSecondary,
-                                  ),
-                                ),
+                                // 1- Trending Now 🔥
+                                _buildSectionHeader("Trending Now 🔥"),
+                                _buildTrendingItem("1", "#Piagoan", "12.4k posts"),
+                                _buildTrendingItem("2", "#FlutterDev", "8.2k posts"),
+                                _buildTrendingItem("3", "#SupabaseGlow", "5.1k posts"),
+                                _buildTrendingItem("4", "#Glassmorphism", "3.9k posts"),
                                 const SizedBox(height: 12),
+                                Divider(height: 1, color: context.border),
 
-                                // Recommendations List
+                                // 2- Rising Topics 🚀
+                                _buildSectionHeader("Rising Topics 🚀"),
+                                _buildRisingTopicItem("Dart 3.5 Features", "+180% growth"),
+                                _buildRisingTopicItem("Artificial Intelligence UI", "+120% growth"),
+                                _buildRisingTopicItem("Web3 Social Networks", "+85% growth"),
+                                const SizedBox(height: 12),
+                                Divider(height: 1, color: context.border),
+
+                                // 3- Most Discussed 👑
+                                _buildSectionHeader("Most Discussed 👑"),
+                                _buildDiscussedItem("Is remote work here to stay?", "142 replies today"),
+                                _buildDiscussedItem("Best practices for Flutter state management", "98 replies today"),
+                                _buildDiscussedItem("Supabase vs Firebase in 2026", "76 replies today"),
+                                const SizedBox(height: 12),
+                                Divider(height: 1, color: context.border),
+
+                                // 4- Recommended for you
+                                _buildSectionHeader("Recommended for you"),
                                 if (_recommended.isEmpty)
                                   SizedBox(
                                     height: 200,
