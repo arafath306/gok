@@ -28,6 +28,22 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
   late AnimationController _fabAnimationController;
   StreamSubscription? _notificationSubscription;
   bool _showBars = true;
+  Timer? _scrollStopTimer;
+
+  void _startScrollStopTimer() {
+    _scrollStopTimer?.cancel();
+    _scrollStopTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && !_showBars) {
+        setState(() {
+          _showBars = true;
+        });
+      }
+    });
+  }
+
+  void _cancelScrollStopTimer() {
+    _scrollStopTimer?.cancel();
+  }
 
   @override
   void initState() {
@@ -51,6 +67,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
   @override
   void dispose() {
     _notificationSubscription?.cancel();
+    _scrollStopTimer?.cancel();
     _pageController.dispose();
     _fabAnimationController.dispose();
     super.dispose();
@@ -790,20 +807,33 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             if (notification is ScrollUpdateNotification) {
               if (notification.metrics.axis == Axis.vertical) {
                 final double scrollDelta = notification.scrollDelta ?? 0;
-                if (scrollDelta > 5.0 && _showBars) {
-                  setState(() {
-                    _showBars = false;
-                  });
-                } else if (scrollDelta < -5.0 && !_showBars) {
-                  setState(() {
-                    _showBars = true;
-                  });
+                if (scrollDelta > 2.0) {
+                  if (_showBars) {
+                    setState(() {
+                      _showBars = false;
+                    });
+                  }
+                  _startScrollStopTimer();
+                } else if (scrollDelta < -2.0) {
+                  if (!_showBars) {
+                    setState(() {
+                      _showBars = true;
+                    });
+                  }
+                  _cancelScrollStopTimer();
                 }
-                if (notification.metrics.pixels <= 0 && !_showBars) {
-                  setState(() {
-                    _showBars = true;
-                  });
+                if (notification.metrics.pixels <= 0) {
+                  if (!_showBars) {
+                    setState(() {
+                      _showBars = true;
+                    });
+                  }
+                  _cancelScrollStopTimer();
                 }
+              }
+            } else if (notification is ScrollEndNotification) {
+              if (!_showBars) {
+                _startScrollStopTimer();
               }
             }
             return false;
