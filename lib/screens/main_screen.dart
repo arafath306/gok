@@ -856,8 +856,8 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
       floatingActionButton: (_currentIndex == 0 || _currentIndex == 4)
           ? AnimatedScale(
               scale: _showBars ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutBack,
               child: ScaleTransition(
                 scale: TweenSequence<double>([
                   TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.88), weight: 25),
@@ -892,9 +892,9 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           : null,
 
       bottomNavigationBar: AnimatedSlide(
-        offset: _showBars ? Offset.zero : const Offset(0, 1.2),
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        offset: _showBars ? Offset.zero : const Offset(0, 1.3),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
         child: Consumer<DatabaseService>(
           builder: (context, dbService, _) {
             final double bottomPadding = MediaQuery.of(context).padding.bottom;
