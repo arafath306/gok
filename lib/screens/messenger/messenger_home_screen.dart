@@ -113,19 +113,20 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0085FF),
+                                  backgroundColor: const Color(0xFF1E824C),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                   elevation: 0,
+                                  minimumSize: Size.zero,
                                 ),
-                                icon: const Icon(Icons.add_comment_rounded, size: 18),
+                                icon: const Icon(Icons.add_comment_rounded, size: 15),
                                 label: Text(
                                   'New chat',
                                   style: GoogleFonts.inter(
-                                    fontSize: 14.5,
+                                    fontSize: 12.5,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -245,7 +246,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
               MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
             );
           },
-          backgroundColor: const Color(0xFF0085FF),
+          backgroundColor: const Color(0xFF1E824C),
           shape: const CircleBorder(),
           elevation: 3,
           child: const Icon(Icons.add, color: Colors.white, size: 20),
