@@ -142,11 +142,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     setState(() {
       _currentIndex = index;
     });
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-    );
+    _pageController.jumpToPage(index);
   }
 
   void _showMockFeatureDialog(BuildContext context, String feature) {
