@@ -260,7 +260,47 @@ class _FeedScreenState extends State<FeedScreen> {
                                           ),
                                         ),
                                       ),
-                                      const Spacer(),
+                                      Expanded(
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
+                                            },
+                                            child: Container(
+                                              height: 32,
+                                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF1E824C).withOpacity(0.08),
+                                                borderRadius: BorderRadius.circular(16),
+                                                border: Border.all(
+                                                  color: const Color(0xFF1E824C).withOpacity(0.2),
+                                                  width: 0.8,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.local_fire_department_rounded,
+                                                    size: 14,
+                                                    color: Color(0xFF1E824C),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    "#Piagoan",
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: const Color(0xFF1E824C),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
