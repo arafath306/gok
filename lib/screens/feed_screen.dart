@@ -286,9 +286,9 @@ class _FeedScreenState extends State<FeedScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "আপনার ফলোয়িং লিস্টে কেউ নেই",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontSize: 16,
+                                      "You are not following anyone",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15,
                                         color: context.textSecondary,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -299,9 +299,9 @@ class _FeedScreenState extends State<FeedScreen> {
                                         context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
                                       },
                                       child: Text(
-                                        "ইউজারদের ফলো করুন",
-                                        style: GoogleFonts.hindSiliguri(
-                                          fontSize: 15,
+                                        "Follow users",
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
                                           color: const Color(0xFF1E824C).withOpacity(0.6),
                                           fontWeight: FontWeight.bold,
                                           decoration: TextDecoration.underline,
@@ -320,9 +320,9 @@ class _FeedScreenState extends State<FeedScreen> {
                               child: Center(
                                 child: Text(
                                   _selectedTabIndex == 1
-                                      ? "আপনি যাদের ফলো করছেন তাদের কোনো ডাক পাওয়া যায়নি।"
-                                      : "কোন ডাক পাওয়া যায়নি।",
-                                  style: GoogleFonts.hindSiliguri(color: context.textSecondary),
+                                      ? "No posts found from people you follow."
+                                      : "No posts found.",
+                                  style: GoogleFonts.inter(color: context.textSecondary),
                                 ),
                               ),
                             );
