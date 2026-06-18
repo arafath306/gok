@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -260,47 +261,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                           ),
                                         ),
                                       ),
-                                      Expanded(
-                                        child: Align(
-                                          alignment: Alignment.centerRight,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
-                                            },
-                                            child: Container(
-                                              height: 32,
-                                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF1E824C).withOpacity(0.08),
-                                                borderRadius: BorderRadius.circular(16),
-                                                border: Border.all(
-                                                  color: const Color(0xFF1E824C).withOpacity(0.2),
-                                                  width: 0.8,
-                                                ),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const Icon(
-                                                    Icons.local_fire_department_rounded,
-                                                    size: 14,
-                                                    color: Color(0xFF1E824C),
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    "#Piagoan",
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: const Color(0xFF1E824C),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
+                                      const TrendingTopicPill(),
                                     ],
                                   ),
                                 ),
@@ -381,3 +342,128 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 }
+
+class TrendingTopicPill extends StatefulWidget {
+  const TrendingTopicPill({super.key});
+
+  @override
+  State<TrendingTopicPill> createState() => _TrendingTopicPillState();
+}
+
+class _TrendingTopicPillState extends State<TrendingTopicPill> {
+  List<String> _topics = [];
+  int _currentIndex = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTopics();
+  }
+
+  Future<void> _loadTopics() async {
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final trending = await dbService.fetchTrendingTopics();
+    
+    if (trending.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _topics = trending.map((t) => t['topic_name'] as String).toList();
+        });
+        _startTimer();
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _topics = ["Pigeon"];
+        });
+      }
+    }
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!mounted || _topics.isEmpty) return;
+      setState(() {
+        _currentIndex = (_currentIndex + 1) % _topics.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_topics.isEmpty) return const Expanded(child: SizedBox());
+
+    final currentTopic = _topics[_currentIndex];
+    final displayTopic = currentTopic.startsWith('#') ? currentTopic : '#$currentTopic';
+
+    return Expanded(
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: GestureDetector(
+          onTap: () {
+            context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
+          },
+          child: Container(
+            height: 32,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E824C).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFF1E824C).withOpacity(0.2),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.local_fire_department_rounded,
+                  size: 14,
+                  color: Color(0xFF1E824C),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.0, 0.5),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      displayTopic,
+                      key: ValueKey<String>(displayTopic),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1E824C),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
