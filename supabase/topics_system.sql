@@ -27,6 +27,10 @@ DECLARE
     'ami', 'tumi', 'ebong', 'kintu', 'holo', 'ache', 'chilo', 'hobe', 'is', 'the', 'and', 'are', 'that', 'this', 'for', 'you', 'with', 'have', 'was', 'were', 'not', 'but', 'আমি', 'তুমি', 'এবং', 'কিন্তু', 'হলো', 'আছে', 'ছিল', 'হবে', 'একটা', 'করে', 'করা', 'হয়ে', 'থেকে', 'দিয়ে', 'জন্য', 'সাথে', 'নিয়ে', 'করেছে', 'হচ্ছে', 'হবে', 'এখানে', 'কোনো', 'টাকা', 'আজকে', 'আজ', 'কাল', 'গতকাল', 'নিয়ে', 'থেকে', 'এবং', 'কিন্তু', 'অথবা'
   ];
 BEGIN
+  IF content IS NULL THEN
+    RETURN '{}';
+  END IF;
+
   -- Split by non-alphanumeric/non-hashtag characters
   words := regexp_split_to_array(lower(content), '[^a-z0-9#\u0980-\u09FF]+');
   
@@ -191,6 +195,7 @@ BEGIN
   WITH topic_threads_list AS (
     SELECT topic_id, thread_id
     FROM public.post_topics
+    WHERE created_at >= now() - INTERVAL '24 hours'
   ),
   discussion_stats AS (
     SELECT 
