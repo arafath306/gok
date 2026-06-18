@@ -372,12 +372,6 @@ class _TrendingTopicPillState extends State<TrendingTopicPill> {
         });
         _startTimer();
       }
-    } else {
-      if (mounted) {
-        setState(() {
-          _topics = ["Pigeon"];
-        });
-      }
     }
   }
 
