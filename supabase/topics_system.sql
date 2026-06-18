@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.post_topics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     thread_id UUID REFERENCES public.threads(id) ON DELETE CASCADE NOT NULL,
     topic_id UUID REFERENCES public.topics(id) ON DELETE CASCADE NOT NULL,
-    user_id TEXT REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     CONSTRAINT unique_post_topic UNIQUE (thread_id, topic_id)
 );
@@ -223,7 +223,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION public.get_topic_threads(topic_name TEXT)
 RETURNS TABLE(
   id UUID,
-  user_id TEXT,
+  user_id UUID,
   content TEXT,
   image_urls TEXT[],
   video_url TEXT,
