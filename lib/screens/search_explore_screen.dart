@@ -162,7 +162,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                           color: context.textPrimary,
                         ),
                       ),
-                      if (user.fullName == 'Dak Official') ...[
+                      if (user.isVerified) ...[
                         const SizedBox(width: 4),
                         const Icon(
                           Icons.verified,

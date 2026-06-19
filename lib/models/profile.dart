@@ -19,6 +19,8 @@ class Profile {
   final String allowMentions;
   final bool filterAdult;
   final bool autoplayVideos;
+  final bool isVerified;
+  final bool verificationRequested;
 
   Profile({
     required this.id,
@@ -41,6 +43,8 @@ class Profile {
     this.allowMentions = 'everyone',
     this.filterAdult = true,
     this.autoplayVideos = true,
+    this.isVerified = false,
+    this.verificationRequested = false,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -65,6 +69,8 @@ class Profile {
       allowMentions: json['allow_mentions'] as String? ?? 'everyone',
       filterAdult: json['filter_adult'] as bool? ?? true,
       autoplayVideos: json['autoplay_videos'] as bool? ?? true,
+      isVerified: json['is_verified'] as bool? ?? false,
+      verificationRequested: json['verification_requested'] as bool? ?? false,
     );
   }
 
@@ -90,6 +96,8 @@ class Profile {
       'allow_mentions': allowMentions,
       'filter_adult': filterAdult,
       'autoplay_videos': autoplayVideos,
+      'is_verified': isVerified,
+      'verification_requested': verificationRequested,
     };
   }
 }

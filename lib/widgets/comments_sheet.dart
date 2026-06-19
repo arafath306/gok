@@ -78,7 +78,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
       debugPrint("Post comment error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("মন্তব্য পোস্ট করতে ব্যর্থ হয়েছে: $e")),
+          SnackBar(content: Text("Failed to post comment: $e")),
         );
       }
     }
@@ -215,8 +215,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
                 : _comments.isEmpty
                     ? Center(
                         child: Text(
-                          "কোন মন্তব্য পাওয়া যায়নি।",
-                          style: GoogleFonts.hindSiliguri(color: context.textMuted),
+                          "No comments found.",
+                          style: GoogleFonts.inter(color: context.textMuted),
                         ),
                       )
                     : (() {
@@ -295,7 +295,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               ),
                                             ),
                                           ),
-                                          if (author.fullName == 'Pigeon Official') ...[
+                                          if (author.isVerified) ...[
                                             const SizedBox(width: 4),
                                             const Icon(
                                               Icons.verified,

@@ -92,7 +92,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   Text(
                     widget.otherUser.fullName,
-                    style: GoogleFonts.hindSiliguri(
+                    style: GoogleFonts.inter(
                       fontSize: 15.5,
                       fontWeight: FontWeight.bold,
                       color: context.textPrimary,
@@ -148,8 +148,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         Icon(Icons.chat_bubble_outline_rounded, size: 48, color: context.textMuted),
                         const SizedBox(height: 12),
                         Text(
-                          "কথোপকথন শুরু করতে বার্তা পাঠান।",
-                          style: GoogleFonts.hindSiliguri(color: context.textMuted),
+                          "Send a message to start conversation.",
+                          style: GoogleFonts.inter(color: context.textMuted),
                         ),
                       ],
                     ),
@@ -193,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           children: [
                             Text(
                               msg["text"] as String,
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14.5,
                                 color: isMe ? Colors.white : context.textPrimary,
                                 height: 1.4,
@@ -248,13 +248,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: TextField(
                       controller: _messageCtrl,
                       decoration: InputDecoration(
-                        hintText: "বার্তা লিখুন...",
-                        hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 14),
+                        hintText: "Write a message...",
+                        hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary),
+                      style: GoogleFonts.inter(fontSize: 14.5, color: context.textPrimary),
                       maxLines: 4,
                       minLines: 1,
                       textInputAction: TextInputAction.send,

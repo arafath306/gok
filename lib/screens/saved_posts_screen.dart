@@ -119,8 +119,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'সংরক্ষিত পোস্ট',
-                                    style: GoogleFonts.hindSiliguri(
+                                    'Saved Posts',
+                                    style: GoogleFonts.inter(
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
                                       color: context.textPrimary,
@@ -128,9 +128,9 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                                   ),
                                   Text(
                                     savedPosts.isEmpty
-                                        ? 'কোনো পোস্ট সংরক্ষিত নেই'
-                                        : '${savedPosts.length}টি পোস্ট সংরক্ষিত আছে',
-                                    style: GoogleFonts.hindSiliguri(
+                                        ? 'No saved posts'
+                                        : '${savedPosts.length} posts saved',
+                                    style: GoogleFonts.inter(
                                       fontSize: 13,
                                       color: context.textSecondary,
                                     ),
@@ -161,8 +161,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
               child: Container(height: 0.8, color: context.border),
             ),
             title: Text(
-              'সংরক্ষিত পোস্ট',
-              style: GoogleFonts.hindSiliguri(
+              'Saved Posts',
+              style: GoogleFonts.inter(
                 fontWeight: FontWeight.w700,
                 fontSize: 17,
                 color: context.textPrimary,
@@ -207,8 +207,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'শুধুমাত্র আপনি এই পোস্টগুলো দেখতে পারবেন',
-                                      style: GoogleFonts.hindSiliguri(
+                                      'Only you can see these posts',
+                                      style: GoogleFonts.inter(
                                         fontSize: 12.5,
                                         color: const Color(0xFF1E824C),
                                         fontWeight: FontWeight.w500,
@@ -251,8 +251,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                                       ),
                                       const SizedBox(width: 3),
                                       Text(
-                                        'সেভড',
-                                        style: GoogleFonts.hindSiliguri(
+                                        'Saved',
+                                        style: GoogleFonts.inter(
                                           fontSize: 10,
                                           color: const Color(0xFF1E824C),
                                           fontWeight: FontWeight.w600,
@@ -303,8 +303,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
           ),
           const SizedBox(height: 24),
           Text(
-            'কোনো পোস্ট সংরক্ষিত নেই',
-            style: GoogleFonts.hindSiliguri(
+            'No saved posts',
+            style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: context.textPrimary,
@@ -314,8 +314,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'যে পোস্টগুলো পরে পড়তে চান, সেগুলো বুকমার্ক আইকন চেপে সংরক্ষণ করুন।',
-              style: GoogleFonts.hindSiliguri(
+              'Tap the bookmark icon on posts you want to read later.',
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 color: context.textSecondary,
                 height: 1.5,
@@ -349,8 +349,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'ফিডে ফিরে যান',
-                    style: GoogleFonts.hindSiliguri(
+                    'Back to Feed',
+                    style: GoogleFonts.inter(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,

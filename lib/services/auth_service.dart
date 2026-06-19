@@ -64,7 +64,7 @@ class AuthService with ChangeNotifier {
               'id': uid,
               'username': defaultUsername,
               'full_name': defaultUsername,
-              'bio': 'আমি ডাক অ্যাপ ব্যবহার করছি।',
+              'bio': 'I am using the Pigeon app.',
               'avatar_url': null,
               'cover_url': null,
               'followers_count': 0,
@@ -130,7 +130,7 @@ class AuthService with ChangeNotifier {
           'id': uid,
           'username': defaultUsername,
           'full_name': fullName,
-          'bio': 'আসসালামু আলাইকুম! আমি ডাক অ্যাপ ব্যবহার করছি।',
+          'bio': 'Hello! I am using the Pigeon app.',
           'avatar_url': null,
           'cover_url': null,
           'followers_count': 0,
@@ -150,7 +150,7 @@ class AuthService with ChangeNotifier {
             'id': uid,
             'username': defaultUsername,
             'full_name': fullName,
-            'bio': 'আসসালামু আলাইকুম! আমি ডাক অ্যাপ ব্যবহার করছি।',
+            'bio': 'Hello! I am using the Pigeon app.',
             'phone': phone,
           });
         } catch (innerError) {

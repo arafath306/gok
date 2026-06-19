@@ -318,7 +318,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
     // If this post was deleted, render nothing.
     if (dbService.isPostDeleted(post.id)) return const SizedBox.shrink();
 
-    final isVerified = post.author.fullName == 'Pigeon Official';
+    final isVerified = post.author.isVerified;
 
     return InkWell(
       hoverColor: Colors.transparent,

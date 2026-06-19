@@ -554,6 +554,72 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  /// Fetch list of profiles who follow [userId]
+  Future<List<Profile>> fetchUserFollowers(String userId) async {
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('profiles!follower_id(id, username, full_name, avatar_url, bio, followers_count, following_count)')
+          .eq('following_id', userId);
+      final data = response as List<dynamic>;
+      return data
+          .map((row) => Profile.fromJson(row['profiles'] as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint("Fetch user followers error: $e");
+      return [];
+    }
+  }
+
+  /// Fetch list of profiles that [userId] follows
+  Future<List<Profile>> fetchUserFollowing(String userId) async {
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('profiles!following_id(id, username, full_name, avatar_url, bio, followers_count, following_count)')
+          .eq('follower_id', userId);
+      final data = response as List<dynamic>;
+      return data
+          .map((row) => Profile.fromJson(row['profiles'] as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint("Fetch user following error: $e");
+      return [];
+    }
+  }
+
+  /// Remove a follower (the [followerId] who follows the current user)
+  Future<void> removeFollower(String followerId) async {
+    if (_currentUid.isEmpty) return;
+    try {
+      await _supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', followerId)
+          .eq('following_id', _currentUid);
+      await fetchMyProfile();
+    } catch (e) {
+      debugPrint("Remove follower error: $e");
+    }
+  }
+
+  /// Report a user
+  Future<bool> reportUser(String reportedUserId, String reason) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('reports').insert({
+        'reporter_id': _currentUid,
+        'reported_user_id': reportedUserId,
+        'reason': reason,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint("Report user error: $e");
+      return false;
+    }
+  }
+
   Future<void> fetchBlockedMutedLists() async {
     if (_currentUid.isEmpty) return;
     try {
@@ -1988,6 +2054,244 @@ class DatabaseService with ChangeNotifier {
     } catch (e) {
       debugPrint("Fetch topic threads error: $e");
       return [];
+    }
+  }
+
+  // ── Beta Center & Admin Control Panel State & Methods ──
+
+  bool get isAdmin => myProfile != null && ['admin', 'test', 'pigeon', 'system'].contains(myProfile!.username.toLowerCase());
+
+  Future<bool> submitBetaBug({
+    required String title,
+    required String desc,
+    required String severity,
+    required String screen,
+    String? screenshotUrl,
+  }) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('beta_bugs').insert({
+        'user_id': _currentUid,
+        'title': title,
+        'description': desc,
+        'severity': severity,
+        'screen_name': screen,
+        'screenshot_url': screenshotUrl,
+      });
+      return true;
+    } catch (e) {
+      debugPrint("DB Beta bug insert failed: $e");
+      return false;
+    }
+  }
+
+  Future<bool> submitBetaFeature({
+    required String title,
+    required String desc,
+    required String expectedBenefit,
+  }) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('beta_features').insert({
+        'user_id': _currentUid,
+        'title': title,
+        'description': desc,
+        'expected_benefit': expectedBenefit,
+      });
+      return true;
+    } catch (e) {
+      debugPrint("DB Beta feature insert failed: $e");
+      return false;
+    }
+  }
+
+  Future<bool> submitBetaFeedback({
+    required int rating,
+    required String liked,
+    required String improved,
+  }) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('beta_feedback').insert({
+        'user_id': _currentUid,
+        'rating': rating,
+        'liked': liked,
+        'improved': improved,
+      });
+      return true;
+    } catch (e) {
+      debugPrint("DB Beta feedback insert failed: $e");
+      return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchBetaKnownIssues() async {
+    try {
+      final response = await _supabase.from('beta_known_issues').select('*').order('updated_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      debugPrint("DB Fetch known issues failed: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchBetaChangelogs() async {
+    try {
+      final response = await _supabase.from('beta_changelogs').select('*').order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      debugPrint("DB Fetch changelogs failed: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMyBetaReports() async {
+    if (_currentUid.isEmpty) return [];
+    List<Map<String, dynamic>> results = [];
+
+    // Bugs
+    try {
+      final bugRes = await _supabase.from('beta_bugs').select('*').eq('user_id', _currentUid);
+      for (var r in (bugRes as List)) {
+        var m = Map<String, dynamic>.from(r);
+        m['type'] = 'Bug';
+        results.add(m);
+      }
+    } catch (e) {
+      debugPrint("DB Fetch my bugs error: $e");
+    }
+
+    // Features
+    try {
+      final featRes = await _supabase.from('beta_features').select('*').eq('user_id', _currentUid);
+      for (var r in (featRes as List)) {
+        var m = Map<String, dynamic>.from(r);
+        m['type'] = 'Feature';
+        results.add(m);
+      }
+    } catch (e) {
+      debugPrint("DB Fetch my features error: $e");
+    }
+
+    // Sort by created_at descending
+    results.sort((a, b) => (b['created_at'] as String).compareTo(a['created_at'] as String));
+    return results;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchAdminBetaReports() async {
+    List<Map<String, dynamic>> results = [];
+
+    // Fetch bugs
+    try {
+      final bugRes = await _supabase.from('beta_bugs').select('*, profiles(id, username, full_name, avatar_url)');
+      for (var r in (bugRes as List)) {
+        var m = Map<String, dynamic>.from(r);
+        m['type'] = 'Bug';
+        m['user'] = r['profiles'];
+        results.add(m);
+      }
+    } catch (e) {
+      debugPrint("DB Admin fetch bugs error: $e");
+    }
+
+    // Fetch features
+    try {
+      final featRes = await _supabase.from('beta_features').select('*, profiles(id, username, full_name, avatar_url)');
+      for (var r in (featRes as List)) {
+        var m = Map<String, dynamic>.from(r);
+        m['type'] = 'Feature';
+        m['user'] = r['profiles'];
+        results.add(m);
+      }
+    } catch (e) {
+      debugPrint("DB Admin fetch features error: $e");
+    }
+
+    // Fetch feedback
+    try {
+      final feedRes = await _supabase.from('beta_feedback').select('*, profiles(id, username, full_name, avatar_url)');
+      for (var r in (feedRes as List)) {
+        var m = Map<String, dynamic>.from(r);
+        m['type'] = 'Feedback';
+        m['user'] = r['profiles'];
+        results.add(m);
+      }
+    } catch (e) {
+      debugPrint("DB Admin fetch feedback error: $e");
+    }
+
+    results.sort((a, b) => (b['created_at'] as String).compareTo(a['created_at'] as String));
+    return results;
+  }
+
+  Future<bool> updateBetaReportStatus(String reportId, String type, String newStatus) async {
+    try {
+      final table = type == 'Bug' ? 'beta_bugs' : 'beta_features';
+      await _supabase.from(table).update({'status': newStatus}).eq('id', reportId);
+      return true;
+    } catch (e) {
+      debugPrint("DB Update status error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> addBetaKnownIssue(String title, String desc, String status) async {
+    try {
+      await _supabase.from('beta_known_issues').insert({
+        'title': title,
+        'description': desc,
+        'status': status,
+      });
+      return true;
+    } catch (e) {
+      debugPrint("DB Add known issue error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> updateBetaKnownIssue(String issueId, String newStatus) async {
+    try {
+      await _supabase.from('beta_known_issues').update({'status': newStatus, 'updated_at': DateTime.now().toIso8601String()}).eq('id', issueId);
+      return true;
+    } catch (e) {
+      debugPrint("DB Update known issue status error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> addBetaChangelog(String version, String newFeatures, String improvements, String bugFixes) async {
+    try {
+      await _supabase.from('beta_changelogs').insert({
+        'version': version,
+        'new_features': newFeatures,
+        'improvements': improvements,
+        'bug_fixes': bugFixes,
+      });
+      return true;
+    } catch (e) {
+      debugPrint("DB Add changelog error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> notifyBetaTester({
+    required String targetUserId,
+    required String title,
+    required String body,
+  }) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('notifications').insert({
+        'user_id': targetUserId,
+        'actor_id': _currentUid,
+        'type': 'SYSTEM',
+        'content': '$title: $body',
+        'is_read': false,
+      });
+      return true;
+    } catch (e) {
+      debugPrint("DB Send notification error: $e");
+      return false;
     }
   }
 

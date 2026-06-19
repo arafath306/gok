@@ -444,7 +444,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         ),
                       ),
                     ),
-                    if (author.fullName == 'Dak Official') ...[
+                    if (author.isVerified) ...[
                       const SizedBox(width: 4),
                       const Icon(
                         Icons.verified,
@@ -747,7 +747,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                             color: context.textPrimary,
                                           ),
                                         ),
-                                        if (activePost.author.fullName == 'Dak Official') ...[
+                                        if (activePost.author.isVerified) ...[
                                           const SizedBox(width: 4),
                                           const Icon(
                                             Icons.verified,
