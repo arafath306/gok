@@ -91,7 +91,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               border: Border.all(color: context.border, width: 0.8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 )
@@ -100,7 +100,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF1E824C).withOpacity(0.1),
+                  backgroundColor: const Color(0xFF1E824C).withValues(alpha: 0.1),
                   child: Icon(
                     event['type'] == 'message' ? Icons.chat_bubble : Icons.notifications,
                     color: const Color(0xFF1E824C),
@@ -190,8 +190,8 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     );
   }
 
-  void _showFeedbackDialog(BuildContext context) {
-    final TextEditingController feedbackController = TextEditingController();
+  void _showBetaCenterDialog(BuildContext context) {
+    final TextEditingController betaController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -199,7 +199,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          "Submit Feedback",
+          "Beta Center",
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Column(
@@ -207,16 +207,16 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Let us know your thoughts or report any issues:",
+              "Welcome to the Beta Center! Report bugs, suggest features, or help us improve:",
               style: GoogleFonts.inter(color: context.textSecondary),
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: feedbackController,
+              controller: betaController,
               maxLines: 3,
               style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
               decoration: InputDecoration(
-                hintText: "Enter your feedback...",
+                hintText: "Describe the bug or feature suggestion...",
                 hintStyle: GoogleFonts.inter(color: context.textMuted),
                 filled: true,
                 fillColor: context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF3F4F6),
@@ -244,7 +244,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                 SnackBar(
                   backgroundColor: const Color(0xFF1E824C),
                   content: Text(
-                    "Thank you for your feedback!",
+                    "Thank you for participating in our Beta program!",
                     style: GoogleFonts.inter(color: Colors.white),
                   ),
                 ),
@@ -547,10 +547,10 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         children: [
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () => _showFeedbackDialog(context),
-              icon: Icon(Icons.chat_bubble_outline_rounded, size: 16, color: context.textPrimary),
+              onPressed: () => _showBetaCenterDialog(context),
+              icon: Icon(Icons.bug_report_outlined, size: 16, color: context.textPrimary),
               label: Text(
-                "Feedback",
+                "Beta Center",
                 style: GoogleFonts.inter(
                   color: context.textPrimary,
                   fontSize: 14,
@@ -909,8 +909,8 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                   height: 52 + bottomPadding,
                   decoration: BoxDecoration(
                     color: context.isDarkMode
-                        ? Colors.black.withOpacity(0.8)
-                        : Colors.white.withOpacity(0.85),
+                        ? Colors.black.withValues(alpha: 0.8)
+                        : Colors.white.withValues(alpha: 0.85),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(24),
                       topRight: Radius.circular(24),
@@ -918,8 +918,8 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                     border: Border(
                       top: BorderSide(
                         color: context.isDarkMode
-                            ? Colors.white.withOpacity(0.12)
-                            : Colors.black.withOpacity(0.08),
+                            ? Colors.white.withValues(alpha: 0.12)
+                            : Colors.black.withValues(alpha: 0.08),
                         width: 0.5,
                       ),
                     ),
