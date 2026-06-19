@@ -10,6 +10,7 @@ import '../../utils/routes.dart';
 import '../../utils/app_theme.dart';
 import '../settings/settings_screen.dart';
 import 'edit_profile_screen.dart';
+import 'followers_following_screen.dart';
 import '../messenger/chat_screen.dart';
 import '../../widgets/custom_thread_card.dart';
 
@@ -175,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           children: [
             // Cover Image Area
             GestureDetector(
-              onTap: _isOwnProfile ? () => _pickAndUploadImage(context, db, false) : null,
+              onTap: _isOwnProfile ? () => _pickAndUploadImage(db, false) : null,
               child: Container(
                 height: coverHeight,
                 width: double.infinity,
@@ -201,8 +202,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     const Icon(Icons.camera_alt_outlined, color: Color(0xFF0085FF), size: 28),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'কভার ফটো যোগ করুন',
-                                      style: GoogleFonts.hindSiliguri(
+                                      'Add cover photo',
+                                      style: GoogleFonts.inter(
                                         fontSize: 12,
                                         color: const Color(0xFF0085FF),
                                         fontWeight: FontWeight.bold,
@@ -260,7 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               top: avatarHeightOffset,
               left: 16,
               child: GestureDetector(
-                onTap: _isOwnProfile ? () => _pickAndUploadImage(context, db, true) : null,
+                onTap: _isOwnProfile ? () => _pickAndUploadImage(db, true) : null,
                 child: Stack(
                   children: [
                     Container(
@@ -271,7 +272,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         border: Border.all(color: context.scaffoldBg, width: 3.5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -286,7 +287,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     progress == null
                                         ? child
                                         : _defaultAvatar(size: avatarRadius * 2),
-                                errorBuilder: (_, __, ___) =>
+                                errorBuilder: (context, error, stackTrace) =>
                                     _defaultAvatar(size: avatarRadius * 2),
                               )
                             : _defaultAvatar(size: avatarRadius * 2),
@@ -396,15 +397,47 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ),
 
-        // Stats
+        // Stats row — tappable followers and following
         const SizedBox(height: 4),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              _statItem(_fmt(profile?.followersCount ?? 0), 'followers'),
+              GestureDetector(
+                onTap: () {
+                  if (profile == null) return;
+                  Navigator.push(
+                    context,
+                    NoTransitionPageRoute(
+                      child: FollowersFollowingScreen(
+                        userId: profile.id,
+                        username: profile.username,
+                        listType: FollowListType.followers,
+                        isOwnProfile: _isOwnProfile,
+                      ),
+                    ),
+                  );
+                },
+                child: _statItem(_fmt(profile?.followersCount ?? 0), 'followers'),
+              ),
               const SizedBox(width: 20),
-              _statItem(_fmt(profile?.followingCount ?? 0), 'following'),
+              GestureDetector(
+                onTap: () {
+                  if (profile == null) return;
+                  Navigator.push(
+                    context,
+                    NoTransitionPageRoute(
+                      child: FollowersFollowingScreen(
+                        userId: profile.id,
+                        username: profile.username,
+                        listType: FollowListType.following,
+                        isOwnProfile: _isOwnProfile,
+                      ),
+                    ),
+                  );
+                },
+                child: _statItem(_fmt(profile?.followingCount ?? 0), 'following'),
+              ),
               const SizedBox(width: 20),
               _statItem(_fmt(threads.length), 'posts'),
             ],
@@ -418,11 +451,32 @@ class _ProfileScreenState extends State<ProfileScreen>
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               profile.bio!,
-              style: GoogleFonts.hindSiliguri(
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 color: context.textPrimary,
                 height: 1.45,
               ),
+            ),
+          ),
+        ],
+
+        // Location (country)
+        if (profile?.country != null && profile!.country!.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Icon(Icons.public_rounded, size: 14, color: context.textMuted),
+                const SizedBox(width: 5),
+                Text(
+                  profile.country!,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: context.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -538,7 +592,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           KeepAliveWrapper(child: _postsTab(profile, threads)),
           KeepAliveWrapper(child: _repliesTab(profile)),
           KeepAliveWrapper(child: _repostsTab(profile)),
-          KeepAliveWrapper(child: _emptyTab('No media yet')),
+          KeepAliveWrapper(child: _mediaTab(profile, threads)),
         ],
       );
 
@@ -688,12 +742,52 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  Widget _mediaTab(Profile? profile, List<ThreadPost> threads) {
+    final db = Provider.of<DatabaseService>(context, listen: false);
+    final mediaThreads = threads.where((p) {
+      if (db.isPostDeleted(p.id)) return false;
+      final hasImages = p.imageUrls != null && p.imageUrls!.isNotEmpty;
+      final hasVideo = p.videoUrl != null && p.videoUrl!.isNotEmpty;
+      return hasImages || hasVideo;
+    }).toList();
 
-  Widget _emptyTab(String msg) => Center(
-        child: Text(msg,
-            style: GoogleFonts.hindSiliguri(
-                fontSize: 15, color: context.textSecondary)),
+    if (mediaThreads.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                border: Border.all(color: context.border, width: 1.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.image_outlined,
+                  size: 34, color: context.textMuted),
+            ),
+            const SizedBox(height: 14),
+            Text('No media yet',
+                style: GoogleFonts.inter(
+                    fontSize: 16,
+                    color: context.textSecondary,
+                    fontWeight: FontWeight.w500)),
+          ],
+        ),
       );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 72),
+      physics: const BouncingScrollPhysics(),
+      itemCount: mediaThreads.length,
+      itemBuilder: (context, i) => CustomThreadCard(
+        key: ValueKey(mediaThreads[i].id),
+        post: mediaThreads[i],
+      ),
+    );
+  }
+
 
   // ── More Options ───────────────────────────────────────────
   void _showMoreOptions() {
@@ -745,22 +839,22 @@ class _ProfileScreenState extends State<ProfileScreen>
                     builder: (ctx) => AlertDialog(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       title: Text(
-                        'ব্লক করবেন?',
-                        style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold),
+                        'Block this account?',
+                        style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                       ),
                       content: Text(
-                        'আপনি কি নিশ্চিতভাবে এই অ্যাকাউন্টটি ব্লক করতে চান?',
-                        style: GoogleFonts.hindSiliguri(),
+                        'Are you sure you want to block this account?',
+                        style: GoogleFonts.inter(),
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: Text('বাতিল', style: GoogleFonts.hindSiliguri(color: Colors.grey)),
+                          child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey)),
                         ),
                         ElevatedButton(
                           onPressed: () => Navigator.pop(ctx, true),
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                          child: Text('ব্লক', style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold)),
+                          child: Text('Block', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -769,10 +863,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                     final settings = Provider.of<GeneralSettingsProvider>(context, listen: false);
                     final db = Provider.of<DatabaseService>(context, listen: false);
                     await settings.blockUserById(widget.userId!);
+                    if (!mounted) return;
                     db.fetchBlockedMutedLists();
                     db.fetchFeed();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('অ্যাকাউন্টটি ব্লক করা হয়েছে।', style: GoogleFonts.hindSiliguri())),
+                      SnackBar(content: Text('Account has been blocked.', style: GoogleFonts.inter())),
                     );
                     Navigator.pop(context); // Go back
                   }
@@ -781,7 +876,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ListTile(
                 leading: const Icon(Icons.flag_outlined, color: Colors.red),
                 title: Text('Report',
-                    style: GoogleFonts.hindSiliguri(
+                    style: GoogleFonts.inter(
                         fontSize: 15, color: Colors.red)),
                 onTap: () async {
                   Navigator.pop(context); // close bottom sheet
@@ -792,26 +887,26 @@ class _ProfileScreenState extends State<ProfileScreen>
                       return AlertDialog(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         title: Text(
-                          'রিপোর্ট করার কারণ',
-                          style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold),
+                          'Reason for reporting',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                         ),
                         content: TextField(
                           controller: controller,
                           decoration: InputDecoration(
-                            hintText: 'কেন রিপোর্ট করছেন তা লিখুন...',
-                            hintStyle: GoogleFonts.hindSiliguri(),
+                            hintText: 'Describe why you are reporting...',
+                            hintStyle: GoogleFonts.inter(),
                           ),
-                          style: GoogleFonts.hindSiliguri(),
+                          style: GoogleFonts.inter(),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
-                            child: Text('বাতিল', style: GoogleFonts.hindSiliguri(color: Colors.grey)),
+                            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey)),
                           ),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                            child: Text('রিপোর্ট', style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold)),
+                            child: Text('Report', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                           ),
                         ],
                       );
@@ -820,8 +915,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   if (reason != null && reason.isNotEmpty && mounted) {
                     final db = Provider.of<DatabaseService>(context, listen: false);
                     await db.reportProfile(widget.userId!, reason);
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('রিপোর্ট জমা দেওয়া হয়েছে। ধন্যবাদ!', style: GoogleFonts.hindSiliguri())),
+                      SnackBar(content: Text('Report submitted. Thank you!', style: GoogleFonts.inter())),
                     );
                   }
                 },
@@ -834,7 +930,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Future<void> _pickAndUploadImage(BuildContext context, DatabaseService db, bool isAvatar) async {
+  Future<void> _pickAndUploadImage(DatabaseService db, bool isAvatar) async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
@@ -850,8 +946,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isAvatar ? 'প্রোফাইল ছবি সফলভাবে পরিবর্তন করা হয়েছে।' : 'কভার ফটো সফলভাবে পরিবর্তন করা হয়েছে।',
-              style: GoogleFonts.hindSiliguri(),
+              isAvatar ? 'Profile photo updated successfully.' : 'Cover photo updated successfully.',
+              style: GoogleFonts.inter(),
             ),
           ),
         );
@@ -859,8 +955,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'ছবি আপলোড করতে ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
-              style: GoogleFonts.hindSiliguri(),
+              'Failed to upload image. Please try again.',
+              style: GoogleFonts.inter(),
             ),
           ),
         );
@@ -871,8 +967,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'ত্রুটি: $e',
-            style: GoogleFonts.hindSiliguri(),
+            'Error: $e',
+            style: GoogleFonts.inter(),
           ),
         ),
       );

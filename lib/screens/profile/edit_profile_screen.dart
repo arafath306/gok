@@ -4,6 +4,205 @@ import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../utils/app_theme.dart';
 
+// ─────────────────────────────────────────────────────────────────
+// Full list of world countries + ISO flags
+// ─────────────────────────────────────────────────────────────────
+const List<Map<String, String>> _kCountries = [
+  {'flag': '🇦🇫', 'name': 'Afghanistan'},
+  {'flag': '🇦🇱', 'name': 'Albania'},
+  {'flag': '🇩🇿', 'name': 'Algeria'},
+  {'flag': '🇦🇩', 'name': 'Andorra'},
+  {'flag': '🇦🇴', 'name': 'Angola'},
+  {'flag': '🇦🇬', 'name': 'Antigua and Barbuda'},
+  {'flag': '🇦🇷', 'name': 'Argentina'},
+  {'flag': '🇦🇲', 'name': 'Armenia'},
+  {'flag': '🇦🇺', 'name': 'Australia'},
+  {'flag': '🇦🇹', 'name': 'Austria'},
+  {'flag': '🇦🇿', 'name': 'Azerbaijan'},
+  {'flag': '🇧🇸', 'name': 'Bahamas'},
+  {'flag': '🇧🇭', 'name': 'Bahrain'},
+  {'flag': '🇧🇩', 'name': 'Bangladesh'},
+  {'flag': '🇧🇧', 'name': 'Barbados'},
+  {'flag': '🇧🇾', 'name': 'Belarus'},
+  {'flag': '🇧🇪', 'name': 'Belgium'},
+  {'flag': '🇧🇿', 'name': 'Belize'},
+  {'flag': '🇧🇯', 'name': 'Benin'},
+  {'flag': '🇧🇹', 'name': 'Bhutan'},
+  {'flag': '🇧🇴', 'name': 'Bolivia'},
+  {'flag': '🇧🇦', 'name': 'Bosnia and Herzegovina'},
+  {'flag': '🇧🇼', 'name': 'Botswana'},
+  {'flag': '🇧🇷', 'name': 'Brazil'},
+  {'flag': '🇧🇳', 'name': 'Brunei'},
+  {'flag': '🇧🇬', 'name': 'Bulgaria'},
+  {'flag': '🇧🇫', 'name': 'Burkina Faso'},
+  {'flag': '🇧🇮', 'name': 'Burundi'},
+  {'flag': '🇨🇻', 'name': 'Cabo Verde'},
+  {'flag': '🇰🇭', 'name': 'Cambodia'},
+  {'flag': '🇨🇲', 'name': 'Cameroon'},
+  {'flag': '🇨🇦', 'name': 'Canada'},
+  {'flag': '🇨🇫', 'name': 'Central African Republic'},
+  {'flag': '🇹🇩', 'name': 'Chad'},
+  {'flag': '🇨🇱', 'name': 'Chile'},
+  {'flag': '🇨🇳', 'name': 'China'},
+  {'flag': '🇨🇴', 'name': 'Colombia'},
+  {'flag': '🇰🇲', 'name': 'Comoros'},
+  {'flag': '🇨🇩', 'name': 'Congo (DRC)'},
+  {'flag': '🇨🇬', 'name': 'Congo (Republic)'},
+  {'flag': '🇨🇷', 'name': 'Costa Rica'},
+  {'flag': '🇨🇮', 'name': "Côte d'Ivoire"},
+  {'flag': '🇭🇷', 'name': 'Croatia'},
+  {'flag': '🇨🇺', 'name': 'Cuba'},
+  {'flag': '🇨🇾', 'name': 'Cyprus'},
+  {'flag': '🇨🇿', 'name': 'Czech Republic'},
+  {'flag': '🇩🇰', 'name': 'Denmark'},
+  {'flag': '🇩🇯', 'name': 'Djibouti'},
+  {'flag': '🇩🇲', 'name': 'Dominica'},
+  {'flag': '🇩🇴', 'name': 'Dominican Republic'},
+  {'flag': '🇪🇨', 'name': 'Ecuador'},
+  {'flag': '🇪🇬', 'name': 'Egypt'},
+  {'flag': '🇸🇻', 'name': 'El Salvador'},
+  {'flag': '🇬🇶', 'name': 'Equatorial Guinea'},
+  {'flag': '🇪🇷', 'name': 'Eritrea'},
+  {'flag': '🇪🇪', 'name': 'Estonia'},
+  {'flag': '🇸🇿', 'name': 'Eswatini'},
+  {'flag': '🇪🇹', 'name': 'Ethiopia'},
+  {'flag': '🇫🇯', 'name': 'Fiji'},
+  {'flag': '🇫🇮', 'name': 'Finland'},
+  {'flag': '🇫🇷', 'name': 'France'},
+  {'flag': '🇬🇦', 'name': 'Gabon'},
+  {'flag': '🇬🇲', 'name': 'Gambia'},
+  {'flag': '🇬🇪', 'name': 'Georgia'},
+  {'flag': '🇩🇪', 'name': 'Germany'},
+  {'flag': '🇬🇭', 'name': 'Ghana'},
+  {'flag': '🇬🇷', 'name': 'Greece'},
+  {'flag': '🇬🇩', 'name': 'Grenada'},
+  {'flag': '🇬🇹', 'name': 'Guatemala'},
+  {'flag': '🇬🇳', 'name': 'Guinea'},
+  {'flag': '🇬🇼', 'name': 'Guinea-Bissau'},
+  {'flag': '🇬🇾', 'name': 'Guyana'},
+  {'flag': '🇭🇹', 'name': 'Haiti'},
+  {'flag': '🇭🇳', 'name': 'Honduras'},
+  {'flag': '🇭🇺', 'name': 'Hungary'},
+  {'flag': '🇮🇸', 'name': 'Iceland'},
+  {'flag': '🇮🇳', 'name': 'India'},
+  {'flag': '🇮🇩', 'name': 'Indonesia'},
+  {'flag': '🇮🇷', 'name': 'Iran'},
+  {'flag': '🇮🇶', 'name': 'Iraq'},
+  {'flag': '🇮🇪', 'name': 'Ireland'},
+  {'flag': '🇮🇱', 'name': 'Israel'},
+  {'flag': '🇮🇹', 'name': 'Italy'},
+  {'flag': '🇯🇲', 'name': 'Jamaica'},
+  {'flag': '🇯🇵', 'name': 'Japan'},
+  {'flag': '🇯🇴', 'name': 'Jordan'},
+  {'flag': '🇰🇿', 'name': 'Kazakhstan'},
+  {'flag': '🇰🇪', 'name': 'Kenya'},
+  {'flag': '🇰🇮', 'name': 'Kiribati'},
+  {'flag': '🇰🇼', 'name': 'Kuwait'},
+  {'flag': '🇰🇬', 'name': 'Kyrgyzstan'},
+  {'flag': '🇱🇦', 'name': 'Laos'},
+  {'flag': '🇱🇻', 'name': 'Latvia'},
+  {'flag': '🇱🇧', 'name': 'Lebanon'},
+  {'flag': '🇱🇸', 'name': 'Lesotho'},
+  {'flag': '🇱🇷', 'name': 'Liberia'},
+  {'flag': '🇱🇾', 'name': 'Libya'},
+  {'flag': '🇱🇮', 'name': 'Liechtenstein'},
+  {'flag': '🇱🇹', 'name': 'Lithuania'},
+  {'flag': '🇱🇺', 'name': 'Luxembourg'},
+  {'flag': '🇲🇬', 'name': 'Madagascar'},
+  {'flag': '🇲🇼', 'name': 'Malawi'},
+  {'flag': '🇲🇾', 'name': 'Malaysia'},
+  {'flag': '🇲🇻', 'name': 'Maldives'},
+  {'flag': '🇲🇱', 'name': 'Mali'},
+  {'flag': '🇲🇹', 'name': 'Malta'},
+  {'flag': '🇲🇭', 'name': 'Marshall Islands'},
+  {'flag': '🇲🇷', 'name': 'Mauritania'},
+  {'flag': '🇲🇺', 'name': 'Mauritius'},
+  {'flag': '🇲🇽', 'name': 'Mexico'},
+  {'flag': '🇫🇲', 'name': 'Micronesia'},
+  {'flag': '🇲🇩', 'name': 'Moldova'},
+  {'flag': '🇲🇨', 'name': 'Monaco'},
+  {'flag': '🇲🇳', 'name': 'Mongolia'},
+  {'flag': '🇲🇪', 'name': 'Montenegro'},
+  {'flag': '🇲🇦', 'name': 'Morocco'},
+  {'flag': '🇲🇿', 'name': 'Mozambique'},
+  {'flag': '🇲🇲', 'name': 'Myanmar'},
+  {'flag': '🇳🇦', 'name': 'Namibia'},
+  {'flag': '🇳🇷', 'name': 'Nauru'},
+  {'flag': '🇳🇵', 'name': 'Nepal'},
+  {'flag': '🇳🇱', 'name': 'Netherlands'},
+  {'flag': '🇳🇿', 'name': 'New Zealand'},
+  {'flag': '🇳🇮', 'name': 'Nicaragua'},
+  {'flag': '🇳🇪', 'name': 'Niger'},
+  {'flag': '🇳🇬', 'name': 'Nigeria'},
+  {'flag': '🇲🇰', 'name': 'North Macedonia'},
+  {'flag': '🇳🇴', 'name': 'Norway'},
+  {'flag': '🇴🇲', 'name': 'Oman'},
+  {'flag': '🇵🇰', 'name': 'Pakistan'},
+  {'flag': '🇵🇼', 'name': 'Palau'},
+  {'flag': '🇵🇦', 'name': 'Panama'},
+  {'flag': '🇵🇬', 'name': 'Papua New Guinea'},
+  {'flag': '🇵🇾', 'name': 'Paraguay'},
+  {'flag': '🇵🇪', 'name': 'Peru'},
+  {'flag': '🇵🇭', 'name': 'Philippines'},
+  {'flag': '🇵🇱', 'name': 'Poland'},
+  {'flag': '🇵🇹', 'name': 'Portugal'},
+  {'flag': '🇶🇦', 'name': 'Qatar'},
+  {'flag': '🇷🇴', 'name': 'Romania'},
+  {'flag': '🇷🇺', 'name': 'Russia'},
+  {'flag': '🇷🇼', 'name': 'Rwanda'},
+  {'flag': '🇰🇳', 'name': 'Saint Kitts and Nevis'},
+  {'flag': '🇱🇨', 'name': 'Saint Lucia'},
+  {'flag': '🇻🇨', 'name': 'Saint Vincent and the Grenadines'},
+  {'flag': '🇼🇸', 'name': 'Samoa'},
+  {'flag': '🇸🇲', 'name': 'San Marino'},
+  {'flag': '🇸🇹', 'name': 'São Tomé and Príncipe'},
+  {'flag': '🇸🇦', 'name': 'Saudi Arabia'},
+  {'flag': '🇸🇳', 'name': 'Senegal'},
+  {'flag': '🇷🇸', 'name': 'Serbia'},
+  {'flag': '🇸🇨', 'name': 'Seychelles'},
+  {'flag': '🇸🇱', 'name': 'Sierra Leone'},
+  {'flag': '🇸🇬', 'name': 'Singapore'},
+  {'flag': '🇸🇰', 'name': 'Slovakia'},
+  {'flag': '🇸🇮', 'name': 'Slovenia'},
+  {'flag': '🇸🇧', 'name': 'Solomon Islands'},
+  {'flag': '🇸🇴', 'name': 'Somalia'},
+  {'flag': '🇿🇦', 'name': 'South Africa'},
+  {'flag': '🇸🇸', 'name': 'South Sudan'},
+  {'flag': '🇪🇸', 'name': 'Spain'},
+  {'flag': '🇱🇰', 'name': 'Sri Lanka'},
+  {'flag': '🇸🇩', 'name': 'Sudan'},
+  {'flag': '🇸🇷', 'name': 'Suriname'},
+  {'flag': '🇸🇪', 'name': 'Sweden'},
+  {'flag': '🇨🇭', 'name': 'Switzerland'},
+  {'flag': '🇸🇾', 'name': 'Syria'},
+  {'flag': '🇹🇼', 'name': 'Taiwan'},
+  {'flag': '🇹🇯', 'name': 'Tajikistan'},
+  {'flag': '🇹🇿', 'name': 'Tanzania'},
+  {'flag': '🇹🇭', 'name': 'Thailand'},
+  {'flag': '🇹🇱', 'name': 'Timor-Leste'},
+  {'flag': '🇹🇬', 'name': 'Togo'},
+  {'flag': '🇹🇴', 'name': 'Tonga'},
+  {'flag': '🇹🇹', 'name': 'Trinidad and Tobago'},
+  {'flag': '🇹🇳', 'name': 'Tunisia'},
+  {'flag': '🇹🇷', 'name': 'Turkey'},
+  {'flag': '🇹🇲', 'name': 'Turkmenistan'},
+  {'flag': '🇹🇻', 'name': 'Tuvalu'},
+  {'flag': '🇺🇬', 'name': 'Uganda'},
+  {'flag': '🇺🇦', 'name': 'Ukraine'},
+  {'flag': '🇦🇪', 'name': 'United Arab Emirates'},
+  {'flag': '🇬🇧', 'name': 'United Kingdom'},
+  {'flag': '🇺🇸', 'name': 'United States'},
+  {'flag': '🇺🇾', 'name': 'Uruguay'},
+  {'flag': '🇺🇿', 'name': 'Uzbekistan'},
+  {'flag': '🇻🇺', 'name': 'Vanuatu'},
+  {'flag': '🇻🇦', 'name': 'Vatican City'},
+  {'flag': '🇻🇪', 'name': 'Venezuela'},
+  {'flag': '🇻🇳', 'name': 'Vietnam'},
+  {'flag': '🇾🇪', 'name': 'Yemen'},
+  {'flag': '🇿🇲', 'name': 'Zambia'},
+  {'flag': '🇿🇼', 'name': 'Zimbabwe'},
+];
+
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> profile;
   const EditProfileScreen({super.key, required this.profile});
@@ -21,6 +220,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _villageCtrl;
   late TextEditingController _zipCtrl;
 
+  String? _selectedCountry;
   String? _selectedDivision;
   String? _selectedGender;
   String? _birthdateString;
@@ -28,54 +228,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isSaving = false;
   String? _errorMsg;
 
-  final List<String> _divisions = [
-    "ঢাকা (Dhaka)",
-    "চট্টগ্রাম (Chattogram)",
-    "রাজশাহী (Rajshahi)",
-    "খুলনা (Khulna)",
-    "বরিশাল (Barishal)",
-    "সিলেট (Sylhet)",
-    "রংপুর (Rangpur)",
-    "ময়মনসিংহ (Mymensingh)"
-  ];
-
   final List<Map<String, String>> _genders = [
-    {"label": "পুরুষ (Male)", "value": "পুরুষ"},
-    {"label": "নারী (Female)", "value": "নারী"},
-    {"label": "অন্যান্য (Other)", "value": "অন্যান্য"}
+    {"label": "Male", "value": "Male"},
+    {"label": "Female", "value": "Female"},
+    {"label": "Other", "value": "Other"}
   ];
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl =
-        TextEditingController(text: widget.profile['full_name']?.toString() ?? '');
-    _usernameCtrl =
-        TextEditingController(text: widget.profile['username']?.toString() ?? '');
-    _bioCtrl =
-        TextEditingController(text: widget.profile['bio']?.toString() ?? '');
-    _phoneCtrl =
-        TextEditingController(text: widget.profile['phone']?.toString() ?? '');
-    _cityCtrl =
-        TextEditingController(text: widget.profile['city']?.toString() ?? '');
-    _villageCtrl =
-        TextEditingController(text: widget.profile['village']?.toString() ?? '');
-    _zipCtrl =
-        TextEditingController(text: widget.profile['zip']?.toString() ?? '');
+    _nameCtrl = TextEditingController(text: widget.profile['full_name']?.toString() ?? '');
+    _usernameCtrl = TextEditingController(text: widget.profile['username']?.toString() ?? '');
+    _bioCtrl = TextEditingController(text: widget.profile['bio']?.toString() ?? '');
+    _phoneCtrl = TextEditingController(text: widget.profile['phone']?.toString() ?? '');
+    _cityCtrl = TextEditingController(text: widget.profile['city']?.toString() ?? '');
+    _villageCtrl = TextEditingController(text: widget.profile['village']?.toString() ?? '');
+    _zipCtrl = TextEditingController(text: widget.profile['zip']?.toString() ?? '');
+
+    _selectedCountry = widget.profile['country']?.toString();
+    if (_selectedCountry != null && _selectedCountry!.isEmpty) _selectedCountry = null;
 
     _selectedDivision = widget.profile['division']?.toString();
-    if (_selectedDivision != null && !_divisions.contains(_selectedDivision)) {
-      _selectedDivision = null;
-    }
+    if (_selectedDivision != null && _selectedDivision!.isEmpty) _selectedDivision = null;
 
     _selectedGender = widget.profile['gender']?.toString();
     if (_selectedGender != null) {
       if (_selectedGender == 'Male' || _selectedGender == 'পুরুষ') {
-        _selectedGender = 'পুরুষ';
+        _selectedGender = 'Male';
       } else if (_selectedGender == 'Female' || _selectedGender == 'নারী') {
-        _selectedGender = 'নারী';
+        _selectedGender = 'Female';
       } else if (_selectedGender == 'Other' || _selectedGender == 'অন্যান্য') {
-        _selectedGender = 'অন্যান্য';
+        _selectedGender = 'Other';
       } else {
         _selectedGender = null;
       }
@@ -95,16 +278,58 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  // ── Country picker ─────────────────────────────────────────
+  void _showCountryPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _SearchablePickerSheet(
+        title: 'Select Country',
+        hintText: 'Search countries...',
+        items: _kCountries.map((c) => '${c['flag']} ${c['name']}').toList(),
+        selected: _selectedCountry != null
+            ? _kCountries
+                .where((c) => c['name'] == _selectedCountry)
+                .map((c) => '${c['flag']} ${c['name']}')
+                .firstOrNull
+            : null,
+        onSelected: (val) {
+          final name = val.substring(val.indexOf(' ') + 1);
+          setState(() => _selectedCountry = name);
+        },
+      ),
+    );
+  }
+
+  // ── Division / State / Region picker ───────────────────────
+  void _showDivisionPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _SearchablePickerSheet(
+        title: 'Select State / Division / Region',
+        hintText: 'Search or type any region...',
+        items: _kWorldDivisions,
+        selected: _selectedDivision,
+        allowCustom: true,
+        onSelected: (val) => setState(() => _selectedDivision = val),
+      ),
+    );
+  }
+
   Future<void> _selectBirthdate(BuildContext context) async {
     DateTime initialDate = DateTime(2000);
     if (_birthdateString != null && _birthdateString!.isNotEmpty) {
       try {
         final parts = _birthdateString!.split('/');
         if (parts.length == 3) {
-          final day = int.parse(parts[0]);
-          final month = int.parse(parts[1]);
-          final year = int.parse(parts[2]);
-          initialDate = DateTime(year, month, day);
+          initialDate = DateTime(
+            int.parse(parts[2]),
+            int.parse(parts[1]),
+            int.parse(parts[0]),
+          );
         }
       } catch (_) {}
     }
@@ -157,7 +382,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       username: _usernameCtrl.text.trim().toLowerCase(),
       bio: _bioCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
-      country: widget.profile['country']?.toString() ?? '',
+      country: _selectedCountry ?? '',
       division: _selectedDivision,
       city: _cityCtrl.text.trim(),
       village: _villageCtrl.text.trim(),
@@ -193,7 +418,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         title: Text(
           'Edit Profile',
-          style: GoogleFonts.hindSiliguri(
+          style: GoogleFonts.inter(
               fontWeight: FontWeight.bold, color: context.textPrimary, fontSize: 17),
         ),
         actions: [
@@ -208,7 +433,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   )
                 : Text(
                     'Save',
-                    style: GoogleFonts.hindSiliguri(
+                    style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF0085FF),
@@ -235,6 +460,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Text(_errorMsg!,
                   style: const TextStyle(color: Colors.red, fontSize: 13)),
             ),
+
           _field('Display Name', _nameCtrl, fieldBg),
           const SizedBox(height: 14),
           _field('Username', _usernameCtrl, fieldBg, prefix: '@'),
@@ -245,50 +471,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _field('Phone', _phoneCtrl, fieldBg, hint: '+880XXXXXXXXXX'),
           const SizedBox(height: 14),
 
-          // Division Dropdown
-          Text('Division',
-              style: GoogleFonts.hindSiliguri(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: context.textSecondary)),
+          // ── Country ──────────────────────────────────────────
+          _label('Country'),
           const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            dropdownColor: context.cardBg,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: fieldBg,
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            ),
+          _pickerTile(
+            fieldBg: fieldBg,
+            value: _selectedCountry != null
+                ? _kCountries
+                    .where((c) => c['name'] == _selectedCountry)
+                    .map((c) => '${c['flag']}  $_selectedCountry')
+                    .firstOrNull
+                : null,
+            hint: 'Select your country',
+            icon: Icons.public_rounded,
+            onTap: _showCountryPicker,
+            onClear: _selectedCountry != null
+                ? () => setState(() => _selectedCountry = null)
+                : null,
+          ),
+          const SizedBox(height: 14),
+
+          // ── Division / State / Region ─────────────────────────
+          _label('State / Division / Region'),
+          const SizedBox(height: 6),
+          _pickerTile(
+            fieldBg: fieldBg,
             value: _selectedDivision,
-            hint: Text('Select Division',
-                style: GoogleFonts.hindSiliguri(color: context.textMuted)),
-            items: _divisions
-                .map((div) => DropdownMenuItem(
-                    value: div,
-                    child: Text(div, style: GoogleFonts.hindSiliguri(color: context.textPrimary))))
-                .toList(),
-            onChanged: (val) => setState(() => _selectedDivision = val),
+            hint: 'Search or type any region...',
+            icon: Icons.location_city_rounded,
+            onTap: _showDivisionPicker,
+            onClear: _selectedDivision != null
+                ? () => setState(() => _selectedDivision = null)
+                : null,
           ),
           const SizedBox(height: 14),
 
           _field('City / Town', _cityCtrl, fieldBg, hint: 'e.g. Mirpur, Dhaka'),
           const SizedBox(height: 14),
-          _field('Village / Street', _villageCtrl, fieldBg,
-              hint: 'e.g. Road 5, Block D'),
+          _field('Village / Street', _villageCtrl, fieldBg, hint: 'e.g. Road 5, Block D'),
           const SizedBox(height: 14),
           _field('ZIP Code', _zipCtrl, fieldBg, hint: 'e.g. 1216'),
           const SizedBox(height: 14),
 
-          // Gender Dropdown
-          Text('Gender',
-              style: GoogleFonts.hindSiliguri(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: context.textSecondary)),
+          // ── Gender ───────────────────────────────────────────
+          _label('Gender'),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
             dropdownColor: context.cardBg,
@@ -301,25 +527,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
-            value: _selectedGender,
+            initialValue: _selectedGender,
             hint: Text('Select Gender',
-                style: GoogleFonts.hindSiliguri(color: context.textMuted)),
+                style: GoogleFonts.inter(color: context.textMuted)),
             items: _genders
                 .map((g) => DropdownMenuItem(
                     value: g['value'],
-                    child:
-                        Text(g['label']!, style: GoogleFonts.hindSiliguri(color: context.textPrimary))))
+                    child: Text(g['label']!,
+                        style: GoogleFonts.inter(color: context.textPrimary))))
                 .toList(),
             onChanged: (val) => setState(() => _selectedGender = val),
           ),
           const SizedBox(height: 14),
 
-          // Birthdate
-          Text('Birth Date',
-              style: GoogleFonts.hindSiliguri(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: context.textSecondary)),
+          // ── Birthdate ─────────────────────────────────────────
+          _label('Birth Date'),
           const SizedBox(height: 6),
           GestureDetector(
             onTap: () => _selectBirthdate(context),
@@ -338,10 +560,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _birthdateString != null && _birthdateString!.isNotEmpty
                         ? _birthdateString!
                         : 'Select Birth Date',
-                    style: GoogleFonts.hindSiliguri(
+                    style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: _birthdateString != null &&
-                              _birthdateString!.isNotEmpty
+                      color: _birthdateString != null && _birthdateString!.isNotEmpty
                           ? context.textPrimary
                           : context.textMuted,
                     ),
@@ -352,6 +573,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  Widget _label(String text) => Text(
+        text,
+        style: GoogleFonts.inter(
+            fontSize: 13, fontWeight: FontWeight.bold, color: context.textSecondary),
+      );
+
+  Widget _pickerTile({
+    required Color fieldBg,
+    required String? value,
+    required String hint,
+    required IconData icon,
+    required VoidCallback onTap,
+    VoidCallback? onClear,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
+          color: fieldBg,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: context.textSecondary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                value ?? hint,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: value != null ? context.textPrimary : context.textMuted,
+                ),
+              ),
+            ),
+            if (onClear != null)
+              GestureDetector(
+                onTap: onClear,
+                child: Icon(Icons.close_rounded, size: 18, color: context.textMuted),
+              )
+            else
+              Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 20, color: context.textSecondary),
+          ],
+        ),
       ),
     );
   }
@@ -367,31 +637,292 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.hindSiliguri(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: context.textSecondary)),
+        _label(label),
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,
           maxLines: maxLines,
           decoration: InputDecoration(
             prefixText: prefix,
-            prefixStyle: GoogleFonts.hindSiliguri(color: context.textSecondary),
+            prefixStyle: GoogleFonts.inter(color: context.textSecondary),
             hintText: hint,
-            hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted),
+            hintStyle: GoogleFonts.inter(color: context.textMuted),
             filled: true,
             fillColor: bg,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
-          style: GoogleFonts.hindSiliguri(fontSize: 14, color: context.textPrimary),
+          style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
         ),
       ],
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Reusable searchable bottom-sheet picker
+// ─────────────────────────────────────────────────────────────────
+class _SearchablePickerSheet extends StatefulWidget {
+  final String title;
+  final String hintText;
+  final List<String> items;
+  final String? selected;
+  final bool allowCustom;
+  final ValueChanged<String> onSelected;
+
+  const _SearchablePickerSheet({
+    required this.title,
+    required this.hintText,
+    required this.items,
+    required this.onSelected,
+    this.selected,
+    this.allowCustom = false,
+  });
+
+  @override
+  State<_SearchablePickerSheet> createState() => _SearchablePickerSheetState();
+}
+
+class _SearchablePickerSheetState extends State<_SearchablePickerSheet> {
+  late TextEditingController _searchCtrl;
+  late List<String> _filtered;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl = TextEditingController();
+    _filtered = widget.items;
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onSearch() {
+    final q = _searchCtrl.text.toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty
+          ? widget.items
+          : widget.items.where((i) => i.toLowerCase().contains(q)).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sheetBg = context.isDarkMode ? const Color(0xFF0D0F1A) : Colors.white;
+    final inputBg = context.isDarkMode ? const Color(0xFF1A1D2E) : const Color(0xFFF3F5F8);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.88,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (_, scrollCtrl) => Container(
+        decoration: BoxDecoration(
+          color: sheetBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                widget.title,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: context.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
+                decoration: InputDecoration(
+                  hintText: widget.hintText,
+                  hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
+                  prefixIcon: Icon(Icons.search_rounded, color: context.textMuted, size: 20),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            _searchCtrl.clear();
+                          },
+                          child: Icon(Icons.close_rounded, color: context.textMuted, size: 18),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: inputBg,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Custom entry option
+            if (widget.allowCustom &&
+                _searchCtrl.text.trim().isNotEmpty &&
+                !_filtered.any((item) =>
+                    item.toLowerCase() == _searchCtrl.text.trim().toLowerCase()))
+              ListTile(
+                leading: Icon(Icons.add_circle_outline_rounded,
+                    color: const Color(0xFF0085FF), size: 22),
+                title: Text(
+                  'Use "${_searchCtrl.text.trim()}"',
+                  style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF0085FF),
+                      fontWeight: FontWeight.w500),
+                ),
+                onTap: () {
+                  widget.onSelected(_searchCtrl.text.trim());
+                  Navigator.pop(context);
+                },
+              ),
+
+            // Divider
+            Divider(height: 1, color: context.border),
+
+            // List
+            Expanded(
+              child: ListView.builder(
+                controller: scrollCtrl,
+                itemCount: _filtered.length,
+                itemBuilder: (_, i) {
+                  final item = _filtered[i];
+                  final isSelected = item == widget.selected;
+                  return ListTile(
+                    dense: true,
+                    title: Text(
+                      item,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: isSelected
+                            ? const Color(0xFF0085FF)
+                            : context.textPrimary,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_rounded,
+                            color: Color(0xFF0085FF), size: 18)
+                        : null,
+                    onTap: () {
+                      widget.onSelected(item);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Curated list of world divisions/states/regions
+// ─────────────────────────────────────────────────────────────────
+const List<String> _kWorldDivisions = [
+  // Bangladesh
+  'Dhaka', 'Chattogram', 'Rajshahi', 'Khulna', 'Barishal', 'Sylhet', 'Rangpur', 'Mymensingh',
+  // India
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa',
+  'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala',
+  'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland',
+  'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir',
+  // United States
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+  'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+  'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+  'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
+  'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina',
+  'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
+  'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
+  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming',
+  // United Kingdom
+  'England', 'Scotland', 'Wales', 'Northern Ireland', 'London', 'Manchester',
+  'Birmingham', 'Yorkshire', 'Lancashire', 'Kent',
+  // Canada
+  'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador',
+  'Northwest Territories', 'Nova Scotia', 'Nunavut', 'Ontario', 'Prince Edward Island',
+  'Quebec', 'Saskatchewan', 'Yukon',
+  // Australia
+  'New South Wales', 'Queensland', 'South Australia', 'Tasmania', 'Victoria',
+  'Western Australia', 'Australian Capital Territory', 'Northern Territory',
+  // Germany
+  'Bavaria', 'Baden-Württemberg', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg',
+  'Hesse', 'Lower Saxony', 'Mecklenburg-Vorpommern', 'North Rhine-Westphalia',
+  'Rhineland-Palatinate', 'Saarland', 'Saxony', 'Saxony-Anhalt',
+  'Schleswig-Holstein', 'Thuringia',
+  // France
+  'Île-de-France', 'Normandy', 'Bretagne', 'Occitanie', 'Nouvelle-Aquitaine',
+  'Hauts-de-France', 'Grand Est', 'Pays de la Loire', 'Auvergne-Rhône-Alpes',
+  // Pakistan
+  'Punjab', 'Sindh', 'Khyber Pakhtunkhwa', 'Balochistan', 'Islamabad Capital Territory',
+  'Azad Kashmir', 'Gilgit-Baltistan',
+  // China
+  'Beijing', 'Shanghai', 'Guangdong', 'Sichuan', 'Zhejiang', 'Jiangsu', 'Shandong',
+  'Henan', 'Hunan', 'Hubei', 'Yunnan', 'Xinjiang', 'Tibet', 'Inner Mongolia',
+  // Japan
+  'Tokyo', 'Osaka', 'Hokkaido', 'Aichi', 'Kanagawa', 'Fukuoka', 'Kyoto',
+  'Hyogo', 'Chiba', 'Saitama', 'Hiroshima', 'Okinawa',
+  // Brazil
+  'São Paulo', 'Rio de Janeiro', 'Minas Gerais', 'Bahia', 'Rio Grande do Sul',
+  'Paraná', 'Pernambuco', 'Ceará', 'Goiás', 'Maranhão', 'Amazonas', 'Pará',
+  // Russia
+  'Moscow Oblast', 'Saint Petersburg', 'Krasnodar Krai', 'Sverdlovsk Oblast',
+  'Novosibirsk Oblast', 'Tatarstan', 'Bashkortostan', 'Chelyabinsk Oblast',
+  // Middle East
+  'Riyadh Province', 'Makkah Province', 'Madinah Province', 'Eastern Province',
+  'Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman',
+  'Cairo Governorate', 'Giza Governorate', 'Alexandria Governorate',
+  // Turkey
+  'Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana',
+  // Malaysia
+  'Kuala Lumpur', 'Selangor', 'Johor', 'Penang', 'Sabah', 'Sarawak',
+  // Indonesia
+  'Jakarta', 'West Java', 'East Java', 'Central Java', 'Bali', 'Sumatra',
+  // Nigeria
+  'Lagos State', 'Kano State', 'Abuja (FCT)', 'Rivers State', 'Oyo State',
+  // South Africa
+  'Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Limpopo',
+  // Mexico
+  'Mexico City', 'Estado de México', 'Jalisco', 'Nuevo León', 'Veracruz',
+  // Argentina
+  'Buenos Aires', 'Córdoba', 'Santa Fe', 'Mendoza', 'Tucumán',
+  // Spain
+  'Madrid', 'Catalonia', 'Andalusia', 'Valencia', 'Galicia', 'Basque Country',
+  // Italy
+  'Lombardy', 'Lazio', 'Campania', 'Sicily', 'Veneto', 'Tuscany',
+];
