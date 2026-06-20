@@ -153,7 +153,7 @@ class SavedThreadsScreen extends StatelessWidget {
                 style: GoogleFonts.inter(fontSize: 12.5, color: context.textSecondary),
               ),
               const SizedBox(width: 16),
-              Icon(Icons.chat_bubble_outline_rounded, size: 16, color: context.textMuted),
+              Icon(Icons.mode_comment_outlined, size: 16, color: context.textMuted),
               const SizedBox(width: 4),
               Text(
                 '${thread['replies']}',

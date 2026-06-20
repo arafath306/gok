@@ -260,24 +260,46 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Enable RLS
-ALTER TABLE public.topics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.post_topics ENABLE ROW LEVEL SECURITY;
-
--- Drop existing policies if any
+-- Drop existing policies to prevent conflicts
 DROP POLICY IF EXISTS "Allow public read access to topics" ON public.topics;
-DROP POLICY IF EXISTS "Allow public read access to post_topics" ON public.post_topics;
-DROP POLICY IF EXISTS "Allow authenticated users to insert post_topics" ON public.post_topics;
+DROP POLICY IF EXISTS "Allow authenticated users to insert topics" ON public.topics;
+DROP POLICY IF EXISTS "Allow authenticated users to update topics" ON public.topics;
 
--- Add policies
+-- Re-enable RLS on topics
+ALTER TABLE public.topics ENABLE ROW LEVEL SECURITY;
+
+-- 1. Anyone can read topics
 CREATE POLICY "Allow public read access to topics" ON public.topics
   FOR SELECT USING (true);
 
+-- 2. Authenticated users can insert new topics (needed for sync trigger)
+CREATE POLICY "Allow authenticated users to insert topics" ON public.topics
+  FOR INSERT WITH CHECK (true);
+
+-- 3. Authenticated users can update topics (needed for sync trigger ON CONFLICT DO UPDATE)
+CREATE POLICY "Allow authenticated users to update topics" ON public.topics
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+
+-- Drop existing policies to prevent conflicts on post_topics
+DROP POLICY IF EXISTS "Allow public read access to post_topics" ON public.post_topics;
+DROP POLICY IF EXISTS "Allow authenticated users to insert post_topics" ON public.post_topics;
+DROP POLICY IF EXISTS "Allow authenticated users to delete their own post_topics" ON public.post_topics;
+
+-- Re-enable RLS on post_topics
+ALTER TABLE public.post_topics ENABLE ROW LEVEL SECURITY;
+
+-- 4. Anyone can read post_topics relations
 CREATE POLICY "Allow public read access to post_topics" ON public.post_topics
   FOR SELECT USING (true);
 
+-- 5. Authenticated users can insert post_topics relations (needed for sync trigger)
 CREATE POLICY "Allow authenticated users to insert post_topics" ON public.post_topics
   FOR INSERT WITH CHECK (true);
+
+-- 6. Authenticated users can delete their own post_topics (needed for sync trigger when editing a thread)
+CREATE POLICY "Allow authenticated users to delete their own post_topics" ON public.post_topics
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- Backfill existing threads manually
 DO $$

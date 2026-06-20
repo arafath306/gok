@@ -26,6 +26,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     allow_mentions TEXT DEFAULT 'everyone' NOT NULL, -- 'everyone', 'people_you_follow', 'no_one'
     filter_adult BOOLEAN DEFAULT true NOT NULL,
     autoplay_videos BOOLEAN DEFAULT true NOT NULL,
+    is_suspended BOOLEAN DEFAULT false NOT NULL,
+    is_banned BOOLEAN DEFAULT false NOT NULL,
+    reach_multiplier NUMERIC DEFAULT 1.0 NOT NULL,
+    role TEXT, -- 'Admin', 'Moderator', 'Junior Mod', etc.
+    is_verified BOOLEAN DEFAULT false NOT NULL,
+    verification_requested BOOLEAN DEFAULT false NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -67,6 +73,12 @@ CREATE TABLE IF NOT EXISTS public.threads (
     is_pinned BOOLEAN DEFAULT false NOT NULL,
     mute_notifications BOOLEAN DEFAULT false NOT NULL,
     hide_from_profile BOOLEAN DEFAULT false NOT NULL,
+    audience TEXT DEFAULT 'Public',
+    is_boosted BOOLEAN DEFAULT false NOT NULL,
+    boost_status TEXT DEFAULT 'none' NOT NULL, -- 'none', 'active', 'paused', 'terminated'
+    boost_spend INTEGER DEFAULT 0 NOT NULL,
+    boost_reach INTEGER DEFAULT 0 NOT NULL,
+    boost_roi TEXT DEFAULT '+0.0%' NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 ALTER TABLE public.threads DISABLE ROW LEVEL SECURITY;
@@ -223,6 +235,7 @@ CREATE TABLE IF NOT EXISTS public.reposts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     thread_id UUID REFERENCES public.threads(id) ON DELETE CASCADE NOT NULL,
+    quote_text TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     CONSTRAINT unique_user_repost UNIQUE (user_id, thread_id)
 );

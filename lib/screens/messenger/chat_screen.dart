@@ -145,7 +145,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat_bubble_outline_rounded, size: 48, color: context.textMuted),
+                        Icon(Icons.forum_outlined, size: 48, color: context.textMuted),
                         const SizedBox(height: 12),
                         Text(
                           "Send a message to start conversation.",

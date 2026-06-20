@@ -16,6 +16,13 @@ class DatabaseService with ChangeNotifier {
   List<ThreadPost> _feed = [];
   List<ThreadPost> get feed => _feed;
 
+  List<ThreadPost> _personalizedFeed = [];
+  List<ThreadPost> get personalizedFeed => _personalizedFeed;
+
+  int _aiFeedPage = 0;
+  bool _aiFeedHasMore = true;
+  bool get aiFeedHasMore => _aiFeedHasMore;
+
   List<ThreadPost> _myThreads = [];
   List<ThreadPost> get myThreads => _myThreads;
 
@@ -90,6 +97,7 @@ class DatabaseService with ChangeNotifier {
         });
         // Fetch that post and add to savedPosts
         await fetchSavedPosts();
+        logUserInteraction(threadId, 'save');
       }
     } catch (e) {
       debugPrint('Toggle save thread error: $e');
@@ -123,7 +131,7 @@ class DatabaseService with ChangeNotifier {
     try {
       final response = await _supabase
           .from('saved_posts')
-          .select('thread_id, threads(*, profiles(*), likes(user_id), thread_hides(user_id))')
+          .select('thread_id, threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id))')
           .eq('user_id', _currentUid)
           .order('created_at', ascending: false);
       final List<dynamic> data = response as List<dynamic>;
@@ -218,6 +226,7 @@ class DatabaseService with ChangeNotifier {
     fetchMyProfile();
     fetchFollowingList();
     fetchFeed(silent: true);
+    fetchAIFeed(silent: true);
     fetchNotifications();
     fetchUnreadCounts();
     fetchSavedThreadIds();
@@ -228,6 +237,9 @@ class DatabaseService with ChangeNotifier {
   void _clearAllData() {
     _myProfile = null;
     _feed = [];
+    _personalizedFeed = [];
+    _aiFeedPage = 0;
+    _aiFeedHasMore = true;
     _myThreads = [];
     _notifications = [];
     _followingIds = {};
@@ -608,9 +620,8 @@ class DatabaseService with ChangeNotifier {
     if (_currentUid.isEmpty) return false;
     try {
       await _supabase.from('reports').insert({
-        'reporter_id': _currentUid,
-        'reported_user_id': reportedUserId,
-        'reason': reason,
+        'user_id': _currentUid,
+        'reason': 'User Report (@$reportedUserId): $reason',
         'created_at': DateTime.now().toIso8601String(),
       });
       return true;
@@ -693,6 +704,40 @@ class DatabaseService with ChangeNotifier {
       return results;
     } catch (e) {
       debugPrint("Search profiles error: $e");
+      return [];
+    }
+  }
+
+  Future<List<ThreadPost>> searchThreads(String query) async {
+    if (query.trim().isEmpty) return [];
+    try {
+      final response = await _supabase
+          .from('threads')
+          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
+          .ilike('content', '%$query%')
+          .limit(20);
+
+      final List<dynamic> data = response as List<dynamic>;
+      final List<ThreadPost> results = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      
+      // Filter out blocked/muted users, private users we don't follow, and posts hidden from current user
+      results.removeWhere((post) {
+        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
+          return true;
+        }
+        if (post.isHiddenFromMe) {
+          return true;
+        }
+        if (post.userId != _currentUid && post.author.isPrivate) {
+          return !isFollowingUser(post.userId);
+        }
+        return false;
+      });
+
+      _updateCache(results);
+      return results;
+    } catch (e) {
+      debugPrint("Search threads error: $e");
       return [];
     }
   }
@@ -811,7 +856,7 @@ class DatabaseService with ChangeNotifier {
       // 1. Fetch normal threads
       final response = await _supabase
           .from('threads')
-          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
+          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -819,7 +864,7 @@ class DatabaseService with ChangeNotifier {
       // 2. Fetch reposts/quotes
       final repostsRes = await _supabase
           .from('reposts')
-          .select('*, profiles(*), threads(*, profiles(*), likes(user_id), thread_hides(user_id))')
+          .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id))')
           .order('created_at', ascending: false);
 
       final List<dynamic> repostsData = repostsRes as List<dynamic>;
@@ -913,7 +958,7 @@ class DatabaseService with ChangeNotifier {
     try {
       final response = await _supabase
           .from('threads')
-          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
+          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
           .eq('user_id', _currentUid)
           .order('created_at', ascending: false);
 
@@ -946,6 +991,7 @@ class DatabaseService with ChangeNotifier {
         if (audience != null) 'audience': audience,
       });
       await fetchFeed(silent: true);
+      await fetchAIFeed(silent: true);
       await fetchMyThreads();
       return true;
     } catch (e) {
@@ -1007,12 +1053,14 @@ class DatabaseService with ChangeNotifier {
           'user_id': _currentUid,
           'thread_id': threadId,
         });
+        logUserInteraction(threadId, 'like');
       } else {
         await _supabase
             .from('likes')
             .delete()
             .eq('user_id', _currentUid)
             .eq('thread_id', threadId);
+        logUserInteraction(threadId, 'scroll_away');
       }
     } catch (e) {
       debugPrint("Toggle like error: $e");
@@ -1025,7 +1073,7 @@ class DatabaseService with ChangeNotifier {
     try {
       final response = await _supabase
           .from('likes')
-          .select('user_id, profiles(*)')
+          .select('user_id, profiles!user_id(*)')
           .eq('thread_id', threadId);
       final List<dynamic> data = response as List<dynamic>;
       
@@ -1072,7 +1120,7 @@ class DatabaseService with ChangeNotifier {
 
       final response = await _supabase
           .from('threads')
-          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
+          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
@@ -1128,7 +1176,7 @@ class DatabaseService with ChangeNotifier {
       // Fetch those threads
       final response = await _supabase
           .from('threads')
-          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
+          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
           .inFilter('id', threadIds)
           .order('created_at', ascending: false);
 
@@ -1693,6 +1741,7 @@ class DatabaseService with ChangeNotifier {
       }
 
       fetchFeed(silent: true);
+      logUserInteraction(threadId, 'reply');
       return true;
     } catch (e) {
       debugPrint("Add comment error: $e");
@@ -1842,7 +1891,7 @@ class DatabaseService with ChangeNotifier {
     try {
       final response = await _supabase
           .from('reposts')
-          .select('*, profiles(*), threads(*, profiles(*), likes(user_id), thread_hides(user_id))')
+          .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id))')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
@@ -1889,6 +1938,7 @@ class DatabaseService with ChangeNotifier {
         'thread_id': threadId,
         'reason': reason,
       });
+      logUserInteraction(threadId, 'report');
       return true;
     } catch (e) {
       debugPrint("Report post error: $e");
@@ -1918,6 +1968,7 @@ class DatabaseService with ChangeNotifier {
         'user_id': _currentUid,
       });
       fetchFeed(silent: true);
+      logUserInteraction(threadId, 'hide');
       return true;
     } catch (e) {
       debugPrint("Hide thread for current user error: $e");
@@ -1970,6 +2021,7 @@ class DatabaseService with ChangeNotifier {
   Future<void> incrementThreadViews(String threadId) async {
     try {
       await _supabase.rpc('increment_thread_views', params: {'thread_id': threadId});
+      logUserInteraction(threadId, 'click');
       
       // Update local cache views count optimistically
       final cached = _postsCache[threadId];
@@ -2041,7 +2093,7 @@ class DatabaseService with ChangeNotifier {
 
       final threadsRes = await _supabase
           .from('threads')
-          .select('*, profiles(*), likes(user_id), thread_hides(user_id)')
+          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
           .inFilter('id', threadIds);
       
       final List<dynamic> threadsData = threadsRes as List<dynamic>;
@@ -2300,6 +2352,105 @@ class DatabaseService with ChangeNotifier {
     _supabaseAuthSub?.cancel();
     unsubscribeRealtime();
     super.dispose();
+  }
+
+  // --- Algorithmic Personalized Feed Operations ---
+
+  Future<void> fetchAIFeed({bool silent = false, int limit = 15, bool loadMore = false}) async {
+    if (_currentUid.isEmpty) return;
+    if (loadMore && !_aiFeedHasMore) return;
+
+    if (!loadMore) {
+      _aiFeedPage = 0;
+      _aiFeedHasMore = true;
+    }
+
+    if (!silent && !loadMore) {
+      _isLoading = true;
+      notifyListeners();
+    }
+
+    try {
+      final offset = _aiFeedPage * limit;
+      final response = await _supabase.rpc(
+        'get_personalized_feed',
+        params: {
+          'p_user_id': _currentUid,
+          'p_limit': limit,
+          'p_offset': offset,
+        },
+      );
+
+      final List<dynamic> data = response as List<dynamic>;
+      final List<ThreadPost> fetchedPosts = [];
+
+      if (data.isNotEmpty) {
+        final List<String> threadIds = data.map((json) => json['id'] as String).toList();
+        
+        final threadsRes = await _supabase
+            .from('threads')
+            .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
+            .inFilter('id', threadIds);
+
+        final List<dynamic> threadsData = threadsRes as List<dynamic>;
+        final List<ThreadPost> posts = threadsData.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+        
+        // Sort posts back into the ranked order returned by get_personalized_feed
+        posts.sort((a, b) => threadIds.indexOf(a.id).compareTo(threadIds.indexOf(b.id)));
+        fetchedPosts.addAll(posts);
+      }
+
+      // Apply privacy/mute/block filters
+      fetchedPosts.removeWhere((post) {
+        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
+          return true;
+        }
+        if (post.isHiddenFromMe) {
+          return true;
+        }
+        if (post.userId != _currentUid && post.author.isPrivate) {
+          return !isFollowingUser(post.userId);
+        }
+        return false;
+      });
+
+      if (loadMore) {
+        final existingIds = _personalizedFeed.map((p) => p.id).toSet();
+        fetchedPosts.removeWhere((p) => existingIds.contains(p.id));
+        _personalizedFeed.addAll(fetchedPosts);
+      } else {
+        _personalizedFeed = fetchedPosts;
+      }
+
+      _updateCache(fetchedPosts);
+
+      if (fetchedPosts.length < limit) {
+        _aiFeedHasMore = false;
+      } else {
+        _aiFeedPage++;
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      debugPrint("Fetch personalized AI feed error: $e");
+    }
+  }
+
+  Future<void> logUserInteraction(String threadId, String type, {int duration = 0}) async {
+    if (_currentUid.isEmpty) return;
+    try {
+      await _supabase.rpc('log_user_interaction', params: {
+        'p_user_id': _currentUid,
+        'p_thread_id': threadId,
+        'p_type': type,
+        'p_duration': duration,
+      });
+    } catch (e) {
+      debugPrint('Log user interaction error: $e');
+    }
   }
 }
 

@@ -689,17 +689,17 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 transitionBuilder: (child, animation) =>
                     ScaleTransition(scale: animation, child: child),
                 child: post.isLikedByMe
-                    ? Icon(
+                    ? const Icon(
                         Icons.favorite,
-                        key: const ValueKey<int>(1),
+                        key: ValueKey<int>(1),
                         color: Colors.red,
-                        size: 20,
+                        size: 18,
                       )
                     : Icon(
                         Icons.favorite_border,
                         key: const ValueKey<int>(0),
                         color: context.textSecondary,
-                        size: 20,
+                        size: 18,
                       ),
               ),
             ),
@@ -708,9 +708,9 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               onTap: () => _showCommentsBottomSheet(context, post),
               behavior: HitTestBehavior.opaque,
               child: Icon(
-                Icons.chat_bubble_outline_rounded,
+                Icons.mode_comment_outlined,
                 color: context.textSecondary,
-                size: 20,
+                size: 18,
               ),
             ),
             const SizedBox(width: 20),
@@ -720,7 +720,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               child: Icon(
                 Icons.repeat_rounded,
                 color: context.textSecondary,
-                size: 20,
+                size: 18,
               ),
             ),
             const SizedBox(width: 20),
@@ -746,7 +746,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               child: Icon(
                 dbService.isSaved(post.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
                 color: dbService.isSaved(post.id) ? const Color(0xFF1E824C) : context.textSecondary,
-                size: 20,
+                size: 18,
               ),
             ),
             const SizedBox(width: 20),
@@ -755,7 +755,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               child: Icon(
                 Icons.send_outlined,
                 color: context.textSecondary,
-                size: 20,
+                size: 18,
               ),
             ),
           ],

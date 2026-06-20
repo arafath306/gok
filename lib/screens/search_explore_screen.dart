@@ -3,9 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../models/profile.dart';
+import '../models/thread_post.dart';
 import '../utils/app_theme.dart';
 import 'profile/profile_screen.dart';
 import 'topic/topic_threads_screen.dart';
+import '../widgets/custom_thread_card.dart';
 
 class SearchExploreScreen extends StatefulWidget {
   const SearchExploreScreen({super.key});
@@ -17,9 +19,11 @@ class SearchExploreScreen extends StatefulWidget {
 class _SearchExploreScreenState extends State<SearchExploreScreen> {
   final List<String> _recentSearches = [];
   List<Profile> _searchResults = [];
+  List<ThreadPost> _searchPostResults = [];
   List<Profile> _recommended = [];
   bool _isLoading = false;
   final _searchController = TextEditingController();
+  int _searchTabIndex = 0; // 0 for Accounts, 1 for Posts
 
   List<Map<String, dynamic>> _trendingTopics = [];
   List<Map<String, dynamic>> _risingTopics = [];
@@ -74,6 +78,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
       if (mounted) {
         setState(() {
           _searchResults = [];
+          _searchPostResults = [];
           _isLoading = false;
         });
       }
@@ -87,11 +92,15 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     }
 
     final dbService = Provider.of<DatabaseService>(context, listen: false);
-    final results = await dbService.searchProfiles(trimmed);
+    final profileFuture = dbService.searchProfiles(trimmed);
+    final threadFuture = dbService.searchThreads(trimmed);
+
+    final results = await Future.wait([profileFuture, threadFuture]);
 
     if (mounted) {
       setState(() {
-        _searchResults = results;
+        _searchResults = results[0] as List<Profile>;
+        _searchPostResults = results[1] as List<ThreadPost>;
         _isLoading = false;
       });
     }
@@ -363,7 +372,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 color: Colors.orange.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.orange, size: 16),
+              child: const Icon(Icons.mode_comment_outlined, color: Colors.orange, size: 16),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -394,6 +403,76 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchTabButton(int index, String label, int count) {
+    final isSelected = _searchTabIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _searchTabIndex = index;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    fontSize: 13.5,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  "($count)",
+                  style: GoogleFonts.inter(
+                    color: isSelected ? const Color(0xFF1E824C).withOpacity(0.8) : context.textMuted,
+                    fontSize: 11.5,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: 2,
+              width: isSelected ? 24 : 0,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E824C),
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoResultsView() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: 300,
+          child: Center(
+            child: Text(
+              "No results found",
+              style: GoogleFonts.hindSiliguri(color: context.textMuted),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -465,6 +544,20 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
               ),
               const SizedBox(height: 20),
 
+              // Search Tab Selector (Only shown when searching)
+              if (isSearching) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildSearchTabButton(0, "Accounts", _searchResults.length),
+                    const SizedBox(width: 12),
+                    _buildSearchTabButton(1, "Posts", _searchPostResults.length),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              const SizedBox(height: 12),
+
               // Search History / Recommendations OR Search Results
               Expanded(
                 child: RefreshIndicator(
@@ -479,22 +572,12 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                           child: CircularProgressIndicator(color: context.primaryAccent),
                         )
                       : isSearching
-                          ? _searchResults.isEmpty
-                              ? ListView(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    SizedBox(
-                                      height: 300,
-                                      child: Center(
-                                        child: Text(
-                                          "No results found",
-                                          style: GoogleFonts.hindSiliguri(color: context.textMuted),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : ListView.separated(
+                          ? (() {
+                              if (_searchTabIndex == 0) {
+                                if (_searchResults.isEmpty) {
+                                  return _buildNoResultsView();
+                                }
+                                return ListView.separated(
                                   physics: const AlwaysScrollableScrollPhysics(),
                                   padding: const EdgeInsets.only(bottom: 72),
                                   itemCount: _searchResults.length,
@@ -505,7 +588,28 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                   itemBuilder: (context, index) {
                                     return _buildUserRow(_searchResults[index], dbService);
                                   },
-                                )
+                                );
+                              } else {
+                                if (_searchPostResults.isEmpty) {
+                                  return _buildNoResultsView();
+                                }
+                                return ListView.separated(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.only(bottom: 72),
+                                  itemCount: _searchPostResults.length,
+                                  separatorBuilder: (context, index) => Divider(
+                                    height: 1,
+                                    color: context.border,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    return CustomThreadCard(
+                                      key: ValueKey(_searchPostResults[index].id),
+                                      post: _searchPostResults[index],
+                                    );
+                                  },
+                                );
+                              }
+                            })()
                           : ListView(
                               physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.only(bottom: 72),

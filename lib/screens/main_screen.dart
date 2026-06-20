@@ -103,7 +103,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
                 CircleAvatar(
                   backgroundColor: const Color(0xFF1E824C).withValues(alpha: 0.1),
                   child: Icon(
-                    event['type'] == 'message' ? Icons.chat_bubble : Icons.notifications,
+                    event['type'] == 'message' ? Icons.forum_rounded : Icons.notifications,
                     color: const Color(0xFF1E824C),
                     size: 20,
                   ),
@@ -894,7 +894,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: _currentIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline_rounded,
+                            icon: _currentIndex == 2 ? Icons.forum_rounded : Icons.forum_outlined,
                             title: "Chat",
                             isActive: _currentIndex == 2,
                             badgeCount: dbService.unreadMessagesCount,
@@ -923,12 +923,12 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: Icons.list_alt_rounded,
-                            title: "Lists",
+                            icon: Icons.chat_bubble_outline_rounded,
+                            title: "Threads",
                             isActive: false,
                             onTap: () {
                               Navigator.pop(context);
-                              _showMockFeatureDialog(context, "Lists");
+                              _showMockFeatureDialog(context, "Threads");
                             },
                           ),
                           _buildDrawerItem(
@@ -1108,8 +1108,8 @@ WhatsApp: +8801313961899''',
                         _buildBottomNavItem(1, Icons.search_rounded, Icons.search_rounded),
                         _buildBottomNavItem(
                           2, 
-                          Icons.chat_bubble_rounded, 
-                          Icons.chat_bubble_outline_rounded,
+                          Icons.forum_rounded, 
+                          Icons.forum_outlined,
                           badgeCount: dbService.unreadMessagesCount,
                         ),
                         _buildBottomNavItem(

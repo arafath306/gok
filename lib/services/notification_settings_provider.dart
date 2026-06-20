@@ -77,7 +77,7 @@ class NotificationSettingsProvider with ChangeNotifier {
     'replies': NotificationSettingItem(
       id: 'replies',
       title: 'Replies',
-      icon: Icons.chat_bubble_outline,
+      icon: Icons.mode_comment_outlined,
       inApp: true,
       push: true,
       from: 'everyone',

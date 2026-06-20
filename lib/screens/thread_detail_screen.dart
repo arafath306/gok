@@ -373,7 +373,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: context.textSecondary, size: 20),
+          Icon(icon, color: context.textSecondary, size: 18),
           if (label.isNotEmpty && label != '0') ...[
             const SizedBox(width: 6),
             Text(
@@ -512,7 +512,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       behavior: HitTestBehavior.opaque,
                       child: Row(
                         children: [
-                          Icon(Icons.chat_bubble_outline_rounded, size: 14, color: context.textSecondary),
+                          Icon(Icons.mode_comment_outlined, size: 14, color: context.textSecondary),
                           const SizedBox(width: 4),
                           Text(
                             "Reply",
@@ -857,13 +857,13 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                             Icons.favorite,
                                             key: ValueKey<int>(1),
                                             color: Colors.red,
-                                            size: 20,
+                                            size: 18,
                                           )
                                         : Icon(
                                             Icons.favorite_border,
                                             key: const ValueKey<int>(0),
                                             color: context.textSecondary,
-                                            size: 20,
+                                            size: 18,
                                           ),
                                   ),
                                   const SizedBox(width: 6),
@@ -880,7 +880,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             ),
                             // Comment Button
                             _buildActionButton(
-                              icon: Icons.chat_bubble_outline_rounded,
+                              icon: Icons.mode_comment_outlined,
                               label: _formatCount(_comments.length),
                               onTap: () {
                                 showModalBottomSheet(
@@ -922,7 +922,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                               child: Icon(
                                 dbService.isSaved(activePost.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
                                 color: dbService.isSaved(activePost.id) ? const Color(0xFF1E824C) : context.textSecondary,
-                                size: 20,
+                                size: 18,
                               ),
                             ),
                             // Share Button

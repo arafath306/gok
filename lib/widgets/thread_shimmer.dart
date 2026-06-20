@@ -132,7 +132,7 @@ class _ThreadShimmerState extends State<ThreadShimmer>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildActionIconSkeleton(Icons.chat_bubble_outline_rounded, baseColor),
+                      _buildActionIconSkeleton(Icons.mode_comment_outlined, baseColor),
                       _buildActionIconSkeleton(Icons.repeat_rounded, baseColor),
                       _buildActionIconSkeleton(Icons.favorite_border_rounded, baseColor),
                       _buildActionIconSkeleton(Icons.share_outlined, baseColor),

@@ -29,19 +29,53 @@ class _FeedScreenState extends State<FeedScreen> {
     "Following",
   ];
   bool _showFullHeader = true;
+  final ScrollController _scrollController = ScrollController();
+  bool _isFetchingMore = false;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final db = Provider.of<DatabaseService>(context, listen: false);
+      if (db.personalizedFeed.isEmpty && !db.isLoading) {
+        db.fetchAIFeed();
+      }
       if (db.feed.isEmpty && !db.isLoading) {
-        db.fetchFeed();
+        db.fetchFeed(silent: true);
       }
       if (db.myProfile == null) {
         db.fetchMyProfile();
       }
     });
+  }
+
+  void _onScroll() {
+    if (_selectedTabIndex != 0) return; // Only paginate For You feed
+    if (!_scrollController.hasClients) return;
+    
+    final threshold = _scrollController.position.maxScrollExtent - 200;
+    if (_scrollController.position.pixels >= threshold) {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      if (db.aiFeedHasMore && !db.isLoading && !_isFetchingMore) {
+        setState(() {
+          _isFetchingMore = true;
+        });
+        db.fetchAIFeed(loadMore: true, silent: true).then((_) {
+          if (mounted) {
+            setState(() {
+              _isFetchingMore = false;
+            });
+          }
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -73,24 +107,10 @@ class _FeedScreenState extends State<FeedScreen> {
           offset: _showFullHeader ? Offset.zero : const Offset(0, 0.05),
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                "assets/pigeon_logo.png",
-                height: 28,
-                width: 28,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "Pigeon",
-                style: GoogleFonts.hindSiliguri(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: context.textPrimary,
-                ),
-              ),
-            ],
+          child: Image.asset(
+            "assets/pigeon_logo.png",
+            height: 38,
+            width: 38,
           ),
         ),
         bottom: PreferredSize(
@@ -198,9 +218,16 @@ class _FeedScreenState extends State<FeedScreen> {
                 // Feed Content
                 Expanded(
                   child: RefreshIndicator(
-                    onRefresh: dbService.fetchFeed,
+                    onRefresh: () async {
+                      if (_selectedTabIndex == 0) {
+                        await dbService.fetchAIFeed();
+                      } else {
+                        await dbService.fetchFeed();
+                      }
+                    },
                     color: const Color(0xFF1E824C),
                     child: ListView(
+                      controller: _scrollController,
                       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                       padding: const EdgeInsets.fromLTRB(0, 4, 0, 72),
                       children: [
@@ -226,43 +253,36 @@ class _FeedScreenState extends State<FeedScreen> {
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          height: 32,
-                                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                                          alignment: Alignment.centerLeft,
-                                          decoration: BoxDecoration(
-                                            color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(
-                                              color: context.border.withOpacity(0.5),
-                                              width: 0.5,
+                                  child: Container(
+                                    height: 32,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    alignment: Alignment.centerLeft,
+                                    decoration: BoxDecoration(
+                                      color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: context.border.withOpacity(0.5),
+                                        width: 0.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            "Send your thoughts...",
+                                            style: GoogleFonts.inter(
+                                              color: context.textMuted,
+                                              fontSize: 12.5,
                                             ),
                                           ),
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  "Send your thoughts...",
-                                                  style: GoogleFonts.inter(
-                                                    color: context.textMuted,
-                                                    fontSize: 12.5,
-                                                  ),
-                                                ),
-                                              ),
-                                              Icon(
-                                                Icons.flutter_dash,
-                                                size: 15,
-                                                color: context.textMuted,
-                                              ),
-                                            ],
-                                          ),
                                         ),
-                                      ),
-                                      const TrendingTopicPill(),
-                                    ],
+                                        Icon(
+                                          Icons.flutter_dash,
+                                          size: 15,
+                                          color: context.textMuted,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -276,7 +296,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                 ? dbService.feed
                                     .where((post) => dbService.isFollowingUser(post.userId))
                                     .toList()
-                                : dbService.feed;
+                                : dbService.personalizedFeed;
 
                           if (_selectedTabIndex == 1 && dbService.followingIds.isEmpty) {
                             return SizedBox(
@@ -329,7 +349,23 @@ class _FeedScreenState extends State<FeedScreen> {
                           }
 
                           return Column(
-                            children: posts.map((post) => CustomThreadCard(key: ValueKey(post.id), post: post)).toList(),
+                            children: [
+                              ...posts.map((post) => CustomThreadCard(key: ValueKey(post.id), post: post)).toList(),
+                              if (_isFetchingMore)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E824C)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           );
                         })(),
                       ],

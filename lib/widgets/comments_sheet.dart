@@ -359,7 +359,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                             onTap: () {},
                                             child: Row(
                                               children: [
-                                                Icon(Icons.chat_bubble_outline, size: 15, color: context.textSecondary),
+                                                Icon(Icons.mode_comment_outlined, size: 15, color: context.textSecondary),
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   "${comment['replies_count'] ?? 0}",
