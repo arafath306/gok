@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../widgets/dak_logo.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -27,11 +28,7 @@ class SplashScreen extends StatelessWidget {
                   ),
                 );
               },
-              child: Image.asset(
-                'assets/pigeon_logo.png',
-                width: 180,
-                height: 180,
-              ),
+              child: const DakLogo(size: 160),
             ),
             const SizedBox(height: 16),
             // App Name

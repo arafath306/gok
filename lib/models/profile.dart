@@ -8,19 +8,24 @@ class Profile {
   final int followersCount;
   final int followingCount;
   final String? phone;
+  final String? email;
   final String? country;
   final String? division;
   final String? city;
   final String? village;
   final String? zip;
-  final String? gender;
+  final bool isVerified;
+  final DateTime? verifiedExpiresAt;
   final String? birthdate;
+  final String? gender;
   final bool isPrivate;
   final String allowMentions;
   final bool filterAdult;
   final bool autoplayVideos;
-  final bool isVerified;
   final bool verificationRequested;
+  final bool isActiveStatusEnabled;
+  final DateTime? lastSeen;
+  final String? publicKey;
 
   Profile({
     required this.id,
@@ -32,19 +37,24 @@ class Profile {
     this.followersCount = 0,
     this.followingCount = 0,
     this.phone,
+    this.email,
     this.country,
     this.division,
     this.city,
     this.village,
     this.zip,
-    this.gender,
+    this.isVerified = false,
+    this.verifiedExpiresAt,
     this.birthdate,
+    this.gender,
     this.isPrivate = false,
     this.allowMentions = 'everyone',
     this.filterAdult = true,
     this.autoplayVideos = true,
-    this.isVerified = false,
     this.verificationRequested = false,
+    this.isActiveStatusEnabled = true,
+    this.lastSeen,
+    this.publicKey,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -58,19 +68,26 @@ class Profile {
       followersCount: (json['followers_count'] as int?) ?? 0,
       followingCount: (json['following_count'] as int?) ?? 0,
       phone: json['phone'] as String?,
+      email: json['email'] as String?,
       country: json['country'] as String?,
       division: json['division'] as String?,
       city: json['city'] as String?,
       village: json['village'] as String?,
       zip: json['zip'] as String?,
-      gender: json['gender'] as String?,
+      isVerified: json['is_verified'] as bool? ?? false,
+      verifiedExpiresAt: json['verified_expires_at'] != null 
+          ? DateTime.tryParse(json['verified_expires_at'] as String) 
+          : null,
       birthdate: json['birthdate'] as String?,
+      gender: json['gender'] as String?,
       isPrivate: json['is_private'] as bool? ?? false,
       allowMentions: json['allow_mentions'] as String? ?? 'everyone',
       filterAdult: json['filter_adult'] as bool? ?? true,
       autoplayVideos: json['autoplay_videos'] as bool? ?? true,
-      isVerified: json['is_verified'] as bool? ?? false,
       verificationRequested: json['verification_requested'] as bool? ?? false,
+      isActiveStatusEnabled: json['is_active_status_enabled'] as bool? ?? true,
+      lastSeen: json['last_seen'] != null ? DateTime.tryParse(json['last_seen'] as String) : null,
+      publicKey: json['public_key'] as String?,
     );
   }
 
@@ -85,19 +102,24 @@ class Profile {
       'followers_count': followersCount,
       'following_count': followingCount,
       'phone': phone,
+      'email': email,
       'country': country,
       'division': division,
       'city': city,
       'village': village,
       'zip': zip,
-      'gender': gender,
+      'is_verified': isVerified,
+      'verified_expires_at': verifiedExpiresAt?.toIso8601String(),
       'birthdate': birthdate,
+      'gender': gender,
       'is_private': isPrivate,
       'allow_mentions': allowMentions,
       'filter_adult': filterAdult,
       'autoplay_videos': autoplayVideos,
-      'is_verified': isVerified,
       'verification_requested': verificationRequested,
+      'is_active_status_enabled': isActiveStatusEnabled,
+      'last_seen': lastSeen?.toIso8601String(),
+      if (publicKey != null) 'public_key': publicKey,
     };
   }
 }

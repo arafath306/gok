@@ -8,6 +8,8 @@ import 'chat_screen.dart';
 import 'chat_settings_screen.dart';
 import 'member_search_sheet.dart';
 
+import '../../services/general_settings_provider.dart';
+
 class MessengerHomeScreen extends StatefulWidget {
   const MessengerHomeScreen({Key? key}) : super(key: key);
 
@@ -23,6 +25,9 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mySettings = Provider.of<GeneralSettingsProvider>(context, listen: false);
+    final bool myActiveStatusEnabled = mySettings.isActiveStatusEnabled;
+
     return Scaffold(
       backgroundColor: context.scaffoldBg,
       appBar: AppBar(
@@ -151,6 +156,11 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                   final String time = chat['last_message_time'] as String;
                   final int unreadCount = chat['unread_count'] as int;
 
+                  final bool otherIsActive = profile.isActiveStatusEnabled &&
+                      profile.lastSeen != null &&
+                      DateTime.now().difference(profile.lastSeen!).inMinutes <= 5;
+                  final bool showGreenDot = myActiveStatusEnabled && otherIsActive;
+
                   return ListTile(
                     tileColor: Colors.transparent,
                     onTap: () {
@@ -162,26 +172,62 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                       );
                     },
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: CircleAvatar(
-                      radius: 24,
-                      backgroundColor: context.border,
-                      backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
-                          ? NetworkImage(profile.avatarUrl!)
-                          : const NetworkImage(""),
+                    leading: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: context.border,
+                          backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                              ? NetworkImage(profile.avatarUrl!)
+                              : null,
+                        ),
+                        if (showGreenDot)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: context.scaffoldBg,
+                                  width: 2.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
-                            profile.fullName,
-                            style: GoogleFonts.hindSiliguri(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: context.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  profile.fullName,
+                                  style: GoogleFonts.hindSiliguri(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: context.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (profile.isVerified) ...[
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                  size: 15,
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         Text(

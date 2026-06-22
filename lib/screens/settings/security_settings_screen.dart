@@ -2,10 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/general_settings_provider.dart';
+import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';
 
-class SecuritySettingsScreen extends StatelessWidget {
+class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
+
+  @override
+  State<SecuritySettingsScreen> createState() => _SecuritySettingsScreenState();
+}
+
+class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<GeneralSettingsProvider>(context, listen: false).fetchActiveSessions();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,14 +56,20 @@ class SecuritySettingsScreen extends StatelessWidget {
               _buildSwitchTile(
                 context: context,
                 title: 'Two-Factor Authentication (2FA)',
-                subtitle: 'Secure your account by requiring a code during login.',
-                value: provider.isTwoFactorEnabled,
+                subtitle: 'Secure your account by requiring a code during login. (Coming Soon)',
+                value: false,
                 onChanged: (val) {
-                  provider.toggleTwoFactor(val);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(val ? '2FA Enabled successfully!' : '2FA Disabled'),
-                      backgroundColor: context.primaryAccent,
+                      content: Text(
+                        'Two-Factor Authentication (2FA) is coming soon!',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                      backgroundColor: Colors.orange[800],
+                      behavior: SnackBarBehavior.floating,
                     ),
                   );
                 },
@@ -277,86 +297,132 @@ class SecuritySettingsScreen extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Change Password',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: context.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildPasswordField(context, 'Old Password', oldPasswordController),
-              const SizedBox(height: 12),
-              _buildPasswordField(context, 'New Password', newPasswordController),
-              const SizedBox(height: 12),
-              _buildPasswordField(context, 'Confirm New Password', confirmPasswordController),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final oldPass = oldPasswordController.text.trim();
-                    final newPass = newPasswordController.text.trim();
-                    final confirmPass = confirmPasswordController.text.trim();
-
-                    if (oldPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
-                      _showToast(context, 'All fields are required.');
-                      return;
-                    }
-                    if (newPass.length < 6) {
-                      _showToast(context, 'Password must be at least 6 characters.');
-                      return;
-                    }
-                    if (newPass != confirmPass) {
-                      _showToast(context, 'New passwords do not match.');
-                      return;
-                    }
-
-                    // Success!
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Password updated successfully!'),
-                        backgroundColor: context.primaryAccent,
+        bool isLoading = false;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: context.border,
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.primaryAccent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Update Password',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: Colors.white,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Change Password',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: context.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildPasswordField(context, 'Old Password', oldPasswordController),
+                  const SizedBox(height: 12),
+                  _buildPasswordField(context, 'New Password', newPasswordController),
+                  const SizedBox(height: 12),
+                  _buildPasswordField(context, 'Confirm New Password', confirmPasswordController),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : () async {
+                        final oldPass = oldPasswordController.text.trim();
+                        final newPass = newPasswordController.text.trim();
+                        final confirmPass = confirmPasswordController.text.trim();
+
+                        if (oldPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
+                          _showToast(ctx, 'All fields are required.');
+                          return;
+                        }
+                        if (newPass.length < 6) {
+                          _showToast(ctx, 'Password must be at least 6 characters.');
+                          return;
+                        }
+                        if (newPass != confirmPass) {
+                          _showToast(ctx, 'New passwords do not match.');
+                          return;
+                        }
+
+                        setModalState(() => isLoading = true);
+
+                        final authService = Provider.of<AuthService>(ctx, listen: false);
+                        final email = authService.currentUser?.email;
+
+                        if (email != null && authService.currentUid != 'mock_uid') {
+                          // Try to verify old password by logging in
+                          final oldPassCorrect = await authService.handleLogin(email, oldPass);
+                          if (!oldPassCorrect) {
+                            setModalState(() => isLoading = false);
+                            _showToast(ctx, authService.errorMessage ?? 'Incorrect old password.');
+                            return;
+                          }
+
+                          // Correct! Now update the password
+                          final success = await authService.updatePassword(newPass);
+                          if (success) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                content: const Text('Password updated successfully! Please log in again.'),
+                                backgroundColor: context.primaryAccent,
+                              ),
+                            );
+                          } else {
+                            setModalState(() => isLoading = false);
+                            _showToast(ctx, authService.errorMessage ?? 'Failed to update password.');
+                          }
+                        } else {
+                          // Mock success (e.g. bypassed login or testing)
+                          await Future.delayed(const Duration(seconds: 1));
+                          setModalState(() => isLoading = false);
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
+                              content: const Text('Password updated (Mock Success).'),
+                              backgroundColor: context.primaryAccent,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.primaryAccent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Update Password',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

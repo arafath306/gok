@@ -10,6 +10,8 @@ class ThreadPost {
   final int likesCount;
   final int repliesCount;
   final int repostsCount;
+  final int savesCount;
+  final int sharesCount;
   final String createdAt;
   final bool isLikedByMe;
   final String? reactionType;
@@ -33,6 +35,8 @@ class ThreadPost {
     this.likesCount = 0,
     this.repliesCount = 0,
     this.repostsCount = 0,
+    this.savesCount = 0,
+    this.sharesCount = 0,
     this.viewsCount = 0,
     required this.createdAt,
     this.isLikedByMe = false,
@@ -103,6 +107,8 @@ class ThreadPost {
       likesCount: (json['likes_count'] as int?) ?? 0,
       repliesCount: (json['replies_count'] as int?) ?? 0,
       repostsCount: (json['reposts_count'] as int?) ?? 0,
+      savesCount: (json['saves_count'] as int?) ?? 0,
+      sharesCount: (json['shares_count'] as int?) ?? 0,
       viewsCount: (json['views_count'] as int?) ?? 0,
       createdAt: formatRelativeTime(json['created_at'] as String?),
       isLikedByMe: isLiked,
@@ -129,6 +135,8 @@ class ThreadPost {
     int? likesCount,
     int? repliesCount,
     int? repostsCount,
+    int? savesCount,
+    int? sharesCount,
     int? viewsCount,
     String? createdAt,
     bool? isLikedByMe,
@@ -151,6 +159,8 @@ class ThreadPost {
       likesCount: likesCount ?? this.likesCount,
       repliesCount: repliesCount ?? this.repliesCount,
       repostsCount: repostsCount ?? this.repostsCount,
+      savesCount: savesCount ?? this.savesCount,
+      sharesCount: sharesCount ?? this.sharesCount,
       viewsCount: viewsCount ?? this.viewsCount,
       createdAt: createdAt ?? this.createdAt,
       isLikedByMe: isLikedByMe ?? this.isLikedByMe,

@@ -146,15 +146,31 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                               backgroundColor: context.border,
                               backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
                                   ? NetworkImage(user.avatarUrl!)
-                                  : const NetworkImage(""),
+                                  : null,
                             ),
-                            title: Text(
-                              user.fullName,
-                              style: GoogleFonts.hindSiliguri(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: context.textPrimary,
-                              ),
+                            title: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    user.fullName,
+                                    style: GoogleFonts.hindSiliguri(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: context.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (user.isVerified) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.verified,
+                                    color: Colors.blue,
+                                    size: 15,
+                                  ),
+                                ],
+                              ],
                             ),
                             subtitle: Text(
                               "@${user.username}",

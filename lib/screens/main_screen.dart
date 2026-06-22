@@ -57,6 +57,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
+      dbService.fetchVerificationPlans();
       _notificationSubscription = dbService.incomingNotificationStream.listen((event) {
         if (mounted) {
           _showInAppNotificationBanner(event);
@@ -191,81 +192,6 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     );
   }
 
-  void _showBetaCenterDialog(BuildContext context) {
-    final TextEditingController betaController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.cardBg,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          "Beta Center",
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Welcome to the Beta Center! Report bugs, suggest features, or help us improve:",
-              style: GoogleFonts.inter(color: context.textSecondary),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: betaController,
-              maxLines: 3,
-              style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
-              decoration: InputDecoration(
-                hintText: "Describe the bug or feature suggestion...",
-                hintStyle: GoogleFonts.inter(color: context.textMuted),
-                filled: true,
-                fillColor: context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF3F4F6),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.all(12),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Cancel",
-              style: GoogleFonts.inter(color: context.textSecondary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: const Color(0xFF1E824C),
-                  content: Text(
-                    "Thank you for participating in our Beta program!",
-                    style: GoogleFonts.inter(color: Colors.white),
-                  ),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E824C),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              "Submit",
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showHelpDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -375,7 +301,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
               backgroundImage: myProfile?.avatarUrl != null && myProfile!.avatarUrl!.isNotEmpty
                   ? NetworkImage(myProfile.avatarUrl!)
-                  : const NetworkImage(""),
+                  : null,
             ),
           ),
           const SizedBox(height: 16),
@@ -384,16 +310,30 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               Navigator.pop(context);
               setTab(4);
             },
-            child: Text(
-              myProfile?.fullName ?? "Arafath",
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: context.textPrimary,
-                letterSpacing: -0.4,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    myProfile?.fullName ?? "Arafath",
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: context.textPrimary,
+                      letterSpacing: -0.4,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (myProfile?.isVerified == true) ...[
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.verified,
+                    color: Colors.blue,
+                    size: 16,
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 2),
@@ -960,7 +900,11 @@ WhatsApp: +8801313961899''',
                               Navigator.pop(context);
                               Navigator.push(
                                 context,
-                                NoTransitionPageRoute(child: const SettingsScreen()),
+                                NoTransitionPageRoute(
+                                  child: SettingsScreen(
+                                    onSwitchToProfile: () => setTab(4),
+                                  ),
+                                ),
                               );
                             },
                           ),

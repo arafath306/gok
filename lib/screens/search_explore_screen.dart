@@ -120,7 +120,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
   Widget _buildUserRow(Profile user, DatabaseService dbService) {
     final isFollowing = dbService.isFollowingUser(user.id);
     final currentUid = dbService.myProfile?.id;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: InkWell(
@@ -129,7 +129,8 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ProfileScreen(userId: user.id == currentUid ? null : user.id),
+              builder: (_) =>
+                  ProfileScreen(userId: user.id == currentUid ? null : user.id),
             ),
           );
         },
@@ -139,11 +140,17 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
             // Left: Circular Avatar
             CircleAvatar(
               radius: 20,
-              backgroundColor: context.isDarkMode ? const Color(0xFF1B3B2B) : const Color(0xFFE8F5E9),
-              backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
+              backgroundColor: context.isDarkMode
+                  ? const Color(0xFF1B3B2B)
+                  : const Color(0xFFE8F5E9),
+              backgroundImage: user.avatarUrl != null
+                  ? NetworkImage(user.avatarUrl!)
+                  : null,
               child: user.avatarUrl == null
                   ? Text(
-                      user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
+                      user.fullName.isNotEmpty
+                          ? user.fullName[0].toUpperCase()
+                          : '?',
                       style: TextStyle(
                         color: context.primaryAccent,
                         fontWeight: FontWeight.bold,
@@ -209,8 +216,10 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                  color: isFollowing 
-                      ? (context.isDarkMode ? const Color(0xFF1E293B) : Colors.grey.shade300) 
+                  color: isFollowing
+                      ? (context.isDarkMode
+                            ? const Color(0xFF1E293B)
+                            : Colors.grey.shade300)
                       : context.border,
                   width: 1,
                 ),
@@ -237,16 +246,28 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, IconData iconData, {Color? iconColor}) {
     return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 12),
-      child: Text(
-        title,
-        style: GoogleFonts.hindSiliguri(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: context.textPrimary,
-        ),
+      padding: const EdgeInsets.only(top: 24, bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            iconData,
+            size: 18,
+            color: iconColor ?? const Color(0xFF1E824C),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: context.textPrimary,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -260,43 +281,52 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              rank,
-              style: GoogleFonts.inter(
-                color: context.textMuted,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tag,
+                    "Trending · #$rank",
                     style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14.5,
-                      color: context.textPrimary,
+                      color: context.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
+                  Text(
+                    tag.startsWith('#') ? tag : '#$tag',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: context.textPrimary,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     postsCount,
                     style: GoogleFonts.inter(
                       color: context.textMuted,
-                      fontSize: 12,
+                      fontSize: 12.5,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.more_horiz, color: context.textMuted, size: 18),
+            IconButton(
+              icon: Icon(Icons.more_horiz, color: context.textMuted, size: 18),
+              onPressed: () {
+                // Actions popup option
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              splashRadius: 16,
+            ),
           ],
         ),
       ),
@@ -311,30 +341,45 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
           MaterialPageRoute(builder: (_) => TopicThreadsScreen(topicName: topic)),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: context.cardBg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.border, width: 0.8),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
         child: Row(
           children: [
-            const Icon(Icons.trending_up, color: Colors.blue, size: 18),
-            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.trending_up_rounded, color: Colors.blue, size: 18),
+            ),
+            const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                topic,
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: context.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    topic.startsWith('#') ? topic : '#$topic',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: context.textPrimary,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    "Rising rapidly",
+                    style: GoogleFonts.inter(
+                      color: context.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.blue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
@@ -344,7 +389,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 style: GoogleFonts.inter(
                   color: Colors.blue,
                   fontWeight: FontWeight.bold,
-                  fontSize: 11,
+                  fontSize: 11.5,
                 ),
               ),
             ),
@@ -363,41 +408,50 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.mode_comment_outlined, color: Colors.orange, size: 16),
+              child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.orange, size: 16),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    topic,
+                    topic.startsWith('#') ? topic : '#$topic',
                     style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
                       color: context.textPrimary,
+                      letterSpacing: -0.1,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
-                    replies,
+                    "Highly active discussion",
                     style: GoogleFonts.inter(
                       color: context.textMuted,
                       fontSize: 12,
                     ),
                   ),
                 ],
+              ),
+            ),
+            Text(
+              replies,
+              style: GoogleFonts.inter(
+                color: Colors.orange,
+                fontWeight: FontWeight.bold,
+                fontSize: 12.5,
               ),
             ),
           ],
@@ -416,9 +470,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: const BoxDecoration(
-          color: Colors.transparent,
-        ),
+        decoration: const BoxDecoration(color: Colors.transparent),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -427,7 +479,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 Text(
                   label,
                   style: GoogleFonts.inter(
-                    color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,
+                    color: isSelected
+                        ? const Color(0xFF1E824C)
+                        : context.textSecondary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     fontSize: 13.5,
                   ),
@@ -436,7 +490,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 Text(
                   "($count)",
                   style: GoogleFonts.inter(
-                    color: isSelected ? const Color(0xFF1E824C).withOpacity(0.8) : context.textMuted,
+                    color: isSelected
+                        ? const Color(0xFF1E824C).withOpacity(0.8)
+                        : context.textMuted,
                     fontSize: 11.5,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
@@ -519,22 +575,41 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 onSubmitted: (val) {
                   _addToHistory(val);
                 },
-                style: GoogleFonts.inter(color: context.textPrimary, fontSize: 14),
+                style: GoogleFonts.inter(
+                  color: context.textPrimary,
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.search, color: context.textMuted, size: 20),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: context.textMuted,
+                    size: 20,
+                  ),
                   suffixIcon: isSearching
                       ? IconButton(
-                          icon: Icon(Icons.clear, color: context.textSecondary, size: 18),
+                          icon: Icon(
+                            Icons.clear,
+                            color: context.textSecondary,
+                            size: 18,
+                          ),
                           onPressed: () {
                             _searchController.clear();
                             _onSearchChanged('');
                           },
                         )
                       : null,
-                  hintText: "Search...",
-                  hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted, fontSize: 15),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  fillColor: context.isDarkMode ? const Color(0xFF151824) : const Color(0xFFF1F1F1),
+                  hintText: "Search,user,content...",
+                  hintStyle: GoogleFonts.hindSiliguri(
+                    color: context.textMuted,
+                    fontSize: 15,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  fillColor: context.isDarkMode
+                      ? const Color(0xFF151824)
+                      : const Color(0xFFF1F1F1),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -551,7 +626,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   children: [
                     _buildSearchTabButton(0, "Accounts", _searchResults.length),
                     const SizedBox(width: 12),
-                    _buildSearchTabButton(1, "Posts", _searchPostResults.length),
+                    _buildSearchTabButton(
+                      1,
+                      "Posts",
+                      _searchPostResults.length,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -569,239 +648,280 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   },
                   child: _isLoading
                       ? Center(
-                          child: CircularProgressIndicator(color: context.primaryAccent),
+                          child: CircularProgressIndicator(
+                            color: context.primaryAccent,
+                          ),
                         )
                       : isSearching
-                          ? (() {
-                              if (_searchTabIndex == 0) {
-                                if (_searchResults.isEmpty) {
-                                  return _buildNoResultsView();
-                                }
-                                return ListView.separated(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.only(bottom: 72),
-                                  itemCount: _searchResults.length,
-                                  separatorBuilder: (context, index) => Divider(
-                                    height: 1,
-                                    color: context.border,
-                                  ),
-                                  itemBuilder: (context, index) {
-                                    return _buildUserRow(_searchResults[index], dbService);
-                                  },
-                                );
-                              } else {
-                                if (_searchPostResults.isEmpty) {
-                                  return _buildNoResultsView();
-                                }
-                                return ListView.separated(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.only(bottom: 72),
-                                  itemCount: _searchPostResults.length,
-                                  separatorBuilder: (context, index) => Divider(
-                                    height: 1,
-                                    color: context.border,
-                                  ),
-                                  itemBuilder: (context, index) {
-                                    return CustomThreadCard(
-                                      key: ValueKey(_searchPostResults[index].id),
-                                      post: _searchPostResults[index],
-                                    );
-                                  },
-                                );
-                              }
-                            })()
-                          : ListView(
+                      ? (() {
+                          if (_searchTabIndex == 0) {
+                            if (_searchResults.isEmpty) {
+                              return _buildNoResultsView();
+                            }
+                            return ListView.separated(
                               physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.only(bottom: 72),
-                              children: [
-                                // Recent Searches Section
-                                if (_recentSearches.isNotEmpty) ...[
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        "Recent Searches",
-                                        style: GoogleFonts.hindSiliguri(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: context.textSecondary,
-                                        ),
+                              itemCount: _searchResults.length,
+                              separatorBuilder: (context, index) =>
+                                  Divider(height: 1, color: context.border),
+                              itemBuilder: (context, index) {
+                                return _buildUserRow(
+                                  _searchResults[index],
+                                  dbService,
+                                );
+                              },
+                            );
+                          } else {
+                            if (_searchPostResults.isEmpty) {
+                              return _buildNoResultsView();
+                            }
+                            return ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.only(bottom: 72),
+                              itemCount: _searchPostResults.length,
+                              separatorBuilder: (context, index) =>
+                                  Divider(height: 1, color: context.border),
+                              itemBuilder: (context, index) {
+                                return CustomThreadCard(
+                                  key: ValueKey(_searchPostResults[index].id),
+                                  post: _searchPostResults[index],
+                                );
+                              },
+                            );
+                          }
+                        })()
+                      : ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 72),
+                          children: [
+                            // Recent Searches Section
+                            if (_recentSearches.isNotEmpty) ...[
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Recent Searches",
+                                    style: GoogleFonts.hindSiliguri(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: context.textSecondary,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _recentSearches.clear();
+                                      });
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      "Clear All",
+                                      style: GoogleFonts.hindSiliguri(
+                                        color: context.primaryAccent,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
                                       ),
-                                      TextButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            _recentSearches.clear();
-                                          });
-                                        },
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: Size.zero,
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8.0,
+                                runSpacing: 8.0,
+                                children: _recentSearches.map((search) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: context.cardBg,
+                                      border: Border.all(color: context.border),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.history,
+                                          size: 14,
+                                          color: context.textMuted,
                                         ),
-                                        child: Text(
-                                          "Clear All",
-                                          style: GoogleFonts.hindSiliguri(
-                                            color: context.primaryAccent,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
+                                        const SizedBox(width: 6),
+                                        GestureDetector(
+                                          onTap: () {
+                                            _searchController.text = search;
+                                            _onSearchChanged(search);
+                                          },
+                                          child: Text(
+                                            search,
+                                            style: GoogleFonts.hindSiliguri(
+                                              fontSize: 13,
+                                              color: context.textPrimary,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Wrap(
-                                    spacing: 8.0,
-                                    runSpacing: 8.0,
-                                    children: _recentSearches.map((search) {
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: context.cardBg,
-                                          border: Border.all(color: context.border),
-                                          borderRadius: BorderRadius.circular(20),
+                                        const SizedBox(width: 6),
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _recentSearches.remove(search);
+                                            });
+                                          },
+                                          child: Icon(
+                                            Icons.close,
+                                            size: 14,
+                                            color: context.textMuted,
+                                          ),
                                         ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.history, size: 14, color: context.textMuted),
-                                            const SizedBox(width: 6),
-                                            GestureDetector(
-                                              onTap: () {
-                                                _searchController.text = search;
-                                                _onSearchChanged(search);
-                                              },
-                                              child: Text(
-                                                search,
-                                                style: GoogleFonts.hindSiliguri(fontSize: 13, color: context.textPrimary),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  _recentSearches.remove(search);
-                                                });
-                                              },
-                                              child: Icon(Icons.close, size: 14, color: context.textMuted),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-
-                                // 1- Trending Now 🔥
-                                _buildSectionHeader("Trending Now 🔥"),
-                                if (_isTopicsLoading)
-                                  const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(20.0),
-                                      child: CircularProgressIndicator(color: Color(0xFF1E824C)),
-                                    ),
-                                  )
-                                else if (_trendingTopics.isEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                    child: Text(
-                                      "No trending topics right now",
-                                      style: GoogleFonts.inter(color: context.textMuted, fontSize: 13),
-                                    ),
-                                  )
-                                else
-                                  ..._trendingTopics.mapIndexed((index, item) {
-                                    final posts = item['post_count'] as int? ?? 0;
-                                    return _buildTrendingItem(
-                                      (index + 1).toString(),
-                                      item['topic_name'] as String? ?? '',
-                                      "$posts ${posts == 1 ? 'post' : 'posts'}",
-                                    );
-                                  }),
-                                const SizedBox(height: 12),
-                                Divider(height: 1, color: context.border),
-
-                                // 2- Rising Topics 🚀
-                                _buildSectionHeader("Rising Topics 🚀"),
-                                if (_isTopicsLoading)
-                                  const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(20.0),
-                                      child: CircularProgressIndicator(color: Color(0xFF1E824C)),
-                                    ),
-                                  )
-                                else if (_risingTopics.isEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                    child: Text(
-                                      "No rising topics right now",
-                                      style: GoogleFonts.inter(color: context.textMuted, fontSize: 13),
-                                    ),
-                                  )
-                                else
-                                  ..._risingTopics.map((item) {
-                                    final growth = item['growth_percentage'] ?? 0;
-                                    final sign = growth >= 0 ? '+' : '';
-                                    return _buildRisingTopicItem(
-                                      item['topic_name'] as String? ?? '',
-                                      "$sign$growth% growth",
-                                    );
-                                  }),
-                                const SizedBox(height: 12),
-                                Divider(height: 1, color: context.border),
-
-                                // 3- Most Discussed 👑
-                                _buildSectionHeader("Most Discussed 👑"),
-                                if (_isTopicsLoading)
-                                  const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(20.0),
-                                      child: CircularProgressIndicator(color: Color(0xFF1E824C)),
-                                    ),
-                                  )
-                                else if (_discussedTopics.isEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                    child: Text(
-                                      "No discussed topics right now",
-                                      style: GoogleFonts.inter(color: context.textMuted, fontSize: 13),
-                                    ),
-                                  )
-                                else
-                                  ..._discussedTopics.map((item) {
-                                    final replies = item['discussion_count'] as int? ?? 0;
-                                    return _buildDiscussedItem(
-                                      item['topic_name'] as String? ?? '',
-                                      "$replies ${replies == 1 ? 'reply' : 'replies'} today",
-                                    );
-                                  }),
-                                const SizedBox(height: 12),
-                                Divider(height: 1, color: context.border),
-
-                                // 4- Recommended for you
-                                _buildSectionHeader("Recommended for you"),
-                                if (_recommended.isEmpty)
-                                  SizedBox(
-                                    height: 200,
-                                    child: Center(
-                                      child: Text(
-                                        "No recommendations found",
-                                        style: GoogleFonts.hindSiliguri(color: context.textMuted),
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  ..._recommended.map((user) {
-                                    return Column(
-                                      children: [
-                                        _buildUserRow(user, dbService),
-                                        Divider(height: 1, color: context.border),
                                       ],
-                                    );
-                                  }),
-                              ],
-                            ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
+                            // 1- Trending Now
+                            _buildSectionHeader("Trending Now", Icons.trending_up_rounded, iconColor: const Color(0xFF1E824C)),
+                            if (_isTopicsLoading)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF1E824C),
+                                  ),
+                                ),
+                              )
+                            else if (_trendingTopics.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                ),
+                                child: Text(
+                                  "No trending topics right now",
+                                  style: GoogleFonts.inter(
+                                    color: context.textMuted,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              )
+                            else
+                              ..._trendingTopics.mapIndexed((index, item) {
+                                final posts = item['post_count'] as int? ?? 0;
+                                return _buildTrendingItem(
+                                  (index + 1).toString(),
+                                  item['topic_name'] as String? ?? '',
+                                  "$posts ${posts == 1 ? 'post' : 'posts'}",
+                                );
+                              }),
+                            const SizedBox(height: 12),
+                            Divider(height: 1, color: context.border),
+
+                            // 2- Rising Topics
+                            _buildSectionHeader("Rising Topics", Icons.show_chart_rounded, iconColor: Colors.blue),
+                            if (_isTopicsLoading)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF1E824C),
+                                  ),
+                                ),
+                              )
+                            else if (_risingTopics.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                ),
+                                child: Text(
+                                  "No rising topics right now",
+                                  style: GoogleFonts.inter(
+                                    color: context.textMuted,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              )
+                            else
+                              ..._risingTopics.map((item) {
+                                final growth = item['growth_percentage'] ?? 0;
+                                final sign = growth >= 0 ? '+' : '';
+                                return _buildRisingTopicItem(
+                                  item['topic_name'] as String? ?? '',
+                                  "$sign$growth% growth",
+                                );
+                              }),
+                            const SizedBox(height: 12),
+                            Divider(height: 1, color: context.border),
+
+                            // 3- Most Discussed
+                            _buildSectionHeader("Most Discussed", Icons.forum_rounded, iconColor: Colors.orange),
+                            if (_isTopicsLoading)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF1E824C),
+                                  ),
+                                ),
+                              )
+                            else if (_discussedTopics.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                ),
+                                child: Text(
+                                  "No discussed topics right now",
+                                  style: GoogleFonts.inter(
+                                    color: context.textMuted,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              )
+                            else
+                              ..._discussedTopics.map((item) {
+                                final replies =
+                                    item['discussion_count'] as int? ?? 0;
+                                return _buildDiscussedItem(
+                                  item['topic_name'] as String? ?? '',
+                                  "$replies ${replies == 1 ? 'reply' : 'replies'} today",
+                                );
+                              }),
+                            const SizedBox(height: 12),
+                            Divider(height: 1, color: context.border),
+
+                            // 4- Recommended for you
+                            _buildSectionHeader("Recommended for you", Icons.person_add_alt_1_rounded, iconColor: const Color(0xFF1E824C)),
+                            if (_recommended.isEmpty)
+                              SizedBox(
+                                height: 200,
+                                child: Center(
+                                  child: Text(
+                                    "No recommendations found",
+                                    style: GoogleFonts.hindSiliguri(
+                                      color: context.textMuted,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              ..._recommended.map((user) {
+                                return Column(
+                                  children: [
+                                    _buildUserRow(user, dbService),
+                                    Divider(height: 1, color: context.border),
+                                  ],
+                                );
+                              }),
+                          ],
+                        ),
                 ),
               ),
             ],

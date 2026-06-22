@@ -1,13 +1,69 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
 import '../models/thread_post.dart';
 import '../models/notification.dart';
+import 'local_notification_service.dart';
+import 'sound_service.dart';
+
+import '../core/injection.dart';
+import '../features/feed/domain/usecases/get_feed_use_case.dart';
+import '../features/feed/domain/usecases/create_thread_use_case.dart';
+import '../features/feed/domain/usecases/toggle_like_use_case.dart';
+import '../features/feed/domain/usecases/toggle_save_thread_use_case.dart';
+import '../features/feed/domain/usecases/fetch_comments_use_case.dart';
+import '../features/feed/domain/usecases/add_comment_use_case.dart';
+import '../features/feed/domain/entities/thread_post_entity.dart';
+import '../features/feed/domain/repositories/feed_repository.dart';
+import '../features/chat/domain/usecases/get_active_chats_use_case.dart';
+import '../features/chat/domain/usecases/get_messages_stream_use_case.dart';
+import '../features/chat/domain/usecases/send_message_use_case.dart';
+import '../features/chat/domain/usecases/mark_messages_as_read_use_case.dart';
+import '../features/chat/domain/usecases/delete_conversation_use_case.dart';
+import '../features/chat/domain/usecases/upload_chat_media_use_case.dart';
+import '../features/chat/domain/entities/message_entity.dart';
+import '../features/profile/domain/usecases/submit_verification_use_case.dart';
+import '../features/profile/domain/usecases/get_verification_status_use_case.dart';
+import '../features/profile/domain/usecases/update_profile_use_case.dart';
+import '../features/profile/domain/usecases/upload_verification_image_use_case.dart';
+import '../features/profile/domain/usecases/update_profile_image_use_case.dart';
+import '../features/profile/domain/usecases/fetch_verification_plans_use_case.dart';
+import '../features/profile/domain/usecases/update_verification_plan_price_use_case.dart';
+import '../features/profile/domain/usecases/fetch_admin_verification_requests_use_case.dart';
+import '../features/profile/domain/usecases/update_verification_request_status_use_case.dart';
+import '../features/notifications/domain/usecases/show_notification_use_case.dart';
+import '../features/notifications/domain/usecases/play_sound_use_case.dart';
 
 class DatabaseService with ChangeNotifier {
   final _supabase = Supabase.instance.client;
+
+  ThreadPost _entityToModel(ThreadPostEntity entity) {
+    return ThreadPost(
+      id: entity.id,
+      userId: entity.userId,
+      author: entity.author,
+      content: entity.content,
+      imageUrls: entity.imageUrls,
+      videoUrl: entity.videoUrl,
+      likesCount: entity.likesCount,
+      repliesCount: entity.repliesCount,
+      repostsCount: entity.repostsCount,
+      savesCount: entity.savesCount,
+      sharesCount: entity.sharesCount,
+      viewsCount: entity.viewsCount,
+      createdAt: entity.createdAt,
+      isLikedByMe: entity.isLikedByMe,
+      reactionType: entity.reactionType,
+      isPinned: entity.isPinned,
+      muteNotifications: entity.muteNotifications,
+      hideFromProfile: entity.hideFromProfile,
+      isHiddenFromMe: entity.isHiddenFromMe,
+      isRepost: entity.isRepost,
+      repostedPost: entity.repostedPost != null ? _entityToModel(entity.repostedPost!) : null,
+      quoteText: entity.quoteText,
+    );
+  }
 
   // Cache variables
   Profile? _myProfile;
@@ -40,6 +96,23 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  void _updateReplyCountInCache(String threadId, PostgresChangeEvent eventType) {
+    final cached = _postsCache[threadId];
+    if (cached != null) {
+      int change = 0;
+      if (eventType == PostgresChangeEvent.insert) {
+        change = 1;
+      } else if (eventType == PostgresChangeEvent.delete) {
+        change = -1;
+      }
+      if (change != 0) {
+        final newRepliesCount = (cached.repliesCount + change).clamp(0, 999999);
+        _postsCache[threadId] = cached.copyWith(repliesCount: newRepliesCount);
+        notifyListeners();
+      }
+    }
+  }
+
   ThreadPost getLatestPost(ThreadPost fallbackPost) {
     final cached = _postsCache[fallbackPost.id];
     if (cached == null) {
@@ -58,6 +131,9 @@ class DatabaseService with ChangeNotifier {
   Set<String> _blockedUserIds = {};
   Set<String> get blockedUserIds => _blockedUserIds;
 
+  Set<String> _blockedByMeIds = {};
+  Set<String> get blockedByMeIds => _blockedByMeIds;
+
   Set<String> _mutedUserIds = {};
   Set<String> get mutedUserIds => _mutedUserIds;
 
@@ -67,9 +143,37 @@ class DatabaseService with ChangeNotifier {
   List<ThreadPost> _savedPosts = [];
   List<ThreadPost> get savedPosts => _savedPosts;
 
+  Set<String> _savedCommentIds = {};
+  Set<String> get savedCommentIds => _savedCommentIds;
+
+  List<Map<String, dynamic>> _savedComments = [];
+  List<Map<String, dynamic>> get savedComments => _savedComments;
+
+  Set<String> _repostedThreadIds = {};
+  Set<String> get repostedThreadIds => _repostedThreadIds;
+  bool isReposted(String threadId) => _repostedThreadIds.contains(threadId);
+
+  Future<void> fetchRepostedThreadIds() async {
+    if (_currentUid.isEmpty) return;
+    try {
+      final response = await _supabase
+          .from('reposts')
+          .select('thread_id')
+          .eq('user_id', _currentUid)
+          .isFilter('quote_text', null);
+      final List<dynamic> data = response as List<dynamic>;
+      _repostedThreadIds = data.map((json) => json['thread_id'] as String).toSet();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Fetch reposted thread ids error: $e');
+    }
+  }
+
   bool isBlocked(String targetUserId) => _blockedUserIds.contains(targetUserId);
+  bool isBlockedByMe(String targetUserId) => _blockedByMeIds.contains(targetUserId);
   bool isMuted(String targetUserId) => _mutedUserIds.contains(targetUserId);
   bool isSaved(String threadId) => _savedThreadIds.contains(threadId);
+  bool isCommentSaved(String commentId) => _savedCommentIds.contains(commentId);
 
   Future<void> toggleSaveThread(String threadId) async {
     final wasAlreadySaved = _savedThreadIds.contains(threadId);
@@ -80,35 +184,74 @@ class DatabaseService with ChangeNotifier {
     } else {
       _savedThreadIds.add(threadId);
     }
+
+    final cached = _postsCache[threadId];
+    if (cached != null) {
+      final int countDelta = wasAlreadySaved ? -1 : 1;
+      _postsCache[threadId] = cached.copyWith(
+        savesCount: (cached.savesCount + countDelta).clamp(0, 999999),
+      );
+    }
+
+    void updatePostSavesCount(List<ThreadPost> list) {
+      final idx = list.indexWhere((p) => p.id == threadId);
+      if (idx != -1) {
+        final post = list[idx];
+        final int countDelta = wasAlreadySaved ? -1 : 1;
+        list[idx] = post.copyWith(
+          savesCount: (post.savesCount + countDelta).clamp(0, 999999),
+        );
+      }
+    }
+    updatePostSavesCount(_feed);
+    updatePostSavesCount(_myThreads);
+    updatePostSavesCount(_personalizedFeed);
+
     notifyListeners();
 
     if (_currentUid.isEmpty) return;
-    try {
-      if (wasAlreadySaved) {
-        await _supabase
-            .from('saved_posts')
-            .delete()
-            .eq('user_id', _currentUid)
-            .eq('thread_id', threadId);
-      } else {
-        await _supabase.from('saved_posts').upsert({
-          'user_id': _currentUid,
-          'thread_id': threadId,
-        });
-        // Fetch that post and add to savedPosts
-        await fetchSavedPosts();
-        logUserInteraction(threadId, 'save');
-      }
-    } catch (e) {
-      debugPrint('Toggle save thread error: $e');
-      // Rollback optimistic update
-      if (wasAlreadySaved) {
-        _savedThreadIds.add(threadId);
-      } else {
-        _savedThreadIds.remove(threadId);
-      }
-      notifyListeners();
-    }
+    final result = await sl<ToggleSaveThreadUseCase>()(threadId, wasAlreadySaved);
+    await result.fold(
+      (failure) async {
+        debugPrint('Toggle save thread error: ${failure.message}');
+        // Rollback optimistic update
+        if (wasAlreadySaved) {
+          _savedThreadIds.add(threadId);
+        } else {
+          _savedThreadIds.remove(threadId);
+        }
+
+        final cachedRollback = _postsCache[threadId];
+        if (cachedRollback != null) {
+          final int countDelta = wasAlreadySaved ? 1 : -1;
+          _postsCache[threadId] = cachedRollback.copyWith(
+            savesCount: (cachedRollback.savesCount + countDelta).clamp(0, 999999),
+          );
+        }
+
+        void updatePostSavesCountRollback(List<ThreadPost> list) {
+          final idx = list.indexWhere((p) => p.id == threadId);
+          if (idx != -1) {
+            final post = list[idx];
+            final int countDelta = wasAlreadySaved ? 1 : -1;
+            list[idx] = post.copyWith(
+              savesCount: (post.savesCount + countDelta).clamp(0, 999999),
+            );
+          }
+        }
+        updatePostSavesCountRollback(_feed);
+        updatePostSavesCountRollback(_myThreads);
+        updatePostSavesCountRollback(_personalizedFeed);
+
+        notifyListeners();
+      },
+      (_) async {
+        if (!wasAlreadySaved) {
+          await fetchSavedPosts();
+          logUserInteraction(threadId, 'save');
+        }
+      },
+    );
   }
 
   Future<void> fetchSavedThreadIds() async {
@@ -190,6 +333,7 @@ class DatabaseService with ChangeNotifier {
   RealtimeChannel? _blocksChannel;
   RealtimeChannel? _mutesChannel;
   StreamSubscription<AuthState>? _supabaseAuthSub;
+  Timer? _lastSeenTimer;
 
   DatabaseService() {
     // Listen to Supabase auth state — auto-reload when session established
@@ -230,8 +374,18 @@ class DatabaseService with ChangeNotifier {
     fetchNotifications();
     fetchUnreadCounts();
     fetchSavedThreadIds();
+    fetchSavedCommentIds();
     fetchSavedPosts();
+    fetchSavedComments();
+    fetchRepostedThreadIds();
     subscribeToRealtime();
+
+    // Periodically update active status
+    updateLastSeen();
+    _lastSeenTimer?.cancel();
+    _lastSeenTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+      updateLastSeen();
+    });
   }
 
   void _clearAllData() {
@@ -244,9 +398,14 @@ class DatabaseService with ChangeNotifier {
     _notifications = [];
     _followingIds = {};
     _blockedUserIds = {};
+    _blockedByMeIds = {};
     _mutedUserIds = {};
     _savedThreadIds = {};
+    _savedCommentIds = {};
     _savedPosts = [];
+    _savedComments = [];
+    _repostedThreadIds = {};
+    _lastSeenTimer?.cancel();
     unsubscribeRealtime();
     notifyListeners();
   }
@@ -290,9 +449,13 @@ class DatabaseService with ChangeNotifier {
             schema: 'public',
             table: 'comments',
             callback: (payload) {
-              fetchFeed(silent: true);
-              if (_currentUid.isNotEmpty) {
-                fetchMyThreads();
+              // Only update the reply count in the feed cache — do NOT call fetchFeed()
+              // because that triggers notifyListeners() which rebuilds CommentsSheet and
+              // can cause the nested comment system to appear to revert.
+              final threadId = (payload.newRecord['thread_id'] ?? payload.oldRecord['thread_id']) as String?;
+              final parentId = (payload.newRecord['parent_id'] ?? payload.oldRecord['parent_id']) as String?;
+              if (threadId != null && parentId == null) {
+                _updateReplyCountInCache(threadId, payload.eventType);
               }
             })
         .subscribe();
@@ -321,7 +484,7 @@ class DatabaseService with ChangeNotifier {
               
               if (payload.eventType == PostgresChangeEvent.insert) {
                 final newNotif = payload.newRecord;
-                if (newNotif['user_id'] == _currentUid && newNotif['actor_id'] != _currentUid) {
+                if (newNotif['user_id'] == _currentUid && (newNotif['actor_id'] != _currentUid || newNotif['type'] == 'mention')) {
                   _handleIncomingNotification(newNotif);
                 }
               }
@@ -446,12 +609,48 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  /// Fetches a single thread by ID. Used for notification tap navigation.
+  Future<ThreadPost?> fetchSingleThread(String threadId) async {
+    try {
+      final response = await _supabase
+          .from('threads')
+          .select('*, author:profiles!user_id(*)')
+          .eq('id', threadId)
+          .maybeSingle();
+      if (response == null) return null;
+      return ThreadPost.fromJson(response);
+    } catch (e) {
+      debugPrint('fetchSingleThread error: $e');
+      return null;
+    }
+  }
+
   Future<void> fetchMyProfile() async {
     if (_currentUid.isEmpty) return;
     final result = await fetchProfile(_currentUid);
     if (result != null) {
       _myProfile = result;
+      _checkBadgeExpiration();
       notifyListeners();
+    }
+  }
+
+  void _checkBadgeExpiration() {
+    if (_myProfile?.isVerified == true && _myProfile?.verifiedExpiresAt != null) {
+      final expiresAt = _myProfile!.verifiedExpiresAt!;
+      final now = DateTime.now();
+      final diff = expiresAt.difference(now);
+      
+      // If within 12 hours of expiration and not already expired
+      if (diff.inHours <= 12 && diff.isNegative == false) {
+        sl<ShowNotificationUseCase>().call(
+          type: NotificationType.generic,
+          id: 9999,
+          title: 'Badge Expiring Soon',
+          body: 'Your Pigeon Blue Badge expires in ${diff.inHours} hours. Tap to renew!',
+          payload: 'badge_renewal',
+        );
+      }
     }
   }
 
@@ -473,29 +672,27 @@ class DatabaseService with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _supabase
-          .from('profiles')
-          .update({
-            'full_name': fullName,
-            'username': username,
-            'bio': bio,
-            'phone': phone,
-            'country': country,
-            'division': division,
-            'city': city,
-            'village': village,
-            'zip': zip,
-            'gender': gender,
-            'birthdate': birthdate,
-          })
-          .eq('id', _currentUid)
-          .select()
-          .single();
+      final res = await sl<UpdateProfileUseCase>().call(
+        fullName: fullName,
+        username: username,
+        bio: bio,
+        phone: phone,
+        country: country,
+        division: division,
+        city: city,
+        village: village,
+        zip: zip,
+        gender: gender,
+        birthdate: birthdate,
+      );
 
-      _myProfile = Profile.fromJson(response);
+      final success = res.fold((l) => false, (r) => r);
+      if (success) {
+        await fetchMyProfile();
+      }
       _isLoading = false;
       notifyListeners();
-      return true;
+      return success;
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -650,8 +847,11 @@ class DatabaseService with ChangeNotifier {
           .eq('muter_id', _currentUid);
 
       _blockedUserIds = {};
+      _blockedByMeIds = {};
       for (var row in blockedRes) {
-        _blockedUserIds.add(row['blocked_id'] as String);
+        final id = row['blocked_id'] as String;
+        _blockedUserIds.add(id);
+        _blockedByMeIds.add(id);
       }
       for (var row in blockedMeRes) {
         _blockedUserIds.add(row['blocker_id'] as String);
@@ -790,15 +990,9 @@ class DatabaseService with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Both avatar and cover use the same 'avatars' bucket but with path prefixes
-      // to avoid needing a separate 'covers' bucket in Supabase storage.
-      final subFolder = isAvatar ? 'avatars' : 'covers';
-      final path = '$subFolder/$_currentUid/img_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-      final publicUrl = await _uploadToStorage('avatars', path, bytes);
-      if (publicUrl != null) {
-        final updateField = isAvatar ? 'avatar_url' : 'cover_url';
-        await _supabase.from('profiles').update({updateField: publicUrl}).eq('id', _currentUid);
+      final res = await sl<UpdateProfileImageUseCase>().call(bytes, isAvatar);
+      final success = res.fold((l) => false, (r) => r);
+      if (success) {
         await fetchMyProfile();
         return true;
       }
@@ -852,158 +1046,59 @@ class DatabaseService with ChangeNotifier {
       notifyListeners();
     }
 
-    try {
-      // 1. Fetch normal threads
-      final response = await _supabase
-          .from('threads')
-          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
-          .order('created_at', ascending: false);
-
-      final List<dynamic> data = response as List<dynamic>;
-
-      // 2. Fetch reposts/quotes
-      final repostsRes = await _supabase
-          .from('reposts')
-          .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id))')
-          .order('created_at', ascending: false);
-
-      final List<dynamic> repostsData = repostsRes as List<dynamic>;
-
-      // Merge raw items
-      final List<Map<String, dynamic>> combinedRaw = [];
-      for (final thread in data) {
-        combinedRaw.add({
-          'type': 'thread',
-          'created_at': thread['created_at'] as String,
-          'data': thread,
-        });
-      }
-      for (final repost in repostsData) {
-        if (repost['threads'] != null) {
-          combinedRaw.add({
-            'type': 'repost',
-            'created_at': repost['created_at'] as String,
-            'data': repost,
-          });
-        }
-      }
-
-      // Sort combined raw by created_at descending
-      combinedRaw.sort((a, b) => (b['created_at'] as String).compareTo(a['created_at'] as String));
-
-      // Map to ThreadPost
-      final List<ThreadPost> posts = [];
-      for (final item in combinedRaw) {
-        final type = item['type'] as String;
-        final map = item['data'] as Map<String, dynamic>;
-        if (type == 'thread') {
-          posts.add(ThreadPost.fromJson(map, currentUid: _currentUid));
-        } else {
-          final threadMap = map['threads'] as Map<String, dynamic>;
-          final reposterProfileMap = map['profiles'] as Map<String, dynamic>?;
-          final reposterProfile = reposterProfileMap != null
-              ? Profile.fromJson(reposterProfileMap)
-              : Profile(id: map['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
-
-          final originalPost = ThreadPost.fromJson(threadMap, currentUid: _currentUid);
-
-          posts.add(ThreadPost(
-            id: map['id'] as String,
-            userId: map['user_id'] as String,
-            author: reposterProfile,
-            content: map['quote_text'] as String? ?? '',
-            createdAt: ThreadPost.formatRelativeTime(map['created_at'] as String?),
-            isRepost: true,
-            repostedPost: originalPost,
-            quoteText: map['quote_text'] as String?,
-            likesCount: 0,
-            repliesCount: 0,
-            repostsCount: 0,
-            viewsCount: 0,
-          ));
-        }
-      }
-
-      _updateCache(posts);
-      
-      // Apply block, mute, custom hidden, and private account privacy filters
-      posts.removeWhere((post) {
-        // Block/Mute filter
-        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
-          return true;
-        }
-        // Custom friend hide filter
-        if (post.isHiddenFromMe) {
-          return true;
-        }
-        // Private account filter (only show if following or is self)
-        if (post.userId != _currentUid && post.author.isPrivate) {
-          return !isFollowingUser(post.userId);
-        }
-        return false;
-      });
-
-      _feed = posts;
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      debugPrint("Fetch feed error: $e");
-    }
+    final result = await sl<GetFeedUseCase>()(silent: silent);
+    result.fold(
+      (failure) {
+        _isLoading = false;
+        notifyListeners();
+        debugPrint("Fetch feed error: ${failure.message}");
+      },
+      (entities) {
+        _feed = entities.map((e) => _entityToModel(e)).toList();
+        _updateCache(_feed);
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
   }
 
   Future<void> fetchMyThreads() async {
     if (_currentUid.isEmpty) return;
-    try {
-      final response = await _supabase
-          .from('threads')
-          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
-          .eq('user_id', _currentUid)
-          .order('created_at', ascending: false);
-
-      final List<dynamic> data = response as List<dynamic>;
-      final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
-      _updateCache(posts);
-      
-      // Sort pinned threads to the top
-      posts.sort((a, b) {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return 0;
-      });
-      
-      _myThreads = posts;
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Fetch my threads error: $e");
-    }
+    final result = await sl<IFeedRepository>().fetchMyThreads();
+    result.fold(
+      (failure) => debugPrint("Fetch my threads error: ${failure.message}"),
+      (entities) {
+        _myThreads = entities.map((e) => _entityToModel(e)).toList();
+        _updateCache(_myThreads);
+        notifyListeners();
+      },
+    );
   }
 
   Future<bool> createThread(String content, {List<String>? imageUrls, String? videoUrl, String? audience}) async {
-    if (_currentUid.isEmpty) return false;
-    try {
-      await _supabase.from('threads').insert({
-        'user_id': _currentUid,
-        'content': content,
-        'image_urls': imageUrls,
-        'video_url': videoUrl,
-        if (audience != null) 'audience': audience,
-      });
-      await fetchFeed(silent: true);
-      await fetchAIFeed(silent: true);
-      await fetchMyThreads();
-      return true;
-    } catch (e) {
-      debugPrint("Create thread error: $e");
-      return false;
-    }
+    final result = await sl<CreateThreadUseCase>()(content, imageUrls: imageUrls, videoUrl: videoUrl, audience: audience);
+    return result.fold(
+      (failure) {
+        debugPrint("Create thread error: ${failure.message}");
+        return false;
+      },
+      (success) async {
+        await fetchFeed(silent: true);
+        await fetchAIFeed(silent: true);
+        await fetchMyThreads();
+        return success;
+      },
+    );
   }
 
   // --- Likes CRUD ---
 
   Future<void> toggleLike(String threadId, bool shouldLike, {String? reactionType}) async {
     if (_currentUid.isEmpty) return;
+
+    if (shouldLike) {
+      sl<PlaySoundUseCase>().call(SoundType.pop);
+    }
 
     // Optimistic update cache
     final cached = _postsCache[threadId];
@@ -1018,7 +1113,7 @@ class DatabaseService with ChangeNotifier {
       );
     }
 
-    // Local state optimistic update for instant UX feedback
+    // Local state optimistic update
     final feedIndex = _feed.indexWhere((p) => p.id == threadId);
     if (feedIndex != -1) {
       final post = _feed[feedIndex];
@@ -1047,252 +1142,237 @@ class DatabaseService with ChangeNotifier {
       notifyListeners();
     }
 
-    try {
-      if (shouldLike) {
-        await _supabase.from('likes').insert({
-          'user_id': _currentUid,
-          'thread_id': threadId,
-        });
-        logUserInteraction(threadId, 'like');
-      } else {
-        await _supabase
-            .from('likes')
-            .delete()
-            .eq('user_id', _currentUid)
-            .eq('thread_id', threadId);
-        logUserInteraction(threadId, 'scroll_away');
-      }
-    } catch (e) {
-      debugPrint("Toggle like error: $e");
+    final aiFeedIndex = _personalizedFeed.indexWhere((p) => p.id == threadId);
+    if (aiFeedIndex != -1) {
+      final post = _personalizedFeed[aiFeedIndex];
+      final int countDelta = shouldLike 
+          ? (post.isLikedByMe ? 0 : 1) 
+          : -1;
+      _personalizedFeed[aiFeedIndex] = post.copyWith(
+        likesCount: post.likesCount + countDelta,
+        isLikedByMe: shouldLike,
+        reactionType: shouldLike ? (reactionType ?? '❤️') : null,
+      );
+      notifyListeners();
     }
+
+    final result = await sl<ToggleLikeUseCase>()(threadId, shouldLike);
+    result.fold(
+      (failure) {
+        debugPrint("Toggle like error: ${failure.message}");
+        // Optimistic rollback is not strictly enforced in legacy flow, but error is caught
+      },
+      (_) {
+        logUserInteraction(threadId, shouldLike ? 'like' : 'scroll_away');
+      },
+    );
   }
 
   Future<List<Map<String, dynamic>>> fetchThreadReactors(String threadId) async {
-    final List<Map<String, dynamic>> reactors = [];
+    final result = await sl<IFeedRepository>().fetchThreadReactors(threadId);
+    return result.fold(
+      (failure) {
+        debugPrint("Fetch thread reactors error: ${failure.message}");
+        return [];
+      },
+      (reactors) {
+        final List<Map<String, dynamic>> reactorList = [];
+        for (final item in reactors) {
+          reactorList.add({
+            'id': item['id'],
+            'name': item['name'],
+            'handle': item['handle'],
+            'avatar': item['avatar'],
+            'isFollowing': isFollowingUser(item['id'] as String),
+          });
+        }
 
-    try {
-      final response = await _supabase
-          .from('likes')
-          .select('user_id, profiles!user_id(*)')
-          .eq('thread_id', threadId);
-      final List<dynamic> data = response as List<dynamic>;
-      
-      for (final item in data) {
-        final profileMap = item['profiles'] as Map<String, dynamic>?;
-        if (profileMap != null) {
-          final profile = Profile.fromJson(profileMap);
-          // Avoid duplicating if mock accounts overlap with real profiles
-          if (profile.id != _currentUid && !reactors.any((r) => r['id'] == profile.id)) {
-            reactors.add({
-              'id': profile.id,
-              'name': profile.fullName,
-              'handle': '@${profile.username}',
-              'avatar': profile.avatarUrl ?? '',
-              'isFollowing': isFollowingUser(profile.id),
+        // If current user liked it, make sure they are in the list
+        final feedIndex = _feed.indexWhere((p) => p.id == threadId);
+        final isLikedByMe = feedIndex != -1 ? _feed[feedIndex].isLikedByMe : false;
+        if (isLikedByMe && _myProfile != null) {
+          if (!reactorList.any((r) => r['id'] == _myProfile!.id)) {
+            reactorList.insert(0, {
+              'id': _myProfile!.id,
+              'name': _myProfile!.fullName,
+              'handle': '@${_myProfile!.username}',
+              'avatar': _myProfile!.avatarUrl ?? '',
+              'isFollowing': false,
             });
           }
         }
-      }
-
-      // If current user liked it, make sure they are in the list
-      final feedIndex = _feed.indexWhere((p) => p.id == threadId);
-      final isLikedByMe = feedIndex != -1 ? _feed[feedIndex].isLikedByMe : false;
-      if (isLikedByMe && _myProfile != null) {
-        if (!reactors.any((r) => r['id'] == _myProfile!.id)) {
-          reactors.insert(0, {
-            'id': _myProfile!.id,
-            'name': _myProfile!.fullName,
-            'handle': '@${_myProfile!.username}',
-            'avatar': _myProfile!.avatarUrl ?? '',
-            'isFollowing': false,
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint("Fetch thread reactors error: $e");
-    }
-
-    return reactors;
+        return reactorList;
+      },
+    );
   }
 
   Future<List<ThreadPost>> fetchUserThreads(String userId) async {
-    try {
+    final result = await sl<IFeedRepository>().fetchUserThreads(userId);
+    return result.fold(
+      (failure) {
+        debugPrint("Fetch user threads error: ${failure.message}");
+        return [];
+      },
+      (entities) {
+        final posts = entities.map((e) => _entityToModel(e)).toList();
+        
+        // Filter out posts hidden from profile or hidden from me
+        posts.removeWhere((post) {
+          if (post.hideFromProfile && post.userId != _currentUid) {
+            return true;
+          }
+          if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
+            return true;
+          }
+          if (post.isHiddenFromMe) {
+            return true;
+          }
+          return false;
+        });
 
-      final response = await _supabase
-          .from('threads')
-          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+        // Sort pinned threads to the top
+        posts.sort((a, b) {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return 0;
+        });
 
-      final List<dynamic> data = response as List<dynamic>;
-      final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
-      
-      // Filter out posts hidden from profile or hidden from me
-      posts.removeWhere((post) {
-        if (post.hideFromProfile && post.userId != _currentUid) {
-          return true;
-        }
-        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
-          return true;
-        }
-        if (post.isHiddenFromMe) {
-          return true;
-        }
-        return false;
-      });
-
-      // Sort pinned threads to the top
-      posts.sort((a, b) {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return 0;
-      });
-
-      _updateCache(posts);
-      return posts;
-    } catch (e) {
-      debugPrint("Fetch user threads error: $e");
-      return [];
-    }
+        _updateCache(posts);
+        return posts;
+      },
+    );
   }
 
   Future<List<ThreadPost>> fetchUserRepliedThreads(String userId) async {
-    try {
-      if (userId.startsWith('mock-')) {
-        return [];
-      }
-
-      // Fetch distinct thread_ids from comments table where user_id = userId
-      final commentsRes = await _supabase
-          .from('comments')
-          .select('thread_id')
-          .eq('user_id', userId);
-      
-      final List<dynamic> commentsData = commentsRes as List<dynamic>;
-      final threadIds = commentsData.map((c) => c['thread_id'] as String).toSet().toList();
-      
-      if (threadIds.isEmpty) return [];
-
-      // Fetch those threads
-      final response = await _supabase
-          .from('threads')
-          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
-          .inFilter('id', threadIds)
-          .order('created_at', ascending: false);
-
-      final List<dynamic> data = response as List<dynamic>;
-      final posts = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
-      
-      // Filter out hidden posts
-      posts.removeWhere((post) {
-        if (post.hideFromProfile && post.userId != _currentUid) {
-          return true;
-        }
-        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
-          return true;
-        }
-        if (post.isHiddenFromMe) {
-          return true;
-        }
-        return false;
-      });
-
-      _updateCache(posts);
-      return posts;
-    } catch (e) {
-      debugPrint("Fetch user replied threads error: $e");
+    if (userId.startsWith('mock-')) {
       return [];
     }
+    final result = await sl<IFeedRepository>().fetchUserRepliedThreads(userId);
+    return result.fold(
+      (failure) {
+        debugPrint("Fetch user replied threads error: ${failure.message}");
+        return [];
+      },
+      (entities) {
+        final posts = entities.map((e) => _entityToModel(e)).toList();
+        
+        // Filter out hidden posts
+        posts.removeWhere((post) {
+          if (post.hideFromProfile && post.userId != _currentUid) {
+            return true;
+          }
+          if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
+            return true;
+          }
+          if (post.isHiddenFromMe) {
+            return true;
+          }
+          return false;
+        });
+
+        _updateCache(posts);
+        return posts;
+      },
+    );
   }
 
   // --- Author Post Operations ---
 
   Future<bool> togglePinPost(String threadId, bool isPinned) async {
-    if (_currentUid.isEmpty) return false;
-    try {
-      await _supabase.from('threads').update({'is_pinned': isPinned}).eq('id', threadId);
-      
-      // Update cache
-      final cached = _postsCache[threadId];
-      if (cached != null) {
-        _postsCache[threadId] = cached.copyWith(isPinned: isPinned);
-      }
+    final result = await sl<IFeedRepository>().togglePinPost(threadId, isPinned);
+    return result.fold(
+      (failure) {
+        debugPrint("Toggle pin post error: ${failure.message}");
+        return false;
+      },
+      (success) {
+        if (success) {
+          // Update cache
+          final cached = _postsCache[threadId];
+          if (cached != null) {
+            _postsCache[threadId] = cached.copyWith(isPinned: isPinned);
+          }
 
-      // Update local feed
-      final feedIdx = _feed.indexWhere((p) => p.id == threadId);
-      if (feedIdx != -1) {
-        _feed[feedIdx] = _feed[feedIdx].copyWith(isPinned: isPinned);
-      }
-      // Update local myThreads
-      final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
-      if (myIdx != -1) {
-        _myThreads[myIdx] = _myThreads[myIdx].copyWith(isPinned: isPinned);
-        _myThreads.sort((a, b) {
-          if (a.isPinned && !b.isPinned) return -1;
-          if (!a.isPinned && b.isPinned) return 1;
-          return 0;
-        });
-      }
-      notifyListeners();
-      return true;
-    } catch (e) {
-      debugPrint("Toggle pin post error: $e");
-      return false;
-    }
+          // Update local feed
+          final feedIdx = _feed.indexWhere((p) => p.id == threadId);
+          if (feedIdx != -1) {
+            _feed[feedIdx] = _feed[feedIdx].copyWith(isPinned: isPinned);
+          }
+          // Update local myThreads
+          final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
+          if (myIdx != -1) {
+            _myThreads[myIdx] = _myThreads[myIdx].copyWith(isPinned: isPinned);
+            _myThreads.sort((a, b) {
+              if (a.isPinned && !b.isPinned) return -1;
+              if (!a.isPinned && b.isPinned) return 1;
+              return 0;
+            });
+          }
+          notifyListeners();
+        }
+        return success;
+      },
+    );
   }
 
   Future<bool> toggleMutePostNotifications(String threadId, bool mute) async {
-    if (_currentUid.isEmpty) return false;
-    try {
-      await _supabase.from('threads').update({'mute_notifications': mute}).eq('id', threadId);
-      
-      // Update cache
-      final cached = _postsCache[threadId];
-      if (cached != null) {
-        _postsCache[threadId] = cached.copyWith(muteNotifications: mute);
-      }
+    final result = await sl<IFeedRepository>().toggleMutePostNotifications(threadId, mute);
+    return result.fold(
+      (failure) {
+        debugPrint("Toggle mute notifications error: ${failure.message}");
+        return false;
+      },
+      (success) {
+        if (success) {
+          // Update cache
+          final cached = _postsCache[threadId];
+          if (cached != null) {
+            _postsCache[threadId] = cached.copyWith(muteNotifications: mute);
+          }
 
-      final feedIdx = _feed.indexWhere((p) => p.id == threadId);
-      if (feedIdx != -1) {
-        _feed[feedIdx] = _feed[feedIdx].copyWith(muteNotifications: mute);
-      }
-      final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
-      if (myIdx != -1) {
-        _myThreads[myIdx] = _myThreads[myIdx].copyWith(muteNotifications: mute);
-      }
-      notifyListeners();
-      return true;
-    } catch (e) {
-      debugPrint("Toggle mute notifications error: $e");
-      return false;
-    }
+          final feedIdx = _feed.indexWhere((p) => p.id == threadId);
+          if (feedIdx != -1) {
+            _feed[feedIdx] = _feed[feedIdx].copyWith(muteNotifications: mute);
+          }
+          final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
+          if (myIdx != -1) {
+            _myThreads[myIdx] = _myThreads[myIdx].copyWith(muteNotifications: mute);
+          }
+          notifyListeners();
+        }
+        return success;
+      },
+    );
   }
 
   Future<bool> toggleHidePostFromProfile(String threadId, bool hide) async {
-    if (_currentUid.isEmpty) return false;
-    try {
-      await _supabase.from('threads').update({'hide_from_profile': hide}).eq('id', threadId);
-      
-      // Update cache
-      final cached = _postsCache[threadId];
-      if (cached != null) {
-        _postsCache[threadId] = cached.copyWith(hideFromProfile: hide);
-      }
+    final result = await sl<IFeedRepository>().toggleHidePostFromProfile(threadId, hide);
+    return result.fold(
+      (failure) {
+        debugPrint("Toggle hide from profile error: ${failure.message}");
+        return false;
+      },
+      (success) {
+        if (success) {
+          // Update cache
+          final cached = _postsCache[threadId];
+          if (cached != null) {
+            _postsCache[threadId] = cached.copyWith(hideFromProfile: hide);
+          }
 
-      final feedIdx = _feed.indexWhere((p) => p.id == threadId);
-      if (feedIdx != -1) {
-        _feed[feedIdx] = _feed[feedIdx].copyWith(hideFromProfile: hide);
-      }
-      final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
-      if (myIdx != -1) {
-        _myThreads[myIdx] = _myThreads[myIdx].copyWith(hideFromProfile: hide);
-      }
-      notifyListeners();
-      return true;
-    } catch (e) {
-      debugPrint("Toggle hide from profile error: $e");
-      return false;
-    }
+          final feedIdx = _feed.indexWhere((p) => p.id == threadId);
+          if (feedIdx != -1) {
+            _feed[feedIdx] = _feed[feedIdx].copyWith(hideFromProfile: hide);
+          }
+          final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
+          if (myIdx != -1) {
+            _myThreads[myIdx] = _myThreads[myIdx].copyWith(hideFromProfile: hide);
+          }
+          notifyListeners();
+        }
+        return success;
+      },
+    );
   }
 
   Future<bool> editPostContent(String threadId, String content) async {
@@ -1520,9 +1600,25 @@ class DatabaseService with ChangeNotifier {
   void _handleIncomingMessage(Map<String, dynamic> msg) async {
     final senderProfile = await fetchProfile(msg['sender_id'] as String);
     final senderName = senderProfile?.fullName ?? "Someone";
+    final body = (msg['content'] as String?)?.isNotEmpty == true
+        ? msg['content'] as String
+        : '📷 Photo';
+
+    // Play chime sound
+    sl<PlaySoundUseCase>().call(SoundType.chime);
+
+    // Typed push notification — goes to Messages channel with grouping
+    await sl<ShowNotificationUseCase>().call(
+      type: NotificationType.message,
+      id: msg['id'].hashCode,
+      senderName: senderName,
+      message: body,
+      payload: 'message:${msg['sender_id']}',
+    );
+
     _incomingNotificationStreamController.add({
       'title': senderName,
-      'body': msg['content'] as String,
+      'body': body,
       'type': 'message',
       'sender_id': msg['sender_id'],
     });
@@ -1531,283 +1627,433 @@ class DatabaseService with ChangeNotifier {
   void _handleIncomingNotification(Map<String, dynamic> notif) async {
     final actorProfile = await fetchProfile(notif['actor_id'] as String);
     final actorName = actorProfile?.fullName ?? "Someone";
+    final type = (notif['type'] as String? ?? '').toLowerCase();
+    final content = notif['content'] as String? ?? '';
+    final threadId = notif['thread_id'] as String?;
+
+    // Play chime sound
+    sl<PlaySoundUseCase>().call(SoundType.chime);
+
+    // Route to typed notification helper for proper OS grouping
+    final id = notif['id'].hashCode;
+    final payload = threadId != null ? 'thread:$threadId' : 'notification';
+
+    switch (type) {
+      case 'follow':
+        await sl<ShowNotificationUseCase>().call(
+          type: NotificationType.follow,
+          id: id,
+          actorName: actorName,
+          payload: 'profile:${notif['actor_id']}',
+        );
+        break;
+      case 'like':
+        await sl<ShowNotificationUseCase>().call(
+          type: NotificationType.like,
+          id: id,
+          actorName: actorName,
+          postSnippet: content.isNotEmpty ? content : 'your post',
+          payload: payload,
+        );
+        break;
+      case 'mention':
+        await sl<ShowNotificationUseCase>().call(
+          type: NotificationType.mention,
+          id: id,
+          actorName: actorName,
+          snippet: content,
+          payload: payload,
+        );
+        break;
+      default: // comment, repost, reply, etc.
+        await sl<ShowNotificationUseCase>().call(
+          type: NotificationType.activity,
+          id: id,
+          actorName: actorName,
+          action: content,
+          payload: payload,
+        );
+    }
+
     _incomingNotificationStreamController.add({
-      'title': 'New Activity',
-      'body': '$actorName ${notif['content']}',
-      'type': 'notification',
+      'title': actorName,
+      'body': content,
+      'type': type,
     });
   }
 
   // --- Real-time Private Messaging ---
 
   Stream<List<Map<String, dynamic>>> getMessagesStream(String otherUserId) {
-    if (_currentUid.isEmpty) return const Stream.empty();
-    
-    // Set up a broadcast stream combining the messages table query and database change triggers
-    final controller = StreamController<List<Map<String, dynamic>>>();
-    
-    Future<void> loadAndPush() async {
-      try {
-        final response = await _supabase
-            .from('messages')
-            .select()
-            .or('and(sender_id.eq.$_currentUid,receiver_id.eq.$otherUserId),and(sender_id.eq.$otherUserId,receiver_id.eq.$_currentUid)')
-            .order('created_at', ascending: true);
-        
-        final List<dynamic> data = response as List<dynamic>;
-        final messages = data.map((json) => {
-          'id': json['id'] as String,
-          'text': json['content'] as String,
-          'isMe': json['sender_id'] == _currentUid,
-          'time': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
-          'created_at': json['created_at'],
-        }).toList();
-        
-        if (!controller.isClosed) {
-          controller.add(messages);
-        }
-      } catch (e) {
-        debugPrint("Error loading messages stream: $e");
-        if (!controller.isClosed) {
-          controller.add([]);
-        }
-      }
-    }
-
-    // Load initial values
-    loadAndPush();
-
-    // Listen to realtime messages table updates
-    final subscription = _supabase
-        .channel('messages:$otherUserId')
-        .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            schema: 'public',
-            table: 'messages',
-            callback: (payload) {
-              loadAndPush();
-            })
-        .subscribe();
-
-    controller.onCancel = () {
-      _supabase.removeChannel(subscription);
-      controller.close();
-    };
-
-    return controller.stream;
+    return sl<GetMessagesStreamUseCase>()(otherUserId).map((list) {
+      return list.map((msg) => {
+        'id': msg.id,
+        'text': msg.text,
+        'isMe': msg.isMe,
+        'time': msg.time,
+        'created_at': msg.createdAt,
+        'media_url': msg.mediaUrl,
+        'media_type': msg.mediaType,
+        'is_read': msg.isRead,
+      }).toList();
+    });
   }
 
-  Future<void> sendMessage(String receiverId, String content) async {
-    if (_currentUid.isEmpty) return;
-    try {
-      await _supabase.from('messages').insert({
-        'sender_id': _currentUid,
-        'receiver_id': receiverId,
-        'content': content,
-        'is_read': false,
-      });
-      
-      // Notify database and trigger unread counts updating
-      fetchUnreadCounts();
-    } catch (e) {
-      debugPrint("Send message error: $e");
+  Future<void> sendMessage(String receiverId, String content, {String? mediaUrl, String? mediaType}) async {
+    if (_blockedUserIds.contains(receiverId)) {
+      debugPrint("Cannot send message: User is blocked");
+      return;
     }
+    final result = await sl<SendMessageUseCase>()(receiverId, content, mediaUrl: mediaUrl, mediaType: mediaType);
+    result.fold(
+      (failure) => debugPrint("Send message error: ${failure.message}"),
+      (_) => fetchUnreadCounts(),
+    );
   }
 
   Future<void> markMessagesAsRead(String otherUserId) async {
-    if (_currentUid.isEmpty) return;
-    try {
-      await _supabase
-          .from('messages')
-          .update({'is_read': true})
-          .eq('sender_id', otherUserId)
-          .eq('receiver_id', _currentUid)
-          .eq('is_read', false);
-      fetchUnreadCounts();
-    } catch (e) {
-      debugPrint("Mark messages as read error: $e");
-    }
+    final result = await sl<MarkMessagesAsReadUseCase>()(otherUserId);
+    result.fold(
+      (failure) => debugPrint("Mark messages as read error: ${failure.message}"),
+      (_) => fetchUnreadCounts(),
+    );
   }
 
   Future<List<Map<String, dynamic>>> fetchActiveChats() async {
-    if (_currentUid.isEmpty) return [];
+    final result = await sl<GetActiveChatsUseCase>()();
+    return result.fold(
+      (failure) {
+        debugPrint("Fetch active chats error: ${failure.message}");
+        return [];
+      },
+      (chats) {
+        final List<Map<String, dynamic>> list = [];
+        for (final chat in chats) {
+          final profile = chat['profile'] as Profile;
+          if (_blockedUserIds.contains(profile.id)) continue;
+          list.add({
+            'profile': profile,
+            'last_message': chat['lastMessage'],
+            'last_message_time': chat['lastMessageTime'],
+            'unread_count': chat['unreadCount'],
+            'timestamp': DateTime.parse(chat['timeRaw'] as String),
+          });
+        }
+        list.sort((a, b) => (b['timestamp'] as DateTime).compareTo(a['timestamp'] as DateTime));
+        return list;
+      },
+    );
+  }
+
+  Future<String?> uploadChatMedia(Uint8List bytes) async {
+    final result = await sl<UploadChatMediaUseCase>()(bytes);
+    return result.fold(
+      (failure) {
+        debugPrint("Upload chat media error: ${failure.message}");
+        return null;
+      },
+      (url) => url,
+    );
+  }
+
+  Future<void> updateLastSeen() async {
+    if (_currentUid.isEmpty) return;
     try {
-      final response = await _supabase
-          .from('messages')
-          .select('*, sender:profiles!sender_id(*), receiver:profiles!receiver_id(*)')
-          .or('sender_id.eq.$_currentUid,receiver_id.eq.$_currentUid')
-          .order('created_at', ascending: false);
-
-      final List<dynamic> data = response as List<dynamic>;
-      final Map<String, Map<String, dynamic>> conversations = {};
-
-      for (final json in data) {
-        final senderId = json['sender_id'] as String;
-        final isMeSender = senderId == _currentUid;
-        final otherUserMap = isMeSender ? json['receiver'] : json['sender'];
-        
-        if (otherUserMap == null) continue;
-        final otherProfile = Profile.fromJson(otherUserMap as Map<String, dynamic>);
-        final otherId = otherProfile.id;
-
-        if (!conversations.containsKey(otherId)) {
-          conversations[otherId] = {
-            'profile': otherProfile,
-            'last_message': json['content'] as String,
-            'last_message_time': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
-            'unread_count': 0,
-            'timestamp': DateTime.parse(json['created_at'] as String),
-          };
-        }
-        
-        if (!isMeSender && !(json['is_read'] as bool)) {
-          conversations[otherId]!['unread_count'] = (conversations[otherId]!['unread_count'] as int) + 1;
-        }
-      }
-
-      final list = conversations.values.toList();
-      list.sort((a, b) => (b['timestamp'] as DateTime).compareTo(a['timestamp'] as DateTime));
-      return list;
+      await _supabase.from('profiles').update({
+        'last_seen': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', _currentUid);
     } catch (e) {
-      debugPrint("Fetch active chats error: $e");
-      return [];
+      debugPrint("Update last seen error: $e");
     }
+  }
+
+  Future<bool> deleteConversation(String otherUserId) async {
+    final result = await sl<DeleteConversationUseCase>()(otherUserId);
+    return result.fold(
+      (failure) {
+        debugPrint("Delete conversation error: ${failure.message}");
+        return false;
+      },
+      (success) => success,
+    );
   }
 
   // --- Comment and Nested Replies Database CRUD ---
 
   Future<List<Map<String, dynamic>>> fetchComments(String threadId) async {
+    final result = await sl<FetchCommentsUseCase>()(threadId);
+    return result.fold(
+      (failure) {
+        debugPrint("Fetch comments error: ${failure.message}");
+        return [];
+      },
+      (comments) => comments,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCommentReplies(String commentId) async {
+    final result = await sl<IFeedRepository>().fetchCommentReplies(commentId);
+    return result.fold(
+      (failure) {
+        debugPrint("Fetch comment replies error: ${failure.message}");
+        return [];
+      },
+      (replies) => replies,
+    );
+  }
+
+  Future<bool> addComment(String threadId, String content, {String? parentId, String? imageUrl}) async {
+    final result = await sl<AddCommentUseCase>()(threadId, content, parentId: parentId, imageUrl: imageUrl);
+    return result.fold(
+      (failure) {
+        debugPrint("Add comment error: ${failure.message}");
+        return false;
+      },
+      (success) async {
+        if (parentId == null) {
+          final cached = _postsCache[threadId];
+          if (cached != null) {
+            _postsCache[threadId] = cached.copyWith(
+              repliesCount: cached.repliesCount + 1,
+            );
+          }
+        }
+        await fetchFeed(silent: true);
+        logUserInteraction(threadId, 'reply');
+        return success;
+      },
+    );
+  }
+
+  Future<void> toggleSaveComment(String commentId) async {
+    final wasAlreadySaved = _savedCommentIds.contains(commentId);
+    if (wasAlreadySaved) {
+      _savedCommentIds.remove(commentId);
+      _savedComments.removeWhere((c) => c['id'] == commentId);
+    } else {
+      _savedCommentIds.add(commentId);
+    }
+    notifyListeners();
+
+    final result = await sl<IFeedRepository>().toggleSaveComment(commentId);
+    result.fold(
+      (failure) {
+        debugPrint('Toggle save comment error: ${failure.message}');
+        if (wasAlreadySaved) {
+          _savedCommentIds.add(commentId);
+        } else {
+          _savedCommentIds.remove(commentId);
+        }
+        notifyListeners();
+      },
+      (_) async {
+        await fetchSavedComments();
+      },
+    );
+  }
+
+  Future<void> fetchSavedCommentIds() async {
+    if (_currentUid.isEmpty) return;
     try {
       final response = await _supabase
-          .from('comments')
-          .select('*, profiles(*)')
-          .eq('thread_id', threadId)
-          .order('created_at', ascending: true);
+          .from('saved_comments')
+          .select('comment_id')
+          .eq('user_id', _currentUid);
+      final List<dynamic> data = response as List<dynamic>;
+      _savedCommentIds = data.map((json) => json['comment_id'] as String).toSet();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Fetch saved comment ids error: $e');
+    }
+  }
 
+  Future<void> fetchSavedComments() async {
+    if (_currentUid.isEmpty) return;
+    try {
+      final response = await _supabase
+          .from('saved_comments')
+          .select('*, comments(*, profiles(*))')
+          .eq('user_id', _currentUid)
+          .order('created_at', ascending: false);
+          
       final List<dynamic> data = response as List<dynamic>;
       
       // Fetch user's comment likes for is_liked_by_me tracking
       Set<String> likedCommentIds = {};
-      if (_currentUid.isNotEmpty) {
-        final likesRes = await _supabase
-            .from('comment_likes')
-            .select('comment_id')
-            .eq('user_id', _currentUid);
-        final List<dynamic> likesData = likesRes as List<dynamic>;
-        likedCommentIds = likesData.map((l) => l['comment_id'] as String).toSet();
-      }
+      final likesRes = await _supabase
+          .from('comment_likes')
+          .select('comment_id')
+          .eq('user_id', _currentUid);
+      final List<dynamic> likesData = likesRes as List<dynamic>;
+      likedCommentIds = likesData.map((l) => l['comment_id'] as String).toSet();
 
-      return data.map((json) {
-        final authorMap = json['profiles'] as Map<String, dynamic>?;
-        final author = authorMap != null 
-            ? Profile.fromJson(authorMap) 
-            : Profile(id: json['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
-        
-        return {
-          'id': json['id'] as String,
-          'author': author,
-          'content': json['content'] as String,
-          'created_at': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
-          'created_at_raw': json['created_at'] as String,
-          'likes_count': (json['likes_count'] as int?) ?? 0,
-          'parent_id': json['parent_id'] as String?,
-          'is_liked_by_me': likedCommentIds.contains(json['id'] as String),
-        };
-      }).toList();
+      final List<Map<String, dynamic>> comments = [];
+      for (final row in data) {
+        final commentMap = row['comments'] as Map<String, dynamic>?;
+        if (commentMap != null) {
+          final authorMap = commentMap['profiles'] as Map<String, dynamic>?;
+          final author = authorMap != null 
+              ? Profile.fromJson(authorMap) 
+              : Profile(id: commentMap['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+          
+          comments.add({
+            'id': commentMap['id'] as String,
+            'thread_id': commentMap['thread_id'] as String,
+            'author': author,
+            'content': commentMap['content'] as String,
+            'image_url': commentMap['image_url'] as String?,
+            'created_at': _getRelativeTime(DateTime.parse(commentMap['created_at'] as String)),
+            'created_at_raw': commentMap['created_at'] as String,
+            'likes_count': (commentMap['likes_count'] as int?) ?? 0,
+            'saves_count': (commentMap['saves_count'] as int?) ?? 0,
+            'shares_count': (commentMap['shares_count'] as int?) ?? 0,
+            'replies_count': (commentMap['replies_count'] as int?) ?? 0,
+            'parent_id': commentMap['parent_id'] as String?,
+            'is_liked_by_me': likedCommentIds.contains(commentMap['id'] as String),
+            'is_saved_by_me': true,
+          });
+        }
+      }
+      _savedComments = comments;
+      _savedCommentIds = comments.map((c) => c['id'] as String).toSet();
+      notifyListeners();
     } catch (e) {
-      debugPrint("Fetch comments error: $e");
-      return [];
+      debugPrint('Fetch saved comments error: $e');
     }
   }
 
-  Future<bool> addComment(String threadId, String content, {String? parentId}) async {
-    if (_currentUid.isEmpty) {
-      throw Exception("User is not authenticated");
-    }
+  Future<Map<String, dynamic>?> fetchSingleComment(String commentId) async {
     try {
-      await _supabase.from('comments').insert({
-        'thread_id': threadId,
-        'user_id': _currentUid,
-        'content': content,
-        'parent_id': parentId,
-      });
+      final response = await _supabase
+          .from('comments')
+          .select('*, profiles(*)')
+          .eq('id', commentId)
+          .single();
+      final json = response;
+      
+      // Check if liked
+      bool isLiked = false;
+      if (_currentUid.isNotEmpty) {
+        final likeRes = await _supabase
+            .from('comment_likes')
+            .select('comment_id')
+            .eq('user_id', _currentUid)
+            .eq('comment_id', commentId)
+            .maybeSingle();
+        isLiked = likeRes != null;
+      }
+      
+      final authorMap = json['profiles'] as Map<String, dynamic>?;
+      final author = authorMap != null 
+          ? Profile.fromJson(authorMap) 
+          : Profile(id: json['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
 
-      // Optimistic update cache for comments count
+      return {
+        'id': json['id'] as String,
+        'author': author,
+        'content': json['content'] as String,
+        'image_url': json['image_url'] as String?,
+        'created_at': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
+        'created_at_raw': json['created_at'] as String,
+        'likes_count': (json['likes_count'] as int?) ?? 0,
+        'saves_count': (json['saves_count'] as int?) ?? 0,
+        'shares_count': (json['shares_count'] as int?) ?? 0,
+        'replies_count': (json['replies_count'] as int?) ?? 0,
+        'parent_id': json['parent_id'] as String?,
+        'is_liked_by_me': isLiked,
+        'is_saved_by_me': isCommentSaved(json['id'] as String),
+      };
+    } catch (e) {
+      debugPrint("Fetch single comment error: $e");
+      return null;
+    }
+  }
+
+  Future<void> incrementCommentShareCount(String commentId) async {
+    try {
+      await _supabase.rpc('increment_comment_shares_count', params: {'c_id': commentId});
+    } catch (e) {
+      debugPrint("Error incrementing comment share count RPC: $e");
+      // Fallback
+      try {
+        final currentRes = await _supabase.from('comments').select('shares_count').eq('id', commentId).single();
+        final currentShares = (currentRes['shares_count'] as int?) ?? 0;
+        await _supabase.from('comments').update({'shares_count': currentShares + 1}).eq('id', commentId);
+      } catch (err) {
+        debugPrint("Error manually updating comment shares count: $err");
+      }
+    }
+  }
+
+  Future<void> incrementShareCount(String threadId) async {
+    try {
+      await _supabase.rpc('increment_shares_count', params: {'thread_id': threadId});
+      // Also update cached post if exists
       final cached = _postsCache[threadId];
       if (cached != null) {
         _postsCache[threadId] = cached.copyWith(
-          repliesCount: cached.repliesCount + 1,
+          sharesCount: cached.sharesCount + 1,
         );
+        notifyListeners();
       }
-
-      fetchFeed(silent: true);
-      logUserInteraction(threadId, 'reply');
-      return true;
     } catch (e) {
-      debugPrint("Add comment error: $e");
-      rethrow;
+      debugPrint("Error incrementing share count RPC: $e");
+      // Fallback: manually update if RPC is missing
+      try {
+        final cached = _postsCache[threadId];
+        if (cached != null) {
+          final newShares = cached.sharesCount + 1;
+          await _supabase.from('threads').update({'shares_count': newShares}).eq('id', threadId);
+          _postsCache[threadId] = cached.copyWith(sharesCount: newShares);
+          notifyListeners();
+        }
+      } catch (err) {
+        debugPrint("Error manually updating shares count: $err");
+      }
     }
   }
 
   Future<void> toggleCommentLike(String commentId, bool shouldLike) async {
-    if (_currentUid.isEmpty) return;
-    try {
-      if (shouldLike) {
-        await _supabase.from('comment_likes').insert({
-          'user_id': _currentUid,
-          'comment_id': commentId,
-        });
-        await _supabase.rpc('increment_comment_likes', params: {'comment_id': commentId});
-      } else {
-        await _supabase
-            .from('comment_likes')
-            .delete()
-            .eq('user_id', _currentUid)
-            .eq('comment_id', commentId);
-        await _supabase.rpc('decrement_comment_likes', params: {'comment_id': commentId});
-      }
-    } catch (e) {
-      // Fallback if RPC functions do not exist, directly update via update query
-      try {
-        final getComment = await _supabase.from('comments').select('likes_count').eq('id', commentId).single();
-        final currentLikes = (getComment['likes_count'] as int?) ?? 0;
-        final newLikes = shouldLike ? currentLikes + 1 : GREATEST(0, currentLikes - 1);
-        
-        await _supabase.from('comments').update({'likes_count': newLikes}).eq('id', commentId);
-      } catch (inner) {
-        debugPrint("Toggle comment like error: $inner");
-      }
-    }
+    final result = await sl<IFeedRepository>().toggleCommentLike(commentId, shouldLike);
+    result.fold(
+      (failure) => debugPrint("Toggle comment like error: ${failure.message}"),
+      (_) => null,
+    );
   }
 
-  Future<bool> deleteComment(String commentId, String threadId) async {
-    if (_currentUid.isEmpty) return false;
-    try {
-      await _supabase.from('comments').delete().eq('id', commentId).eq('user_id', _currentUid);
-      
-      final cached = _postsCache[threadId];
-      if (cached != null) {
-        _postsCache[threadId] = cached.copyWith(
-          repliesCount: cached.repliesCount - 1 < 0 ? 0 : cached.repliesCount - 1,
-        );
-      }
-      fetchFeed(silent: true);
-      return true;
-    } catch (e) {
-      debugPrint("Delete comment error: $e");
-      return false;
-    }
+  Future<bool> deleteComment(String commentId, String threadId, {String? parentId}) async {
+    final result = await sl<IFeedRepository>().deleteComment(commentId);
+    return result.fold(
+      (failure) {
+        debugPrint("Delete comment error: ${failure.message}");
+        return false;
+      },
+      (success) {
+        if (success) {
+          if (parentId == null) {
+            final cached = _postsCache[threadId];
+            if (cached != null) {
+              _postsCache[threadId] = cached.copyWith(
+                repliesCount: cached.repliesCount - 1 < 0 ? 0 : cached.repliesCount - 1,
+              );
+            }
+          }
+          fetchFeed(silent: true);
+        }
+        return success;
+      },
+    );
   }
 
   Future<bool> editComment(String commentId, String content) async {
-    if (_currentUid.isEmpty) return false;
-    try {
-      await _supabase.from('comments').update({'content': content}).eq('id', commentId).eq('user_id', _currentUid);
-      return true;
-    } catch (e) {
-      debugPrint("Edit comment error: $e");
-      return false;
-    }
+    final result = await sl<IFeedRepository>().editComment(commentId, content);
+    return result.fold(
+      (failure) {
+        debugPrint("Edit comment error: ${failure.message}");
+        return false;
+      },
+      (success) => success,
+    );
   }
 
   int GREATEST(int a, int b) => a > b ? a : b;
@@ -1816,6 +2062,42 @@ class DatabaseService with ChangeNotifier {
 
   Future<bool> repostThread(String threadId, {String? quoteText}) async {
     if (_currentUid.isEmpty) return false;
+
+    final wasReposted = _repostedThreadIds.contains(threadId);
+
+    // Optimistic toggle for simple reposts (quoteText == null)
+    if (quoteText == null) {
+      if (wasReposted) {
+        _repostedThreadIds.remove(threadId);
+      } else {
+        _repostedThreadIds.add(threadId);
+      }
+
+      // Update cache
+      final cached = _postsCache[threadId];
+      if (cached != null) {
+        final delta = wasReposted ? -1 : 1;
+        _postsCache[threadId] = cached.copyWith(
+          repostsCount: (cached.repostsCount + delta).clamp(0, 999999),
+        );
+      }
+
+      void updatePostRepostsCount(List<ThreadPost> list) {
+        final idx = list.indexWhere((p) => p.id == threadId);
+        if (idx != -1) {
+          final post = list[idx];
+          final delta = wasReposted ? -1 : 1;
+          list[idx] = post.copyWith(
+            repostsCount: (post.repostsCount + delta).clamp(0, 999999),
+          );
+        }
+      }
+      updatePostRepostsCount(_feed);
+      updatePostRepostsCount(_myThreads);
+      updatePostRepostsCount(_personalizedFeed);
+      notifyListeners();
+    }
+
     try {
       // Check if already reposted
       final existing = await _supabase
@@ -1848,9 +2130,41 @@ class DatabaseService with ChangeNotifier {
         });
       }
       fetchFeed(silent: true);
+      fetchAIFeed(silent: true);
       return true;
     } catch (e) {
       debugPrint("Repost thread error: $e");
+      // Rollback optimistic update if simple repost failed
+      if (quoteText == null) {
+        if (wasReposted) {
+          _repostedThreadIds.add(threadId);
+        } else {
+          _repostedThreadIds.remove(threadId);
+        }
+
+        final cached = _postsCache[threadId];
+        if (cached != null) {
+          final delta = wasReposted ? 1 : -1;
+          _postsCache[threadId] = cached.copyWith(
+            repostsCount: (cached.repostsCount + delta).clamp(0, 999999),
+          );
+        }
+
+        void updatePostRepostsCount(List<ThreadPost> list) {
+          final idx = list.indexWhere((p) => p.id == threadId);
+          if (idx != -1) {
+            final post = list[idx];
+            final delta = wasReposted ? 1 : -1;
+            list[idx] = post.copyWith(
+              repostsCount: (post.repostsCount + delta).clamp(0, 999999),
+            );
+          }
+        }
+        updatePostRepostsCount(_feed);
+        updatePostRepostsCount(_myThreads);
+        updatePostRepostsCount(_personalizedFeed);
+        notifyListeners();
+      }
       return false;
     }
   }
@@ -2350,6 +2664,7 @@ class DatabaseService with ChangeNotifier {
   @override
   void dispose() {
     _supabaseAuthSub?.cancel();
+    _lastSeenTimer?.cancel();
     unsubscribeRealtime();
     super.dispose();
   }
@@ -2370,8 +2685,10 @@ class DatabaseService with ChangeNotifier {
       notifyListeners();
     }
 
+    final offset = _aiFeedPage * limit;
+    final List<ThreadPost> fetchedPosts = [];
+
     try {
-      final offset = _aiFeedPage * limit;
       final response = await _supabase.rpc(
         'get_personalized_feed',
         params: {
@@ -2382,7 +2699,6 @@ class DatabaseService with ChangeNotifier {
       );
 
       final List<dynamic> data = response as List<dynamic>;
-      final List<ThreadPost> fetchedPosts = [];
 
       if (data.isNotEmpty) {
         final List<String> threadIds = data.map((json) => json['id'] as String).toList();
@@ -2400,43 +2716,101 @@ class DatabaseService with ChangeNotifier {
         fetchedPosts.addAll(posts);
       }
 
-      // Apply privacy/mute/block filters
-      fetchedPosts.removeWhere((post) {
-        if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
-          return true;
-        }
-        if (post.isHiddenFromMe) {
-          return true;
-        }
-        if (post.userId != _currentUid && post.author.isPrivate) {
-          return !isFollowingUser(post.userId);
-        }
-        return false;
-      });
+      // Also fetch reposts from users we follow so they appear in the "For You" feed
+      try {
+        final repostsRes = await _supabase
+            .from('reposts')
+            .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id))')
+            .order('created_at', ascending: false)
+            .limit(20);
 
-      if (loadMore) {
-        final existingIds = _personalizedFeed.map((p) => p.id).toSet();
-        fetchedPosts.removeWhere((p) => existingIds.contains(p.id));
-        _personalizedFeed.addAll(fetchedPosts);
-      } else {
-        _personalizedFeed = fetchedPosts;
+        final List<dynamic> repostsData = repostsRes as List<dynamic>;
+        for (final repost in repostsData) {
+          if (repost['threads'] != null) {
+            final threadMap = repost['threads'] as Map<String, dynamic>;
+            final reposterProfileMap = repost['profiles'] as Map<String, dynamic>?;
+            final reposterProfile = reposterProfileMap != null
+                ? Profile.fromJson(reposterProfileMap)
+                : Profile(id: repost['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+
+            final originalPost = ThreadPost.fromJson(threadMap, currentUid: _currentUid);
+            final repostPost = ThreadPost(
+              id: repost['id'] as String,
+              userId: repost['user_id'] as String,
+              author: reposterProfile,
+              content: repost['quote_text'] as String? ?? '',
+              createdAt: ThreadPost.formatRelativeTime(repost['created_at'] as String?),
+              isRepost: true,
+              repostedPost: originalPost,
+              quoteText: repost['quote_text'] as String?,
+              likesCount: 0,
+              repliesCount: 0,
+              repostsCount: 0,
+              viewsCount: 0,
+            );
+            // Only add if not already in fetched posts
+            if (!fetchedPosts.any((p) => p.id == repostPost.id)) {
+              fetchedPosts.add(repostPost);
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Fetch reposts for AI feed error: $e');
       }
-
-      _updateCache(fetchedPosts);
-
-      if (fetchedPosts.length < limit) {
-        _aiFeedHasMore = false;
-      } else {
-        _aiFeedPage++;
-      }
-
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      debugPrint("Fetch personalized AI feed error: $e");
+      debugPrint("Fetch personalized AI feed RPC error: $e. Falling back to direct fetch.");
     }
+
+    // Fallback: If we couldn't load any posts from RPC (due to error or empty result), fetch directly from threads
+    if (fetchedPosts.isEmpty) {
+      try {
+        final response = await _supabase
+            .from('threads')
+            .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
+            .order('created_at', ascending: false)
+            .limit(limit)
+            .range(offset, offset + limit - 1);
+        
+        final List<dynamic> threadsData = response as List<dynamic>;
+        final List<ThreadPost> posts = threadsData.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+        fetchedPosts.addAll(posts);
+      } catch (fallbackError) {
+        debugPrint("AI Feed fallback direct query failed: $fallbackError");
+      }
+    }
+
+    // Apply privacy/mute/block filters
+    fetchedPosts.removeWhere((post) {
+      if (_blockedUserIds.contains(post.userId) || _mutedUserIds.contains(post.userId)) {
+        return true;
+      }
+      if (post.isHiddenFromMe) {
+        return true;
+      }
+      if (post.userId != _currentUid && post.author.isPrivate) {
+        return !isFollowingUser(post.userId);
+      }
+      return false;
+    });
+
+    if (loadMore) {
+      final existingIds = _personalizedFeed.map((p) => p.id).toSet();
+      fetchedPosts.removeWhere((p) => existingIds.contains(p.id));
+      _personalizedFeed.addAll(fetchedPosts);
+    } else {
+      _personalizedFeed = fetchedPosts;
+    }
+
+    _updateCache(fetchedPosts);
+
+    if (fetchedPosts.length < limit) {
+      _aiFeedHasMore = false;
+    } else {
+      _aiFeedPage++;
+    }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<void> logUserInteraction(String threadId, String type, {int duration = 0}) async {
@@ -2450,6 +2824,103 @@ class DatabaseService with ChangeNotifier {
       });
     } catch (e) {
       debugPrint('Log user interaction error: $e');
+    }
+  }
+
+  // --- Profile Verification Operations ---
+
+  List<Map<String, dynamic>> _verificationPlans = [];
+  List<Map<String, dynamic>> get verificationPlans => _verificationPlans;
+
+  Future<void> fetchVerificationPlans() async {
+    try {
+      final res = await sl<FetchVerificationPlansUseCase>().call();
+      _verificationPlans = res.fold((l) => [], (r) => r);
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Fetch verification plans failed: $e. Using fallback values.");
+      _verificationPlans = [
+        {'id': 'weekly', 'name': 'Weekly Plan', 'price': 59.0, 'discount_price': null, 'interval_unit': 'week'},
+        {'id': 'monthly', 'name': 'Monthly Plan', 'price': 199.0, 'discount_price': null, 'interval_unit': 'month'},
+        {'id': 'yearly', 'name': 'Yearly Plan', 'price': 1999.0, 'discount_price': null, 'interval_unit': 'year'},
+        {'id': 'lifetime', 'name': 'Lifetime Plan', 'price': 4999.0, 'discount_price': null, 'interval_unit': 'lifetime'},
+      ];
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateVerificationPlanPrice(String planId, double price, {double? discountPrice}) async {
+    try {
+      final res = await sl<UpdateVerificationPlanPriceUseCase>().call(planId, price, discountPrice: discountPrice);
+      final success = res.fold((l) => false, (r) => r);
+      if (success) {
+        await fetchVerificationPlans();
+      }
+      return success;
+    } catch (e) {
+      debugPrint("Update verification plan price failed: $e");
+      return false;
+    }
+  }
+
+  Future<String?> uploadVerificationImage(Uint8List bytes, String filename) async {
+    if (_currentUid.isEmpty) return null;
+    try {
+      final res = await sl<UploadVerificationImageUseCase>().call(bytes, filename);
+      return res.fold((l) => null, (r) => r);
+    } catch (e) {
+      debugPrint("Upload verification image error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchUserVerificationRequest() async {
+    if (_currentUid.isEmpty) return null;
+    try {
+      final res = await sl<GetVerificationStatusUseCase>().call();
+      return res.fold((l) => null, (r) => r);
+    } catch (e) {
+      debugPrint("DB Fetch user verification request failed: $e");
+      return null;
+    }
+  }
+
+  Future<bool> submitVerificationRequest(Map<String, dynamic> requestData) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      final res = await sl<SubmitVerificationUseCase>().call(requestData);
+      final success = res.fold((l) => false, (r) => r);
+      if (success) {
+        await fetchMyProfile();
+      }
+      return success;
+    } catch (e) {
+      debugPrint("DB Submit verification request failed: $e");
+      return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchAdminVerificationRequests() async {
+    try {
+      final res = await sl<FetchAdminVerificationRequestsUseCase>().call();
+      return res.fold((l) => [], (r) => r);
+    } catch (e) {
+      debugPrint("DB Admin fetch verification requests error: $e");
+      return [];
+    }
+  }
+
+  Future<bool> updateVerificationRequestStatus(String requestId, String status, {String? reason}) async {
+    try {
+      final res = await sl<UpdateVerificationRequestStatusUseCase>().call(requestId, status, reason: reason);
+      final success = res.fold((l) => false, (r) => r);
+      if (success) {
+        await fetchMyProfile();
+      }
+      return success;
+    } catch (e) {
+      debugPrint("DB Update verification status error: $e");
+      return false;
     }
   }
 }

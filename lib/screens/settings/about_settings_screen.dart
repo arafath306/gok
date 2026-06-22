@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/dak_logo.dart';
 
 class AboutSettingsScreen extends StatefulWidget {
   const AboutSettingsScreen({super.key});
@@ -25,13 +26,18 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: context.cardBg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'Check for Updates',
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.bold,
+              color: context.textPrimary,
+            ),
           ),
           content: Text(
-            'You are on the latest premium release!\n\nVersion: 2.0.0-Beta\nBuild: 44 (Premium Edition)',
+            'You are on the latest release!\n\nVersion: 1.5.9\nBuild: 12',
             style: GoogleFonts.inter(color: context.textSecondary),
           ),
           actions: [
@@ -39,7 +45,10 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 'Great!',
-                style: GoogleFonts.inter(color: context.primaryAccent, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                  color: context.primaryAccent,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -82,21 +91,24 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: context.cardBg,
+                color: context.isDarkMode
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFF1F5F9),
                 shape: BoxShape.circle,
                 border: Border.all(color: context.border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(context.isDarkMode ? 0.2 : 0.04),
+                    color: Colors.black.withOpacity(
+                      context.isDarkMode ? 0.2 : 0.04,
+                    ),
                     blurRadius: 10,
                     spreadRadius: 2,
                   ),
                 ],
               ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/logo_transparent.png',
-                  fit: BoxFit.contain,
+              child: Center(
+                child: DakLogo(
+                  size: context.isDarkMode ? 62 : 58,
                 ),
               ),
             ),
@@ -114,11 +126,8 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           ),
           Center(
             child: Text(
-              'Version 2.0.0 (Beta-44)',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: context.textMuted,
-              ),
+              'Version 1.5.9 (Build 12)',
+              style: GoogleFonts.inter(fontSize: 13, color: context.textMuted),
             ),
           ),
           const SizedBox(height: 24),
@@ -173,7 +182,10 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
                       ? SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: context.primaryAccent),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: context.primaryAccent,
+                          ),
                         )
                       : null,
                   onTap: _isCheckingUpdates ? null : _checkUpdates,
@@ -411,7 +423,9 @@ WhatsApp: +8801313961899''',
           fontSize: 14.5,
         ),
       ),
-      trailing: trailing ?? Icon(Icons.chevron_right, color: context.textMuted, size: 18),
+      trailing:
+          trailing ??
+          Icon(Icons.chevron_right, color: context.textMuted, size: 18),
       onTap: onTap,
     );
   }
@@ -424,12 +438,18 @@ WhatsApp: +8801313961899''',
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           title,
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.bold,
+            color: context.textPrimary,
+          ),
         ),
         content: SingleChildScrollView(
           child: Text(
             content,
-            style: GoogleFonts.inter(color: context.textSecondary, height: 1.45),
+            style: GoogleFonts.inter(
+              color: context.textSecondary,
+              height: 1.45,
+            ),
           ),
         ),
         actions: [
@@ -437,7 +457,10 @@ WhatsApp: +8801313961899''',
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Close',
-              style: GoogleFonts.inter(color: context.primaryAccent, fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(
+                color: context.primaryAccent,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -447,10 +470,23 @@ WhatsApp: +8801313961899''',
 
   void _showLicenses(BuildContext context) {
     final List<Map<String, String>> licenses = [
-      {'package': 'flutter_bloc', 'desc': 'State management library by Felix Angelov under MIT License.'},
-      {'package': 'provider', 'desc': 'A wrapper around InheritedWidget by Remi Rousselet under MIT License.'},
-      {'package': 'supabase_flutter', 'desc': 'Official Supabase Flutter client under Apache 2.0 License.'},
-      {'package': 'google_fonts', 'desc': 'Access to Google Fonts catalog under Apache 2.0 License.'},
+      {
+        'package': 'audioplayers',
+        'desc': 'Audio playback library by luan.dev under MIT License.',
+      },
+      {
+        'package': 'provider',
+        'desc':
+            'A wrapper around InheritedWidget by Remi Rousselet under MIT License.',
+      },
+      {
+        'package': 'supabase_flutter',
+        'desc': 'Official Supabase Flutter client under Apache 2.0 License.',
+      },
+      {
+        'package': 'google_fonts',
+        'desc': 'Access to Google Fonts catalog under Apache 2.0 License.',
+      },
     ];
 
     showModalBottomSheet(
@@ -489,7 +525,8 @@ WhatsApp: +8801313961899''',
               Expanded(
                 child: ListView.separated(
                   itemCount: licenses.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, color: context.border),
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: context.border),
                   itemBuilder: (context, index) {
                     final item = licenses[index];
                     return Padding(
@@ -499,12 +536,19 @@ WhatsApp: +8801313961899''',
                         children: [
                           Text(
                             item['package']!,
-                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14.5, color: context.textPrimary),
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.5,
+                              color: context.textPrimary,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             item['desc']!,
-                            style: GoogleFonts.inter(fontSize: 12.5, color: context.textSecondary),
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              color: context.textSecondary,
+                            ),
                           ),
                         ],
                       ),

@@ -265,25 +265,28 @@ BEGIN
         LIMIT 100
     ),
 
-    -- D. Merge all unique candidates
+    -- D. Merge all unique candidates (collapsing duplicate thread_ids across pools to prevent duplicate insertion)
     merged_candidates AS (
-        SELECT thread_id, pool_source FROM interest_pool
-        UNION
-        SELECT thread_id, pool_source FROM relationship_pool
-        UNION
-        SELECT thread_id, pool_source FROM trending_pool
-        UNION
-        SELECT thread_id, pool_source FROM community_pool
-        UNION
-        SELECT thread_id, pool_source FROM new_creator_pool
-        UNION
-        -- Fallback: Always add user's own posts and direct followed posts
-        SELECT id AS thread_id, 'self'::text AS pool_source
-        FROM public.threads
-        WHERE (user_id = p_user_id OR user_id IN (SELECT following_id FROM public.follows WHERE follower_id = p_user_id))
-          AND id NOT IN (SELECT ex_thread_id FROM excluded_threads)
-          AND user_id NOT IN (SELECT ex_user_id FROM excluded_users)
-        LIMIT 50
+        SELECT thread_id, MAX(pool_source) AS pool_source
+        FROM (
+            SELECT thread_id, pool_source FROM interest_pool
+            UNION ALL
+            SELECT thread_id, pool_source FROM relationship_pool
+            UNION ALL
+            SELECT thread_id, pool_source FROM trending_pool
+            UNION ALL
+            SELECT thread_id, pool_source FROM community_pool
+            UNION ALL
+            SELECT thread_id, pool_source FROM new_creator_pool
+            UNION ALL
+            SELECT id AS thread_id, 'self'::text AS pool_source
+            FROM public.threads
+            WHERE (user_id = p_user_id OR user_id IN (SELECT following_id FROM public.follows WHERE follower_id = p_user_id))
+              AND id NOT IN (SELECT ex_thread_id FROM excluded_threads)
+              AND user_id NOT IN (SELECT ex_user_id FROM excluded_users)
+            LIMIT 50
+        ) subquery
+        GROUP BY thread_id
     )
 
     -- E. Compute and Cache Personalized Scores

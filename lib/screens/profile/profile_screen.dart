@@ -130,6 +130,12 @@ class _ProfileScreenState extends State<ProfileScreen>
           );
         }
 
+        final bool isBlocked = !_isOwnProfile && widget.userId != null && db.isBlocked(widget.userId!);
+        if (isBlocked) {
+          final bool blockedByMe = db.isBlockedByMe(widget.userId!);
+          return _buildBlockedProfileView(context, db, widget.userId!, blockedByMe);
+        }
+
 
         Widget tabSection = Column(
           children: [
@@ -242,12 +248,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: IconButton(
                         icon: const Icon(Icons.settings_rounded, color: Colors.white, size: 18),
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            NoTransitionPageRoute(
-                              child: const SettingsScreen(),
-                            ),
-                          );
+                           Navigator.push(
+                             context,
+                             NoTransitionPageRoute(
+                               child: SettingsScreen(
+                                 onSwitchToProfile: () {
+                                   // Already on profile screen
+                                 },
+                               ),
+                             ),
+                           );
                         },
                         padding: EdgeInsets.zero,
                       ),
@@ -330,13 +340,31 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      profile?.fullName ?? 'User',
-                      style: GoogleFonts.hindSiliguri(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                        color: context.textPrimary,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            profile?.fullName ?? 'User',
+                            style: GoogleFonts.hindSiliguri(
+                              fontSize: 21,
+                              fontWeight: FontWeight.bold,
+                              color: context.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (profile?.isVerified == true ||
+                            (_isOwnProfile && db.myProfile?.isVerified == true) ||
+                            (profile != null && profile.id == db.currentUid && db.myProfile?.isVerified == true)) ...[
+                          const SizedBox(width: 6),
+                          const Icon(
+                            Icons.verified,
+                            color: Colors.blue,
+                            size: 18,
+                          ),
+                        ],
+                      ],
                     ),
                     Text(
                       '@${profile?.username ?? ''}',
@@ -973,6 +1001,140 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       );
     }
+  }
+
+  Widget _buildBlockedProfileView(BuildContext context, DatabaseService db, String targetId, bool blockedByMe) {
+    final username = _viewedProfile?.username ?? 'user';
+    final fullName = _viewedProfile?.fullName ?? 'User';
+
+    return Scaffold(
+      backgroundColor: context.scaffoldBg,
+      appBar: AppBar(
+        backgroundColor: context.scaffoldBg,
+        elevation: 0.5,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "@$username",
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: context.textPrimary,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: context.isDarkMode ? Colors.grey[850] : Colors.grey[200],
+                  border: Border.all(color: context.border, width: 2),
+                ),
+                child: Icon(
+                  Icons.person_rounded,
+                  size: 60,
+                  color: context.textMuted,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                blockedByMe ? fullName : "Account unavailable",
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: context.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "@$username",
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: context.textMuted,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Divider(color: context.border, height: 1),
+              const SizedBox(height: 24),
+              Icon(
+                Icons.block_rounded,
+                color: Colors.redAccent,
+                size: 40,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                blockedByMe
+                    ? "You blocked this account"
+                    : "You cannot view this account",
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: context.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                blockedByMe
+                    ? "Unblock @$username to see their posts and profile info."
+                    : "You are blocked from following @$username or viewing their posts.",
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: context.textMuted,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (blockedByMe) ...[
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () async {
+                    final settingsProvider = Provider.of<GeneralSettingsProvider>(context, listen: false);
+                    await settingsProvider.unblockAccount(targetId);
+                    await db.fetchBlockedMutedLists();
+                    setState(() {});
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("@$username has been unblocked."),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.primaryAccent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    "Unblock",
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

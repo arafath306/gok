@@ -13,6 +13,9 @@ class MutedAccountsScreen extends StatefulWidget {
 
 class _MutedAccountsScreenState extends State<MutedAccountsScreen> {
   final _controller = TextEditingController();
+  List<Map<String, String>> _searchResults = [];
+  bool _isSearching = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -28,38 +31,30 @@ class _MutedAccountsScreenState extends State<MutedAccountsScreen> {
     super.dispose();
   }
 
-  void _muteNewUser(GeneralSettingsProvider provider) async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  void _performSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _searchQuery = '';
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
 
-    try {
-      final success = await provider.muteAccount(text);
-      if (!mounted) return;
-      if (success) {
-        _controller.clear();
-        FocusScope.of(context).unfocus();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('"$text" has been muted.'),
-            backgroundColor: context.primaryAccent,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User not found in database.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception:', '').trim()),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+    setState(() {
+      _searchQuery = trimmed;
+      _isSearching = true;
+    });
+
+    final provider = Provider.of<GeneralSettingsProvider>(context, listen: false);
+    final results = await provider.searchProfiles(trimmed);
+
+    if (mounted) {
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+      });
     }
   }
 
@@ -93,149 +88,284 @@ class _MutedAccountsScreenState extends State<MutedAccountsScreen> {
           final muted = provider.mutedAccounts;
           return Column(
             children: [
-              // Search & Mute Input Panel
+              // Search Input Panel
               Container(
                 decoration: BoxDecoration(
                   color: context.cardBg,
                   border: Border(bottom: BorderSide(color: context.border)),
                 ),
                 padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        decoration: InputDecoration(
-                          hintText: 'Enter name or @username to mute...',
-                          hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
-                          filled: true,
-                          fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        ),
-                        style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
-                        onSubmitted: (_) => _muteNewUser(provider),
-                      ),
+                child: TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    hintText: 'Search user to mute...',
+                    hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
+                    filled: true,
+                    fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
                     ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () => _muteNewUser(provider),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.primaryAccent,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                      child: Text(
-                        'Mute',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    prefixIcon: Icon(Icons.search_rounded, color: context.textMuted, size: 20),
+                    suffixIcon: _controller.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear_rounded, color: context.textMuted, size: 18),
+                            onPressed: () {
+                              _controller.clear();
+                              _performSearch('');
+                            },
+                          )
+                        : null,
+                  ),
+                  style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
+                  onChanged: _performSearch,
                 ),
               ),
 
-              // Muted users list
+              // Search results or current muted users list
               Expanded(
-                child: provider.isLoading
+                child: _isSearching
                     ? Center(
                         child: CircularProgressIndicator(
                           color: context.primaryAccent,
                         ),
                       )
-                    : muted.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.volume_off_rounded, size: 60, color: context.textMuted),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No muted accounts',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: context.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: muted.length,
-                            separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
-                            itemBuilder: (context, index) {
-                              final user = muted[index];
-                              return Container(
-                                color: context.cardBg,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                child: Row(
+                    : _searchQuery.isNotEmpty
+                        ? _searchResults.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    CircleAvatar(
-                                      radius: 20,
-                                      backgroundImage: NetworkImage(user['avatar']!),
-                                      backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            user['name']!,
-                                            style: GoogleFonts.inter(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14.5,
-                                              color: context.textPrimary,
-                                            ),
-                                          ),
-                                          Text(
-                                            '@${user['username']!}',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 12.5,
-                                              color: context.textMuted,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    OutlinedButton(
-                                      onPressed: () {
-                                        provider.unmuteAccount(user['id']!);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Unmuted @${user['username']}'),
-                                            backgroundColor: context.primaryAccent,
-                                          ),
-                                        );
-                                      },
-                                      style: OutlinedButton.styleFrom(
-                                        side: BorderSide(color: context.border),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                                        minimumSize: const Size(0, 32),
-                                      ),
-                                      child: Text(
-                                        'Unmute',
-                                        style: GoogleFonts.inter(
-                                          color: context.textPrimary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
+                                    Icon(Icons.search_off_rounded, size: 60, color: context.textMuted),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No users found matching "$_searchQuery"',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: context.textSecondary,
                                       ),
                                     ),
                                   ],
                                 ),
-                              );
-                            },
-                          ),
+                              )
+                            : ListView.separated(
+                                itemCount: _searchResults.length,
+                                separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
+                                itemBuilder: (context, index) {
+                                  final user = _searchResults[index];
+                                  final isMuted = provider.mutedAccounts.any((a) => a['id'] == user['id']);
+
+                                  return Container(
+                                    color: context.cardBg,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 20,
+                                          backgroundImage: user['avatar']!.isNotEmpty
+                                              ? NetworkImage(user['avatar']!)
+                                              : null,
+                                          backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
+                                          child: user['avatar']!.isEmpty
+                                              ? Icon(Icons.person, color: context.textMuted, size: 20)
+                                              : null,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                user['name']!,
+                                                style: GoogleFonts.inter(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14.5,
+                                                  color: context.textPrimary,
+                                                ),
+                                              ),
+                                              Text(
+                                                '@${user['username']!}',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12.5,
+                                                  color: context.textMuted,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        isMuted
+                                            ? OutlinedButton(
+                                                onPressed: () async {
+                                                  await provider.unmuteAccount(user['id']!);
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('Unmuted @${user['username']}'),
+                                                        backgroundColor: context.primaryAccent,
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                style: OutlinedButton.styleFrom(
+                                                  side: BorderSide(color: context.border),
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                                  minimumSize: const Size(0, 32),
+                                                ),
+                                                child: Text(
+                                                  'Unmute',
+                                                  style: GoogleFonts.inter(
+                                                    color: context.textPrimary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              )
+                                            : ElevatedButton(
+                                                onPressed: () async {
+                                                  try {
+                                                    await provider.muteUserById(user['id']!);
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text('Muted @${user['username']}'),
+                                                          backgroundColor: context.primaryAccent,
+                                                        ),
+                                                      );
+                                                    }
+                                                  } catch (e) {
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(e.toString().replaceAll('Exception:', '').trim()),
+                                                          backgroundColor: Colors.redAccent,
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: context.primaryAccent,
+                                                  elevation: 0,
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                                  minimumSize: const Size(0, 32),
+                                                ),
+                                                child: Text(
+                                                  'Mute',
+                                                  style: GoogleFonts.inter(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              )
+                        : provider.isLoading
+                            ? Center(
+                                child: CircularProgressIndicator(
+                                  color: context.primaryAccent,
+                                ),
+                              )
+                            : muted.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.volume_off_rounded, size: 60, color: context.textMuted),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'No muted accounts',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: context.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    itemCount: muted.length,
+                                    separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
+                                    itemBuilder: (context, index) {
+                                      final user = muted[index];
+                                      return Container(
+                                        color: context.cardBg,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        child: Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 20,
+                                              backgroundImage: user['avatar']!.isNotEmpty
+                                                  ? NetworkImage(user['avatar']!)
+                                                  : null,
+                                              backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
+                                              child: user['avatar']!.isEmpty
+                                                  ? Icon(Icons.person, color: context.textMuted, size: 20)
+                                                  : null,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    user['name']!,
+                                                    style: GoogleFonts.inter(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 14.5,
+                                                      color: context.textPrimary,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    '@${user['username']!}',
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 12.5,
+                                                      color: context.textMuted,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            OutlinedButton(
+                                              onPressed: () async {
+                                                await provider.unmuteAccount(user['id']!);
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('Unmuted @${user['username']}'),
+                                                      backgroundColor: context.primaryAccent,
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              style: OutlinedButton.styleFrom(
+                                                side: BorderSide(color: context.border),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                                minimumSize: const Size(0, 32),
+                                              ),
+                                              child: Text(
+                                                'Unmute',
+                                                style: GoogleFonts.inter(
+                                                  color: context.textPrimary,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
               ),
             ],
           );

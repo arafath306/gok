@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GeneralSettingsProvider with ChangeNotifier {
   final _supabase = Supabase.instance.client;
@@ -18,6 +20,9 @@ class GeneralSettingsProvider with ChangeNotifier {
   bool _autoplayVideos = true;
   bool get autoplayVideos => _autoplayVideos;
 
+  bool _isActiveStatusEnabled = true;
+  bool get isActiveStatusEnabled => _isActiveStatusEnabled;
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -32,7 +37,7 @@ class GeneralSettingsProvider with ChangeNotifier {
       // 1. Fetch privacy settings from user profile
       final profileRes = await _supabase
           .from('profiles')
-          .select('is_private, allow_mentions, filter_adult, autoplay_videos')
+          .select('is_private, allow_mentions, filter_adult, autoplay_videos, is_active_status_enabled')
           .eq('id', uid)
           .maybeSingle();
 
@@ -41,6 +46,7 @@ class GeneralSettingsProvider with ChangeNotifier {
         _allowMentionsFrom = profileRes['allow_mentions'] as String? ?? 'everyone';
         _filterAdultContent = profileRes['filter_adult'] as bool? ?? true;
         _autoplayVideos = profileRes['autoplay_videos'] as bool? ?? true;
+        _isActiveStatusEnabled = profileRes['is_active_status_enabled'] as bool? ?? true;
       }
 
       // 2. Fetch blocked accounts
@@ -94,6 +100,8 @@ class GeneralSettingsProvider with ChangeNotifier {
           });
         }
       }
+      // 4. Fetch active sessions
+      await fetchActiveSessions();
     } catch (e) {
       debugPrint('[GeneralSettings] Fetch settings error: $e');
     } finally {
@@ -107,6 +115,7 @@ class GeneralSettingsProvider with ChangeNotifier {
     String? allowMentionsFrom,
     bool? filterAdultContent,
     bool? autoplayVideos,
+    bool? isActiveStatusEnabled,
   }) async {
     final uid = _currentUid;
     if (uid.isEmpty) return;
@@ -115,6 +124,7 @@ class GeneralSettingsProvider with ChangeNotifier {
     if (allowMentionsFrom != null) _allowMentionsFrom = allowMentionsFrom;
     if (filterAdultContent != null) _filterAdultContent = filterAdultContent;
     if (autoplayVideos != null) _autoplayVideos = autoplayVideos;
+    if (isActiveStatusEnabled != null) _isActiveStatusEnabled = isActiveStatusEnabled;
     notifyListeners();
 
     try {
@@ -123,6 +133,7 @@ class GeneralSettingsProvider with ChangeNotifier {
       if (allowMentionsFrom != null) updates['allow_mentions'] = allowMentionsFrom;
       if (filterAdultContent != null) updates['filter_adult'] = filterAdultContent;
       if (autoplayVideos != null) updates['autoplay_videos'] = autoplayVideos;
+      if (isActiveStatusEnabled != null) updates['is_active_status_enabled'] = isActiveStatusEnabled;
 
       if (updates.isNotEmpty) {
         await _supabase.from('profiles').update(updates).eq('id', uid);
@@ -148,9 +159,117 @@ class GeneralSettingsProvider with ChangeNotifier {
   ];
   List<Map<String, String>> get activeSessions => _activeSessions;
 
-  void revokeSession(String id) {
+  Future<void> fetchActiveSessions() async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? cachedSessionId = prefs.getString('current_session_id');
+      if (cachedSessionId == null) {
+        cachedSessionId = 'session_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecondsSinceEpoch % 9000))}';
+        await prefs.setString('current_session_id', cachedSessionId);
+      }
+
+      // Determine device name
+      String deviceName = 'Web Client';
+      if (!kIsWeb) {
+        deviceName = defaultTargetPlatform == TargetPlatform.android
+            ? 'Android Device'
+            : (defaultTargetPlatform == TargetPlatform.iOS ? 'iOS Device' : 'Desktop App');
+      }
+
+      // Sync/Upsert this session in database
+      try {
+        final existing = await _supabase
+            .from('user_sessions')
+            .select('id')
+            .eq('id', cachedSessionId)
+            .maybeSingle();
+
+        if (existing == null) {
+          await _supabase.from('user_sessions').insert({
+            'id': cachedSessionId,
+            'user_id': uid,
+            'device_name': deviceName,
+            'location': 'Dhaka, Bangladesh',
+            'status': 'Active now',
+          });
+        } else {
+          await _supabase.from('user_sessions').update({
+            'last_active': DateTime.now().toUtc().toIso8601String(),
+            'status': 'Active now',
+          }).eq('id', cachedSessionId);
+        }
+      } catch (dbError) {
+        debugPrint('[GeneralSettings] Sync current session to DB failed (falling back): $dbError');
+      }
+
+      // Fetch all sessions
+      final res = await _supabase
+          .from('user_sessions')
+          .select()
+          .eq('user_id', uid)
+          .order('last_active', ascending: false);
+
+      final List<dynamic> data = res as List<dynamic>;
+      
+      // If we are logged in, but our current session is not in the fetched data, we were revoked!
+      final hasCurrentSession = data.any((item) => item['id'] == cachedSessionId);
+      if (!hasCurrentSession && data.isNotEmpty) {
+        debugPrint('[GeneralSettings] Current session was revoked!');
+        await _supabase.auth.signOut();
+        return;
+      }
+
+      _activeSessions.clear();
+      for (var item in data) {
+        final String sessionId = item['id'] as String;
+        final bool isCurrent = sessionId == cachedSessionId;
+        _activeSessions.add({
+          'id': sessionId,
+          'device': item['device_name'] as String? ?? 'Unknown Device',
+          'location': item['location'] as String? ?? 'Unknown Location',
+          'status': isCurrent ? 'Active now' : _formatLastActive(item['last_active'] as String?),
+        });
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[GeneralSettings] fetchActiveSessions error: $e');
+    }
+  }
+
+  String _formatLastActive(String? isoString) {
+    if (isoString == null) return 'Last active unknown';
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1) {
+        return 'Last active just now';
+      } else if (diff.inMinutes < 60) {
+        return 'Last active ${diff.inMinutes}m ago';
+      } else if (diff.inHours < 24) {
+        return 'Last active ${diff.inHours}h ago';
+      } else {
+        return 'Last active ${diff.inDays}d ago';
+      }
+    } catch (_) {
+      return 'Last active recently';
+    }
+  }
+
+  Future<void> revokeSession(String id) async {
     _activeSessions.removeWhere((session) => session['id'] == id);
     notifyListeners();
+
+    final uid = _currentUid;
+    if (uid.isNotEmpty) {
+      try {
+        await _supabase.from('user_sessions').delete().eq('id', id);
+      } catch (e) {
+        debugPrint('[GeneralSettings] revokeSession error: $e');
+      }
+    }
   }
 
   // Saved Threads State
@@ -352,6 +471,33 @@ class GeneralSettingsProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('[GeneralSettings] Mute user by ID error: $e');
       rethrow;
+    }
+  }
+
+  Future<List<Map<String, String>>> searchProfiles(String queryText) async {
+    final uid = _currentUid;
+    if (uid.isEmpty || queryText.trim().isEmpty) return [];
+
+    try {
+      final res = await _supabase
+          .from('profiles')
+          .select('id, full_name, username, avatar_url')
+          .or('username.ilike.%${queryText.trim()}%,full_name.ilike.%${queryText.trim()}%')
+          .neq('id', uid)
+          .limit(20);
+
+      final List<dynamic> data = res as List<dynamic>;
+      return data.map<Map<String, String>>((item) {
+        return {
+          'id': item['id'] as String? ?? '',
+          'name': item['full_name'] as String? ?? '',
+          'username': item['username'] as String? ?? '',
+          'avatar': item['avatar_url'] as String? ?? '',
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('[GeneralSettings] Search profiles error: $e');
+      return [];
     }
   }
 

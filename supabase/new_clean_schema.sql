@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS public.threads (
     likes_count INTEGER DEFAULT 0 NOT NULL,
     replies_count INTEGER DEFAULT 0 NOT NULL,
     reposts_count INTEGER DEFAULT 0 NOT NULL,
+    saves_count INTEGER DEFAULT 0 NOT NULL,
+    shares_count INTEGER DEFAULT 0 NOT NULL,
     views_count INTEGER DEFAULT 0 NOT NULL,
     is_pinned BOOLEAN DEFAULT false NOT NULL,
     mute_notifications BOOLEAN DEFAULT false NOT NULL,
@@ -103,6 +105,7 @@ CREATE TABLE IF NOT EXISTS public.comments (
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     content TEXT NOT NULL,
     parent_id UUID REFERENCES public.comments(id) ON DELETE CASCADE, -- Supports nested replies
+    image_url TEXT,
     likes_count INTEGER DEFAULT 0 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -251,9 +254,21 @@ CREATE OR REPLACE FUNCTION public.handle_comment_change()
 RETURNS TRIGGER AS $$
 BEGIN
   IF (TG_OP = 'INSERT') THEN
-    UPDATE public.threads SET replies_count = replies_count + 1 WHERE id = NEW.thread_id;
+    IF NEW.parent_id IS NULL THEN
+      -- Increment reply count on the thread (only for top-level comments)
+      UPDATE public.threads SET replies_count = replies_count + 1 WHERE id = NEW.thread_id;
+    ELSE
+      -- If this is a nested comment, increment replies_count on the parent comment
+      UPDATE public.comments SET replies_count = replies_count + 1 WHERE id = NEW.parent_id;
+    END IF;
   ELSIF (TG_OP = 'DELETE') THEN
-    UPDATE public.threads SET replies_count = GREATEST(0, replies_count - 1) WHERE id = OLD.thread_id;
+    IF OLD.parent_id IS NULL THEN
+      -- Decrement reply count on the thread (only for top-level comments)
+      UPDATE public.threads SET replies_count = GREATEST(0, replies_count - 1) WHERE id = OLD.thread_id;
+    ELSE
+      -- If this is a nested comment, decrement replies_count on the parent comment
+      UPDATE public.comments SET replies_count = GREATEST(0, replies_count - 1) WHERE id = OLD.parent_id;
+    END IF;
   END IF;
   RETURN NULL;
 END;

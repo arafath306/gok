@@ -2,6 +2,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
+import '../core/injection.dart';
+import '../core/security/e2ee_service.dart';
+import '../features/auth/domain/usecases/login_use_case.dart';
+import '../features/auth/domain/usecases/signup_use_case.dart';
+import '../features/auth/domain/usecases/sign_out_use_case.dart';
+
 class AuthService with ChangeNotifier {
   final sb.SupabaseClient _supabaseClient = sb.Supabase.instance.client;
 
@@ -16,77 +22,54 @@ class AuthService with ChangeNotifier {
 
   StreamSubscription<sb.AuthState>? _authStateSubscription;
 
+  final LoginUseCase _loginUseCase = sl<LoginUseCase>();
+  final SignupUseCase _signupUseCase = sl<SignupUseCase>();
+  final SignOutUseCase _signOutUseCase = sl<SignOutUseCase>();
+
   AuthService() {
-    // Listen to Supabase auth events
-    _authStateSubscription = _supabaseClient.auth.onAuthStateChange.listen((data) {
-      _currentUser = data.session?.user;
-      notifyListeners();
-    });
     // Set initial user
     _currentUser = _supabaseClient.auth.currentUser;
+    if (_currentUser != null) {
+      sl<E2EEService>().initializeKeys();
+    }
+
+    // Listen to Supabase auth events
+    _authStateSubscription = _supabaseClient.auth.onAuthStateChange.listen((data) {
+      final wasSignedOut = _currentUser == null;
+      _currentUser = data.session?.user;
+      
+      if (_currentUser != null && wasSignedOut) {
+        sl<E2EEService>().initializeKeys();
+      }
+      
+      notifyListeners();
+    });
   }
 
-  bool _isBypassed = false;
-  bool get isUserSignedIn => _currentUser != null || _isBypassed;
-  String get currentUid => _currentUser?.id ?? (_isBypassed ? 'mock_uid' : '');
-
-  void bypassLogin() {
-    _isBypassed = true;
-    notifyListeners();
-  }
+  bool get isUserSignedIn => _currentUser != null;
+  String get currentUid => _currentUser?.id ?? '';
 
   Future<bool> handleLogin(String email, String password) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
-    try {
-      final response = await _supabaseClient.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-
-      _currentUser = response.user;
-
-      // Ensure a profile row exists for this user in public.profiles (safeguard)
-      if (_currentUser != null) {
-        final uid = _currentUser!.id;
-        try {
-          final existing = await _supabaseClient
-              .from('profiles')
-              .select('id')
-              .eq('id', uid)
-              .maybeSingle();
-
-          if (existing == null) {
-            final defaultUsername = email.split('@')[0];
-            await _supabaseClient.from('profiles').upsert({
-              'id': uid,
-              'username': defaultUsername,
-              'full_name': defaultUsername,
-              'bio': 'I am using the Pigeon app.',
-              'avatar_url': null,
-              'cover_url': null,
-              'followers_count': 0,
-              'following_count': 0,
-            });
-            debugPrint("Profile created on-demand for uid: $uid");
-          }
-        } catch (profileError) {
-          debugPrint("Profile ensure error (non-fatal): $profileError");
-        }
-      }
-
-      _isBypassed = false;
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
-      notifyListeners();
-      return false;
-    }
+    final result = await _loginUseCase(email, password);
+    
+    return result.fold(
+      (failure) {
+        _isLoading = false;
+        _errorMessage = failure.message;
+        notifyListeners();
+        return false;
+      },
+      (userEntity) {
+        _currentUser = _supabaseClient.auth.currentUser;
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      },
+    );
   }
 
   Future<bool> handleSignup({
@@ -106,73 +89,33 @@ class AuthService with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    try {
-      final defaultUsername = username ?? email.split('@')[0];
+    final result = await _signupUseCase(
+      email: email,
+      password: password,
+      fullName: fullName,
+      phone: phone,
+      gender: gender,
+      birthdate: birthdate,
+      username: username,
+      division: division,
+      city: city,
+      village: village,
+      zip: zip,
+    );
 
-      // 1. Sign up with Supabase GoTrue Auth
-      final response = await _supabaseClient.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'username': defaultUsername,
-          'full_name': fullName,
-        },
-      );
-
-      final uid = response.user?.id;
-      if (uid == null) {
-        throw Exception("Signup failed: returned null user.");
-      }
-
-      // 2. Initialize/Update profile in profiles table with additional details
-      try {
-        await _supabaseClient.from('profiles').upsert({
-          'id': uid,
-          'username': defaultUsername,
-          'full_name': fullName,
-          'bio': 'Hello! I am using the Pigeon app.',
-          'avatar_url': null,
-          'cover_url': null,
-          'followers_count': 0,
-          'following_count': 0,
-          'phone': phone,
-          'gender': gender,
-          'birthdate': birthdate,
-          'division': division,
-          'city': city,
-          'village': village,
-          'zip': zip,
-        });
-      } catch (dbError) {
-        debugPrint("Creating DB profile row with extra details failed, falling back: $dbError");
-        try {
-          await _supabaseClient.from('profiles').upsert({
-            'id': uid,
-            'username': defaultUsername,
-            'full_name': fullName,
-            'bio': 'Hello! I am using the Pigeon app.',
-            'phone': phone,
-          });
-        } catch (innerError) {
-          debugPrint("Fallback profile creation failed: $innerError");
-        }
-      }
-
-      // 3. Sign out immediately so they must verify or log in manually
-      try {
-        await _supabaseClient.auth.signOut();
-      } catch (_) {}
-
-      _isBypassed = false;
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
-      notifyListeners();
-      return false;
-    }
+    return result.fold(
+      (failure) {
+        _isLoading = false;
+        _errorMessage = failure.message;
+        notifyListeners();
+        return false;
+      },
+      (success) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      },
+    );
   }
 
   Future<bool> isUsernameTaken(String username) async {
@@ -253,13 +196,18 @@ class AuthService with ChangeNotifier {
   }
 
   Future<void> handleSignout() async {
-    _isBypassed = false;
-    try {
-      await _supabaseClient.auth.signOut();
-    } catch (e) {
-      debugPrint("Supabase signout warning: $e");
-    }
-    notifyListeners();
+    final result = await _signOutUseCase();
+    result.fold(
+      (failure) {
+        _errorMessage = failure.message;
+        notifyListeners();
+      },
+      (_) {
+        sl<E2EEService>().clearKeys();
+        _currentUser = null;
+        notifyListeners();
+      },
+    );
   }
 
   void clearErrors() {

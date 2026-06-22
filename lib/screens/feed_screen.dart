@@ -6,6 +6,7 @@ import '../services/database_service.dart';
 import '../widgets/custom_thread_card.dart';
 import '../widgets/thread_shimmer.dart';
 import '../utils/app_theme.dart';
+import '../widgets/dak_logo.dart';
 import 'main_screen.dart';
 
 class FeedScreen extends StatefulWidget {
@@ -107,12 +108,20 @@ class _FeedScreenState extends State<FeedScreen> {
           offset: _showFullHeader ? Offset.zero : const Offset(0, 0.05),
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
-          child: Image.asset(
-            "assets/pigeon_logo.png",
-            height: 38,
-            width: 38,
-          ),
+          child: const DakLogo(size: 38),
         ),
+        actions: [
+          AnimatedOpacity(
+            opacity: _showFullHeader ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: IconButton(
+              icon: Icon(Icons.groups_rounded, color: context.textPrimary, size: 24),
+              onPressed: _showFullHeader
+                  ? () {}
+                  : null,
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(_showFullHeader ? 0.5 : 0.0),
           child: AnimatedOpacity(

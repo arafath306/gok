@@ -10,14 +10,19 @@ import '../profile/edit_profile_screen.dart';
 import 'notification_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 import 'security_settings_screen.dart';
-import 'saved_threads_screen.dart';
+import '../saved_posts_screen.dart';
 import 'blocked_accounts_screen.dart';
 import 'muted_accounts_screen.dart';
 import 'help_center_screen.dart';
 import 'about_settings_screen.dart';
+import 'verification/verification_intro_screen.dart';
+import 'verification/pending_screen.dart';
+import '../../state/verification_controller.dart';
+import '../../models/verification_request.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final VoidCallback? onSwitchToProfile;
+  const SettingsScreen({super.key, this.onSwitchToProfile});
 
   @override
   Widget build(BuildContext context) {
@@ -54,15 +59,10 @@ class SettingsScreen extends StatelessWidget {
           // --- Profile Header Card ---
           GestureDetector(
             onTap: () {
-              final profileMap = myProfile?.toJson() ?? {
-                'full_name': '',
-                'username': '',
-                'bio': '',
-              };
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => EditProfileScreen(profile: profileMap)),
-              );
+              Navigator.pop(context);
+              if (onSwitchToProfile != null) {
+                onSwitchToProfile!();
+              }
             },
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -88,13 +88,29 @@ class SettingsScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          myProfile?.fullName ?? 'User',
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: context.textPrimary,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                myProfile?.fullName ?? 'User',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: context.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (myProfile?.isVerified == true) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.verified,
+                                color: Colors.blue,
+                                size: 16,
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -130,6 +146,41 @@ class SettingsScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (_) => EditProfileScreen(profile: profileMap)),
                 );
+              },
+            ),
+            _SettingsTileItem(
+              icon: Icons.verified_user_outlined,
+              title: 'Profile Verification',
+              trailingText: myProfile?.isVerified == true
+                  ? 'Verified'
+                  : (myProfile?.verificationRequested == true ? 'Pending' : 'Apply'),
+              trailingColor: myProfile?.isVerified == true
+                  ? context.greenAccent
+                  : (myProfile?.verificationRequested == true ? Colors.orange[700] : null),
+              onTap: () {
+                final controller = Provider.of<VerificationController>(context, listen: false);
+                controller.checkStatus(dbService).then((status) {
+                  if (myProfile?.isVerified == true) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Your Profile Verification is Active!',
+                            style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                        backgroundColor: context.greenAccent,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  } else if (myProfile?.verificationRequested == true || status == VerificationStatus.pendingReview || status == VerificationStatus.rejected) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PendingScreen()),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const VerificationIntroScreen()),
+                    );
+                  }
+                });
               },
             ),
             _SettingsTileItem(
@@ -211,7 +262,7 @@ class SettingsScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const SavedThreadsScreen()),
+                  MaterialPageRoute(builder: (_) => const SavedPostsScreen()),
                 );
               },
             ),
@@ -253,7 +304,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             _SettingsTileItem(
               icon: Icons.info_outline_rounded,
-              title: 'About Dak',
+              title: 'About Pigeon',
               onTap: () {
                 Navigator.push(
                   context,
@@ -342,7 +393,22 @@ class SettingsScreen extends StatelessWidget {
                 fontSize: 14.5,
               ),
             ),
-            trailing: Icon(Icons.chevron_right, color: context.textMuted, size: 18),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (tile.trailingText != null)
+                  Text(
+                    tile.trailingText!,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: tile.trailingColor ?? context.textMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right, color: context.textMuted, size: 18),
+              ],
+            ),
             onTap: tile.onTap,
           );
         },
@@ -403,10 +469,14 @@ class _SettingsTileItem {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
+  final String? trailingText;
+  final Color? trailingColor;
 
   const _SettingsTileItem({
     required this.icon,
     required this.title,
     required this.onTap,
+    this.trailingText,
+    this.trailingColor,
   });
 }

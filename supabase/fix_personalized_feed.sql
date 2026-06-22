@@ -1,0 +1,216 @@
+-- ============================================================================
+-- DAK SOCIAL NETWORK - PERSONALIZED FEED SYSTEM BUG FIX
+-- Run this script in your Supabase SQL Editor to redefine the get_personalized_feed function.
+-- This resolves the "ON CONFLICT DO UPDATE command cannot affect row a second time" error.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.get_personalized_feed(
+    p_user_id UUID,
+    p_limit INTEGER DEFAULT 20,
+    p_offset INTEGER DEFAULT 0
+)
+RETURNS SETOF public.threads AS $$
+#variable_conflict use_column
+DECLARE
+    v_cache_count INTEGER;
+    v_last_cached TIMESTAMP WITH TIME ZONE;
+BEGIN
+    -- If requesting starting page (offset=0), clear old cache to fetch new/fresh feed
+    IF p_offset = 0 THEN
+        DELETE FROM public.user_feed_cache WHERE user_id = p_user_id;
+    END IF;
+
+    -- Check if feed cache is still fresh (< 5 mins)
+    SELECT COUNT(*), MAX(cached_at) INTO v_cache_count, v_last_cached 
+    FROM public.user_feed_cache 
+    WHERE user_id = p_user_id;
+
+    -- If fresh cache is available, return immediately
+    IF v_cache_count > 0 AND v_last_cached > (now() - INTERVAL '5 minutes') THEN
+        RETURN QUERY
+        SELECT t.*
+        FROM public.threads t
+        JOIN public.user_feed_cache c ON t.id = c.thread_id
+        WHERE c.user_id = p_user_id
+        ORDER BY c.score DESC
+        LIMIT p_limit
+        OFFSET p_offset;
+        RETURN;
+    END IF;
+
+    -- REBUILD FEED CACHE
+    -- A. Exclude blocked, muted users, and posts already hidden or reported by user
+    -- Also filter private profiles user does not follow
+    WITH excluded_users AS (
+        SELECT blocked_id AS ex_user_id FROM public.blocks WHERE blocker_id = p_user_id
+        UNION
+        SELECT blocker_id AS ex_user_id FROM public.blocks WHERE blocked_id = p_user_id
+        UNION
+        SELECT muted_id AS ex_user_id FROM public.mutes WHERE muter_id = p_user_id
+    ),
+    excluded_threads AS (
+        SELECT thread_id AS ex_thread_id FROM public.thread_hides WHERE user_id = p_user_id
+        UNION
+        SELECT thread_id AS ex_thread_id FROM public.reports WHERE user_id = p_user_id AND thread_id IS NOT NULL
+    ),
+    not_followed_private_users AS (
+        SELECT id AS pr_user_id FROM public.profiles 
+        WHERE is_private = true 
+          AND id != p_user_id 
+          AND id NOT IN (SELECT following_id FROM public.follows WHERE follower_id = p_user_id)
+    ),
+    
+    -- B. Compute User's Category Scores from Interactions (last 7 days)
+    user_category_weights AS (
+        SELECT category, SUM(score) AS interest_score
+        FROM public.user_interactions
+        WHERE user_id = p_user_id AND created_at > (now() - INTERVAL '7 days')
+        GROUP BY category
+    ),
+
+    -- C. Retrieve Candidates from 5 pools (last 7 days)
+    -- Pool 1: Interest Pool (Matches user's top categories)
+    interest_pool AS (
+        SELECT t.id AS thread_id, 'interest'::text AS pool_source
+        FROM public.threads t
+        JOIN user_category_weights w ON t.category = w.category
+        WHERE t.created_at > (now() - INTERVAL '7 days')
+          AND t.user_id != p_user_id
+          AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
+          AND t.user_id NOT IN (SELECT pr_user_id FROM not_followed_private_users)
+          AND t.id NOT IN (SELECT ex_thread_id FROM excluded_threads)
+        ORDER BY w.interest_score DESC
+        LIMIT 100
+    ),
+
+    -- Pool 2: Relationship Pool (Followed, Friends, Chat Partners)
+    relationship_pool AS (
+        SELECT t.id AS thread_id, 'relationship'::text AS pool_source
+        FROM public.threads t
+        WHERE t.created_at > (now() - INTERVAL '7 days')
+          AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
+          AND t.id NOT IN (SELECT ex_thread_id FROM excluded_threads)
+          AND (
+             t.user_id IN (SELECT following_id FROM public.follows WHERE follower_id = p_user_id) OR
+             t.user_id IN (SELECT friend_id FROM public.friends_view WHERE user_id = p_user_id) OR
+             t.user_id IN (SELECT contact_id FROM public.frequent_chats_view WHERE user_id = p_user_id)
+          )
+        LIMIT 100
+    ),
+
+    -- Pool 3: Trending Pool (Highly liked/replied in last 48 hours)
+    trending_pool AS (
+        SELECT t.id AS thread_id, 'trending'::text AS pool_source
+        FROM public.threads t
+        WHERE t.created_at > (now() - INTERVAL '48 hours')
+          AND t.user_id != p_user_id
+          AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
+          AND t.user_id NOT IN (SELECT pr_user_id FROM not_followed_private_users)
+          AND t.id NOT IN (SELECT ex_thread_id FROM excluded_threads)
+          AND (t.likes_count + t.replies_count) > 3
+        ORDER BY (t.likes_count * 2.0 + t.replies_count * 5.0) DESC
+        LIMIT 100
+    ),
+
+    -- Pool 4: Community Pool (User joined communities)
+    community_pool AS (
+        SELECT t.id AS thread_id, 'community'::text AS pool_source
+        FROM public.threads t
+        JOIN public.community_members m ON t.community_id = m.community_id
+        WHERE m.user_id = p_user_id
+          AND t.created_at > (now() - INTERVAL '7 days')
+          AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
+          AND t.id NOT IN (SELECT ex_thread_id FROM excluded_threads)
+        LIMIT 100
+    ),
+
+    -- Pool 5: New Creator Pool (New unverified users, ensures exposure)
+    new_creator_pool AS (
+        SELECT t.id AS thread_id, 'new_creator'::text AS pool_source
+        FROM public.threads t
+        JOIN public.profiles p ON t.user_id = p.id
+        WHERE p.created_at > (now() - INTERVAL '30 days')
+          AND p.is_verified = false
+          AND t.user_id != p_user_id
+          AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
+          AND t.user_id NOT IN (SELECT pr_user_id FROM not_followed_private_users)
+          AND t.id NOT IN (SELECT ex_thread_id FROM excluded_threads)
+        ORDER BY t.created_at DESC
+        LIMIT 100
+    ),
+
+    -- D. Merge all unique candidates (collapsing duplicate thread_ids across pools to prevent duplicate insertion)
+    merged_candidates AS (
+        SELECT thread_id, MAX(pool_source) AS pool_source
+        FROM (
+            SELECT thread_id, pool_source FROM interest_pool
+            UNION ALL
+            SELECT thread_id, pool_source FROM relationship_pool
+            UNION ALL
+            SELECT thread_id, pool_source FROM trending_pool
+            UNION ALL
+            SELECT thread_id, pool_source FROM community_pool
+            UNION ALL
+            SELECT thread_id, pool_source FROM new_creator_pool
+            UNION ALL
+            SELECT id AS thread_id, 'self'::text AS pool_source
+            FROM public.threads
+            WHERE (user_id = p_user_id OR user_id IN (SELECT following_id FROM public.follows WHERE follower_id = p_user_id))
+              AND id NOT IN (SELECT ex_thread_id FROM excluded_threads)
+              AND user_id NOT IN (SELECT ex_user_id FROM excluded_users)
+            LIMIT 50
+        ) subquery
+        GROUP BY thread_id
+    )
+
+    -- E. Compute and Cache Personalized Scores
+    INSERT INTO public.user_feed_cache (user_id, thread_id, score, pool_source, cached_at)
+    SELECT 
+        p_user_id AS user_id,
+        mc.thread_id,
+        (
+            -- Engagement Score
+            (COALESCE(t.likes_count, 0) * 2.0 + COALESCE(t.replies_count, 0) * 5.0 + COALESCE(t.reposts_count, 0) * 4.0 + COALESCE(t.views_count, 0) * 0.1 + 1.0)
+            
+            -- Relationship Multiplier
+            * (1.0 + CASE 
+                WHEN t.user_id = p_user_id THEN 4.0
+                WHEN EXISTS (SELECT 1 FROM public.friends_view WHERE user_id = p_user_id AND friend_id = t.user_id) THEN 3.0
+                WHEN EXISTS (SELECT 1 FROM public.follows WHERE follower_id = p_user_id AND following_id = t.user_id) THEN 1.5
+                ELSE 0.0 
+              END
+              + COALESCE((SELECT LEAST(message_count * 0.1, 2.0) FROM public.frequent_chats_view WHERE user_id = p_user_id AND contact_id = t.user_id), 0.0)
+            )
+
+            -- Category Interest Overlap
+            * (1.0 + COALESCE((SELECT LEAST(interest_score * 0.05, 3.0) FROM user_category_weights WHERE category = t.category), 0.0))
+
+            -- Quality Boosts
+            * (1.0 + CASE WHEN t.media_hd = true THEN 0.5 ELSE 0.0 END + CASE WHEN t.is_original = true THEN 0.3 ELSE 0.0 END)
+
+            -- Spam Penalty
+            - (COALESCE(t.spam_score, 0.0) * 10.0)
+        )
+        / 
+        -- Gravity-Based Freshness Decay
+        ( (EXTRACT(EPOCH FROM (now() - t.created_at)) / 3600.0 + 2.0) ^ 1.8 ) AS score,
+        mc.pool_source,
+        now() AS cached_at
+    FROM merged_candidates mc
+    JOIN public.threads t ON mc.thread_id = t.id
+    ON CONFLICT (user_id, thread_id) DO UPDATE 
+    SET score = EXCLUDED.score,
+        pool_source = EXCLUDED.pool_source,
+        cached_at = EXCLUDED.cached_at;
+
+    -- Return the ranked list from the rebuilt cache
+    RETURN QUERY
+    SELECT t.*
+    FROM public.threads t
+    JOIN public.user_feed_cache c ON t.id = c.thread_id
+    WHERE c.user_id = p_user_id
+    ORDER BY c.score DESC
+    LIMIT p_limit
+    OFFSET p_offset;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

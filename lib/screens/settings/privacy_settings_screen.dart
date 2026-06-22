@@ -70,6 +70,15 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   );
                 },
               ),
+              _buildSwitchTile(
+                context,
+                title: 'Show Active Status',
+                subtitle: 'Allow others to see when you\'re active. If disabled, you won\'t see others\' active status.',
+                value: provider.isActiveStatusEnabled,
+                onChanged: (val) {
+                  provider.updatePrivacy(isActiveStatusEnabled: val);
+                },
+              ),
               const SizedBox(height: 16),
               _buildSectionHeader(context, 'Interactions'),
               _buildSelectionTile(

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../services/auth_service.dart';
+import '../../widgets/dak_logo.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -708,12 +709,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                                           ),
                                         ),
                                       ),
-                                      Image.asset(
-                                        "assets/pigeon_logo.png",
-                                        height: 68,
-                                        width: 76,
-                                        fit: BoxFit.contain,
-                                      ),
+                                      const DakLogo(size: 68),
                                       ..._buildSparkles(_sparkleController.value),
                                     ],
                                   ),

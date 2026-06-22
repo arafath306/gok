@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import '../../services/auth_service.dart';
+import '../../widgets/dak_logo.dart';
 import 'forgot_password_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -464,9 +465,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     return positions.asMap().entries.map((entry) {
       final i = entry.key;
       final pos = entry.value;
-      // Scale positions to fit 85x85 container (divide by 215, multiply by 85)
-      final scaledX = pos.dx * 85 / 215;
-      final scaledY = pos.dy * 85 / 215;
+      // Scale positions to fit 125x125 container (divide by 215, multiply by 125)
+      final scaledX = pos.dx * 125 / 215;
+      final scaledY = pos.dy * 125 / 215;
       // Stagger each dot by 1/8 of full cycle for wave effect
       final phase = ((t + i / positions.length) % 1.0);
       final opacity = math.sin(phase * math.pi).clamp(0.0, 1.0);
@@ -894,7 +895,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
-    final screenHeight = MediaQuery.of(context).size.height;
     final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
@@ -920,11 +920,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ),
 
           // 2. Animated atmospheric cloud background
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: screenHeight * 0.50,
+          Positioned.fill(
             child: AnimatedBuilder(
               animation: _cloudController,
               builder: (context, child) {
@@ -946,7 +942,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
                     children: [
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 24),
 
                       // Back button row (signup steps >= 1)
                       if (_isSignUp && _signUpStep < 4)
@@ -988,8 +984,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                               offset: Offset(0, _floatAnimation.value * 0.4),
                               child: Center(
                                 child: SizedBox(
-                                  height: 85,
-                                  width: 85,
+                                  height: 125,
+                                  width: 125,
                                   child: Stack(
                                     clipBehavior: Clip.none,
                                     alignment: Alignment.center,
@@ -998,8 +994,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                       Transform.scale(
                                         scale: _glowAnimation.value,
                                         child: Container(
-                                          width: 76,
-                                          height: 76,
+                                          width: 110,
+                                          height: 110,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             gradient: RadialGradient(
@@ -1017,8 +1013,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                       Transform.scale(
                                         scale: _glowAnimation.value * 0.97,
                                         child: Container(
-                                          width: 72,
-                                          height: 72,
+                                          width: 104,
+                                          height: 104,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             border: Border.all(
@@ -1028,13 +1024,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                           ),
                                         ),
                                       ),
-                                      // Pigeon mascot
-                                      Image.asset(
-                                        "assets/pigeon_logo.png",
-                                        height: 68,
-                                        width: 76,
-                                        fit: BoxFit.contain,
-                                      ),
+                                       // Dove mascot – transparent via DakLogo
+                                       const DakLogo(size: 96),
                                       // Orbiting sparkles
                                       ..._buildSparkles(_sparkleController.value),
                                     ],
@@ -1044,23 +1035,23 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                             );
                           },
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 12),
                         // Only show App Name and Subtitle on Login or step 1 & 2 of signup
                         if (!_isSignUp || _signUpStep < 3) ...[
                           Text(
                             "Pigeon",
                             style: GoogleFonts.poppins(
-                              fontSize: 24,
+                              fontSize: 28,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
                               letterSpacing: 0.5,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
                           Text(
                             "Messages. Moments. Together.",
                             style: GoogleFonts.inter(
-                              fontSize: 12,
+                              fontSize: 13,
                               color: Colors.white60,
                               letterSpacing: 0.4,
                             ),
@@ -1110,145 +1101,156 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                             style: GoogleFonts.inter(color: Colors.red[100], fontSize: 12),
                           ),
                         ),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
 
                 // ── Bottom: auth card fills remaining space ─────────────────
                 Expanded(
-                  child: SingleChildScrollView(
-                    physics: isKeyboardOpen ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
-                    child: Column(
-                      children: [
-                        _buildGlassCard(
-                          child: _isSignUp
-                              ? (_signUpStep == 1
-                                  ? _buildStep1()
-                                  : _signUpStep == 2
-                                      ? _buildStep2()
-                                      : _signUpStep == 3
-                                          ? _buildStep3()
-                                          : _buildStep7())
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Welcome back!",
-                                      style: GoogleFonts.inter(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF9B79FF),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      "Login to continue your journey",
-                                      style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildDarkTextField(
-                                      hint: "Email or Username",
-                                      controller: _emailPhoneController,
-                                      prefixIcon: Icons.mail_outline_rounded,
-                                    ),
-                                    _buildDarkTextField(
-                                      hint: "Password",
-                                      controller: _passwordController,
-                                      prefixIcon: Icons.lock_outline_rounded,
-                                      obscureText: _obscureLoginPassword,
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscureLoginPassword
-                                              ? Icons.visibility_outlined
-                                              : Icons.visibility_off_outlined,
-                                          color: Colors.white38,
-                                          size: 20,
-                                        ),
-                                        onPressed: () => setState(() => _obscureLoginPassword = !_obscureLoginPassword),
-                                      ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (context) => const ForgotPasswordScreen(),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        physics: isKeyboardOpen ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildGlassCard(
+                                  child: _isSignUp
+                                      ? (_signUpStep == 1
+                                          ? _buildStep1()
+                                          : _signUpStep == 2
+                                              ? _buildStep2()
+                                              : _signUpStep == 3
+                                                  ? _buildStep3()
+                                                  : _buildStep7())
+                                      : Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Welcome back!",
+                                              style: GoogleFonts.inter(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF9B79FF),
+                                              ),
                                             ),
-                                          );
-                                        },
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: const Size(0, 30),
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        child: Text(
-                                          "Forgot password?",
-                                          style: GoogleFonts.inter(
-                                            color: const Color(0xFF9B79FF),
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _buildGradientButton(
-                                      label: "Login",
-                                      icon: Icons.arrow_forward,
-                                      isLoading: authService.isLoading,
-                                      onPressed: _submitLogin,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      children: [
-                                        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                                          child: Text(
-                                            "or continue with",
-                                            style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
-                                          ),
-                                        ),
-                                        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    _buildSocialButtons(),
-                                    const SizedBox(height: 14),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          "Don't have an account? ",
-                                          style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
-                                        ),
-                                        GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              _isSignUp = true;
-                                              _signUpStep = 1;
-                                            });
-                                            authService.clearErrors();
-                                          },
-                                          child: Text(
-                                            "Register >",
-                                            style: GoogleFonts.inter(
-                                              color: const Color(0xFF9B79FF),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "Login to continue your journey",
+                                              style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
                                             ),
-                                          ),
+                                            const SizedBox(height: 16),
+                                            _buildDarkTextField(
+                                              hint: "Email or Username",
+                                              controller: _emailPhoneController,
+                                              prefixIcon: Icons.mail_outline_rounded,
+                                            ),
+                                            _buildDarkTextField(
+                                              hint: "Password",
+                                              controller: _passwordController,
+                                              prefixIcon: Icons.lock_outline_rounded,
+                                              obscureText: _obscureLoginPassword,
+                                              suffixIcon: IconButton(
+                                                icon: Icon(
+                                                  _obscureLoginPassword
+                                                      ? Icons.visibility_outlined
+                                                      : Icons.visibility_off_outlined,
+                                                  color: Colors.white38,
+                                                  size: 20,
+                                                ),
+                                                onPressed: () => setState(() => _obscureLoginPassword = !_obscureLoginPassword),
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                      builder: (context) => const ForgotPasswordScreen(),
+                                                    ),
+                                                  );
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  padding: EdgeInsets.zero,
+                                                  minimumSize: const Size(0, 30),
+                                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                ),
+                                                child: Text(
+                                                  "Forgot password?",
+                                                  style: GoogleFonts.inter(
+                                                    color: const Color(0xFF9B79FF),
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            _buildGradientButton(
+                                              label: "Login",
+                                              icon: Icons.arrow_forward,
+                                              isLoading: authService.isLoading,
+                                              onPressed: _submitLogin,
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Row(
+                                              children: [
+                                                Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                                                  child: Text(
+                                                    "or continue with",
+                                                    style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+                                                  ),
+                                                ),
+                                                Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            _buildSocialButtons(),
+                                            const SizedBox(height: 14),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  "Don't have an account? ",
+                                                  style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
+                                                ),
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      _isSignUp = true;
+                                                      _signUpStep = 1;
+                                                    });
+                                                    authService.clearErrors();
+                                                  },
+                                                  child: Text(
+                                                    "Register >",
+                                                    style: GoogleFonts.inter(
+                                                      color: const Color(0xFF9B79FF),
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  ],
                                 ),
+                                const SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
+                      );
+                    }
                   ),
                 ),
               ],

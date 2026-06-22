@@ -7,13 +7,23 @@ import 'services/database_service.dart';
 import 'services/notification_settings_provider.dart';
 import 'services/chat_settings_provider.dart';
 import 'services/general_settings_provider.dart';
+import 'state/verification_controller.dart';
+import 'services/local_notification_service.dart';
 import 'screens/auth/onboarding_screen.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/splash_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/app_theme.dart';
+import 'core/injection.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize dependency injection
+  await initInjection();
+
+  // Initialize notifications
+  await LocalNotificationService.initialize();
 
   // Initialize Supabase
   await Supabase.initialize(
@@ -29,6 +39,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => NotificationSettingsProvider()),
         ChangeNotifierProvider(create: (_) => ChatSettingsProvider()),
         ChangeNotifierProvider(create: (_) => GeneralSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => VerificationController()),
       ],
       child: const PigeonApp(),
     ),
@@ -135,10 +146,10 @@ class _AuthGateState extends State<AuthGate> {
     // Otherwise show Onboarding, followed by Auth Screen
     if (_showOnboarding) {
       return OnboardingScreen(
-        onFinish: () {
+        onFinish: (startSignUp) {
           setState(() {
             _showOnboarding = false;
-            _startSignUp = false;
+            _startSignUp = startSignUp;
           });
         },
       );

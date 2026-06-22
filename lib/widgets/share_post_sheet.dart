@@ -135,6 +135,7 @@ class _SharePostSheetState extends State<SharePostSheet> {
                           return GestureDetector(
                             onTap: () async {
                               Navigator.pop(context);
+                              db.incrementShareCount(widget.post.id);
                               await db.sendMessage(profile.id, "Shared a post: $postLink");
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -236,6 +237,7 @@ class _SharePostSheetState extends State<SharePostSheet> {
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: postLink));
                     Navigator.pop(context);
+                    db.incrementShareCount(widget.post.id);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("Link copied for sharing"),
@@ -273,6 +275,7 @@ class _SharePostSheetState extends State<SharePostSheet> {
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: postLink));
                     Navigator.pop(context);
+                    db.incrementShareCount(widget.post.id);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("Link copied to clipboard"),
