@@ -10,7 +10,9 @@ import '../models/thread_post.dart';
 
 class CreateThreadScreen extends StatefulWidget {
   final ThreadPost? quotePost;
-  const CreateThreadScreen({super.key, this.quotePost});
+  /// When non-null the screen is in "edit" mode: pre-fills text and saves via editPostContent.
+  final ThreadPost? editPost;
+  const CreateThreadScreen({super.key, this.quotePost, this.editPost});
 
   @override
   State<CreateThreadScreen> createState() => _CreateThreadScreenState();
@@ -52,6 +54,10 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   void initState() {
     super.initState();
     _contentController.addListener(_onContentChanged);
+    // Pre-fill content when editing an existing post
+    if (widget.editPost != null) {
+      _contentController.text = widget.editPost!.content;
+    }
   }
 
   void _onContentChanged() {
@@ -103,7 +109,35 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     setState(() => _isUploadingImage = true);
     final db = Provider.of<DatabaseService>(context, listen: false);
 
-    // Format post content with location & polls if selected
+    // ── Edit mode: just update the existing post content ──────────────────
+    if (widget.editPost != null) {
+      final success = await db.editPostContent(widget.editPost!.id, text);
+      if (!mounted) return;
+      setState(() => _isUploadingImage = false);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text('Post updated successfully', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+            ]),
+            backgroundColor: const Color(0xFF1E824C),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        Navigator.pop(context, true); // return true = edited
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update post', style: GoogleFonts.inter())),
+        );
+      }
+      return;
+    }
+
+    // ── Create / Quote mode ───────────────────────────────────────────────
     String finalContent = text;
     if (_selectedLocation != null) {
       finalContent += "\n\n📍 ${_selectedLocation}";
@@ -165,10 +199,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              "Failed to publish post",
-              style: GoogleFonts.inter(),
-            ),
+            content: Text("Failed to publish post", style: GoogleFonts.inter()),
           ),
         );
       }
@@ -308,7 +339,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
               ),
               const Spacer(),
               Text(
-                widget.quotePost != null ? "Quote Post" : "Create New Post",
+                widget.editPost != null ? "Edit Post" : (widget.quotePost != null ? "Quote Post" : "Create New Post"),
                 style: GoogleFonts.inter(
                   color: context.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -336,7 +367,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : Text(
-                        "Release",
+                        widget.editPost != null ? "Save" : "Release",
                         style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
               )

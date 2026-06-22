@@ -217,12 +217,12 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               const SizedBox(width: 8),
               Text(
                 origPost.author.fullName,
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12, color: context.textPrimary),
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: context.textPrimary),
               ),
               const SizedBox(width: 4),
               Text(
                 "@${origPost.author.username}",
-                style: TextStyle(fontSize: 10, color: context.textSecondary),
+                style: TextStyle(fontSize: 11, color: context.textSecondary),
               ),
             ],
           ),
@@ -231,7 +231,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             origPost.content,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(fontSize: 13, color: context.textPrimary),
+            style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary, height: 1.35),
           ),
           if (origPost.imageUrls != null && origPost.imageUrls!.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -493,43 +493,40 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                     ),
                   );
                 },
-                child: Row(
-                  children: [
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: Text(
-                        post.author.fullName,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: post.author.fullName,
                         style: GoogleFonts.hindSiliguri(
                           fontWeight: FontWeight.bold,
-                          fontSize: 14.5,
+                          fontSize: 15.5,
                           color: context.textPrimary,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.clip,
                       ),
-                    ),
-                    if (isVerified) ...[
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.verified,
-                        color: Colors.blue,
-                        size: 14,
-                      ),
-                    ],
-                    const SizedBox(width: 6),
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: Text(
-                        '@${post.author.username}',
+                      if (isVerified)
+                        const WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: Padding(
+                            padding: EdgeInsets.only(left: 4),
+                            child: Icon(
+                              Icons.verified,
+                              color: Colors.blue,
+                              size: 14,
+                            ),
+                          ),
+                        ),
+                      TextSpan(
+                        text: ' @${post.author.username}',
                         style: GoogleFonts.inter(
-                          fontSize: 12.5,
+                          fontSize: 13.5,
                           color: context.textMuted,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -537,7 +534,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             Text(
               post.createdAt,
               style: GoogleFonts.inter(
-                fontSize: 12.5,
+                fontSize: 13.5,
                 color: context.textMuted,
               ),
             ),
@@ -559,7 +556,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
         Text(
           post.content,
           style: GoogleFonts.hindSiliguri(
-            fontSize: 15,
+            fontSize: 16.5,
             color: context.textPrimary,
             height: 1.45,
           ),
@@ -1367,105 +1364,15 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
   }
 
   void _showEditPostSheet(BuildContext ctx) {
-    final textController = TextEditingController(text: widget.post.content);
-    showModalBottomSheet(
-      context: ctx,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: context.cardBg,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Edit Post",
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: context.textPrimary,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close, color: context.textPrimary),
-                      onPressed: () => Navigator.pop(sheetContext),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: textController,
-                  maxLines: 5,
-                  style: GoogleFonts.hindSiliguri(fontSize: 15, color: context.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: "What's on your mind?",
-                    hintStyle: GoogleFonts.hindSiliguri(color: context.textMuted),
-                    filled: true,
-                    fillColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: context.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: context.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF1E824C), width: 1.5),
-                    ),
-                    contentPadding: const EdgeInsets.all(16),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final newContent = textController.text.trim();
-                      if (newContent.isNotEmpty) {
-                        Navigator.pop(sheetContext);
-                        final success = await widget.dbService.editPostContent(widget.post.id, newContent);
-                        if (!mounted) return;
-                        if (success) {
-                          _showSuccessSnackBar(context, "Post updated successfully");
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E824C),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      "Save Changes",
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    // Navigate to the full composer screen in edit mode.
+    // This avoids the "unmounted widget" error that the bottom-sheet approach had.
+    Navigator.of(ctx).push(
+      MaterialPageRoute(
+        builder: (_) => CreateThreadScreen(editPost: widget.post),
+      ),
     );
   }
+
 
   void _showHideSpecificUsersSheet(BuildContext ctx) {
     showModalBottomSheet(

@@ -486,8 +486,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Flexible(
-                      fit: FlexFit.loose,
+                    Expanded(
                       child: GestureDetector(
                         onTap: () {
                           final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
@@ -498,45 +497,48 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             ),
                           );
                         },
-                        child: Text(
-                          author.fullName,
-                          maxLines: 1,
-                          overflow: TextOverflow.clip,
-                          style: GoogleFonts.hindSiliguri(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14.5,
-                            color: context.textPrimary,
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: author.fullName,
+                                style: GoogleFonts.hindSiliguri(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15.5,
+                                  color: context.textPrimary,
+                                ),
+                              ),
+                              if (author.isVerified)
+                                const WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(left: 4),
+                                    child: Icon(
+                                      Icons.verified,
+                                      color: Colors.blue,
+                                      size: 15,
+                                    ),
+                                  ),
+                                ),
+                              TextSpan(
+                                text: ' @${author.username}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13.5,
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' · ${_formatTime(comment['created_at_raw'] ?? comment['created_at'] ?? '')}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13.5,
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ),
-                    if (author.isVerified) ...[
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.verified,
-                        color: Colors.blue,
-                        size: 15,
-                      ),
-                    ],
-                    const SizedBox(width: 6),
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: Text(
-                        "@${author.username}",
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: GoogleFonts.inter(
-                          fontSize: 12.5,
-                          color: context.textSecondary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "· ${_formatTime(comment['created_at_raw'] ?? comment['created_at'] ?? '')}",
-                      style: GoogleFonts.inter(
-                        fontSize: 12.5,
-                        color: context.textSecondary,
                       ),
                     ),
                     if (isPostAuthor) ...[
@@ -557,7 +559,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         ),
                       ),
                     ],
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     IconButton(
                       icon: Icon(Icons.more_horiz, size: 18, color: context.textSecondary),
                       padding: EdgeInsets.zero,
@@ -570,7 +572,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                 Text(
                   comment['content'] as String? ?? '',
                   style: GoogleFonts.hindSiliguri(
-                    fontSize: 14,
+                    fontSize: 15.5,
                     color: context.textPrimary,
                     height: 1.45,
                   ),
@@ -878,35 +880,41 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        NoTransitionPageRoute(
-                                          child: ProfileScreen(userId: activePost.userId),
-                                        ),
-                                      );
-                                    },
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          activePost.author.fullName,
-                                          style: GoogleFonts.hindSiliguri(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: context.textPrimary,
+                                  Flexible(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          NoTransitionPageRoute(
+                                            child: ProfileScreen(userId: activePost.userId),
                                           ),
-                                        ),
-                                        if (activePost.author.isVerified) ...[
-                                          const SizedBox(width: 4),
-                                          const Icon(
-                                            Icons.verified,
-                                            color: Colors.blue,
-                                            size: 14,
+                                        );
+                                      },
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              activePost.author.fullName,
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                              style: GoogleFonts.hindSiliguri(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 17,
+                                                color: context.textPrimary,
+                                              ),
+                                            ),
                                           ),
+                                          if (activePost.author.isVerified) ...[
+                                            const SizedBox(width: 4),
+                                            const Icon(
+                                              Icons.verified,
+                                              color: Colors.blue,
+                                              size: 14,
+                                            ),
+                                          ],
                                         ],
-                                      ],
+                                      ),
                                     ),
                                   ),
                                   if (activePost.userId != dbService.currentUid) ...[
@@ -929,7 +937,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                     "@${activePost.author.username}",
                                     style: TextStyle(
                                       color: context.textSecondary,
-                                      fontSize: 13,
+                                      fontSize: 14,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -939,7 +947,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                     "${_formatCount(activePost.viewsCount)} views",
                                     style: TextStyle(
                                       color: context.textSecondary,
-                                      fontSize: 12,
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ],
@@ -966,9 +974,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       children: [
                         Text(
                           activePost.content,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
+                          style: GoogleFonts.hindSiliguri(
+                            fontSize: 17.5,
                             color: context.textPrimary,
+                            height: 1.45,
                           ),
                         ),
                         if (activePost.isRepost && activePost.repostedPost != null)

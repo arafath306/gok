@@ -241,7 +241,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                   const Spacer(),
-                  if (_isOwnProfile)
+                  if (_isOwnProfile) ...[
                     CircleAvatar(
                       backgroundColor: Colors.black38,
                       radius: 18,
@@ -262,6 +262,27 @@ class _ProfileScreenState extends State<ProfileScreen>
                         padding: EdgeInsets.zero,
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    CircleAvatar(
+                      backgroundColor: Colors.black38,
+                      radius: 18,
+                      child: IconButton(
+                        icon: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: 18),
+                        onPressed: _showMoreOptions,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ] else ...[
+                    CircleAvatar(
+                      backgroundColor: Colors.black38,
+                      radius: 18,
+                      child: IconButton(
+                        icon: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: 18),
+                        onPressed: _showMoreOptions,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -327,56 +348,15 @@ class _ProfileScreenState extends State<ProfileScreen>
           ],
         ),
 
-        // Spacer to account for overlapping avatar with nice separation
-        SizedBox(height: avatarRadius + 14),
+        // Spacing for buttons next to avatar
+        const SizedBox(height: 12),
 
-        // Name, username & Edit button inline Row
+        // Buttons next to avatar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            profile?.fullName ?? 'User',
-                            style: GoogleFonts.hindSiliguri(
-                              fontSize: 21,
-                              fontWeight: FontWeight.bold,
-                              color: context.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (profile?.isVerified == true ||
-                            (_isOwnProfile && db.myProfile?.isVerified == true) ||
-                            (profile != null && profile.id == db.currentUid && db.myProfile?.isVerified == true)) ...[
-                          const SizedBox(width: 6),
-                          const Icon(
-                            Icons.verified,
-                            color: Colors.blue,
-                            size: 18,
-                          ),
-                        ],
-                      ],
-                    ),
-                    Text(
-                      '@${profile?.username ?? ''}',
-                      style: GoogleFonts.hindSiliguri(
-                        fontSize: 14,
-                        color: context.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
               if (_isOwnProfile) ...[
                 _outlinedBtn('Edit Profile', onTap: () async {
                   if (profile != null) {
@@ -391,8 +371,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                     db.fetchMyProfile();
                   }
                 }),
-                const SizedBox(width: 8),
-                _iconBtn(Icons.more_horiz_rounded, onTap: _showMoreOptions),
               ] else ...[
                 Consumer<DatabaseService>(
                   builder: (ctx, dbS, _) {
@@ -404,8 +382,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     );
                   },
                 ),
-                const SizedBox(width: 8),
                 if (profile != null && (!profile.isPrivate || _doesFollowMe)) ...[
+                  const SizedBox(width: 8),
                   _outlinedBtn(
                     'Message',
                     onTap: () {
@@ -417,10 +395,54 @@ class _ProfileScreenState extends State<ProfileScreen>
                       );
                     },
                   ),
-                  const SizedBox(width: 8),
                 ],
-                _iconBtn(Icons.more_horiz_rounded, onTap: _showMoreOptions),
               ],
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Name and username details below avatar, taking full width
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      profile?.fullName ?? 'User',
+                      style: GoogleFonts.hindSiliguri(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                        color: context.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (profile?.isVerified == true ||
+                      (_isOwnProfile && db.myProfile?.isVerified == true) ||
+                      (profile != null && profile.id == db.currentUid && db.myProfile?.isVerified == true)) ...[
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.verified,
+                      color: Colors.blue,
+                      size: 18,
+                    ),
+                  ],
+                ],
+              ),
+              Text(
+                '@${profile?.username ?? ''}',
+                style: GoogleFonts.hindSiliguri(
+                  fontSize: 14,
+                  color: context.textSecondary,
+                ),
+              ),
             ],
           ),
         ),
@@ -577,20 +599,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       );
 
-  Widget _iconBtn(IconData icon, {required VoidCallback onTap}) =>
-      GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: context.cardBg,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: context.border),
-          ),
-          child: Icon(icon, size: 18, color: context.textPrimary),
-        ),
-      );
+
 
   // ── Tab Bar ────────────────────────────────────────────────
   Widget _buildTabBar() => Container(

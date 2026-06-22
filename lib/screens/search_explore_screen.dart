@@ -246,17 +246,17 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData iconData, {Color? iconColor}) {
+  Widget _buildSectionHeader(
+    String title,
+    IconData iconData, {
+    Color? iconColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            iconData,
-            size: 18,
-            color: iconColor ?? const Color(0xFF1E824C),
-          ),
+          Icon(iconData, size: 18, color: iconColor ?? const Color(0xFF1E824C)),
           const SizedBox(width: 8),
           Text(
             title,
@@ -338,7 +338,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => TopicThreadsScreen(topicName: topic)),
+          MaterialPageRoute(
+            builder: (_) => TopicThreadsScreen(topicName: topic),
+          ),
         );
       },
       child: Padding(
@@ -351,7 +353,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 color: Colors.blue.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.trending_up_rounded, color: Colors.blue, size: 18),
+              child: const Icon(
+                Icons.trending_up_rounded,
+                color: Colors.blue,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -404,7 +410,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => TopicThreadsScreen(topicName: topic)),
+          MaterialPageRoute(
+            builder: (_) => TopicThreadsScreen(topicName: topic),
+          ),
         );
       },
       child: Padding(
@@ -417,7 +425,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 color: Colors.orange.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.orange, size: 16),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: Colors.orange,
+                size: 16,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -598,7 +610,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                           },
                         )
                       : null,
-                  hintText: "Search,user,content...",
+                  hintText: "Search for posts,users or topics...",
                   hintStyle: GoogleFonts.hindSiliguri(
                     color: context.textMuted,
                     fontSize: 15,
@@ -790,7 +802,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                             ],
 
                             // 1- Trending Now
-                            _buildSectionHeader("Trending Now", Icons.trending_up_rounded, iconColor: const Color(0xFF1E824C)),
+                            _buildSectionHeader(
+                              "Trending Now",
+                              Icons.trending_up_rounded,
+                              iconColor: const Color(0xFF1E824C),
+                            ),
                             if (_isTopicsLoading)
                               const Center(
                                 child: Padding(
@@ -826,7 +842,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                             Divider(height: 1, color: context.border),
 
                             // 2- Rising Topics
-                            _buildSectionHeader("Rising Topics", Icons.show_chart_rounded, iconColor: Colors.blue),
+                            _buildSectionHeader(
+                              "Rising Topics",
+                              Icons.show_chart_rounded,
+                              iconColor: Colors.blue,
+                            ),
                             if (_isTopicsLoading)
                               const Center(
                                 child: Padding(
@@ -862,7 +882,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                             Divider(height: 1, color: context.border),
 
                             // 3- Most Discussed
-                            _buildSectionHeader("Most Discussed", Icons.forum_rounded, iconColor: Colors.orange),
+                            _buildSectionHeader(
+                              "Most Discussed",
+                              Icons.forum_rounded,
+                              iconColor: Colors.orange,
+                            ),
                             if (_isTopicsLoading)
                               const Center(
                                 child: Padding(
@@ -898,7 +922,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                             Divider(height: 1, color: context.border),
 
                             // 4- Recommended for you
-                            _buildSectionHeader("Recommended for you", Icons.person_add_alt_1_rounded, iconColor: const Color(0xFF1E824C)),
+                            _buildSectionHeader(
+                              "Recommended for you",
+                              Icons.person_add_alt_1_rounded,
+                              iconColor: const Color(0xFF1E824C),
+                            ),
                             if (_recommended.isEmpty)
                               SizedBox(
                                 height: 200,

@@ -35,33 +35,62 @@ class E2EEService {
   Future<String?> initializeKeys() async {
     if (_currentUid.isEmpty) return null;
 
-    final existingPrivateKeyBase64 = await _secureStorage.read(key: _privateKeyKey(_currentUid));
-    
-    if (existingPrivateKeyBase64 != null) {
-      // Reconstruct keypair to get public key
-      final privateKeyBytes = base64Decode(existingPrivateKeyBase64);
-      final keyPair = await _keyExchangeAlgorithm.newKeyPairFromSeed(privateKeyBytes);
-      final publicKey = await keyPair.extractPublicKey();
-      return base64Encode(publicKey.bytes);
+    String? existingPrivateKeyBase64;
+    try {
+      existingPrivateKeyBase64 = await _secureStorage.read(key: _privateKeyKey(_currentUid));
+    } catch (e) {
+      print('Secure storage read failed (likely keystore corruption): $e');
+      try {
+        await _secureStorage.delete(key: _privateKeyKey(_currentUid));
+      } catch (_) {}
     }
 
-    // Generate new key pair
-    final keyPair = await _keyExchangeAlgorithm.newKeyPair();
-    final privateKeyBytes = await keyPair.extractPrivateKeyBytes();
-    final publicKey = await keyPair.extractPublicKey();
+    String? publicKeyBase64;
+    bool needsUpload = false;
 
-    final privateKeyBase64 = base64Encode(privateKeyBytes);
-    final publicKeyBase64 = base64Encode(publicKey.bytes);
+    if (existingPrivateKeyBase64 != null) {
+      try {
+        // Reconstruct keypair to get public key
+        final privateKeyBytes = base64Decode(existingPrivateKeyBase64);
+        final keyPair = await _keyExchangeAlgorithm.newKeyPairFromSeed(privateKeyBytes);
+        final publicKey = await keyPair.extractPublicKey();
+        publicKeyBase64 = base64Encode(publicKey.bytes);
+      } catch (e) {
+        print('Error reconstructing keypair from seed: $e. Regenerating keys...');
+        existingPrivateKeyBase64 = null; // force regeneration
+      }
+    }
 
-    // Save private key locally
-    await _secureStorage.write(key: _privateKeyKey(_currentUid), value: privateKeyBase64);
+    if (existingPrivateKeyBase64 == null) {
+      try {
+        // Generate new key pair
+        final keyPair = await _keyExchangeAlgorithm.newKeyPair();
+        final privateKeyBytes = await keyPair.extractPrivateKeyBytes();
+        final publicKey = await keyPair.extractPublicKey();
 
-    // Update public key in Supabase profile
+        final privateKeyBase64 = base64Encode(privateKeyBytes);
+        publicKeyBase64 = base64Encode(publicKey.bytes);
+
+        // Save private key locally
+        await _secureStorage.write(key: _privateKeyKey(_currentUid), value: privateKeyBase64);
+        needsUpload = true;
+      } catch (e) {
+        print('Error generating or saving new key pair: $e');
+        return null;
+      }
+    }
+
+    // Always check and synchronize with Supabase profiles table
     try {
-      await _supabaseClient.from('profiles').update({'public_key': publicKeyBase64}).eq('id', _currentUid);
+      final res = await _supabaseClient.from('profiles').select('public_key').eq('id', _currentUid).maybeSingle();
+      final dbPublicKey = res?['public_key'] as String?;
+      
+      if (dbPublicKey == null || dbPublicKey != publicKeyBase64 || needsUpload) {
+        await _supabaseClient.from('profiles').update({'public_key': publicKeyBase64}).eq('id', _currentUid);
+        print('Successfully synchronized E2EE public key to Supabase: $publicKeyBase64');
+      }
     } catch (e) {
-      print('Error uploading public key: $e');
-      // If we fail to upload, we should ideally revert the local storage, but for now we proceed.
+      print('Error synchronizing E2EE public key with Supabase: $e');
     }
 
     return publicKeyBase64;

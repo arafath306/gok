@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import '../../services/auth_service.dart';
-import '../../widgets/dak_logo.dart';
+import '../../utils/app_theme.dart';
 import 'forgot_password_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -47,10 +47,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   Timer? _debounce;
 
   // ── Animation Controllers ──────────────────────────────────────────────────
-  late AnimationController _cloudController;   // drifting clouds
-  late AnimationController _floatController;   // pigeon bobbing
-  late AnimationController _glowController;    // glow ring pulse
-  late AnimationController _sparkleController; // star twinkle
+  late AnimationController _cloudController;
+  late AnimationController _floatController;
+  late AnimationController _glowController;
+  late AnimationController _sparkleController;
 
   late Animation<double> _floatAnimation;
   late Animation<double> _glowAnimation;
@@ -61,13 +61,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     super.initState();
     _isSignUp = widget.initialIsSignUp;
 
-    // Slow continuous cloud drift (10s cycle)
     _cloudController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat();
 
-    // Pigeon gentle float (3s, up↔down, easeInOut)
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
@@ -76,7 +74,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
 
-    // Glow ring breathing pulse (2.2s)
     _glowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
@@ -85,7 +82,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    // Sparkle twinkling (1.8s, each particle staggered)
     _sparkleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
@@ -145,14 +141,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
 
     if (success && mounted) {
-      setState(() => _signUpStep = 4); // Step 4 will be Success View
+      setState(() => _signUpStep = 4);
     }
   }
 
   void _showSnackBar(String message) {
+    final isDark = context.isDarkMode;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
         content: Text(
           message,
           style: GoogleFonts.inter(color: Colors.white),
@@ -201,6 +198,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _selectDate() async {
+    final isDark = context.isDarkMode;
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime(2000),
@@ -209,12 +207,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF8B5CF6),
-              onPrimary: Colors.white,
-              surface: Color(0xFF090E17),
-              onSurface: Colors.white,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: Color(0xFF5B7FFF),
+                    onPrimary: Colors.white,
+                    surface: Color(0xFF090E17),
+                    onSurface: Colors.white,
+                  )
+                : const ColorScheme.light(
+                    primary: Color(0xFF5B7FFF),
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Color(0xFF0F172A),
+                  ),
           ),
           child: child!,
         );
@@ -222,31 +227,43 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
     if (picked != null) {
       setState(() {
-        _dobController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _dobController.text =
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
 
-  // Helper Custom Widget: Gradient Border Glassmorphic Container
+  // ── Glass card: adapts to light/dark ─────────────────────────────────────
   Widget _buildGlassCard({required Widget child}) {
+    final isDark = context.isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF7C3AED).withValues(alpha: 0.55),
-            const Color(0xFF4F46E5).withValues(alpha: 0.25),
-            const Color(0xFF7C3AED).withValues(alpha: 0.35),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: isDark
+            ? LinearGradient(
+                colors: [
+                  const Color(0xFF7C3AED).withValues(alpha: 0.55),
+                  const Color(0xFF4F46E5).withValues(alpha: 0.25),
+                  const Color(0xFF7C3AED).withValues(alpha: 0.35),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : LinearGradient(
+                colors: [
+                  const Color(0xFF5B7FFF).withValues(alpha: 0.18),
+                  const Color(0xFF7B5FFF).withValues(alpha: 0.08),
+                  const Color(0xFF5B7FFF).withValues(alpha: 0.14),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Container(
         margin: const EdgeInsets.all(1.2),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF10132A),
+          color: isDark ? const Color(0xFF10132A) : Colors.white,
           borderRadius: BorderRadius.circular(23),
         ),
         child: child,
@@ -254,7 +271,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildDarkTextField({
+  // ── Text field: light or dark styling ─────────────────────────────────────
+  Widget _buildTextField({
     required String hint,
     required TextEditingController controller,
     required IconData prefixIcon,
@@ -265,6 +283,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     bool readOnly = false,
     void Function(String)? onChanged,
   }) {
+    final isDark = context.isDarkMode;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: TextField(
@@ -274,32 +293,50 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         onTap: onTap,
         readOnly: readOnly,
         onChanged: onChanged,
-        style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+        style: GoogleFonts.inter(
+          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          fontSize: 15,
+        ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.inter(color: Colors.white38, fontSize: 14),
-          prefixIcon: Icon(prefixIcon, color: Colors.white38, size: 20),
+          hintStyle: GoogleFonts.inter(
+            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
+            prefixIcon,
+            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+            size: 20,
+          ),
           suffixIcon: suffixIcon,
           filled: true,
-          fillColor: const Color(0xFF070B13).withValues(alpha: 0.6),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          fillColor: isDark
+              ? const Color(0xFF070B13).withValues(alpha: 0.6)
+              : const Color(0xFFF8FAFC),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF1E293B)),
+            borderSide: BorderSide(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF1E293B)),
+            borderSide: BorderSide(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
+            borderSide: const BorderSide(color: Color(0xFF5B7FFF), width: 1.5),
           ),
         ),
       ),
     );
   }
 
+  // ── Gradient action button ─────────────────────────────────────────────────
   Widget _buildGradientButton({
     required String label,
     required VoidCallback onPressed,
@@ -308,19 +345,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }) {
     return Container(
       width: double.infinity,
-      height: 46,
+      height: 50,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFFF6B3A), Color(0xFFFF3A5C)],
+          colors: [Color(0xFF5B7FFF), Color(0xFF7B5FFF)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(23),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF5E36).withValues(alpha: 0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: const Color(0xFF5B7FFF).withValues(alpha: 0.30),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -330,7 +367,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(23),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: isLoading
@@ -367,7 +404,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     return ShaderMask(
       shaderCallback: (bounds) {
         return const LinearGradient(
-          colors: [Color(0xFF4285F4), Color(0xFFEA4335), Color(0xFFFBBC05), Color(0xFF34A853)],
+          colors: [
+            Color(0xFF4285F4),
+            Color(0xFFEA4335),
+            Color(0xFFFBBC05),
+            Color(0xFF34A853)
+          ],
           stops: [0.0, 0.33, 0.66, 1.0],
         ).createShader(bounds);
       },
@@ -383,15 +425,23 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildSocialButtons() {
+    final isDark = context.isDarkMode;
+    final borderColor =
+        isDark ? const Color(0xFF2D3050) : const Color(0xFFE2E8F0);
+    final bgColor =
+        isDark ? const Color(0xFF0D1021) : const Color(0xFFF8FAFC);
+    final textColor =
+        isDark ? Colors.white : const Color(0xFF0F172A);
+
     return Row(
       children: [
         Expanded(
           child: Container(
             height: 50,
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF2D3050)),
+              border: Border.all(color: borderColor),
               borderRadius: BorderRadius.circular(14),
-              color: const Color(0xFF0D1021),
+              color: bgColor,
             ),
             child: InkWell(
               onTap: () {},
@@ -404,7 +454,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   Text(
                     "Google",
                     style: GoogleFonts.inter(
-                      color: Colors.white,
+                      color: textColor,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -419,9 +469,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           child: Container(
             height: 50,
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF2D3050)),
+              border: Border.all(color: borderColor),
               borderRadius: BorderRadius.circular(14),
-              color: const Color(0xFF0D1021),
+              color: bgColor,
             ),
             child: InkWell(
               onTap: () {},
@@ -429,12 +479,16 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.apple, color: Colors.white, size: 24),
+                  Icon(
+                    Icons.apple,
+                    color: textColor,
+                    size: 24,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     "Apple",
                     style: GoogleFonts.inter(
-                      color: Colors.white,
+                      color: textColor,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -448,27 +502,23 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
-  /// Twinkling sparkle particles that orbit the pigeon mascot.
   List<Widget> _buildSparkles(double t) {
-    // Sparkle positions within the 215×215 hero SizedBox
     const positions = [
-      Offset(108, 6),    // top center
-      Offset(192, 40),   // top-right wing tip
-      Offset(210, 105),  // right
-      Offset(188, 172),  // bottom-right
-      Offset(108, 208),  // bottom center
-      Offset(28, 172),   // bottom-left
-      Offset(6, 105),    // left
-      Offset(22, 40),    // top-left wing tip
+      Offset(108, 6),
+      Offset(192, 40),
+      Offset(210, 105),
+      Offset(188, 172),
+      Offset(108, 208),
+      Offset(28, 172),
+      Offset(6, 105),
+      Offset(22, 40),
     ];
 
     return positions.asMap().entries.map((entry) {
       final i = entry.key;
       final pos = entry.value;
-      // Scale positions to fit 125x125 container (divide by 215, multiply by 125)
       final scaledX = pos.dx * 125 / 215;
       final scaledY = pos.dy * 125 / 215;
-      // Stagger each dot by 1/8 of full cycle for wave effect
       final phase = ((t + i / positions.length) % 1.0);
       final opacity = math.sin(phase * math.pi).clamp(0.0, 1.0);
       final dotSize = (i % 3 == 0) ? 2.5 : 1.5;
@@ -483,10 +533,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             height: dotSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
+              color: const Color(0xFF5B7FFF),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFA78BFA).withValues(alpha: opacity * 0.85),
+                  color: const Color(0xFF5B7FFF).withValues(alpha: opacity * 0.8),
                   blurRadius: 5,
                   spreadRadius: 1.5,
                 ),
@@ -499,6 +549,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildStepIndicator() {
+    final isDark = context.isDarkMode;
     return Column(
       children: [
         Row(
@@ -517,7 +568,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.white54,
+            color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
           ),
         ),
       ],
@@ -525,6 +576,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildStepCircle(int step) {
+    final isDark = context.isDarkMode;
     bool isCompleted = _signUpStep > step;
     bool isActive = _signUpStep == step;
 
@@ -533,9 +585,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isCompleted || isActive ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B),
+        color: isCompleted || isActive
+            ? const Color(0xFF5B7FFF)
+            : isDark
+                ? const Color(0xFF1E293B)
+                : const Color(0xFFE2E8F0),
         border: isActive
-            ? Border.all(color: Colors.white, width: 1.5)
+            ? Border.all(
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                width: 1.5)
             : Border.all(color: Colors.transparent),
       ),
       alignment: Alignment.center,
@@ -544,7 +602,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           : Text(
               "$step",
               style: GoogleFonts.inter(
-                color: isCompleted || isActive ? Colors.white : Colors.white38,
+                color: isCompleted || isActive
+                    ? Colors.white
+                    : isDark
+                        ? Colors.white38
+                        : const Color(0xFF94A3B8),
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -553,26 +615,30 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildStepConnector(int stepAfter) {
+    final isDark = context.isDarkMode;
     bool isPassed = _signUpStep > stepAfter;
     return Container(
       width: 40,
       height: 2,
-      color: isPassed ? const Color(0xFF8B5CF6) : const Color(0xFF1E293B),
+      color: isPassed
+          ? const Color(0xFF5B7FFF)
+          : isDark
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFE2E8F0),
     );
   }
 
-  // Registration step views
   Widget _buildStep1() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildDarkTextField(
+        _buildTextField(
           hint: "Full Name",
           controller: _fullNameController,
           prefixIcon: Icons.person_outline,
         ),
-        _buildDarkTextField(
+        _buildTextField(
           hint: "Username",
           controller: _usernameController,
           prefixIcon: Icons.alternate_email,
@@ -582,13 +648,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   child: SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF8B5CF6)),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Color(0xFF5B7FFF)),
                   ),
                 )
               : _usernameAvailable == null
                   ? null
                   : _usernameAvailable == true
-                      ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                      ? const Icon(Icons.check_circle,
+                          color: Colors.green, size: 20)
                       : const Icon(Icons.cancel, color: Colors.red, size: 20),
           onChanged: (val) {
             if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -610,10 +678,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.only(bottom: 8, left: 4),
             child: Text(
               "Username is available",
-              style: GoogleFonts.inter(color: Colors.green[400], fontSize: 12),
+              style:
+                  GoogleFonts.inter(color: Colors.green[600], fontSize: 12),
             ),
           ),
-        _buildDarkTextField(
+        _buildTextField(
           hint: "Email",
           controller: _emailController,
           prefixIcon: Icons.mail_outline,
@@ -637,7 +706,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               return;
             }
             final email = _emailController.text.trim();
-            if (email.isEmpty || !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+            if (email.isEmpty ||
+                !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                    .hasMatch(email)) {
               _showSnackBar("Please enter a valid email address");
               return;
             }
@@ -655,35 +726,45 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildDarkTextField(
+        _buildTextField(
           hint: "Password",
           controller: _signUpPasswordController,
           prefixIcon: Icons.lock_outline,
           obscureText: _obscureSignUpPassword,
           suffixIcon: IconButton(
             icon: Icon(
-              _obscureSignUpPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: Colors.white38,
+              _obscureSignUpPassword
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              color: context.isDarkMode
+                  ? Colors.white38
+                  : const Color(0xFF94A3B8),
               size: 20,
             ),
-            onPressed: () => setState(() => _obscureSignUpPassword = !_obscureSignUpPassword),
+            onPressed: () =>
+                setState(() => _obscureSignUpPassword = !_obscureSignUpPassword),
           ),
         ),
-        _buildDarkTextField(
+        _buildTextField(
           hint: "Confirm Password",
           controller: _confirmPasswordController,
           prefixIcon: Icons.lock_outline,
           obscureText: _obscureConfirmPassword,
           suffixIcon: IconButton(
             icon: Icon(
-              _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: Colors.white38,
+              _obscureConfirmPassword
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              color: context.isDarkMode
+                  ? Colors.white38
+                  : const Color(0xFF94A3B8),
               size: 20,
             ),
-            onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+            onPressed: () => setState(
+                () => _obscureConfirmPassword = !_obscureConfirmPassword),
           ),
         ),
-        _buildDarkTextField(
+        _buildTextField(
           hint: "Date of Birth",
           controller: _dobController,
           prefixIcon: Icons.calendar_today_outlined,
@@ -719,6 +800,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildStep3() {
+    final isDark = context.isDarkMode;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -726,17 +808,34 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF070B13).withValues(alpha: 0.6),
+            color: isDark
+                ? const Color(0xFF070B13).withValues(alpha: 0.6)
+                : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF1E293B)),
+            border: Border.all(
+              color: isDark
+                  ? const Color(0xFF1E293B)
+                  : const Color(0xFFE2E8F0),
+            ),
           ),
           child: Column(
             children: [
-              _buildReviewRow(Icons.person_outline, "Full Name", _fullNameController.text),
-              const Divider(color: Color(0xFF1E293B), height: 16),
-              _buildReviewRow(Icons.alternate_email, "Username", _usernameController.text),
-              const Divider(color: Color(0xFF1E293B), height: 16),
-              _buildReviewRow(Icons.mail_outline, "Email", _emailController.text),
+              _buildReviewRow(
+                  Icons.person_outline, "Full Name", _fullNameController.text),
+              Divider(
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFE2E8F0),
+                  height: 16),
+              _buildReviewRow(Icons.alternate_email, "Username",
+                  _usernameController.text),
+              Divider(
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFE2E8F0),
+                  height: 16),
+              _buildReviewRow(
+                  Icons.mail_outline, "Email", _emailController.text),
             ],
           ),
         ),
@@ -745,12 +844,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           child: Text.rich(
             TextSpan(
               text: "By creating an account, you agree to our\n",
-              style: GoogleFonts.inter(color: Colors.white54, fontSize: 11, height: 1.4),
+              style: GoogleFonts.inter(
+                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  fontSize: 11,
+                  height: 1.4),
               children: [
                 TextSpan(
                   text: "Terms of Service",
                   style: GoogleFonts.inter(
-                    color: const Color(0xFF8B5CF6),
+                    color: const Color(0xFF5B7FFF),
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -758,7 +860,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 TextSpan(
                   text: "Privacy Policy",
                   style: GoogleFonts.inter(
-                    color: const Color(0xFF8B5CF6),
+                    color: const Color(0xFF5B7FFF),
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -781,12 +883,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   Widget _buildAlreadyHaveAccountLink() {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final isDark = context.isDarkMode;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           "Already have an account? ",
-          style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
+          style: GoogleFonts.inter(
+              color: isDark ? Colors.white54 : const Color(0xFF64748B),
+              fontSize: 13),
         ),
         GestureDetector(
           onTap: () {
@@ -799,7 +904,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           child: Text(
             "Login",
             style: GoogleFonts.inter(
-              color: const Color(0xFF9B79FF),
+              color: const Color(0xFF5B7FFF),
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
@@ -810,21 +915,29 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildReviewRow(IconData icon, String label, String value) {
+    final isDark = context.isDarkMode;
     return Row(
       children: [
-        Icon(icon, color: Colors.white38, size: 20),
+        Icon(icon,
+            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+            size: 20),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: GoogleFonts.inter(color: Colors.white38, fontSize: 11),
+              style: GoogleFonts.inter(
+                  color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                  fontSize: 11),
             ),
             const SizedBox(height: 2),
             Text(
               value,
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+              style: GoogleFonts.inter(
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -833,6 +946,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildStep7() {
+    final isDark = context.isDarkMode;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -840,8 +954,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color(0xFF141D19),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF141D19)
+                  : const Color(0xFFECFDF5),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -865,7 +981,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Colors.white70,
+              color: isDark ? Colors.white70 : const Color(0xFF64748B),
               height: 1.4,
             ),
           ),
@@ -895,31 +1011,52 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final isDark = context.isDarkMode;
     final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
+    // Theme-aware colors
+    final bgColor = isDark ? const Color(0xFF080A18) : const Color(0xFFF4F8FD);
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subtitleColor = isDark ? Colors.white60 : const Color(0xFF64748B);
+    final accentColor = const Color(0xFF5B7FFF);
+    final backBtnBg = isDark ? const Color(0xFF10132A) : Colors.white;
+    final backBtnBorder = isDark ? const Color(0xFF2D3050) : const Color(0xFFE2E8F0);
+    final backBtnIconColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final dividerColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : const Color(0xFFE2E8F0);
+    final orTextColor = isDark ? Colors.white38 : const Color(0xFF94A3B8);
+    final registerLinkColor = isDark ? Colors.white54 : const Color(0xFF64748B);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF080A18),
+      backgroundColor: bgColor,
       body: Stack(
         children: [
-          // 1. Full atmospheric dark background
+          // 1. Animated atmospheric background
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFF0D0F24),
-                    Color(0xFF080A18),
-                    Color(0xFF060810),
-                  ],
-                  stops: [0.0, 0.5, 1.0],
+                  colors: isDark
+                      ? const [
+                          Color(0xFF0D0F24),
+                          Color(0xFF080A18),
+                          Color(0xFF060810),
+                        ]
+                      : const [
+                          Color(0xFFF4F8FD),
+                          Color(0xFFEEF4FB),
+                          Color(0xFFE8F0F8),
+                        ],
+                  stops: const [0.0, 0.5, 1.0],
                 ),
               ),
             ),
           ),
 
-          // 2. Animated atmospheric cloud background
+          // 2. Animated cloud painter
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _cloudController,
@@ -927,6 +1064,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 return CustomPaint(
                   painter: _AtmosphericBackgroundPainter(
                     cloudOffset: _cloudController.value,
+                    isDark: isDark,
                   ),
                 );
               },
@@ -937,27 +1075,39 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           SafeArea(
             child: Column(
               children: [
-                // ── Top: back button + mascot + title ──────────────────────
+                // ── Top hero section ──────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
                     children: [
                       const SizedBox(height: 24),
 
-                      // Back button row (signup steps >= 1)
+                      // Back button (signup steps >= 1)
                       if (_isSignUp && _signUpStep < 4)
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFF10132A),
-                              border: Border.all(color: const Color(0xFF2D3050)),
+                              color: backBtnBg,
+                              border: Border.all(color: backBtnBorder),
+                              boxShadow: isDark
+                                  ? []
+                                  : [
+                                      BoxShadow(
+                                        color: Colors.black
+                                            .withValues(alpha: 0.06),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                             ),
                             child: IconButton(
-                              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                              constraints: const BoxConstraints(
+                                  minWidth: 36, minHeight: 36),
                               padding: const EdgeInsets.all(6),
-                              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 18),
+                              icon: Icon(Icons.arrow_back,
+                                  color: backBtnIconColor, size: 18),
                               onPressed: () {
                                 if (_signUpStep > 1) {
                                   setState(() => _signUpStep--);
@@ -971,7 +1121,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       else
                         const SizedBox(height: 2),
 
-                      // HERO: Animated pigeon with orbiting sparkles
+                      // HERO: animated logo + sparkles
                       if (!isKeyboardOpen) ...[
                         AnimatedBuilder(
                           animation: Listenable.merge([
@@ -990,7 +1140,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                     clipBehavior: Clip.none,
                                     alignment: Alignment.center,
                                     children: [
-                                      // Outer glow
+                                      // Glow ring
                                       Transform.scale(
                                         scale: _glowAnimation.value,
                                         child: Container(
@@ -1000,8 +1150,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                             shape: BoxShape.circle,
                                             gradient: RadialGradient(
                                               colors: [
-                                                const Color(0xFF7C3AED).withValues(alpha: 0.32),
-                                                const Color(0xFF4F46E5).withValues(alpha: 0.14),
+                                                const Color(0xFF5B7FFF)
+                                                    .withValues(alpha: isDark ? 0.32 : 0.16),
+                                                const Color(0xFF7B5FFF)
+                                                    .withValues(alpha: isDark ? 0.14 : 0.06),
                                                 Colors.transparent,
                                               ],
                                               stops: const [0.0, 0.5, 1.0],
@@ -1018,15 +1170,23 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color: const Color(0xFF9B79FF).withValues(alpha: 0.2),
+                                              color: const Color(0xFF5B7FFF)
+                                                  .withValues(alpha: isDark ? 0.2 : 0.12),
                                               width: 1.2,
                                             ),
                                           ),
                                         ),
                                       ),
-                                       // Dove mascot – transparent via DakLogo
-                                       const DakLogo(size: 96),
-                                      // Orbiting sparkles
+                                      // App logo
+                                      ClipOval(
+                                        child: Image.asset(
+                                          'assets/logo_transparent.png',
+                                          width: 90,
+                                          height: 90,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      // Sparkles
                                       ..._buildSparkles(_sparkleController.value),
                                     ],
                                   ),
@@ -1036,14 +1196,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           },
                         ),
                         const SizedBox(height: 12),
-                        // Only show App Name and Subtitle on Login or step 1 & 2 of signup
+
                         if (!_isSignUp || _signUpStep < 3) ...[
                           Text(
                             "Pigeon",
                             style: GoogleFonts.poppins(
                               fontSize: 28,
                               fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                              color: titleColor,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -1052,69 +1212,86 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                             "Messages. Moments. Together.",
                             style: GoogleFonts.inter(
                               fontSize: 13,
-                              color: Colors.white60,
+                              color: subtitleColor,
                               letterSpacing: 0.4,
                             ),
                           ),
                         ],
-                      ],
 
-                      // Step Title + Subtitle + indicator (signup only)
-                      if (_isSignUp && _signUpStep < 4) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          "Create your account",
-                          style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF8B5CF6),
+                        // Sign-up step info
+                        if (_isSignUp && _signUpStep < 4) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            "Create your account",
+                            style: GoogleFonts.inter(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: accentColor,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _signUpStep == 1
-                              ? "Let's get started with some basic info."
-                              : _signUpStep == 2
-                                  ? "Set a strong password to secure your account."
-                                  : "Review your info and create your account.",
-                          style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 6),
-                        _buildStepIndicator(),
-                      ],
+                          const SizedBox(height: 2),
+                          Text(
+                            _signUpStep == 1
+                                ? "Let's get started with some basic info."
+                                : _signUpStep == 2
+                                    ? "Set a strong password to secure your account."
+                                    : "Review your info and create your account.",
+                            style: GoogleFonts.inter(
+                                fontSize: 13, color: subtitleColor),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          _buildStepIndicator(),
+                        ],
 
-                      // Error message
-                      if (authService.errorMessage != null && _signUpStep < 4)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(10),
-                          margin: const EdgeInsets.only(top: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.red[900]!.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.red[700]!.withValues(alpha: 0.5)),
+                        // Error message
+                        if (authService.errorMessage != null &&
+                            _signUpStep < 4)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.only(top: 6),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.red[900]!.withValues(alpha: 0.3)
+                                  : Colors.red[50],
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.red[700]!.withValues(alpha: 0.5)
+                                    : Colors.red[200]!,
+                              ),
+                            ),
+                            child: Text(
+                              authService.errorMessage!,
+                              style: GoogleFonts.inter(
+                                color: isDark
+                                    ? Colors.red[100]
+                                    : Colors.red[700],
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            authService.errorMessage!,
-                            style: GoogleFonts.inter(color: Colors.red[100], fontSize: 12),
-                          ),
-                        ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                      ],
                     ],
                   ),
                 ),
 
-                // ── Bottom: auth card fills remaining space ─────────────────
+                // ── Bottom: auth card ────────────────────────────────────
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
-                        physics: isKeyboardOpen ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
+                        physics: isKeyboardOpen
+                            ? const ClampingScrollPhysics()
+                            : const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24.0, vertical: 4.0),
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          constraints:
+                              BoxConstraints(minHeight: constraints.maxHeight),
                           child: IntrinsicHeight(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -1129,41 +1306,55 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                                   ? _buildStep3()
                                                   : _buildStep7())
                                       : Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               "Welcome back!",
                                               style: GoogleFonts.inter(
                                                 fontSize: 20,
                                                 fontWeight: FontWeight.bold,
-                                                color: const Color(0xFF9B79FF),
+                                                color: accentColor,
                                               ),
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
                                               "Login to continue your journey",
-                                              style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
+                                              style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                  color: subtitleColor),
                                             ),
                                             const SizedBox(height: 16),
-                                            _buildDarkTextField(
+                                            _buildTextField(
                                               hint: "Email or Username",
-                                              controller: _emailPhoneController,
-                                              prefixIcon: Icons.mail_outline_rounded,
+                                              controller:
+                                                  _emailPhoneController,
+                                              prefixIcon:
+                                                  Icons.mail_outline_rounded,
                                             ),
-                                            _buildDarkTextField(
+                                            _buildTextField(
                                               hint: "Password",
                                               controller: _passwordController,
-                                              prefixIcon: Icons.lock_outline_rounded,
-                                              obscureText: _obscureLoginPassword,
+                                              prefixIcon:
+                                                  Icons.lock_outline_rounded,
+                                              obscureText:
+                                                  _obscureLoginPassword,
                                               suffixIcon: IconButton(
                                                 icon: Icon(
                                                   _obscureLoginPassword
-                                                      ? Icons.visibility_outlined
-                                                      : Icons.visibility_off_outlined,
-                                                  color: Colors.white38,
+                                                      ? Icons
+                                                          .visibility_outlined
+                                                      : Icons
+                                                          .visibility_off_outlined,
+                                                  color: isDark
+                                                      ? Colors.white38
+                                                      : const Color(
+                                                          0xFF94A3B8),
                                                   size: 20,
                                                 ),
-                                                onPressed: () => setState(() => _obscureLoginPassword = !_obscureLoginPassword),
+                                                onPressed: () => setState(() =>
+                                                    _obscureLoginPassword =
+                                                        !_obscureLoginPassword),
                                               ),
                                             ),
                                             Align(
@@ -1172,19 +1363,23 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                                 onPressed: () {
                                                   Navigator.of(context).push(
                                                     MaterialPageRoute(
-                                                      builder: (context) => const ForgotPasswordScreen(),
+                                                      builder: (context) =>
+                                                          const ForgotPasswordScreen(),
                                                     ),
                                                   );
                                                 },
                                                 style: TextButton.styleFrom(
                                                   padding: EdgeInsets.zero,
-                                                  minimumSize: const Size(0, 30),
-                                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                  minimumSize:
+                                                      const Size(0, 30),
+                                                  tapTargetSize:
+                                                      MaterialTapTargetSize
+                                                          .shrinkWrap,
                                                 ),
                                                 child: Text(
                                                   "Forgot password?",
                                                   style: GoogleFonts.inter(
-                                                    color: const Color(0xFF9B79FF),
+                                                    color: accentColor,
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 13,
                                                   ),
@@ -1195,32 +1390,44 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                             _buildGradientButton(
                                               label: "Login",
                                               icon: Icons.arrow_forward,
-                                              isLoading: authService.isLoading,
+                                              isLoading:
+                                                  authService.isLoading,
                                               onPressed: _submitLogin,
                                             ),
                                             const SizedBox(height: 16),
                                             Row(
                                               children: [
-                                                Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
+                                                Expanded(
+                                                    child: Divider(
+                                                        color: dividerColor)),
                                                 Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 12.0),
                                                   child: Text(
                                                     "or continue with",
-                                                    style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+                                                    style: GoogleFonts.inter(
+                                                        color: orTextColor,
+                                                        fontSize: 12),
                                                   ),
                                                 ),
-                                                Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
+                                                Expanded(
+                                                    child: Divider(
+                                                        color: dividerColor)),
                                               ],
                                             ),
                                             const SizedBox(height: 12),
                                             _buildSocialButtons(),
                                             const SizedBox(height: 14),
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
                                               children: [
                                                 Text(
                                                   "Don't have an account? ",
-                                                  style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
+                                                  style: GoogleFonts.inter(
+                                                      color: registerLinkColor,
+                                                      fontSize: 13),
                                                 ),
                                                 GestureDetector(
                                                   onTap: () {
@@ -1233,8 +1440,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                                   child: Text(
                                                     "Register >",
                                                     style: GoogleFonts.inter(
-                                                      color: const Color(0xFF9B79FF),
-                                                      fontWeight: FontWeight.bold,
+                                                      color: accentColor,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       fontSize: 13,
                                                     ),
                                                   ),
@@ -1250,7 +1458,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           ),
                         ),
                       );
-                    }
+                    },
                   ),
                 ),
               ],
@@ -1262,28 +1470,40 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 }
 
-/// Animated custom painter for the atmospheric cloud/nebula background.
-/// Accepts [cloudOffset] (0.0–1.0, looping) to drive slow sinusoidal drift
-/// of cloud blobs — creates a living, breathing atmospheric effect.
+// ─────────────────────────────────────────────────────────────────────────────
+/// Atmospheric background painter — adapts colors for light/dark mode
+// ─────────────────────────────────────────────────────────────────────────────
 class _AtmosphericBackgroundPainter extends CustomPainter {
   final double cloudOffset;
+  final bool isDark;
 
-  _AtmosphericBackgroundPainter({required this.cloudOffset});
+  _AtmosphericBackgroundPainter({
+    required this.cloudOffset,
+    required this.isDark,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Sinusoidal drift values for cloud movement
     final drift = math.sin(cloudOffset * 2 * math.pi);
     final drift2 = math.cos(cloudOffset * 2 * math.pi);
 
-    // ── 1. Main center nebula glow (breathes with drift) ────────────────────
-    final glowAlpha = 0.42 + 0.13 * drift;
+    // Light mode: soft blue/indigo tones; dark: purple nebula
+    final c1 = isDark ? const Color(0xFF3D1F8C) : const Color(0xFF5B7FFF);
+    final c2 = isDark ? const Color(0xFF1E0F5E) : const Color(0xFF7B5FFF);
+    final c3 = isDark ? const Color(0xFF5B21B6) : const Color(0xFF5B7FFF);
+    final c4 = isDark ? const Color(0xFF1E3A8A) : const Color(0xFF3B82F6);
+    final c5 = isDark ? const Color(0xFF7C3AED) : const Color(0xFF5B7FFF);
+
+    final baseAlpha = isDark ? 0.42 : 0.08;
+
+    // Center glow
+    final glowAlpha = baseAlpha + 0.08 * drift;
     final centerGlow = Paint()
       ..shader = RadialGradient(
         colors: [
-          Color(0xFF3D1F8C).withValues(alpha: glowAlpha.clamp(0.0, 1.0)),
-          Color(0xFF1E0F5E).withValues(alpha: (glowAlpha * 0.5).clamp(0.0, 1.0)),
-          Color(0xFF0D0F24).withValues(alpha: 0.0),
+          c1.withValues(alpha: glowAlpha.clamp(0.0, 1.0)),
+          c2.withValues(alpha: (glowAlpha * 0.5).clamp(0.0, 1.0)),
+          Colors.transparent,
         ],
         stops: const [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(
@@ -1296,13 +1516,14 @@ class _AtmosphericBackgroundPainter extends CustomPainter {
       centerGlow,
     );
 
-    // ── 2. Left purple cloud (drifts right ↔ left, slightly vertical) ───────
+    // Left cloud
     final leftX = size.width * 0.08 + 28.0 * drift;
     final leftY = size.height * 0.32 + 14.0 * drift2;
     final leftCloud = Paint()
       ..shader = RadialGradient(
         colors: [
-          Color(0xFF5B21B6).withValues(alpha: (0.20 + 0.09 * drift).clamp(0.0, 1.0)),
+          c3.withValues(
+              alpha: (isDark ? 0.20 : 0.07 + 0.03 * drift).clamp(0.0, 1.0)),
           Colors.transparent,
         ],
       ).createShader(Rect.fromCircle(
@@ -1311,13 +1532,14 @@ class _AtmosphericBackgroundPainter extends CustomPainter {
       ));
     canvas.drawCircle(Offset(leftX, leftY), size.width * 0.48, leftCloud);
 
-    // ── 3. Right blue-teal cloud (opposite drift direction) ──────────────────
+    // Right cloud
     final rightX = size.width * 0.92 - 22.0 * drift;
     final rightY = size.height * 0.22 - 12.0 * drift2;
     final rightCloud = Paint()
       ..shader = RadialGradient(
         colors: [
-          Color(0xFF1E3A8A).withValues(alpha: (0.17 + 0.08 * drift2).clamp(0.0, 1.0)),
+          c4.withValues(
+              alpha: (isDark ? 0.17 : 0.06 + 0.02 * drift2).clamp(0.0, 1.0)),
           Colors.transparent,
         ],
       ).createShader(Rect.fromCircle(
@@ -1326,13 +1548,15 @@ class _AtmosphericBackgroundPainter extends CustomPainter {
       ));
     canvas.drawCircle(Offset(rightX, rightY), size.width * 0.42, rightCloud);
 
-    // ── 4. Small bottom-left accent cloud (adds depth) ───────────────────────
+    // Bottom accent cloud
     final accentX = size.width * 0.22 + 18.0 * drift2;
     final accentY = size.height * 0.72 + 8.0 * drift;
     final accentCloud = Paint()
       ..shader = RadialGradient(
         colors: [
-          Color(0xFF7C3AED).withValues(alpha: (0.11 + 0.06 * drift.abs()).clamp(0.0, 1.0)),
+          c5.withValues(
+              alpha: (isDark ? 0.11 : 0.05 + 0.03 * drift.abs())
+                  .clamp(0.0, 1.0)),
           Colors.transparent,
         ],
       ).createShader(Rect.fromCircle(
@@ -1341,22 +1565,21 @@ class _AtmosphericBackgroundPainter extends CustomPainter {
       ));
     canvas.drawCircle(Offset(accentX, accentY), size.width * 0.32, accentCloud);
 
-    // ── 5. Bottom fade-out (merges into page background) ────────────────────
+    // Bottom fade
+    final fadeColors = isDark
+        ? [Colors.transparent, const Color(0x99080A18), const Color(0xFF080A18)]
+        : [Colors.transparent, const Color(0x22EEF4FB), const Color(0xFFE8F0F8)];
     final fadeOut = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          Colors.transparent,
-          Color(0x99080A18),
-          Color(0xFF080A18),
-        ],
-        stops: [0.42, 0.75, 1.0],
+        colors: fadeColors,
+        stops: const [0.42, 0.75, 1.0],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), fadeOut);
   }
 
   @override
   bool shouldRepaint(_AtmosphericBackgroundPainter old) =>
-      old.cloudOffset != cloudOffset;
+      old.cloudOffset != cloudOffset || old.isDark != isDark;
 }

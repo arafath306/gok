@@ -341,95 +341,97 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         // Author Header Info Row
-                                        Row(
-                                          children: [
-                                            Flexible(
-                                              fit: FlexFit.loose,
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
-                                                    ),
-                                                  );
-                                                },
-                                                child: Text(
-                                                  author.fullName,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.clip,
-                                                  style: GoogleFonts.hindSiliguri(
-                                                    fontWeight: FontWeight.w700,
-                                                    fontSize: 14.5,
-                                                    color: context.textPrimary,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            if (author.isVerified) ...[
-                                              const SizedBox(width: 4),
-                                              const Icon(
-                                                Icons.verified,
-                                                color: Colors.blue,
-                                                size: 15,
-                                              ),
-                                            ],
-                                            const SizedBox(width: 6),
-                                            Flexible(
-                                              fit: FlexFit.loose,
-                                              child: Text(
-                                                "@${author.username}",
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 12.5,
-                                                  color: context.textSecondary,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              "· ${comment['created_at']}",
-                                              style: GoogleFonts.inter(
-                                                fontSize: 12.5,
-                                                color: context.textSecondary,
-                                              ),
-                                            ),
-                                            if (isPostAuthor) ...[
-                                              const SizedBox(width: 6),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFF1E824C).withOpacity(0.1),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                ),
-                                                child: Text(
-                                                  "Author",
-                                                  style: GoogleFonts.inter(
-                                                    color: const Color(0xFF1E824C),
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                            const Spacer(),
-                                            IconButton(
-                                              icon: Icon(Icons.more_horiz, size: 18, color: context.textSecondary),
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(),
-                                              onPressed: () => _showQuickActions(context, comment, dbService),
-                                            ),
-                                          ],
-                                        ),
+                                         Row(
+                                           children: [
+                                             Expanded(
+                                               child: GestureDetector(
+                                                 onTap: () {
+                                                   final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
+                                                   Navigator.push(
+                                                     context,
+                                                     MaterialPageRoute(
+                                                       builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
+                                                     ),
+                                                   );
+                                                 },
+                                                 child: Text.rich(
+                                                   TextSpan(
+                                                     children: [
+                                                       TextSpan(
+                                                         text: author.fullName,
+                                                         style: GoogleFonts.hindSiliguri(
+                                                           fontWeight: FontWeight.w700,
+                                                           fontSize: 15.5,
+                                                           color: context.textPrimary,
+                                                         ),
+                                                       ),
+                                                       if (author.isVerified)
+                                                         const WidgetSpan(
+                                                           alignment: PlaceholderAlignment.middle,
+                                                           child: Padding(
+                                                             padding: EdgeInsets.only(left: 4),
+                                                             child: Icon(
+                                                               Icons.verified,
+                                                               color: Colors.blue,
+                                                               size: 15,
+                                                             ),
+                                                           ),
+                                                         ),
+                                                       TextSpan(
+                                                         text: ' @${author.username}',
+                                                         style: GoogleFonts.inter(
+                                                           fontSize: 13.5,
+                                                           color: context.textSecondary,
+                                                         ),
+                                                       ),
+                                                       TextSpan(
+                                                         text: ' · ${comment['created_at']}',
+                                                         style: GoogleFonts.inter(
+                                                           fontSize: 13.5,
+                                                           color: context.textSecondary,
+                                                         ),
+                                                       ),
+                                                     ],
+                                                   ),
+                                                   maxLines: 1,
+                                                   overflow: TextOverflow.ellipsis,
+                                                 ),
+                                               ),
+                                             ),
+                                             if (isPostAuthor) ...[
+                                               const SizedBox(width: 6),
+                                               Container(
+                                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                 decoration: BoxDecoration(
+                                                   color: const Color(0xFF1E824C).withOpacity(0.1),
+                                                   borderRadius: BorderRadius.circular(4),
+                                                 ),
+                                                 child: Text(
+                                                   "Author",
+                                                   style: GoogleFonts.inter(
+                                                     color: const Color(0xFF1E824C),
+                                                     fontSize: 10,
+                                                     fontWeight: FontWeight.bold,
+                                                   ),
+                                                 ),
+                                               ),
+                                             ],
+                                             const SizedBox(width: 8),
+                                             IconButton(
+                                               icon: Icon(Icons.more_horiz, size: 18, color: context.textSecondary),
+                                               padding: EdgeInsets.zero,
+                                               constraints: const BoxConstraints(),
+                                               onPressed: () => _showQuickActions(context, comment, dbService),
+                                             ),
+                                           ],
+                                         ),
                                         const SizedBox(height: 4),
 
                                         // Content Text
                                         Text(
                                           comment['content'] as String,
                                           style: GoogleFonts.hindSiliguri(
-                                            fontSize: 14,
+                                            fontSize: 15.5,
                                             color: context.textPrimary,
                                             height: 1.45,
                                           ),

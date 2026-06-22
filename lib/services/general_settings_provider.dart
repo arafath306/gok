@@ -502,7 +502,8 @@ class GeneralSettingsProvider with ChangeNotifier {
   }
 
   // Theme Settings
-  bool _isDarkTheme = true; // Default to true (AMOLED dark)
+  bool _isDarkTheme = false; // Default to light (consistent with onboarding)
+
   bool get isDarkTheme => _isDarkTheme;
 
   ThemeMode get themeMode => _isDarkTheme ? ThemeMode.dark : ThemeMode.light;
