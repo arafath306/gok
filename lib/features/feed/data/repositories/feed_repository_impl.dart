@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../../../core/error/failures.dart';
 import '../../../../models/profile.dart';
+import '../../../../models/poll_option.dart';
 import '../../domain/entities/thread_post_entity.dart';
 import '../../domain/repositories/feed_repository.dart';
 import '../datasources/feed_remote_data_source.dart';
@@ -146,9 +147,24 @@ class FeedRepositoryImpl implements IFeedRepository {
   }
 
   @override
-  Future<Either<Failure, bool>> createThread(String content, {List<String>? imageUrls, String? videoUrl, String? audience}) async {
+  Future<Either<Failure, bool>> createThread(
+    String content, {
+    List<String>? imageUrls,
+    String? videoUrl,
+    String? audience,
+    List<String>? pollOptions,
+    DateTime? pollExpiresAt,
+  }) async {
     try {
-      final result = await remoteDataSource.createThread(_currentUid, content, imageUrls: imageUrls, videoUrl: videoUrl, audience: audience);
+      final result = await remoteDataSource.createThread(
+        _currentUid,
+        content,
+        imageUrls: imageUrls,
+        videoUrl: videoUrl,
+        audience: audience,
+        pollOptions: pollOptions,
+        pollExpiresAt: pollExpiresAt,
+      );
       return Right(result);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -386,6 +402,25 @@ class FeedRepositoryImpl implements IFeedRepository {
       }
     }
 
+    // Parse Poll Votes
+    final votesList = json['poll_votes'] as List<dynamic>?;
+    final isVoted = _currentUid.isNotEmpty && votesList != null &&
+        votesList.any((vote) => vote['user_id'] == _currentUid);
+    final votedOptId = isVoted
+        ? votesList.firstWhere((vote) => vote['user_id'] == _currentUid)['poll_option_id'] as String?
+        : null;
+
+    // Parse Poll Options
+    List<PollOption>? parsedPollOptions;
+    if (json['poll_options'] != null) {
+      parsedPollOptions = (json['poll_options'] as List)
+          .map((opt) => PollOption.fromJson(opt as Map<String, dynamic>, votesList: votesList))
+          .toList();
+    }
+
+    final expiresAtStr = json['poll_expires_at'] as String?;
+    final expiresAt = expiresAtStr != null ? DateTime.parse(expiresAtStr).toLocal() : null;
+
     return ThreadPostEntity(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -411,6 +446,10 @@ class FeedRepositoryImpl implements IFeedRepository {
           ? _mapToEntity(json['reposted_post'] as Map<String, dynamic>)
           : null,
       quoteText: json['quote_text'] as String?,
+      pollOptions: parsedPollOptions,
+      pollExpiresAt: expiresAt,
+      hasVotedPoll: isVoted,
+      votedOptionId: votedOptId,
     );
   }
 

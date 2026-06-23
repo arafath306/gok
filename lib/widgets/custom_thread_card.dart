@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
@@ -209,7 +210,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               CircleAvatar(
                 radius: 10,
                 backgroundImage: origPost.author.avatarUrl != null && origPost.author.avatarUrl!.isNotEmpty
-                    ? NetworkImage(origPost.author.avatarUrl!)
+                    ? CachedNetworkImageProvider(origPost.author.avatarUrl!)
                     : null,
                 child: origPost.author.avatarUrl == null || origPost.author.avatarUrl!.isEmpty
                     ? const Icon(Icons.person, size: 10)
@@ -258,42 +259,44 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
 
     final isVerified = post.author.isVerified;
 
-    return InkWell(
-      hoverColor: Colors.transparent,
-      onTap: () {
-        final targetPost = (post.isRepost && (post.quoteText == null || post.quoteText!.isEmpty)) 
-            ? post.repostedPost! 
-            : post;
-        Navigator.push(
-          context,
-          NoTransitionPageRoute(
-            child: ThreadDetailScreen(post: targetPost),
-          ),
-        );
-      },
-      onLongPress: () => _showQuickActions(context, dbService, post),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildLeftColumn(context, dbService, post),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: _buildRightColumn(context, dbService, post, isVerified),
+    return RepaintBoundary(
+      child: InkWell(
+        hoverColor: Colors.transparent,
+        onTap: () {
+          final targetPost = (post.isRepost && (post.quoteText == null || post.quoteText!.isEmpty)) 
+              ? post.repostedPost! 
+              : post;
+          Navigator.push(
+            context,
+            NoTransitionPageRoute(
+              child: ThreadDetailScreen(post: targetPost),
+            ),
+          );
+        },
+        onLongPress: () => _showQuickActions(context, dbService, post),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildLeftColumn(context, dbService, post),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: _buildRightColumn(context, dbService, post, isVerified),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          Divider(height: 1, thickness: 0.5, color: context.border),
-        ],
+            Divider(height: 1, thickness: 0.5, color: context.border),
+          ],
+        ),
       ),
     );
   }
@@ -310,7 +313,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               radius: 20,
               backgroundColor: Colors.grey[800],
               backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
-                  ? NetworkImage(post.author.avatarUrl!)
+                  ? CachedNetworkImageProvider(post.author.avatarUrl!)
                   : null,
               child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
                   ? const Icon(Icons.person, size: 20, color: Colors.white54)
@@ -351,7 +354,11 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
         ),
         child: ClipOval(
           child: avatarUrl != null && avatarUrl.isNotEmpty
-              ? Image.network(avatarUrl, fit: BoxFit.cover)
+              ? CachedNetworkImage(
+                  imageUrl: avatarUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
+                )
               : Container(color: const Color(0xFF1E824C)),
         ),
       );
@@ -375,7 +382,11 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 ),
                 child: ClipOval(
                   child: avatarUrl0 != null && avatarUrl0.isNotEmpty
-                      ? Image.network(avatarUrl0, fit: BoxFit.cover)
+                      ? CachedNetworkImage(
+                          imageUrl: avatarUrl0,
+                          fit: BoxFit.cover,
+                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
+                        )
                       : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
@@ -392,7 +403,11 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 ),
                 child: ClipOval(
                   child: avatarUrl1 != null && avatarUrl1.isNotEmpty
-                      ? Image.network(avatarUrl1, fit: BoxFit.cover)
+                      ? CachedNetworkImage(
+                          imageUrl: avatarUrl1,
+                          fit: BoxFit.cover,
+                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
+                        )
                       : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
@@ -421,7 +436,11 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 ),
                 child: ClipOval(
                   child: avatarUrl0 != null && avatarUrl0.isNotEmpty
-                      ? Image.network(avatarUrl0, fit: BoxFit.cover)
+                      ? CachedNetworkImage(
+                          imageUrl: avatarUrl0,
+                          fit: BoxFit.cover,
+                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
+                        )
                       : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
@@ -438,7 +457,11 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 ),
                 child: ClipOval(
                   child: avatarUrl1 != null && avatarUrl1.isNotEmpty
-                      ? Image.network(avatarUrl1, fit: BoxFit.cover)
+                      ? CachedNetworkImage(
+                          imageUrl: avatarUrl1,
+                          fit: BoxFit.cover,
+                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
+                        )
                       : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
@@ -455,7 +478,11 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 ),
                 child: ClipOval(
                   child: avatarUrl2 != null && avatarUrl2.isNotEmpty
-                      ? Image.network(avatarUrl2, fit: BoxFit.cover)
+                      ? CachedNetworkImage(
+                          imageUrl: avatarUrl2,
+                          fit: BoxFit.cover,
+                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
+                        )
                       : Container(color: const Color(0xFF1E824C)),
                 ),
               ),
@@ -607,6 +634,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
           ),
         ],
+        _buildPollSection(context, dbService, post),
         const SizedBox(height: 10),
         (() {
           final targetPost = post.isRepost && post.repostedPost != null ? post.repostedPost! : post;
@@ -749,6 +777,218 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
       ],
     );
   }
+
+  Widget _buildPollSection(BuildContext context, DatabaseService dbService, ThreadPost post) {
+    final options = post.pollOptions;
+    if (options == null || options.isEmpty) return const SizedBox.shrink();
+
+    final totalVotes = post.totalPollVotes;
+    final isExpired = post.isPollExpired;
+    final hasVoted = post.hasVotedPoll;
+    final votedOptionId = post.votedOptionId;
+    final showResults = isExpired || hasVoted;
+
+    // Find the winning option(s) (highest votes)
+    int maxVotes = 0;
+    for (var opt in options) {
+      if (opt.votesCount > maxVotes) {
+        maxVotes = opt.votesCount;
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10, bottom: 4),
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...options.map((option) {
+            final double percent = totalVotes > 0 ? (option.votesCount / totalVotes) : 0.0;
+            final isWinner = showResults && option.votesCount == maxVotes && maxVotes > 0;
+            final isUserChoice = showResults && option.id == votedOptionId;
+
+            if (showResults) {
+              // --- Voted or Expired view: Animate progress bars ---
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5.0),
+                child: Container(
+                  height: 38,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isWinner 
+                          ? Colors.blue.withOpacity(0.3) 
+                          : context.border,
+                      width: isWinner ? 1.2 : 0.8,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Stack(
+                      children: [
+                        // Progress fill animation
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0.0, end: percent),
+                          duration: const Duration(milliseconds: 700),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, val, child) {
+                            return FractionallySizedBox(
+                              widthFactor: val,
+                              heightFactor: 1.0,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isWinner
+                                        ? [Colors.blue.withOpacity(0.25), Colors.blue.withOpacity(0.15)]
+                                        : [context.textSecondary.withOpacity(0.12), context.textSecondary.withOpacity(0.08)],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        // Label & stats row
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        option.optionText,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13.5,
+                                          fontWeight: isWinner ? FontWeight.w700 : FontWeight.w500,
+                                          color: isWinner 
+                                              ? (context.isDarkMode ? Colors.blue[300] : Colors.blue[900])
+                                              : context.textPrimary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (isUserChoice) ...[
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: context.isDarkMode ? Colors.blue[300] : Colors.blue[600],
+                                        size: 15,
+                                      ),
+                                    ]
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '${(percent * 100).toStringAsFixed(1)}%',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  fontWeight: isWinner ? FontWeight.w700 : FontWeight.w600,
+                                  color: isWinner 
+                                      ? (context.isDarkMode ? Colors.blue[300] : Colors.blue[900])
+                                      : context.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              // --- Active & Not Voted view: Interactive pill-shaped buttons ---
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5.5),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => dbService.votePoll(post.id, option.id),
+                    borderRadius: BorderRadius.circular(20),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: context.border,
+                          width: 0.9,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        option.optionText,
+                        style: GoogleFonts.inter(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+          }),
+          const SizedBox(height: 6),
+          // Metadata row
+          Row(
+            children: [
+              Text(
+                '$totalVotes ${totalVotes == 1 ? "vote" : "votes"}',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: context.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 3.5,
+                height: 3.5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: context.textMuted.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _getPollDurationString(post.pollExpiresAt),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: context.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getPollDurationString(DateTime? expiresAt) {
+    if (expiresAt == null) return "Unknown duration";
+    final now = DateTime.now();
+    if (now.isAfter(expiresAt)) {
+      return "Final results";
+    }
+    final diff = expiresAt.difference(now);
+    if (diff.inDays >= 1) {
+      return "${diff.inDays}d left";
+    }
+    if (diff.inHours >= 1) {
+      return "${diff.inHours}h left";
+    }
+    if (diff.inMinutes >= 1) {
+      return "${diff.inMinutes}m left";
+    }
+    return "Less than a minute left";
+  }
 }
 
 // ─── Quick Actions Bottom Sheet (Twitter/X Style) ─────────────────────────────
@@ -862,10 +1102,11 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
         icon: Icons.sentiment_dissatisfied_outlined,
         label: 'Not interested in this post',
         onTap: () async {
+          final parentCtx = widget.parentContext;
           Navigator.pop(context);
           final success = await widget.dbService.hideThreadForCurrentUser(widget.post.id);
-          if (success && mounted) {
-            _showSuccessSnackBar(context, 'Post hidden from your feed',
+          if (success && parentCtx.mounted) {
+            _showSuccessSnackBar(parentCtx, 'Post hidden from your feed',
                 undoLabel: 'Undo', onUndo: () async {
                   await widget.dbService.unhideThreadForCurrentUser(widget.post.id);
                 });
@@ -878,12 +1119,13 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
             : Icons.person_add_alt_1_outlined,
         label: _isFollowing ? 'Unfollow @$username' : 'Follow @$username',
         onTap: () async {
+          final parentCtx = widget.parentContext;
           final wasFollowing = _isFollowing;
           Navigator.pop(context);
           await widget.dbService.toggleFollowUser(widget.post.userId);
-          if (mounted) {
+          if (parentCtx.mounted) {
             _showSuccessSnackBar(
-              context,
+              parentCtx,
               wasFollowing
                   ? 'You unfollowed @$username'
                   : 'You are now following @$username',
@@ -903,9 +1145,10 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
         icon: _isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
         label: _isMuted ? 'Unmute @$username' : 'Mute @$username',
         onTap: () async {
+          final parentCtx = widget.parentContext;
           final wasMuted = _isMuted;
+          final settingsProvider = Provider.of<GeneralSettingsProvider>(parentCtx, listen: false);
           Navigator.pop(context);
-          final settingsProvider = Provider.of<GeneralSettingsProvider>(context, listen: false);
           if (wasMuted) {
             await settingsProvider.unmuteAccount(widget.post.userId);
           } else {
@@ -913,9 +1156,9 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
           }
           await widget.dbService.fetchBlockedMutedLists();
           await widget.dbService.fetchFeed();
-          if (mounted) {
+          if (parentCtx.mounted) {
             _showSuccessSnackBar(
-              context,
+              parentCtx,
               wasMuted ? '@$username unmuted' : '@$username has been muted',
               undoLabel: 'Undo',
               onUndo: () async {
@@ -936,8 +1179,9 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
         label: _isBlocked ? 'Unblock @$username' : 'Block @$username',
         isDanger: true,
         onTap: () {
+          final parentCtx = widget.parentContext;
           Navigator.pop(context);
-          _showBlockConfirm(context, username);
+          _showBlockConfirm(parentCtx, username);
         },
       ),
       _QuickActionItem(
@@ -945,8 +1189,9 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
         label: 'Report post',
         isDanger: true,
         onTap: () {
+          final parentCtx = widget.parentContext;
           Navigator.pop(context);
-          _showReportSheet(context);
+          _showReportSheet(parentCtx);
         },
       ),
     ];
@@ -1132,6 +1377,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                       onTap: () async {
                         Navigator.pop(reportCtx);
                         final success = await widget.dbService.reportPost(widget.post.id, reason);
+                        if (!ctx.mounted) return;
                         if (success) {
                           _showSuccessSnackBar(
                             ctx,
@@ -1298,7 +1544,7 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
               if (newText.isNotEmpty) {
                 Navigator.pop(dialogCtx);
                 final success = await widget.dbService.editRepost(post.id, newText);
-                if (success) {
+                if (success && ctx.mounted) {
                   _showSuccessSnackBar(ctx, "Quote updated successfully");
                 }
               }
@@ -1334,9 +1580,8 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
             onPressed: () async {
               Navigator.pop(dialogCtx);
               final success = await widget.dbService.deletePost(widget.post.id);
-              if (!mounted) return;
-              if (success) {
-                _showSuccessSnackBar(context, 'Post deleted successfully');
+              if (success && ctx.mounted) {
+                _showSuccessSnackBar(ctx, 'Post deleted successfully');
               }
             },
             style: ElevatedButton.styleFrom(
@@ -1391,10 +1636,11 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
           label: 'Remove repost',
           isDanger: true,
           onTap: () async {
+            final parentCtx = widget.parentContext;
             Navigator.pop(context);
             final success = await widget.dbService.deleteRepost(widget.post.id, widget.post.repostedPost?.id ?? '');
-            if (success) {
-              _showSuccessSnackBar(widget.parentContext, 'Repost removed');
+            if (success && parentCtx.mounted) {
+              _showSuccessSnackBar(parentCtx, 'Repost removed');
             }
           },
         ),
@@ -1402,11 +1648,12 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
           icon: isMuted ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
           label: isMuted ? 'Unmute notifications' : 'Mute notifications for this post',
           onTap: () async {
+            final parentCtx = widget.parentContext;
             Navigator.pop(context);
             final success = await widget.dbService.toggleMutePostNotifications(widget.post.id, !isMuted);
-            if (success) {
+            if (success && parentCtx.mounted) {
               _showSuccessSnackBar(
-                widget.parentContext,
+                parentCtx,
                 isMuted ? 'Notifications unmuted' : 'Notifications muted for this post',
               );
             }
@@ -1428,11 +1675,12 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
           icon: isPinned ? Icons.push_pin : Icons.push_pin_outlined,
           label: isPinned ? 'Unpin from profile' : 'Pin to profile',
           onTap: () async {
+            final parentCtx = widget.parentContext;
             Navigator.pop(context);
             final success = await widget.dbService.togglePinPost(widget.post.id, !isPinned);
-            if (success) {
+            if (success && parentCtx.mounted) {
               _showSuccessSnackBar(
-                widget.parentContext,
+                parentCtx,
                 isPinned ? 'Post unpinned from profile' : 'Post pinned to profile',
               );
             }
@@ -1442,11 +1690,12 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
           icon: isMuted ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
           label: isMuted ? 'Unmute notifications' : 'Mute notifications for this post',
           onTap: () async {
+            final parentCtx = widget.parentContext;
             Navigator.pop(context);
             final success = await widget.dbService.toggleMutePostNotifications(widget.post.id, !isMuted);
-            if (success) {
+            if (success && parentCtx.mounted) {
               _showSuccessSnackBar(
-                widget.parentContext,
+                parentCtx,
                 isMuted ? 'Notifications unmuted' : 'Notifications muted for this post',
               );
             }
@@ -1464,11 +1713,12 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
           icon: isHiddenFromProfile ? Icons.visibility_outlined : Icons.visibility_off_outlined,
           label: isHiddenFromProfile ? 'Show on profile' : 'Hide from my profile',
           onTap: () async {
+            final parentCtx = widget.parentContext;
             Navigator.pop(context);
             final success = await widget.dbService.toggleHidePostFromProfile(widget.post.id, !isHiddenFromProfile);
-            if (success) {
+            if (success && parentCtx.mounted) {
               _showSuccessSnackBar(
-                widget.parentContext,
+                parentCtx,
                 isHiddenFromProfile ? 'Post is now visible on your profile' : 'Post hidden from your profile feed',
               );
             }
@@ -1729,9 +1979,12 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
                                 });
                               },
                               secondary: CircleAvatar(
-                                backgroundImage: NetworkImage(
-                                  friend.avatarUrl ?? "",
-                                ),
+                                backgroundImage: (friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty)
+                                    ? CachedNetworkImageProvider(friend.avatarUrl!)
+                                    : null,
+                                child: (friend.avatarUrl == null || friend.avatarUrl!.isEmpty)
+                                    ? const Icon(Icons.person)
+                                    : null,
                               ),
                               title: Text(
                                 friend.fullName,

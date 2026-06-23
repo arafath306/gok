@@ -930,7 +930,6 @@ class _AtmosphericBackgroundPainter extends CustomPainter {
     final c2 = isDark ? const Color(0xFF1E0F5E) : const Color(0xFF7B5FFF);
     final c3 = isDark ? const Color(0xFF5B21B6) : const Color(0xFF5B7FFF);
     final c4 = isDark ? const Color(0xFF1E3A8A) : const Color(0xFF3B82F6);
-    final c5 = isDark ? const Color(0xFF7C3AED) : const Color(0xFF5B7FFF);
 
     final baseAlpha = isDark ? 0.42 : 0.08;
 

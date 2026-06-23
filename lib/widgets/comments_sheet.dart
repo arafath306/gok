@@ -1062,6 +1062,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                   widget.onCommentEdited!(commentId, newContent);
                 }
                 final success = await widget.dbService.editComment(commentId, newContent);
+                if (!ctx.mounted) return;
                 if (success) {
                   _showSuccessSnackBar(ctx, "Comment updated successfully");
                 }
@@ -1104,6 +1105,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
               final threadId = widget.comment['thread_id'] as String? ?? '';
               final parentId = widget.comment['parent_id'] as String?;
               final success = await widget.dbService.deleteComment(commentId, threadId, parentId: parentId);
+              if (!ctx.mounted) return;
               if (success) {
                 _showSuccessSnackBar(ctx, 'Comment deleted successfully');
               }
@@ -1410,7 +1412,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                       onTap: () async {
                         Navigator.pop(reportCtx);
                         await widget.dbService.reportComment(commentId, reason);
-                        if (!mounted) return;
+                        if (!ctx.mounted) return;
                         _showSuccessSnackBar(
                           ctx,
                           'Report submitted. Thank you for helping keep Pigeon safe.',

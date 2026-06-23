@@ -257,14 +257,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     }
 
     // Navigate to the thread
-    if (context.mounted) {
-      final post = await _fetchPost(db, threadId);
-      if (post != null && context.mounted) {
-        Navigator.push(
-          context,
-          NoTransitionPageRoute(child: ThreadDetailScreen(post: post)),
-        );
-      }
+    if (!mounted) return;
+    final post = await _fetchPost(db, threadId);
+    if (!mounted) return;
+    if (post != null) {
+      Navigator.push(
+        context,
+        NoTransitionPageRoute(child: ThreadDetailScreen(post: post)),
+      );
     }
   }
 

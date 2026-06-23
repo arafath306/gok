@@ -6,7 +6,21 @@ class CreateThreadUseCase {
 
   CreateThreadUseCase(this.repository);
 
-  Future<Either<Failure, bool>> call(String content, {List<String>? imageUrls, String? videoUrl, String? audience}) {
-    return repository.createThread(content, imageUrls: imageUrls, videoUrl: videoUrl, audience: audience);
+  Future<Either<Failure, bool>> call(
+    String content, {
+    List<String>? imageUrls,
+    String? videoUrl,
+    String? audience,
+    List<String>? pollOptions,
+    DateTime? pollExpiresAt,
+  }) {
+    return repository.createThread(
+      content,
+      imageUrls: imageUrls,
+      videoUrl: videoUrl,
+      audience: audience,
+      pollOptions: pollOptions,
+      pollExpiresAt: pollExpiresAt,
+    );
   }
 }

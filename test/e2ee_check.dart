@@ -35,7 +35,7 @@ void main() {
 
     for (final table in tables) {
       try {
-        final res = await supabase.from(table).select('id').limit(1).maybeSingle();
+        await supabase.from(table).select('id').limit(1).maybeSingle();
         print('  - Table "$table": EXISTS (Query success)');
       } catch (e) {
         print('  - Table "$table": ❌ ERROR/MISSING: $e');

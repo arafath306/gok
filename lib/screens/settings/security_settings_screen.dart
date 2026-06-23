@@ -362,6 +362,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         if (email != null && authService.currentUid != 'mock_uid') {
                           // Try to verify old password by logging in
                           final oldPassCorrect = await authService.handleLogin(email, oldPass);
+                          if (!ctx.mounted) return;
                           if (!oldPassCorrect) {
                             setModalState(() => isLoading = false);
                             _showToast(ctx, authService.errorMessage ?? 'Incorrect old password.');
@@ -370,12 +371,13 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
                           // Correct! Now update the password
                           final success = await authService.updatePassword(newPass);
+                          if (!ctx.mounted) return;
                           if (success) {
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(ctx).showSnackBar(
                               SnackBar(
                                 content: const Text('Password updated successfully! Please log in again.'),
-                                backgroundColor: context.primaryAccent,
+                                backgroundColor: ctx.primaryAccent,
                               ),
                             );
                           } else {
@@ -385,12 +387,13 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         } else {
                           // Mock success (e.g. bypassed login or testing)
                           await Future.delayed(const Duration(seconds: 1));
+                          if (!ctx.mounted) return;
                           setModalState(() => isLoading = false);
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             SnackBar(
                               content: const Text('Password updated (Mock Success).'),
-                              backgroundColor: context.primaryAccent,
+                              backgroundColor: ctx.primaryAccent,
                             ),
                           );
                         }

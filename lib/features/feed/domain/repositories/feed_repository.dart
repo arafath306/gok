@@ -1,5 +1,4 @@
 import '../../../../core/error/failures.dart';
-import '../../../../models/profile.dart';
 import '../entities/thread_post_entity.dart';
 
 abstract class IFeedRepository {
@@ -8,7 +7,14 @@ abstract class IFeedRepository {
   Future<Either<Failure, List<ThreadPostEntity>>> fetchUserThreads(String userId);
   Future<Either<Failure, List<ThreadPostEntity>>> fetchUserRepliedThreads(String userId);
   Future<Either<Failure, List<Map<String, dynamic>>>> fetchThreadReactors(String threadId);
-  Future<Either<Failure, bool>> createThread(String content, {List<String>? imageUrls, String? videoUrl, String? audience});
+  Future<Either<Failure, bool>> createThread(
+    String content, {
+    List<String>? imageUrls,
+    String? videoUrl,
+    String? audience,
+    List<String>? pollOptions,
+    DateTime? pollExpiresAt,
+  });
   Future<Either<Failure, void>> toggleLike(String threadId, bool shouldLike);
   Future<Either<Failure, bool>> togglePinPost(String threadId, bool isPinned);
   Future<Either<Failure, bool>> toggleMutePostNotifications(String threadId, bool mute);

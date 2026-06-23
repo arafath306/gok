@@ -547,16 +547,18 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                             'status': 'pending',
                           });
 
+                          if (!ctx.mounted) return;
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             SnackBar(
                               content: const Text('Your query has been submitted directly to the Admin Dashboard!'),
-                              backgroundColor: context.primaryAccent,
+                              backgroundColor: ctx.primaryAccent,
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
                         } catch (e) {
                           setModalState(() => isSubmitting = false);
+                          if (!ctx.mounted) return;
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             SnackBar(
                               content: Text('Failed to submit ticket: ${e.toString()}'),

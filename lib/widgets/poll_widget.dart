@@ -1,0 +1,229 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../models/thread_post.dart';
+import '../services/database_service.dart';
+import '../utils/app_theme.dart';
+
+class PollWidget extends StatelessWidget {
+  final ThreadPost post;
+  final DatabaseService dbService;
+
+  const PollWidget({
+    super.key,
+    required this.post,
+    required this.dbService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final options = post.pollOptions;
+    if (options == null || options.isEmpty) return const SizedBox.shrink();
+
+    final totalVotes = post.totalPollVotes;
+    final isExpired = post.isPollExpired;
+    final hasVoted = post.hasVotedPoll;
+    final votedOptionId = post.votedOptionId;
+    final showResults = isExpired || hasVoted;
+
+    // Find the winning option(s) (highest votes)
+    int maxVotes = 0;
+    for (var opt in options) {
+      if (opt.votesCount > maxVotes) {
+        maxVotes = opt.votesCount;
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10, bottom: 4),
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...options.map((option) {
+            final double percent = totalVotes > 0 ? (option.votesCount / totalVotes) : 0.0;
+            final isWinner = showResults && option.votesCount == maxVotes && maxVotes > 0;
+            final isUserChoice = showResults && option.id == votedOptionId;
+
+            if (showResults) {
+              // --- Voted or Expired view: Animate progress bars ---
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5.0),
+                child: Container(
+                  height: 38,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isWinner 
+                          ? Colors.blue.withOpacity(0.3) 
+                          : context.border,
+                      width: isWinner ? 1.2 : 0.8,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Stack(
+                      children: [
+                        // Progress fill animation
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0.0, end: percent),
+                          duration: const Duration(milliseconds: 700),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, val, child) {
+                            return FractionallySizedBox(
+                              widthFactor: val,
+                              heightFactor: 1.0,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isWinner
+                                        ? [Colors.blue.withOpacity(0.25), Colors.blue.withOpacity(0.15)]
+                                        : [context.textSecondary.withOpacity(0.12), context.textSecondary.withOpacity(0.08)],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        // Label & stats row
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        option.optionText,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13.5,
+                                          fontWeight: isWinner ? FontWeight.w700 : FontWeight.w500,
+                                          color: isWinner 
+                                              ? (context.isDarkMode ? Colors.blue[300] : Colors.blue[900])
+                                              : context.textPrimary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (isUserChoice) ...[
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: context.isDarkMode ? Colors.blue[300] : Colors.blue[600],
+                                        size: 15,
+                                      ),
+                                    ]
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '${(percent * 100).toStringAsFixed(1)}%',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  fontWeight: isWinner ? FontWeight.w700 : FontWeight.w600,
+                                  color: isWinner 
+                                      ? (context.isDarkMode ? Colors.blue[300] : Colors.blue[900])
+                                      : context.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              // --- Active & Not Voted view: Interactive pill-shaped buttons ---
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5.5),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => dbService.votePoll(post.id, option.id),
+                    borderRadius: BorderRadius.circular(20),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: context.border,
+                          width: 0.9,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        option.optionText,
+                        style: GoogleFonts.inter(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+          }),
+          const SizedBox(height: 6),
+          // Metadata row
+          Row(
+            children: [
+              Text(
+                '$totalVotes ${totalVotes == 1 ? "vote" : "votes"}',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: context.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 3.5,
+                height: 3.5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: context.textMuted.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _getPollDurationString(post.pollExpiresAt),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: context.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getPollDurationString(DateTime? expiresAt) {
+    if (expiresAt == null) return "Unknown duration";
+    final now = DateTime.now();
+    if (now.isAfter(expiresAt)) {
+      return "Final results";
+    }
+    final diff = expiresAt.difference(now);
+    if (diff.inDays >= 1) {
+      return "${diff.inDays}d left";
+    }
+    if (diff.inHours >= 1) {
+      return "${diff.inHours}h left";
+    }
+    if (diff.inMinutes >= 1) {
+      return "${diff.inMinutes}m left";
+    }
+    return "Less than a minute left";
+  }
+}

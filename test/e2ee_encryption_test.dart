@@ -11,7 +11,6 @@ void main() {
       // 1. Simulate Alice generating her key pair
       final aliceKeyPair = await keyExchangeAlgorithm.newKeyPair();
       final alicePublicKey = await aliceKeyPair.extractPublicKey();
-      final alicePrivateKeyBytes = await aliceKeyPair.extractPrivateKeyBytes();
 
       // 2. Simulate Bob generating his key pair
       final bobKeyPair = await keyExchangeAlgorithm.newKeyPair();

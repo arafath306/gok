@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../screens/full_screen_media_viewer.dart';
 
 class ThreadImageCarousel extends StatefulWidget {
@@ -40,11 +41,28 @@ class _ThreadImageCarouselState extends State<ThreadImageCarousel> {
         },
         child: ClipRRect(
           borderRadius: borderRadius,
-          child: Image.network(
-            widget.imageUrls.first,
+          child: CachedNetworkImage(
+            imageUrl: widget.imageUrls.first,
             height: widget.height,
             width: double.infinity,
             fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              color: Colors.black12,
+              child: const Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E824C)),
+                  ),
+                ),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: Colors.black12,
+              child: const Icon(Icons.broken_image, color: Colors.white54),
+            ),
           ),
         ),
       );
@@ -79,11 +97,28 @@ class _ThreadImageCarouselState extends State<ThreadImageCarousel> {
                       ),
                     );
                   },
-                  child: Image.network(
-                    widget.imageUrls[index],
+                  child: CachedNetworkImage(
+                    imageUrl: widget.imageUrls[index],
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,
+                    placeholder: (context, url) => Container(
+                      color: Colors.black12,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E824C)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.black12,
+                      child: const Icon(Icons.broken_image, color: Colors.white54),
+                    ),
                   ),
                 );
               },

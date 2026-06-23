@@ -17,6 +17,7 @@ dependencies:
   supabase_flutter: ^2.5.5
   provider: ^6.1.2
   google_fonts: ^6.1.0
+  cached_network_image: ^3.4.1
   image_picker: ^1.0.7
   intl: ^0.20.2
   shared_preferences: ^2.5.5

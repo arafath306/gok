@@ -19,17 +19,17 @@ import 'core/injection.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize dependency injection
-  await initInjection();
-
-  // Initialize notifications
-  await LocalNotificationService.initialize();
-
   // Initialize Supabase
   await Supabase.initialize(
     url: "https://lznxtbnqwaryqkyxfwgy.supabase.co",
     anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnh0Ym5xd2FyeXFreXhmd2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTk1MjIsImV4cCI6MjA5NjkzNTUyMn0.PGQqRFmGjE5GncIs5Eeqf5fvgxQtDMgvggNLzNEGOJk",
   );
+
+  // Initialize dependency injection
+  await initInjection();
+
+  // Initialize notifications
+  await LocalNotificationService.initialize();
 
   runApp(
     MultiProvider(

@@ -1,4 +1,5 @@
 import 'profile.dart';
+import 'poll_option.dart';
 
 class ThreadPost {
   final String id;
@@ -25,6 +26,12 @@ class ThreadPost {
   final ThreadPost? repostedPost;
   final String? quoteText;
 
+  // Poll Fields
+  final List<PollOption>? pollOptions;
+  final DateTime? pollExpiresAt;
+  final bool hasVotedPoll;
+  final String? votedOptionId;
+
   ThreadPost({
     required this.id,
     required this.userId,
@@ -48,7 +55,21 @@ class ThreadPost {
     this.isRepost = false,
     this.repostedPost,
     this.quoteText,
+    this.pollOptions,
+    this.pollExpiresAt,
+    this.hasVotedPoll = false,
+    this.votedOptionId,
   });
+
+  int get totalPollVotes {
+    if (pollOptions == null) return 0;
+    return pollOptions!.fold(0, (sum, option) => sum + option.votesCount);
+  }
+
+  bool get isPollExpired {
+    if (pollExpiresAt == null) return false;
+    return DateTime.now().isAfter(pollExpiresAt!);
+  }
 
   static String formatRelativeTime(String? isoString) {
     if (isoString == null || isoString.isEmpty) return 'now';
@@ -87,7 +108,6 @@ class ThreadPost {
       if (json['image_urls'] is List) {
         parsedImages = (json['image_urls'] as List).map((e) => e.toString()).toList();
       } else if (json['image_urls'] is String) {
-        // sometimes returned as a string literal or comma separated values
         final str = json['image_urls'] as String;
         if (str.startsWith('{') && str.endsWith('}')) {
           parsedImages = str.substring(1, str.length - 1).split(',').map((e) => e.trim()).toList();
@@ -96,6 +116,25 @@ class ThreadPost {
         }
       }
     }
+
+    // Parse Poll Votes
+    final votesList = json['poll_votes'] as List<dynamic>?;
+    final isVoted = currentUid != null && votesList != null &&
+        votesList.any((vote) => vote['user_id'] == currentUid);
+    final votedOptId = isVoted
+        ? votesList.firstWhere((vote) => vote['user_id'] == currentUid)['poll_option_id'] as String?
+        : null;
+
+    // Parse Poll Options
+    List<PollOption>? parsedPollOptions;
+    if (json['poll_options'] != null) {
+      parsedPollOptions = (json['poll_options'] as List)
+          .map((opt) => PollOption.fromJson(opt as Map<String, dynamic>, votesList: votesList))
+          .toList();
+    }
+
+    final expiresAtStr = json['poll_expires_at'] as String?;
+    final expiresAt = expiresAtStr != null ? DateTime.parse(expiresAtStr).toLocal() : null;
 
     return ThreadPost(
       id: json['id'] as String,
@@ -122,6 +161,10 @@ class ThreadPost {
           ? ThreadPost.fromJson(json['reposted_post'] as Map<String, dynamic>, currentUid: currentUid)
           : null,
       quoteText: json['quote_text'] as String?,
+      pollOptions: parsedPollOptions,
+      pollExpiresAt: expiresAt,
+      hasVotedPoll: isVoted,
+      votedOptionId: votedOptId,
     );
   }
 
@@ -148,6 +191,10 @@ class ThreadPost {
     bool? isRepost,
     ThreadPost? repostedPost,
     String? quoteText,
+    List<PollOption>? pollOptions,
+    DateTime? pollExpiresAt,
+    bool? hasVotedPoll,
+    String? votedOptionId,
   }) {
     return ThreadPost(
       id: id ?? this.id,
@@ -172,6 +219,10 @@ class ThreadPost {
       isRepost: isRepost ?? this.isRepost,
       repostedPost: repostedPost ?? this.repostedPost,
       quoteText: quoteText ?? this.quoteText,
+      pollOptions: pollOptions ?? this.pollOptions,
+      pollExpiresAt: pollExpiresAt ?? this.pollExpiresAt,
+      hasVotedPoll: hasVotedPoll ?? this.hasVotedPoll,
+      votedOptionId: votedOptionId ?? this.votedOptionId,
     );
   }
 }

@@ -4,8 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
 import '../models/thread_post.dart';
 import '../models/notification.dart';
-import 'local_notification_service.dart';
-import 'sound_service.dart';
 
 import '../core/injection.dart';
 import '../features/feed/domain/usecases/get_feed_use_case.dart';
@@ -23,7 +21,6 @@ import '../features/chat/domain/usecases/send_message_use_case.dart';
 import '../features/chat/domain/usecases/mark_messages_as_read_use_case.dart';
 import '../features/chat/domain/usecases/delete_conversation_use_case.dart';
 import '../features/chat/domain/usecases/upload_chat_media_use_case.dart';
-import '../features/chat/domain/entities/message_entity.dart';
 import '../features/profile/domain/usecases/submit_verification_use_case.dart';
 import '../features/profile/domain/usecases/get_verification_status_use_case.dart';
 import '../features/profile/domain/usecases/update_profile_use_case.dart';
@@ -63,6 +60,10 @@ class DatabaseService with ChangeNotifier {
       isRepost: entity.isRepost,
       repostedPost: entity.repostedPost != null ? _entityToModel(entity.repostedPost!) : null,
       quoteText: entity.quoteText,
+      pollOptions: entity.pollOptions,
+      pollExpiresAt: entity.pollExpiresAt,
+      hasVotedPoll: entity.hasVotedPoll,
+      votedOptionId: entity.votedOptionId,
     );
   }
 
@@ -97,6 +98,105 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  void _updatePostInLists(String threadId, ThreadPost updatedPost) {
+    _postsCache[threadId] = updatedPost;
+    void updateInList(List<ThreadPost> list) {
+      final idx = list.indexWhere((p) => p.id == threadId);
+      if (idx != -1) {
+        list[idx] = updatedPost;
+      }
+    }
+    updateInList(_feed);
+    updateInList(_myThreads);
+    updateInList(_personalizedFeed);
+    updateInList(_myReplies);
+    updateInList(_savedPosts);
+  }
+
+  void _removePostFromLists(String threadId) {
+    _postsCache.remove(threadId);
+    _deletedPostIds.add(threadId);
+    _feed.removeWhere((p) => p.id == threadId);
+    _myThreads.removeWhere((p) => p.id == threadId);
+    _personalizedFeed.removeWhere((p) => p.id == threadId);
+    _myReplies.removeWhere((p) => p.id == threadId);
+    _savedPosts.removeWhere((p) => p.id == threadId);
+  }
+
+  void _handleLikeRealtimeUpdate(String threadId, String userId, PostgresChangeEvent eventType) {
+    final cached = _postsCache[threadId];
+    if (cached == null) return;
+
+    final isMe = userId == _currentUid;
+    int likeDelta = 0;
+    bool newIsLikedByMe = cached.isLikedByMe;
+
+    if (eventType == PostgresChangeEvent.insert) {
+      if (isMe) {
+        if (!cached.isLikedByMe) {
+          likeDelta = 1;
+          newIsLikedByMe = true;
+        }
+      } else {
+        likeDelta = 1;
+      }
+    } else if (eventType == PostgresChangeEvent.delete) {
+      if (isMe) {
+        if (cached.isLikedByMe) {
+          likeDelta = -1;
+          newIsLikedByMe = false;
+        }
+      } else {
+        likeDelta = -1;
+      }
+    }
+
+    if (likeDelta != 0 || newIsLikedByMe != cached.isLikedByMe) {
+      final updatedPost = cached.copyWith(
+        likesCount: (cached.likesCount + likeDelta).clamp(0, 999999),
+        isLikedByMe: newIsLikedByMe,
+        reactionType: newIsLikedByMe ? (cached.reactionType ?? '❤️') : null,
+      );
+      _updatePostInLists(threadId, updatedPost);
+      notifyListeners();
+    }
+  }
+
+  Future<void> _reloadThread(String threadId, {bool isNew = false}) async {
+    try {
+      final response = await _supabase
+          .from('threads')
+          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
+          .eq('id', threadId)
+          .maybeSingle();
+
+      if (response != null) {
+        final updatedPost = ThreadPost.fromJson(response, currentUid: _currentUid);
+        
+        if (isNew) {
+          final alreadyInFeed = _feed.any((p) => p.id == threadId);
+          if (!alreadyInFeed) {
+            _feed.insert(0, updatedPost);
+          }
+          final isAuthorMe = updatedPost.userId == _currentUid;
+          if (isAuthorMe) {
+            final alreadyInMyThreads = _myThreads.any((p) => p.id == threadId);
+            if (!alreadyInMyThreads) {
+              _myThreads.insert(0, updatedPost);
+            }
+          }
+          _postsCache[threadId] = updatedPost;
+        } else {
+          _updatePostInLists(threadId, updatedPost);
+        }
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error reloading/inserting thread: $e');
+    }
+  }
+
   void _updateReplyCountInCache(String threadId, PostgresChangeEvent eventType) {
     final cached = _postsCache[threadId];
     if (cached != null) {
@@ -108,7 +208,8 @@ class DatabaseService with ChangeNotifier {
       }
       if (change != 0) {
         final newRepliesCount = (cached.repliesCount + change).clamp(0, 999999);
-        _postsCache[threadId] = cached.copyWith(repliesCount: newRepliesCount);
+        final updatedPost = cached.copyWith(repliesCount: newRepliesCount);
+        _updatePostInLists(threadId, updatedPost);
         notifyListeners();
       }
     }
@@ -333,6 +434,7 @@ class DatabaseService with ChangeNotifier {
   RealtimeChannel? _messagesChannel;
   RealtimeChannel? _blocksChannel;
   RealtimeChannel? _mutesChannel;
+  RealtimeChannel? _pollVotesChannel;
   StreamSubscription<AuthState>? _supabaseAuthSub;
   Timer? _lastSeenTimer;
 
@@ -422,9 +524,16 @@ class DatabaseService with ChangeNotifier {
             schema: 'public',
             table: 'threads',
             callback: (payload) {
-              fetchFeed(silent: true);
-              if (_currentUid.isNotEmpty) {
-                fetchMyThreads();
+              final threadId = (payload.newRecord['id'] ?? payload.oldRecord['id']) as String?;
+              if (threadId != null) {
+                if (payload.eventType == PostgresChangeEvent.insert) {
+                  _reloadThread(threadId, isNew: true);
+                } else if (payload.eventType == PostgresChangeEvent.update) {
+                  _reloadThread(threadId, isNew: false);
+                } else if (payload.eventType == PostgresChangeEvent.delete) {
+                  _removePostFromLists(threadId);
+                  notifyListeners();
+                }
               }
             })
         .subscribe();
@@ -436,9 +545,10 @@ class DatabaseService with ChangeNotifier {
             schema: 'public',
             table: 'likes',
             callback: (payload) {
-              fetchFeed(silent: true);
-              if (_currentUid.isNotEmpty) {
-                fetchMyThreads();
+              final threadId = (payload.newRecord['thread_id'] ?? payload.oldRecord['thread_id']) as String?;
+              final userId = (payload.newRecord['user_id'] ?? payload.oldRecord['user_id']) as String?;
+              if (threadId != null && userId != null) {
+                _handleLikeRealtimeUpdate(threadId, userId, payload.eventType);
               }
             })
         .subscribe();
@@ -533,6 +643,20 @@ class DatabaseService with ChangeNotifier {
               fetchFeed(silent: true);
             })
         .subscribe();
+
+    _pollVotesChannel = _supabase
+        .channel('public:poll_votes')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'poll_votes',
+            callback: (payload) {
+              final threadId = (payload.newRecord['thread_id'] ?? payload.oldRecord['thread_id']) as String?;
+              if (threadId != null) {
+                _reloadThread(threadId);
+              }
+            })
+        .subscribe();
   }
 
   void unsubscribeRealtime() {
@@ -549,6 +673,10 @@ class DatabaseService with ChangeNotifier {
     if (_mutesChannel != null) {
       _supabase.removeChannel(_mutesChannel!);
       _mutesChannel = null;
+    }
+    if (_pollVotesChannel != null) {
+      _supabase.removeChannel(_pollVotesChannel!);
+      _pollVotesChannel = null;
     }
   }
 
@@ -615,11 +743,11 @@ class DatabaseService with ChangeNotifier {
     try {
       final response = await _supabase
           .from('threads')
-          .select('*, author:profiles!user_id(*)')
+          .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
           .eq('id', threadId)
           .maybeSingle();
       if (response == null) return null;
-      return ThreadPost.fromJson(response);
+      return ThreadPost.fromJson(response, currentUid: _currentUid);
     } catch (e) {
       debugPrint('fetchSingleThread error: $e');
       return null;
@@ -1076,8 +1204,26 @@ class DatabaseService with ChangeNotifier {
     );
   }
 
-  Future<bool> createThread(String content, {List<String>? imageUrls, String? videoUrl, String? audience}) async {
-    final result = await sl<CreateThreadUseCase>()(content, imageUrls: imageUrls, videoUrl: videoUrl, audience: audience);
+  Future<bool> createThread(
+    String content, {
+    List<String>? imageUrls,
+    String? videoUrl,
+    String? audience,
+    List<String>? pollOptions,
+    Duration? pollDuration,
+  }) async {
+    DateTime? pollExpiresAt;
+    if (pollDuration != null) {
+      pollExpiresAt = DateTime.now().add(pollDuration);
+    }
+    final result = await sl<CreateThreadUseCase>()(
+      content,
+      imageUrls: imageUrls,
+      videoUrl: videoUrl,
+      audience: audience,
+      pollOptions: pollOptions,
+      pollExpiresAt: pollExpiresAt,
+    );
     return result.fold(
       (failure) {
         debugPrint("Create thread error: ${failure.message}");
@@ -1090,6 +1236,61 @@ class DatabaseService with ChangeNotifier {
         return success;
       },
     );
+  }
+
+
+  Future<void> votePoll(String threadId, String optionId) async {
+    if (_currentUid.isEmpty) return;
+    
+    // Play haptic/pop sound
+    sl<PlaySoundUseCase>().call(SoundType.pop);
+
+    // Optimistically update local state so the transition is instant
+    final cached = _postsCache[threadId];
+    if (cached != null && !cached.hasVotedPoll && !cached.isPollExpired) {
+      // Find the option and increment its vote count
+      final updatedOptions = cached.pollOptions?.map((opt) {
+        if (opt.id == optionId) {
+          return opt.copyWith(votesCount: opt.votesCount + 1);
+        }
+        return opt;
+      }).toList();
+      
+      final updatedPost = cached.copyWith(
+        hasVotedPoll: true,
+        votedOptionId: optionId,
+        pollOptions: updatedOptions,
+      );
+      
+      _postsCache[threadId] = updatedPost;
+      
+      void updateInList(List<ThreadPost> list) {
+        final idx = list.indexWhere((p) => p.id == threadId);
+        if (idx != -1) {
+          list[idx] = updatedPost;
+        }
+      }
+      updateInList(_feed);
+      updateInList(_myThreads);
+      updateInList(_personalizedFeed);
+      updateInList(_savedPosts);
+      
+      notifyListeners();
+    }
+
+    try {
+      await _supabase.from('poll_votes').insert({
+        'user_id': _currentUid,
+        'thread_id': threadId,
+        'poll_option_id': optionId,
+      });
+      
+      logUserInteraction(threadId, 'vote');
+    } catch (e) {
+      debugPrint('Error casting vote: $e');
+      // Rollback on failure
+      await _reloadThread(threadId);
+    }
   }
 
   // --- Likes CRUD ---

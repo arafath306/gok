@@ -235,105 +235,73 @@ class _FeedScreenState extends State<FeedScreen> {
                       }
                     },
                     color: const Color(0xFF1E824C),
-                    child: ListView(
-                      controller: _scrollController,
-                      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                      padding: const EdgeInsets.fromLTRB(0, 4, 0, 72),
-                      children: [
-                        // Composer Panel Card (Flat & Borderless)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          decoration: const BoxDecoration(
-                            color: Colors.transparent,
-                          ),
-                          child: GestureDetector(
-                            onTap: widget.onNavigateToCreate,
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 14,
-                                  backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                                  backgroundImage: (prof?.avatarUrl != null && prof!.avatarUrl!.isNotEmpty)
-                                      ? NetworkImage(prof.avatarUrl!)
-                                      : null,
-                                  child: (prof?.avatarUrl == null || prof!.avatarUrl!.isEmpty)
-                                      ? Icon(Icons.person, size: 14, color: context.isDarkMode ? Colors.white54 : Colors.black38)
-                                      : null,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Container(
-                                    height: 32,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    alignment: Alignment.centerLeft,
-                                    decoration: BoxDecoration(
-                                      color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: context.border.withOpacity(0.5),
-                                        width: 0.5,
-                                      ),
+                    child: (() {
+                      final posts = _selectedTabIndex == 1
+                          ? dbService.feed
+                              .where((post) => dbService.isFollowingUser(post.userId))
+                              .toList()
+                          : dbService.personalizedFeed;
+
+                      return ListView.builder(
+                        controller: _scrollController,
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                        padding: const EdgeInsets.fromLTRB(0, 4, 0, 72),
+                        cacheExtent: 1000.0,
+                        itemCount: posts.isEmpty 
+                            ? 2 
+                            : 1 + posts.length + (_isFetchingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              decoration: const BoxDecoration(
+                                color: Colors.transparent,
+                              ),
+                              child: GestureDetector(
+                                onTap: widget.onNavigateToCreate,
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 14,
+                                      backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                                      backgroundImage: (prof?.avatarUrl != null && prof!.avatarUrl!.isNotEmpty)
+                                          ? NetworkImage(prof.avatarUrl!)
+                                          : null,
+                                      child: (prof?.avatarUrl == null || prof!.avatarUrl!.isEmpty)
+                                          ? Icon(Icons.person, size: 14, color: context.isDarkMode ? Colors.white54 : Colors.black38)
+                                          : null,
                                     ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            "Send your thoughts...",
-                                            style: GoogleFonts.inter(
-                                              color: context.textMuted,
-                                              fontSize: 12.5,
-                                            ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Container(
+                                        height: 32,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        alignment: Alignment.centerLeft,
+                                        decoration: BoxDecoration(
+                                          color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: context.border.withOpacity(0.5),
+                                            width: 0.5,
                                           ),
                                         ),
-                                        Icon(
-                                          Icons.flutter_dash,
-                                          size: 15,
-                                          color: context.textMuted,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // Feed List based on selected tab
-                        (() {
-                          final posts = _selectedTabIndex == 1
-                                ? dbService.feed
-                                    .where((post) => dbService.isFollowingUser(post.userId))
-                                    .toList()
-                                : dbService.personalizedFeed;
-
-                          if (_selectedTabIndex == 1 && dbService.followingIds.isEmpty) {
-                            return SizedBox(
-                              height: 300,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "You are not following anyone",
-                                      style: GoogleFonts.inter(
-                                        fontSize: 15,
-                                        color: context.textSecondary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
-                                      },
-                                      child: Text(
-                                        "Follow users",
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: const Color(0xFF1E824C).withOpacity(0.6),
-                                          fontWeight: FontWeight.bold,
-                                          decoration: TextDecoration.underline,
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                "Send your thoughts...",
+                                                style: GoogleFonts.inter(
+                                                  color: context.textMuted,
+                                                  fontSize: 12.5,
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.flutter_dash,
+                                              size: 15,
+                                              color: context.textMuted,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -344,6 +312,42 @@ class _FeedScreenState extends State<FeedScreen> {
                           }
 
                           if (posts.isEmpty) {
+                            if (_selectedTabIndex == 1 && dbService.followingIds.isEmpty) {
+                              return SizedBox(
+                                height: 300,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "You are not following anyone",
+                                        style: GoogleFonts.inter(
+                                          fontSize: 15,
+                                          color: context.textSecondary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      GestureDetector(
+                                        onTap: () {
+                                          context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
+                                        },
+                                        child: Text(
+                                          "Follow users",
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            color: const Color(0xFF1E824C).withOpacity(0.6),
+                                            fontWeight: FontWeight.bold,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
                             return SizedBox(
                               height: 300,
                               child: Center(
@@ -357,28 +361,31 @@ class _FeedScreenState extends State<FeedScreen> {
                             );
                           }
 
-                          return Column(
-                            children: [
-                              ...posts.map((post) => CustomThreadCard(key: ValueKey(post.id), post: post)).toList(),
-                              if (_isFetchingMore)
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 20),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E824C)),
-                                      ),
-                                    ),
-                                  ),
+                          final postIndex = index - 1;
+                          if (postIndex < posts.length) {
+                            final post = posts[postIndex];
+                            return CustomThreadCard(
+                              key: ValueKey(post.id),
+                              post: post,
+                            );
+                          }
+
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E824C)),
                                 ),
-                            ],
+                              ),
+                            ),
                           );
-                        })(),
-                      ],
-                    ),
+                        },
+                      );
+                    })(),
                   ),
                 ),
               ],

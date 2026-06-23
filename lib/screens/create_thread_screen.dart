@@ -45,6 +45,14 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     TextEditingController(),
     TextEditingController()
   ];
+  Duration _pollDuration = const Duration(hours: 24);
+  final List<Map<String, dynamic>> _durations = [
+    {"label": "1 Hour", "duration": const Duration(hours: 1)},
+    {"label": "6 Hours", "duration": const Duration(hours: 6)},
+    {"label": "1 Day", "duration": const Duration(hours: 24)},
+    {"label": "3 Days", "duration": const Duration(days: 3)},
+    {"label": "7 Days", "duration": const Duration(days: 7)},
+  ];
   
   String? _selectedLocation;
   
@@ -255,13 +263,17 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     if (_selectedLocation != null) {
       finalContent += "\n\n📍 ${_selectedLocation}";
     }
+
+    List<String>? pollOptions;
+    Duration? pollDuration;
     if (_showPollInput) {
       final filledOptions = _pollControllers
           .map((c) => c.text.trim())
           .where((t) => t.isNotEmpty)
           .toList();
-      if (filledOptions.isNotEmpty) {
-        finalContent += "\n\n📊 Vote:\n" + filledOptions.map((opt) => "◽ $opt").join("\n");
+      if (filledOptions.length >= 2) {
+        pollOptions = filledOptions;
+        pollDuration = _pollDuration;
       }
     }
 
@@ -297,6 +309,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
         imageUrls: uploadedUrls,
         videoUrl: videoUrl.isNotEmpty ? videoUrl : null,
         audience: _privacy,
+        pollOptions: pollOptions,
+        pollDuration: pollDuration,
       );
     }
 
@@ -1107,11 +1121,18 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   Widget _buildPollCreator() {
     return Container(
       margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.2)),
+        color: context.isDarkMode ? const Color(0xFF201608) : const Color(0xFFFFFDF5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(context.isDarkMode ? 0.05 : 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1121,14 +1142,14 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.bar_chart, color: Colors.orange, size: 16),
-                  const SizedBox(width: 6),
+                  const Icon(Icons.analytics_outlined, color: Colors.orange, size: 18),
+                  const SizedBox(width: 8),
                   Text(
-                    "Create Poll",
+                    "Create Interactive Poll",
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       color: Colors.orange[800],
-                      fontSize: 13,
+                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -1142,54 +1163,135 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     }
                   });
                 },
-                child: Icon(Icons.close, size: 18, color: context.textSecondary),
+                child: Icon(Icons.close_rounded, size: 20, color: context.textSecondary),
               )
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
           ...List.generate(_pollControllers.length, (index) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: TextField(
-                controller: _pollControllers[index],
-                decoration: InputDecoration(
-                  hintText: "Option ${index + 1}",
-                  hintStyle: GoogleFonts.inter(fontSize: 13, color: context.textMuted),
-                  filled: true,
-                  fillColor: context.isDarkMode ? const Color(0xFF1E2030) : Colors.white,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: context.border),
+              padding: const EdgeInsets.only(bottom: 10.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _pollControllers[index],
+                      maxLength: 25,
+                      buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                      decoration: InputDecoration(
+                        hintText: "Option ${index + 1}",
+                        hintStyle: GoogleFonts.inter(fontSize: 13, color: context.textMuted),
+                        filled: true,
+                        fillColor: context.isDarkMode ? const Color(0xFF1E2030) : Colors.white,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: context.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Colors.orange, width: 1.5),
+                        ),
+                        counterText: "",
+                      ),
+                      style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary),
+                    ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Colors.orange),
-                  ),
-                ),
-                style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary),
+                  if (_pollControllers.length > 2) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          final controller = _pollControllers.removeAt(index);
+                          controller.dispose();
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                      ),
+                    ),
+                  ]
+                ],
               ),
             );
           }),
-          if (_pollControllers.length < 4)
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _pollControllers.add(TextEditingController());
-                });
-              },
-              icon: const Icon(Icons.add, size: 14, color: Colors.orange),
-              label: Text(
-                "Add Option",
-                style: GoogleFonts.inter(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (_pollControllers.length < 4)
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _pollControllers.add(TextEditingController());
+                    });
+                  },
+                  icon: const Icon(Icons.add_rounded, size: 16, color: Colors.orange),
+                  label: Text(
+                    "Add Option",
+                    style: GoogleFonts.inter(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(50, 30),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+              Row(
+                children: [
+                  Text(
+                    "Duration: ",
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: context.isDarkMode ? const Color(0xFF1E2030) : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: context.border, width: 0.8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<Duration>(
+                        value: _pollDuration,
+                        dropdownColor: context.cardBg,
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Colors.orange),
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          color: context.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        onChanged: (Duration? val) {
+                          if (val != null) {
+                            setState(() {
+                              _pollDuration = val;
+                            });
+                          }
+                        },
+                        items: _durations.map((d) {
+                          return DropdownMenuItem<Duration>(
+                            value: d["duration"] as Duration,
+                            child: Text(d["label"] as String),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(50, 30),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            )
+            ],
+          ),
         ],
       ),
     );

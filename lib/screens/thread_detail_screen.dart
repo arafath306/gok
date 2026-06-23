@@ -17,6 +17,7 @@ import '../widgets/share_post_sheet.dart';
 import 'create_thread_screen.dart';
 import '../services/sound_service.dart';
 import '../widgets/thread_image_carousel.dart';
+import '../widgets/poll_widget.dart';
 
 import '../widgets/comment_attachment_picker_panel.dart';
 
@@ -50,6 +51,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     _loadComments();
     _scrollController.addListener(_onScroll);
     Future.microtask(() {
+      if (!mounted) return;
       final dbService = Provider.of<DatabaseService>(context, listen: false);
       dbService.incrementThreadViews(widget.post.id);
     });
@@ -682,7 +684,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                               : (currentSaves > 0 ? currentSaves - 1 : 0);
                         });
                         await dbService.toggleSaveComment(comment['id'] as String);
-                        if (context.mounted) {
+                        if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(newSaved ? "Comment saved to bookmarks" : "Comment removed from bookmarks"),
@@ -993,6 +995,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             height: 220,
                           ),
                         ],
+                        PollWidget(post: activePost, dbService: dbService),
                         Divider(height: 24, color: context.border),
 
                         // Action buttons with inline counts and Save post

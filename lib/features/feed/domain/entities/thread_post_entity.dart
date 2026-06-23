@@ -1,4 +1,5 @@
 import '../../../../models/profile.dart';
+import '../../../../models/poll_option.dart';
 
 class ThreadPostEntity {
   final String id;
@@ -25,6 +26,12 @@ class ThreadPostEntity {
   final ThreadPostEntity? repostedPost;
   final String? quoteText;
 
+  // Poll Fields
+  final List<PollOption>? pollOptions;
+  final DateTime? pollExpiresAt;
+  final bool hasVotedPoll;
+  final String? votedOptionId;
+
   ThreadPostEntity({
     required this.id,
     required this.userId,
@@ -48,6 +55,10 @@ class ThreadPostEntity {
     this.isRepost = false,
     this.repostedPost,
     this.quoteText,
+    this.pollOptions,
+    this.pollExpiresAt,
+    this.hasVotedPoll = false,
+    this.votedOptionId,
   });
 
   ThreadPostEntity copyWith({
@@ -73,6 +84,10 @@ class ThreadPostEntity {
     bool? isRepost,
     ThreadPostEntity? repostedPost,
     String? quoteText,
+    List<PollOption>? pollOptions,
+    DateTime? pollExpiresAt,
+    bool? hasVotedPoll,
+    String? votedOptionId,
   }) {
     return ThreadPostEntity(
       id: id ?? this.id,
@@ -97,6 +112,10 @@ class ThreadPostEntity {
       isRepost: isRepost ?? this.isRepost,
       repostedPost: repostedPost ?? this.repostedPost,
       quoteText: quoteText ?? this.quoteText,
+      pollOptions: pollOptions ?? this.pollOptions,
+      pollExpiresAt: pollExpiresAt ?? this.pollExpiresAt,
+      hasVotedPoll: hasVotedPoll ?? this.hasVotedPoll,
+      votedOptionId: votedOptionId ?? this.votedOptionId,
     );
   }
 }

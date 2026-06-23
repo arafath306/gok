@@ -160,6 +160,7 @@ class SettingsScreen extends StatelessWidget {
               onTap: () {
                 final controller = Provider.of<VerificationController>(context, listen: false);
                 controller.checkStatus(dbService).then((status) {
+                  if (!context.mounted) return;
                   if (myProfile?.isVerified == true) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
