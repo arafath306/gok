@@ -1,180 +1,130 @@
-# ডাক — Dak 📬
+# Pigeon 🐦
 
 > **সংযোগ থাকুক হৃদয়ের** — Stay Connected at Heart
 
-<p align="center">
-  <img src="assets/onboarding_1.jpg" alt="Dak App Screenshot 1" width="600"/>
-</p>
+Pigeon is a modern, high-performance, and feature-rich social networking platform built with Flutter and Supabase. Engineered for buttery-smooth fluid scrolling (60fps+) and instant real-time data synchronization, Pigeon delivers a premium user experience akin to Twitter and Bluesky.
 
 ---
 
-## 📖 প্রজেক্ট পরিচিতি (About)
+## 🚀 Key Highlights & Premium Features
 
-**Dak** (ডাক) হলো একটি বাংলাদেশি সামাজিক যোগাযোগ অ্যাপ, যা Threads এবং Bluesky এর অনুপ্রেরণায় তৈরি করা হয়েছে। এটি মূলত বাংলাভাষী মানুষদের জন্য ডিজাইন করা হয়েছে যেখানে বাংলা ও English উভয় ভাষায় যোগাযোগ করা যায়।
+### 📊 Realtime Polls System
+- Create dynamic polls with 2-4 options and configurable expiration durations (1h, 6h, 24h, 3d, 7d).
+- Instant real-time vote count updating and smooth sweeping progress animation powered by `TweenAnimationBuilder`.
 
-**Dak** is a Bangladeshi social networking application inspired by Threads and Bluesky, built with a minimalist flat design philosophy. It is designed primarily for Bengali-speaking users with full bilingual (Bangla & English) support.
+### 🔐 End-to-End Encryption (E2EE)
+- Secure, cryptographically verifiable chat system.
+- Uses **ECDH Key Exchange** to establish shared secrets and **AES-GCM-256** to encrypt and decrypt messages locally on-device.
 
----
+### 🟢 AI-Powered "For You" Feed
+- Advanced native RPC candidate selection algorithm combining:
+  - User Interest Category mapping (40%)
+  - Friend & chat frequency relationship scoring (25%)
+  - Trending metrics (15%)
+  - Community/Group updates (10%)
+  - Fresh creator discovery boost (10%)
+- Live interaction signals logging (clicks, watch time, scrolls) to dynamically refine feeds.
 
-## ✨ মূল বৈশিষ্ট্যসমূহ (Key Features)
-
-| বৈশিষ্ট্য | বিবরণ |
-|---|---|
-| 📰 **ডাক ফিড** | একটি পরিষ্কার, বিজ্ঞাপনমুক্ত unified feed |
-| 🔍 **অনুসন্ধান** | ব্যবহারকারী খোঁজা ও follow করার সুবিধা |
-| ➕ **ডাক পাঠান** | নতুন পোস্ট তৈরি করুন সহজেই |
-| 🔔 **কার্যক্রম** | লাইক, রিপ্লাই ও ফলো নোটিফিকেশন |
-| 👤 **প্রোফাইল** | ব্যক্তিগত প্রোফাইল ও পোস্ট ম্যানেজমেন্ট |
-| 🌍 **বাংলাদেশ থিম** | বাংলাদেশের সংস্কৃতি ও পরিচয়ে অনুপ্রাণিত ডিজাইন |
-| 🔐 **নিরাপদ লগইন** | Supabase Authentication দিয়ে সুরক্ষিত অ্যাকাউন্ট |
-| 📱 **মাল্টি-প্ল্যাটফর্ম** | Android, iOS ও Web সাপোর্ট |
-
----
-
-## 🖼️ স্ক্রিনশট (Screenshots)
-
-<p align="center">
-  <img src="assets/onboarding_2.jpg" alt="Dak App Features" width="600"/>
-</p>
+### ⚡ Rocket Performance Boost
+- **Lazy Loading Viewports:** Standard lists converted to recycling `ListView.builder` widgets with cache extent pre-rendering.
+- **Repaint Boundaries:** Post cards wrapped in `RepaintBoundary` to isolate UI updates and likes pulses, avoiding screen-wide repaints.
+- **Disk Caching:** Persistent image caching using `CachedNetworkImage` to eliminate duplicate network downloads during scrolling.
+- **In-Memory Sync:** Optimized Supabase Realtime callbacks to update counts locally, reducing network database queries by 99%.
 
 ---
 
-## 🏗️ টেকনোলজি স্ট্যাক (Tech Stack)
+## 🎨 Design Philosophy
+- **Brand Colors:** HSL-tailored premium color scheme featuring a signature Emerald Green brand accent (`#1E824C`).
+- **Typography:** Hind Siliguri (Bengali) combined with Outfit and Inter (English).
+- **Responsive Layout:** Beautiful transitions, haptic feedbacks, and fluid micro-animations.
+
+---
+
+## 🏗️ Technology Stack
 
 ```
-Framework  : Flutter (Dart)
-Backend    : Supabase (PostgreSQL + Auth + Realtime)
-State Mgmt : Provider
-Fonts      : Google Fonts (Hind Siliguri, Outfit, Inter)
-Platform   : Android · iOS · Web
+Frontend Framework  : Flutter (Dart)
+Backend & Database  : Supabase (PostgreSQL + RLS + Realtime)
+State Management    : Provider + GetIt (Dependency Injection)
+Cryptographic Suite : Cryptography Package (ECDH / AES-GCM-256)
+Local Storage       : Flutter Secure Storage (Keys) & SharedPreferences (Configs)
+Media & Caching     : CachedNetworkImage & Flutter Cache Manager
 ```
 
 ---
 
-## 📁 প্রজেক্ট কাঠামো (Project Structure)
+## 📁 Project Architecture
 
 ```
-Dak/
+Pigeon/
 ├── lib/
-│   ├── main.dart                    # App entry point
+│   ├── main.dart                    # App Entry Point & Initialization
+│   ├── core/
+│   │   ├── injection.dart           # GetIt Service Locator & DI
+│   │   └── security/
+│   │       └── e2ee_service.dart    # ECDH Key Exchange & AES-GCM-256 Cipher
 │   ├── models/
-│   │   ├── thread_post.dart         # Post/Thread model
+│   │   ├── thread_post.dart         # Post & Poll model
+│   │   ├── poll_option.dart         # Poll option model
 │   │   ├── profile.dart             # User profile model
-│   │   └── notification.dart        # Notification model
-│   ├── screens/
-│   │   ├── onboarding_screen.dart   # Onboarding slider
-│   │   ├── auth_screen.dart         # Login & signup (multi-step)
-│   │   ├── main_screen.dart         # Bottom nav shell
-│   │   ├── feed_screen.dart         # Home feed
-│   │   ├── search_explore_screen.dart # Search & discover users
-│   │   ├── notifications_screen.dart  # Activity & notifications
-│   │   ├── profile_screen.dart       # User profile
-│   │   ├── create_thread_screen.dart # Post composer
-│   │   └── edit_profile_screen.dart  # Edit profile
+│   │   └── notification.dart        # Notification schema
 │   ├── services/
-│   │   ├── auth_service.dart        # Auth logic + demo bypass
-│   │   └── database_service.dart    # Data fetch + mock fallback
-│   ├── widgets/
-│   │   └── custom_thread_card.dart  # Reusable post card widget
-│   └── utils/
-│       └── routes.dart              # App routing
-├── assets/
-│   ├── logo.jpg                     # Original Dak logo
-│   ├── logo_d_icon_v2.jpg           # Cropped D icon (header)
-│   ├── onboarding_1.jpg             # Onboarding slide 1
-│   └── onboarding_2.jpg             # Onboarding slide 2
-├── android/                         # Android platform files
-├── ios/                             # iOS platform files
-├── web/                             # Web platform files
-└── pubspec.yaml                     # Flutter dependencies
+│   │   ├── auth_service.dart        # Supabase Authentication & Demo Bypass
+│   │   └── database_service.dart    # Optimized Database Access & Realtime Listeners
+│   ├── screens/
+│   │   ├── auth_screen.dart         # Multi-step signup & login flow
+│   │   ├── feed_screen.dart         # Main Feed screen with lazy-loading list
+│   │   ├── thread_detail_screen.dart# Nested comment sheets & poll details
+│   │   ├── profile/
+│   │   │   └── profile_screen.dart  # Multi-tab User profile
+│   │   └── messenger/
+│   │       └── chat_screen.dart     # E2EE enabled private messaging
+│   └── widgets/
+│       ├── custom_thread_card.dart  # Repaint-isolated post card
+│       └── poll_widget.dart         # Animating progress-bar poll widget
 ```
 
 ---
 
-## 🚀 কিভাবে চালাবেন (Getting Started)
+## 🚀 Getting Started
 
-### প্রয়োজনীয়তা (Requirements)
-- Flutter SDK >= 3.12.1
-- Dart SDK >= 3.0
+### Prerequisites
+- Flutter SDK `>= 3.12.1`
+- Dart SDK `>= 3.0`
 - Android Studio / VS Code
-- Supabase account (optional — demo mode available)
+- A Supabase Project Instance
 
-### ইনস্টলেশন (Installation)
+### Installation & Run
 
 ```bash
-# রিপো ক্লোন করুন
+# Clone the repository
 git clone https://github.com/arafath306/gok.git
 cd gok
 
-# Dependencies ইনস্টল করুন
+# Get packages
 flutter pub get
 
-# .env ফাইল তৈরি করুন (Supabase credentials)
+# Setup configurations
 cp .env.example .env
-# SUPABASE_URL এবং SUPABASE_ANON_KEY যোগ করুন
+# Populate .env with your SUPABASE_URL and SUPABASE_ANON_KEY
 
-# অ্যাপ চালু করুন
+# Run the app
 flutter run
 ```
 
-### ডেমো মোড (Demo Mode)
-Supabase সেটআপ ছাড়াই অ্যাপটি দেখতে:
-- লগইন স্ক্রিনে **"ডেমো মোডে প্রবেশ করুন"** বাটনে ক্লিক করুন
-- Mock data দিয়ে সম্পূর্ণ অ্যাপটি ব্যবহার করা যাবে
+### Offline / Demo Mode
+To test the visual flows without database setup:
+- Tap **"Enter Demo Mode"** on the login screen to instantiate local mock mocks.
 
 ---
 
-## 📱 স্ক্রিনসমূহ (Screens)
+## 🤝 Contributing
+Pull requests are welcome! If you want to contribute, please fork the repository and use a branch for your feature.
 
-### 1️⃣ অনবোর্ডিং স্ক্রিন
-- ২টি ফুল-স্ক্রিন ইমেজ স্লাইডার (বাম/ডান arrow দিয়ে navigate করুন)
-- সাইড থেকে swipe করেও navigate করা যায়
-
-### 2️⃣ লগইন / সাইনআপ
-- মাল্টি-স্টেপ রেজিস্ট্রেশন (নাম → জন্মতারিখ → যোগাযোগ → পাসওয়ার্ড)
-- Email verification সাপোর্ট
-
-### 3️⃣ হোম ফিড
-- Threads-এর মতো unified feed
-- Pull-to-refresh সাপোর্ট
-- Thread card এ like, reply, repost, share
-
-### 4️⃣ সার্চ ও এক্সপ্লোর
-- User search
-- Follow/Unfollow toggle
-
-### 5️⃣ নোটিফিকেশন
-- Likes, replies, follows এর activity feed
-- ফিল্টার chips দিয়ে filter করুন
-
-### 6️⃣ প্রোফাইল
-- নিজের threads, replies ও likes দেখুন
-- Profile edit করুন
+## 📄 License
+This project is licensed under the MIT License.
 
 ---
-
-## 🎨 ডিজাইন নীতিমালা (Design Principles)
-
-- **Flat & Minimalist** — কোনো gradient বা shadow নেই
-- **Brand Color** — `#1E824C` (বাংলাদেশের সবুজ)
-- **Typography** — Hind Siliguri (বাংলা) + Outfit & Inter (English)
-- **No Auto-Animation** — সব navigation instant এবং user-controlled
-
----
-
-## 🤝 অবদান (Contributing)
-
-Pull Request এবং Issue সবসময় স্বাগত! বাংলাদেশের মানুষের জন্য তৈরি এই প্রজেক্টকে আরও ভালো করতে সহযোগিতা করুন।
-
----
-
-## 📄 লাইসেন্স (License)
-
-MIT License — স্বাধীনভাবে ব্যবহার ও পরিবর্তন করুন।
-
----
-
 <p align="center">
-  <strong>মেড ইন বাংলাদেশ 🇧🇩 by NGST</strong><br/>
-  <em>সংযোগ থাকুক হৃদয়ের — Stay Connected at Heart</em>
+  <strong>Made in Bangladesh 🇧🇩 by NGST</strong>
 </p>
