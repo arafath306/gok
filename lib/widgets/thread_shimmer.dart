@@ -135,7 +135,7 @@ class _ThreadShimmerState extends State<ThreadShimmer>
                       _buildActionIconSkeleton(Icons.mode_comment_outlined, baseColor),
                       _buildActionIconSkeleton(Icons.repeat_rounded, baseColor),
                       _buildActionIconSkeleton(Icons.favorite_border_rounded, baseColor),
-                      _buildActionIconSkeleton(Icons.share_outlined, baseColor),
+                      _buildActionIconSkeleton(Icons.shortcut_outlined, baseColor),
                     ],
                   ),
                 ),

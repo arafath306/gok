@@ -123,6 +123,14 @@ CREATE POLICY "Allow receivers to update read status"
 ON public.messages FOR UPDATE 
 USING (auth.uid() = receiver_id);
 
+CREATE POLICY "Allow senders to edit their own messages" 
+ON public.messages FOR UPDATE 
+USING (auth.uid() = sender_id);
+
+CREATE POLICY "Allow senders to delete their own messages" 
+ON public.messages FOR DELETE 
+USING (auth.uid() = sender_id);
+
 
 -- 8. NOTIFICATIONS
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;

@@ -7,6 +7,9 @@ class MessageEntity {
   final String? mediaUrl;
   final String? mediaType;
   final bool isRead;
+  final String? replyToId;
+  final String? replyToText;
+  final String? replyToSender;
 
   MessageEntity({
     required this.id,
@@ -17,5 +20,9 @@ class MessageEntity {
     this.mediaUrl,
     this.mediaType,
     required this.isRead,
+    this.replyToId,
+    this.replyToText,
+    this.replyToSender,
   });
 }
+

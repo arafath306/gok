@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../../../core/security/e2ee_service.dart';
-
 abstract class ChatRemoteDataSource {
   Future<List<dynamic>> fetchActiveChatsRaw(String currentUserId);
   Future<List<dynamic>> fetchMessagesRaw(String currentUserId, String otherUserId);
@@ -11,6 +10,8 @@ abstract class ChatRemoteDataSource {
   Future<bool> deleteConversation(String currentUserId, String otherUserId);
   Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes);
   Stream<sb.PostgresChangePayload> getMessagesRealtimeStream(String otherUserId);
+  Future<void> editMessage(String messageId, String senderId, String receiverId, String content);
+  Future<void> deleteMessage(String messageId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -19,13 +20,21 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   ChatRemoteDataSourceImpl(this.supabaseClient, this.e2eeService);
 
+  final Map<String, String?> _publicKeyCache = {};
+
   // Helper method to encrypt content before sending
   Future<String> _encryptContent(String content, String receiverId) async {
     if (content.isEmpty) return content;
     
     try {
-      final receiverProfile = await supabaseClient.from('profiles').select('public_key').eq('id', receiverId).single();
-      final receiverPublicKey = receiverProfile['public_key'] as String?;
+      String? receiverPublicKey;
+      if (_publicKeyCache.containsKey(receiverId)) {
+        receiverPublicKey = _publicKeyCache[receiverId];
+      } else {
+        final receiverProfile = await supabaseClient.from('profiles').select('public_key').eq('id', receiverId).single();
+        receiverPublicKey = receiverProfile['public_key'] as String?;
+        _publicKeyCache[receiverId] = receiverPublicKey;
+      }
       
       if (receiverPublicKey != null && receiverPublicKey.isNotEmpty) {
         final result = await e2eeService.encryptMessage(content, receiverPublicKey);
@@ -94,7 +103,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes) async {
-    final path = 'chat_media/$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final path = 'posts/$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.jpg';
     await supabaseClient.storage.from('avatars').uploadBinary(
       path,
       bytes,
@@ -129,5 +138,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     };
 
     return controller.stream;
+  }
+
+  @override
+  Future<void> editMessage(String messageId, String senderId, String receiverId, String content) async {
+    final encryptedContent = await _encryptContent(content, receiverId);
+    await supabaseClient.from('messages').update({
+      'content': encryptedContent,
+    }).eq('id', messageId);
+  }
+
+  @override
+  Future<void> deleteMessage(String messageId) async {
+    await supabaseClient.from('messages').delete().eq('id', messageId);
   }
 }

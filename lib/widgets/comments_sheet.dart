@@ -12,6 +12,8 @@ import 'share_comment_sheet.dart';
 import 'package:flutter/services.dart';
 import '../utils/app_theme.dart';
 
+import 'comment_attachment_picker_panel.dart';
+
 class CommentsSheet extends StatefulWidget {
   final ThreadPost post;
   const CommentsSheet({super.key, required this.post});
@@ -28,6 +30,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
   String _sortBy = "Most relevant";
   
   Uint8List? _selectedImageBytes;
+  String? _selectedGifUrl;
+  int _pickerTabIndex = 0;
   bool _isUploading = false;
   bool _showEmojiPanel = false;
 
@@ -83,6 +87,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
       final bytes = await image.readAsBytes();
       setState(() {
         _selectedImageBytes = bytes;
+        _selectedGifUrl = null;
       });
     } catch (e) {
       debugPrint("Error picking comment image: $e");
@@ -111,14 +116,16 @@ class _CommentsSheetState extends State<CommentsSheet> {
 
   void _submitComment() async {
     final text = _commentController.text.trim();
-    if (text.isEmpty && _selectedImageBytes == null) return;
+    if (text.isEmpty && _selectedImageBytes == null && _selectedGifUrl == null) return;
 
     setState(() => _isUploading = true);
     final dbService = Provider.of<DatabaseService>(context, listen: false);
 
     String? imageUrl;
     try {
-      if (_selectedImageBytes != null) {
+      if (_selectedGifUrl != null) {
+        imageUrl = _selectedGifUrl;
+      } else if (_selectedImageBytes != null) {
         imageUrl = await dbService.uploadPostImage(_selectedImageBytes!);
       }
 
@@ -133,6 +140,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
         _commentController.clear();
         setState(() {
           _selectedImageBytes = null;
+          _selectedGifUrl = null;
           _replyToCommentId = null;
           _showEmojiPanel = false;
         });
@@ -277,9 +285,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
             // Comments List / Loading Indicator
             Expanded(
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF1E824C),
+                        color: Theme.of(context).primaryColor,
                       ),
                     )
                   : _comments.isEmpty
@@ -403,13 +411,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                Container(
                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                  decoration: BoxDecoration(
-                                                   color: const Color(0xFF1E824C).withOpacity(0.1),
+                                                   color: Theme.of(context).primaryColor.withOpacity(0.1),
                                                    borderRadius: BorderRadius.circular(4),
                                                  ),
                                                  child: Text(
                                                    "Author",
                                                    style: GoogleFonts.inter(
-                                                     color: const Color(0xFF1E824C),
+                                                     color: Theme.of(context).primaryColor,
                                                      fontSize: 10,
                                                      fontWeight: FontWeight.bold,
                                                    ),
@@ -555,7 +563,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                         : Icons.bookmark_border_rounded,
                                                     size: 15,
                                                     color: (comment['is_saved_by_me'] as bool? ?? false)
-                                                        ? const Color(0xFF1E824C)
+                                                        ? Theme.of(context).primaryColor
                                                         : context.textSecondary,
                                                   ),
                                                   const SizedBox(width: 6),
@@ -586,7 +594,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               },
                                               child: Row(
                                                 children: [
-                                                  Icon(Icons.send_outlined, size: 15, color: context.textSecondary),
+                                                  Icon(Icons.shortcut_outlined, size: 15, color: context.textSecondary),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     "${comment['shares_count'] ?? 0}",
@@ -707,6 +715,52 @@ class _CommentsSheetState extends State<CommentsSheet> {
                       ),
                     ),
 
+                  // Selected GIF preview
+                  if (_selectedGifUrl != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 60, top: 12, bottom: 4),
+                      child: Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: context.border, width: 1.5),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                _selectedGifUrl!,
+                                height: 90,
+                                width: 90,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedGifUrl = null;
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   // 3. Input Row
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -725,18 +779,36 @@ class _CommentsSheetState extends State<CommentsSheet> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: TextField(
-                            controller: _commentController,
-                            focusNode: _focusNode,
-                            style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary),
-                            maxLines: 5,
-                            minLines: 1,
-                            decoration: InputDecoration(
-                              hintText: "Write a comment...",
-                              hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14.5),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: context.isDarkMode 
+                                  ? const Color(0xFF161922) 
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(
+                                color: context.border,
+                                width: 0.8,
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: TextField(
+                              controller: _commentController,
+                              focusNode: _focusNode,
+                              style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary),
+                              maxLines: 5,
+                              minLines: 1,
+                              onTap: () {
+                                setState(() {
+                                  _showEmojiPanel = false;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                hintText: "Write a comment...",
+                                hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14.5),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
                             ),
                           ),
                         ),
@@ -750,21 +822,44 @@ class _CommentsSheetState extends State<CommentsSheet> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.image_outlined, size: 20, color: const Color(0xFF1E824C)),
+                          icon: Icon(Icons.image_outlined, size: 22, color: Theme.of(context).primaryColor),
                           onPressed: _pickCommentImage,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
+                        IconButton(
+                          icon: Icon(Icons.gif_box_outlined, size: 22, color: Theme.of(context).primaryColor),
+                          onPressed: () {
+                            _focusNode.unfocus();
+                            setState(() {
+                              if (_showEmojiPanel && _pickerTabIndex == 1) {
+                                _showEmojiPanel = false;
+                              } else {
+                                _showEmojiPanel = true;
+                                _pickerTabIndex = 1;
+                              }
+                            });
+                          },
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        const SizedBox(width: 12),
                         IconButton(
                           icon: Icon(
-                            _showEmojiPanel ? Icons.keyboard_hide_outlined : Icons.sentiment_satisfied_alt_outlined, 
-                            size: 20, 
-                            color: const Color(0xFF1E824C)
+                            _showEmojiPanel && _pickerTabIndex == 0 ? Icons.keyboard_hide_outlined : Icons.sentiment_satisfied_alt_outlined, 
+                            size: 22, 
+                            color: Theme.of(context).primaryColor
                           ),
                           onPressed: () {
+                            _focusNode.unfocus();
                             setState(() {
-                              _showEmojiPanel = !_showEmojiPanel;
+                              if (_showEmojiPanel && _pickerTabIndex == 0) {
+                                _showEmojiPanel = false;
+                              } else {
+                                _showEmojiPanel = true;
+                                _pickerTabIndex = 0;
+                              }
                             });
                           },
                           padding: EdgeInsets.zero,
@@ -776,12 +871,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
                           builder: (context, value, child) {
                             final hasText = value.text.trim().isNotEmpty;
                             final hasImage = _selectedImageBytes != null;
-                            final isEnabled = (hasText || hasImage) && !_isUploading;
+                            final hasGif = _selectedGifUrl != null;
+                            final isEnabled = (hasText || hasImage || hasGif) && !_isUploading;
 
                             return TextButton(
                               onPressed: isEnabled ? _submitComment : null,
                               style: TextButton.styleFrom(
-                                backgroundColor: isEnabled ? const Color(0xFF1E824C) : Colors.grey[300]?.withOpacity(0.4),
+                                backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey[300]?.withOpacity(0.4),
                                 foregroundColor: isEnabled ? Colors.white : Colors.grey[400],
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -804,35 +900,21 @@ class _CommentsSheetState extends State<CommentsSheet> {
                     ),
                   ),
 
-                  // 5. Popular Emoji Row Panel
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: _showEmojiPanel ? 48 : 0,
-                    child: _showEmojiPanel
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            color: context.isDarkMode ? Colors.black12 : Colors.grey[50],
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              children: [
-                                '😂', '❤️', '👍', '😍', '🔥', '😮', '😢', '🙌', '👏', '🤔', '🎉', '✨', '💯', '🚀', '👀', '💡', '🌟', '😭'
-                              ].map((emoji) {
-                                return GestureDetector(
-                                  onTap: () => _insertEmoji(emoji),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    child: Text(
-                                      emoji,
-                                      style: const TextStyle(fontSize: 20),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
+                  // Premium Emoji / GIF Picker Panel
+                  if (_showEmojiPanel)
+                    CommentAttachmentPickerPanel(
+                      initialTabIndex: _pickerTabIndex,
+                      onEmojiSelected: (emoji) {
+                        _insertEmoji(emoji);
+                      },
+                      onGifSelected: (gifUrl) {
+                        setState(() {
+                          _selectedGifUrl = gifUrl;
+                          _selectedImageBytes = null; // Clear image when GIF is selected
+                          _showEmojiPanel = false; // Close panel on selection
+                        });
+                      },
+                    ),
                 ],
               ),
             ),
@@ -937,7 +1019,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
         ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: const Color(0xFF1E824C),
+        backgroundColor: Theme.of(ctx).primaryColor,
         duration: const Duration(seconds: 3),
         action: onUndo != null
             ? SnackBarAction(
@@ -985,7 +1067,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                 }
               }
             },
-            child: const Text("Save", style: TextStyle(color: Color(0xFF1E824C))),
+            child: Text("Save", style: TextStyle(color: Theme.of(context).primaryColor)),
           ),
         ],
       ),

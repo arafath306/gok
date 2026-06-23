@@ -14,6 +14,7 @@ import 'comments_sheet.dart';
 import '../screens/profile/profile_screen.dart';
 import 'share_post_sheet.dart';
 import '../services/sound_service.dart';
+import 'thread_image_carousel.dart';
 
 class CustomThreadCard extends StatefulWidget {
   final ThreadPost post;
@@ -235,14 +236,9 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           ),
           if (origPost.imageUrls != null && origPost.imageUrls!.isNotEmpty) ...[
             const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Image.network(
-                origPost.imageUrls!.first,
-                height: 120,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+            ThreadImageCarousel(
+              imageUrls: origPost.imageUrls!,
+              height: 120,
             ),
           ],
         ],
@@ -565,14 +561,9 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           _buildNestedOriginalPost(context, dbService, post.repostedPost!),
         if (post.imageUrls != null && post.imageUrls!.isNotEmpty) ...[
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12.0),
-            child: Image.network(
-              post.imageUrls!.first,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          ThreadImageCarousel(
+            imageUrls: post.imageUrls!,
+            height: 220,
           ),
         ],
         if (post.videoUrl != null && post.videoUrl!.isNotEmpty) ...[
@@ -739,7 +730,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Icon(
-                    Icons.send_outlined,
+                    Icons.shortcut_outlined,
                     color: context.textSecondary,
                     size: 20,
                   ),

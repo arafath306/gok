@@ -9,4 +9,7 @@ abstract class IChatRepository {
   Future<Either<Failure, void>> markMessagesAsRead(String otherUserId);
   Future<Either<Failure, bool>> deleteConversation(String otherUserId);
   Future<Either<Failure, String?>> uploadChatMedia(Uint8List bytes);
+  Future<Either<Failure, void>> editMessage(String messageId, String receiverId, String newContent);
+  Future<Either<Failure, void>> deleteMessage(String messageId);
 }
+

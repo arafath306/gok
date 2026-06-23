@@ -210,7 +210,7 @@ class _ShareCommentSheetState extends State<ShareCommentSheet> {
                           ),
                         ),
                         Icon(
-                          Icons.send_outlined,
+                          Icons.shortcut_outlined,
                           color: context.textPrimary,
                           size: 18,
                         ),

@@ -118,7 +118,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1E824C),
+                                  backgroundColor: Theme.of(context).primaryColor,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
@@ -292,10 +292,10 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
               MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
             );
           },
-          backgroundColor: const Color(0xFF1E824C),
+          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
           shape: const CircleBorder(),
-          elevation: 3,
-          child: const Icon(Icons.add, color: Colors.white, size: 20),
+          elevation: 0,
+          child: Icon(Icons.add, color: Theme.of(context).primaryColor, size: 23),
         ),
       ),
     );

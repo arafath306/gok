@@ -596,7 +596,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                       },
                       child: Row(
                         children: [
-                          Icon(Icons.send_outlined, size: 15, color: context.textSecondary),
+                          Icon(Icons.shortcut_outlined, size: 15, color: context.textSecondary),
                           const SizedBox(width: 6),
                           Text(
                             "${comment['shares_count'] ?? 0}",

@@ -987,9 +987,9 @@ WhatsApp: +8801313961899''',
                 ]).animate(_fabAnimationController),
                 child: FloatingActionButton(
                   heroTag: 'main_fab',
-                  backgroundColor: const Color(0xFF1E824C),
+                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
                   shape: const CircleBorder(),
-                  elevation: 3,
+                  elevation: 0,
                   mini: true,
                   onPressed: () {
                     _fabAnimationController.forward(from: 0.0);
@@ -1002,10 +1002,10 @@ WhatsApp: +8801313961899''',
                       }
                     });
                   },
-                  child: const Icon(
+                  child: Icon(
                     Icons.edit_rounded,
-                    color: Colors.white,
-                    size: 22,
+                    color: Theme.of(context).primaryColor,
+                    size: 25,
                   ),
                 ),
               ),

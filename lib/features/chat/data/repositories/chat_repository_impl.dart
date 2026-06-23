@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../../../core/error/failures.dart';
@@ -16,6 +17,8 @@ class ChatRepositoryImpl implements IChatRepository {
   ChatRepositoryImpl(this.remoteDataSource, this.supabaseClient, this.e2eeService);
 
   String get _currentUid => supabaseClient.auth.currentUser?.id ?? '';
+
+  final Map<String, String?> _publicKeyCache = {};
 
   Future<String> _decryptContent(String content, String senderPublicKey) async {
     if (content.startsWith('E2EE:v1:')) {
@@ -59,6 +62,13 @@ class ChatRepositoryImpl implements IChatRepository {
             content = await _decryptContent(content, otherProfile.publicKey!);
         }
 
+        if (content.startsWith('{') && content.endsWith('}') && content.contains('reply_to_id')) {
+          try {
+            final Map<String, dynamic> jsonReply = jsonDecode(content) as Map<String, dynamic>;
+            content = jsonReply['text'] as String? ?? '';
+          } catch (_) {}
+        }
+
         final String mediaUrl = json['media_url'] as String? ?? '';
         final String displayMessage = content.isNotEmpty 
             ? content 
@@ -91,9 +101,15 @@ class ChatRepositoryImpl implements IChatRepository {
 
     Future<void> loadAndPush() async {
       try {
-        // Fetch other user's profile to get their public key
-        final otherProfileRes = await supabaseClient.from('profiles').select('public_key').eq('id', otherUserId).single();
-        final otherPublicKey = otherProfileRes['public_key'] as String?;
+        // Get cached public key or fetch from Supabase
+        String? otherPublicKey;
+        if (_publicKeyCache.containsKey(otherUserId)) {
+          otherPublicKey = _publicKeyCache[otherUserId];
+        } else {
+          final otherProfileRes = await supabaseClient.from('profiles').select('public_key').eq('id', otherUserId).single();
+          otherPublicKey = otherProfileRes['public_key'] as String?;
+          _publicKeyCache[otherUserId] = otherPublicKey;
+        }
 
         final data = await remoteDataSource.fetchMessagesRaw(_currentUid, otherUserId);
         final List<MessageEntity> messages = [];
@@ -106,6 +122,20 @@ class ChatRepositoryImpl implements IChatRepository {
               text = await _decryptContent(text, otherPublicKey);
           }
 
+          String? replyToId;
+          String? replyToText;
+          String? replyToSender;
+
+          if (text.startsWith('{') && text.endsWith('}') && text.contains('reply_to_id')) {
+            try {
+              final Map<String, dynamic> jsonReply = jsonDecode(text) as Map<String, dynamic>;
+              replyToId = jsonReply['reply_to_id'] as String?;
+              replyToText = jsonReply['reply_to_text'] as String?;
+              replyToSender = jsonReply['reply_to_sender'] as String?;
+              text = jsonReply['text'] as String? ?? '';
+            } catch (_) {}
+          }
+
           messages.add(MessageEntity(
             id: json['id'] as String,
             text: text,
@@ -115,6 +145,9 @@ class ChatRepositoryImpl implements IChatRepository {
             mediaUrl: json['media_url'] as String?,
             mediaType: json['media_type'] as String?,
             isRead: json['is_read'] as bool? ?? false,
+            replyToId: replyToId,
+            replyToText: replyToText,
+            replyToSender: replyToSender,
           ));
         }
         
@@ -182,20 +215,49 @@ class ChatRepositoryImpl implements IChatRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, void>> editMessage(String messageId, String receiverId, String newContent) async {
+    try {
+      await remoteDataSource.editMessage(messageId, _currentUid, receiverId, newContent);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteMessage(String messageId) async {
+    try {
+      await remoteDataSource.deleteMessage(messageId);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   String _getRelativeTime(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) {
-      final hr = dt.hour.toString().padLeft(2, '0');
-      final min = dt.minute.toString().padLeft(2, '0');
-      return '$hr:$min';
+    // Convert to Dhaka Time (GMT+6)
+    final dhakaTime = dt.toUtc().add(const Duration(hours: 6));
+    final nowDhaka = DateTime.now().toUtc().add(const Duration(hours: 6));
+
+    final hour24 = dhakaTime.hour;
+    final minute = dhakaTime.minute.toString().padLeft(2, '0');
+    final period = hour24 >= 12 ? 'PM' : 'AM';
+    int hour12 = hour24 % 12;
+    if (hour12 == 0) hour12 = 12;
+    final timeStr = '$hour12:$minute $period';
+
+    final isToday = dhakaTime.year == nowDhaka.year &&
+        dhakaTime.month == nowDhaka.month &&
+        dhakaTime.day == nowDhaka.day;
+
+    if (isToday) {
+      return timeStr;
+    } else {
+      final day = dhakaTime.day.toString().padLeft(2, '0');
+      final month = dhakaTime.month.toString().padLeft(2, '0');
+      final year = dhakaTime.year;
+      return '$day/$month/$year, $timeStr';
     }
-    if (diff.inDays < 7) {
-      final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      return weekdays[dt.weekday - 1];
-    }
-    return '${dt.day}/${dt.month}/${dt.year}';
   }
 }

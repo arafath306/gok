@@ -16,6 +16,9 @@ import 'package:flutter/services.dart';
 import '../widgets/share_post_sheet.dart';
 import 'create_thread_screen.dart';
 import '../services/sound_service.dart';
+import '../widgets/thread_image_carousel.dart';
+
+import '../widgets/comment_attachment_picker_panel.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
   final ThreadPost post;
@@ -36,6 +39,8 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
   String _sortBy = "Most relevant";
 
   Uint8List? _selectedImageBytes;
+  String? _selectedGifUrl;
+  int _pickerTabIndex = 0;
   bool _isUploading = false;
   bool _showEmojiPanel = false;
 
@@ -277,14 +282,16 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
 
   void _postComment() async {
     final text = _commentController.text.trim();
-    if (text.isEmpty && _selectedImageBytes == null) return;
+    if (text.isEmpty && _selectedImageBytes == null && _selectedGifUrl == null) return;
 
     setState(() => _isUploading = true);
     final dbService = Provider.of<DatabaseService>(context, listen: false);
 
     String? imageUrl;
     try {
-      if (_selectedImageBytes != null) {
+      if (_selectedGifUrl != null) {
+        imageUrl = _selectedGifUrl;
+      } else if (_selectedImageBytes != null) {
         imageUrl = await dbService.uploadPostImage(_selectedImageBytes!);
       }
 
@@ -298,6 +305,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
         _commentController.clear();
         setState(() {
           _selectedImageBytes = null;
+          _selectedGifUrl = null;
           _showEmojiPanel = false;
         });
         _loadComments(silent: true);
@@ -328,6 +336,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       final bytes = await image.readAsBytes();
       setState(() {
         _selectedImageBytes = bytes;
+        _selectedGifUrl = null;
       });
     } catch (e) {
       debugPrint("Error picking comment image: $e");
@@ -410,14 +419,9 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
           ),
           if (origPost.imageUrls != null && origPost.imageUrls!.isNotEmpty) ...[
             const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Image.network(
-                origPost.imageUrls!.first,
-                height: 120,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+            ThreadImageCarousel(
+              imageUrls: origPost.imageUrls!,
+              height: 120,
             ),
           ],
         ],
@@ -546,13 +550,13 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E824C).withOpacity(0.1),
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           "Author",
                           style: GoogleFonts.inter(
-                            color: const Color(0xFF1E824C),
+                            color: Theme.of(context).primaryColor,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -695,7 +699,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                 : Icons.bookmark_border_rounded,
                             size: 15,
                             color: (comment['is_saved_by_me'] as bool? ?? false)
-                                ? const Color(0xFF1E824C)
+                                ? Theme.of(context).primaryColor
                                 : context.textSecondary,
                           ),
                           const SizedBox(width: 6),
@@ -726,7 +730,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       },
                       child: Row(
                         children: [
-                          Icon(Icons.send_outlined, size: 15, color: context.textSecondary),
+                          Icon(Icons.shortcut_outlined, size: 15, color: context.textSecondary),
                           const SizedBox(width: 6),
                           Text(
                             "${comment['shares_count'] ?? 0}",
@@ -984,14 +988,9 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           _buildNestedOriginalPost(context, dbService, activePost.repostedPost!),
                         if (activePost.imageUrls != null && activePost.imageUrls!.isNotEmpty) ...[
                           const SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12.0),
-                            child: Image.network(
-                              activePost.imageUrls!.first,
-                              height: 220,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
+                          ThreadImageCarousel(
+                            imageUrls: activePost.imageUrls!,
+                            height: 220,
                           ),
                         ],
                         Divider(height: 24, color: context.border),
@@ -1066,7 +1065,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                   Icon(
                                     Icons.repeat_rounded, 
                                     color: dbService.isReposted(activePost.id) 
-                                        ? const Color(0xFF1E824C) 
+                                        ? Theme.of(context).primaryColor 
                                         : context.textSecondary, 
                                     size: 18,
                                   ),
@@ -1075,7 +1074,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                     _formatCount(activePost.repostsCount),
                                     style: TextStyle(
                                       color: dbService.isReposted(activePost.id) 
-                                          ? const Color(0xFF1E824C) 
+                                          ? Theme.of(context).primaryColor 
                                           : context.textSecondary,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
@@ -1097,7 +1096,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                       style: GoogleFonts.inter(),
                                     ),
                                     duration: const Duration(seconds: 2),
-                                    backgroundColor: wasSaved ? Colors.grey[700] : const Color(0xFF1E824C),
+                                    backgroundColor: wasSaved ? Colors.grey[700] : Theme.of(context).primaryColor,
                                     behavior: SnackBarBehavior.floating,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
@@ -1108,7 +1107,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                 children: [
                                   Icon(
                                     dbService.isSaved(activePost.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
-                                    color: dbService.isSaved(activePost.id) ? const Color(0xFF1E824C) : context.textSecondary,
+                                    color: dbService.isSaved(activePost.id) ? Theme.of(context).primaryColor : context.textSecondary,
                                     size: 18,
                                   ),
                                   if (activePost.savesCount > 0) ...[
@@ -1116,7 +1115,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                     Text(
                                       _formatCount(activePost.savesCount),
                                       style: TextStyle(
-                                        color: dbService.isSaved(activePost.id) ? const Color(0xFF1E824C) : context.textSecondary,
+                                        color: dbService.isSaved(activePost.id) ? Theme.of(context).primaryColor : context.textSecondary,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -1127,7 +1126,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             ),
                             // Share Button
                             _buildActionButton(
-                              icon: Icons.send_outlined,
+                              icon: Icons.shortcut_outlined,
                               label: _formatCount(activePost.sharesCount),
                               onTap: () {
                                 _sharePost(context);
@@ -1179,9 +1178,9 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
 
                   // Comments List (Supports nesting for replies)
                   if (_isLoadingComments)
-                    const Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: Center(child: CircularProgressIndicator(color: Color(0xFF1E824C))),
+                    Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor)),
                     )
                   else if (topLevelComments.isEmpty)
                     Padding(
@@ -1267,6 +1266,52 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                     ),
                   ),
 
+                // Selected GIF preview
+                if (_selectedGifUrl != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 60, top: 12, bottom: 4),
+                    child: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: context.border, width: 1.5),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              _selectedGifUrl!,
+                              height: 90,
+                              width: 90,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedGifUrl = null;
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: const Icon(
+                              Icons.close,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // Input Row
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1285,18 +1330,36 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: TextField(
-                          controller: _commentController,
-                          focusNode: _commentFocusNode,
-                          style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary),
-                          maxLines: 5,
-                          minLines: 1,
-                          decoration: InputDecoration(
-                            hintText: "Write a comment...",
-                            hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14.5),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: context.isDarkMode 
+                                ? const Color(0xFF161922) 
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: context.border,
+                              width: 0.8,
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: TextField(
+                            controller: _commentController,
+                            focusNode: _commentFocusNode,
+                            style: GoogleFonts.hindSiliguri(fontSize: 14.5, color: context.textPrimary),
+                            maxLines: 5,
+                            minLines: 1,
+                            onTap: () {
+                              setState(() {
+                                _showEmojiPanel = false;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              hintText: "Write a comment...",
+                              hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14.5),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
                         ),
                       ),
@@ -1310,21 +1373,44 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                   child: Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.image_outlined, size: 20, color: const Color(0xFF1E824C)),
+                        icon: Icon(Icons.image_outlined, size: 22, color: Theme.of(context).primaryColor),
                         onPressed: _pickCommentImage,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
+                      IconButton(
+                        icon: Icon(Icons.gif_box_outlined, size: 22, color: Theme.of(context).primaryColor),
+                        onPressed: () {
+                          _commentFocusNode.unfocus();
+                          setState(() {
+                            if (_showEmojiPanel && _pickerTabIndex == 1) {
+                              _showEmojiPanel = false;
+                            } else {
+                              _showEmojiPanel = true;
+                              _pickerTabIndex = 1;
+                            }
+                          });
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 12),
                       IconButton(
                         icon: Icon(
-                          _showEmojiPanel ? Icons.keyboard_hide_outlined : Icons.sentiment_satisfied_alt_outlined, 
-                          size: 20, 
-                          color: const Color(0xFF1E824C)
+                          _showEmojiPanel && _pickerTabIndex == 0 ? Icons.keyboard_hide_outlined : Icons.sentiment_satisfied_alt_outlined, 
+                          size: 22, 
+                          color: Theme.of(context).primaryColor
                         ),
                         onPressed: () {
+                          _commentFocusNode.unfocus();
                           setState(() {
-                            _showEmojiPanel = !_showEmojiPanel;
+                            if (_showEmojiPanel && _pickerTabIndex == 0) {
+                              _showEmojiPanel = false;
+                            } else {
+                              _showEmojiPanel = true;
+                              _pickerTabIndex = 0;
+                            }
                           });
                         },
                         padding: EdgeInsets.zero,
@@ -1336,12 +1422,13 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         builder: (context, value, child) {
                           final hasText = value.text.trim().isNotEmpty;
                           final hasImage = _selectedImageBytes != null;
-                          final isEnabled = (hasText || hasImage) && !_isUploading;
+                          final hasGif = _selectedGifUrl != null;
+                          final isEnabled = (hasText || hasImage || hasGif) && !_isUploading;
 
                           return TextButton(
                             onPressed: isEnabled ? _postComment : null,
                             style: TextButton.styleFrom(
-                              backgroundColor: isEnabled ? const Color(0xFF1E824C) : Colors.grey[300]?.withOpacity(0.4),
+                              backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey[300]?.withOpacity(0.4),
                               foregroundColor: isEnabled ? Colors.white : Colors.grey[400],
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -1364,35 +1451,21 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                   ),
                 ),
 
-                // Popular Emoji Row Panel
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  height: _showEmojiPanel ? 48 : 0,
-                  child: _showEmojiPanel
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          color: context.isDarkMode ? Colors.black12 : Colors.grey[50],
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            children: [
-                              '😂', '❤️', '👍', '😍', '🔥', '😮', '😢', '🙌', '👏', '🤔', '🎉', '✨', '💯', '🚀', '👀', '💡', '🌟', '😭'
-                            ].map((emoji) {
-                              return GestureDetector(
-                                onTap: () => _insertEmoji(emoji),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  child: Text(
-                                    emoji,
-                                    style: const TextStyle(fontSize: 20),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
+                // Premium Emoji / GIF Picker Panel
+                if (_showEmojiPanel)
+                  CommentAttachmentPickerPanel(
+                    initialTabIndex: _pickerTabIndex,
+                    onEmojiSelected: (emoji) {
+                      _insertEmoji(emoji);
+                    },
+                    onGifSelected: (gifUrl) {
+                      setState(() {
+                        _selectedGifUrl = gifUrl;
+                        _selectedImageBytes = null; // Clear image when GIF is selected
+                        _showEmojiPanel = false; // Close panel on selection
+                      });
+                    },
+                  ),
               ],
             ),
           ),

@@ -16,6 +16,7 @@ import '../features/feed/domain/usecases/fetch_comments_use_case.dart';
 import '../features/feed/domain/usecases/add_comment_use_case.dart';
 import '../features/feed/domain/entities/thread_post_entity.dart';
 import '../features/feed/domain/repositories/feed_repository.dart';
+import '../features/chat/domain/repositories/chat_repository.dart';
 import '../features/chat/domain/usecases/get_active_chats_use_case.dart';
 import '../features/chat/domain/usecases/get_messages_stream_use_case.dart';
 import '../features/chat/domain/usecases/send_message_use_case.dart';
@@ -1375,24 +1376,39 @@ class DatabaseService with ChangeNotifier {
     );
   }
 
-  Future<bool> editPostContent(String threadId, String content) async {
+  Future<bool> editPostContent(String threadId, String content, {List<String>? imageUrls}) async {
     if (_currentUid.isEmpty) return false;
     try {
-      await _supabase.from('threads').update({'content': content}).eq('id', threadId);
+      final Map<String, dynamic> updateData = {
+        'content': content,
+      };
+      if (imageUrls != null) {
+        updateData['image_urls'] = imageUrls;
+      }
+      await _supabase.from('threads').update(updateData).eq('id', threadId);
       
       // Update cache
       final cached = _postsCache[threadId];
       if (cached != null) {
-        _postsCache[threadId] = cached.copyWith(content: content);
+        _postsCache[threadId] = cached.copyWith(
+          content: content,
+          imageUrls: imageUrls ?? cached.imageUrls,
+        );
       }
 
       final feedIdx = _feed.indexWhere((p) => p.id == threadId);
       if (feedIdx != -1) {
-        _feed[feedIdx] = _feed[feedIdx].copyWith(content: content);
+        _feed[feedIdx] = _feed[feedIdx].copyWith(
+          content: content,
+          imageUrls: imageUrls ?? _feed[feedIdx].imageUrls,
+        );
       }
       final myIdx = _myThreads.indexWhere((p) => p.id == threadId);
       if (myIdx != -1) {
-        _myThreads[myIdx] = _myThreads[myIdx].copyWith(content: content);
+        _myThreads[myIdx] = _myThreads[myIdx].copyWith(
+          content: content,
+          imageUrls: imageUrls ?? _myThreads[myIdx].imageUrls,
+        );
       }
       notifyListeners();
       return true;
@@ -1695,6 +1711,9 @@ class DatabaseService with ChangeNotifier {
         'media_url': msg.mediaUrl,
         'media_type': msg.mediaType,
         'is_read': msg.isRead,
+        'reply_to_id': msg.replyToId,
+        'reply_to_text': msg.replyToText,
+        'reply_to_sender': msg.replyToSender,
       }).toList();
     });
   }
@@ -1775,6 +1794,28 @@ class DatabaseService with ChangeNotifier {
         return false;
       },
       (success) => success,
+    );
+  }
+
+  Future<bool> editMessage(String messageId, String receiverId, String newContent) async {
+    final result = await sl<IChatRepository>().editMessage(messageId, receiverId, newContent);
+    return result.fold(
+      (failure) {
+        debugPrint("Edit message error: ${failure.message}");
+        return false;
+      },
+      (_) => true,
+    );
+  }
+
+  Future<bool> deleteMessage(String messageId) async {
+    final result = await sl<IChatRepository>().deleteMessage(messageId);
+    return result.fold(
+      (failure) {
+        debugPrint("Delete message error: ${failure.message}");
+        return false;
+      },
+      (_) => true,
     );
   }
 
