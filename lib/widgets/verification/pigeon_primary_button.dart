@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/app_theme.dart';
 
@@ -77,7 +77,7 @@ class PigeonPrimaryButton extends StatelessWidget {
           gradient: disabled
               ? null
               : LinearGradient(
-                  colors: [context.primaryAccent, context.primaryAccent.withOpacity(0.8)],
+                  colors: [context.primaryAccent, context.primaryAccent.withValues(alpha: 0.8)],
                 ),
           color: disabled ? context.border : null,
         ),

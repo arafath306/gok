@@ -1,0 +1,240 @@
+Analyzing Dak...                                                
+
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\core\security\e2ee_service.dart:42:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\core\security\e2ee_service.dart:59:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\core\security\e2ee_service.dart:78:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\core\security\e2ee_service.dart:90:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\core\security\e2ee_service.dart:93:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\core\security\e2ee_service.dart:178:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\features\chat\data\datasources\chat_remote_data_source.dart:46:7 - avoid_print
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\features\chat\data\datasources\chat_remote_data_source.dart:80:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\features\chat\data\datasources\chat_remote_data_source.dart:81:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\features\feed\data\datasources\feed_remote_data_source.dart:112:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\features\feed\data\datasources\feed_remote_data_source.dart:186:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\features\feed\data\datasources\feed_remote_data_source.dart:187:7 - use_null_aware_elements
+warning - Unused import: '../../../../models/profile.dart'. Try removing the import directive - lib\features\feed\domain\repositories\feed_repository.dart:2:8 - unused_import
+warning - The value of the local variable 'c5' isn't used. Try removing the variable or using it - lib\screens\auth\forgot_password_screen.dart:933:11 - unused_local_variable
+   info - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/services.dart'. Try removing the import directive - lib\screens\comment_detail_screen.dart:1:8 - unnecessary_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\comment_detail_screen.dart:549:102 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\comment_detail_screen.dart:1085:113 - deprecated_member_use
+   info - The private field _showVideoInput could be 'final'. Try making the field 'final' - lib\screens\create_thread_screen.dart:33:8 - prefer_final_fields
+   info - The private field _isAnonymous could be 'final'. Try making the field 'final' - lib\screens\create_thread_screen.dart:34:8 - prefer_final_fields
+   info - Unnecessary braces in a string interpolation. Try removing the braces - lib\screens\create_thread_screen.dart:256:31 - unnecessary_brace_in_string_interps
+   info - Use interpolation to compose strings and values. Try using string interpolation to build the composite string - lib\screens\create_thread_screen.dart:264:25 - prefer_interpolation_to_compose_strings
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\create_thread_screen.dart:562:75 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\create_thread_screen.dart:600:63 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\create_thread_screen.dart:935:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\create_thread_screen.dart:1090:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\create_thread_screen.dart:1093:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\create_thread_screen.dart:1114:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\create_thread_screen.dart:1207:47 - deprecated_member_use
+   info - Parameter 'key' could be a super parameter. Trying converting 'key' to a super parameter - lib\screens\feed_screen.dart:16:9 - use_super_parameters
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\feed_screen.dart:273:63 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\feed_screen.dart:334:74 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread. Try removing the invocation of 'toList' - lib\screens\feed_screen.dart:362:108 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\feed_screen.dart:456:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\feed_screen.dart:459:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_screen.dart:838:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_screen.dart:852:49 - deprecated_member_use
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\screens\messenger\chat_screen.dart:887:51 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\screens\messenger\chat_screen.dart:887:55 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_screen.dart:1367:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_screen.dart:1385:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_screen.dart:1387:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_screen.dart:1388:48 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_settings_screen.dart:108:19 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_settings_screen.dart:109:61 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\messenger\chat_settings_screen.dart:156:55 - deprecated_member_use
+   info - Parameter 'key' could be a super parameter. Trying converting 'key' to a super parameter - lib\screens\messenger\messenger_home_screen.dart:14:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext - lib\screens\notifications_screen.dart:264:11 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\screens\notifications_screen.dart:419:31 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\profile\subscription_dashboard_screen.dart:36:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\saved_posts_screen.dart:149:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\saved_posts_screen.dart:257:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\saved_posts_screen.dart:260:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\saved_posts_screen.dart:313:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\saved_posts_screen.dart:316:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\saved_posts_screen.dart:629:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\saved_posts_screen.dart:630:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\saved_posts_screen.dart:677:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\search_explore_screen.dart:353:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\search_explore_screen.dart:390:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\search_explore_screen.dart:425:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\search_explore_screen.dart:506:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\about_settings_screen.dart:95:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\about_settings_screen.dart:101:41 - deprecated_member_use
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\screens\settings\about_settings_screen.dart:528:41 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\help_center_screen.dart:219:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\help_center_screen.dart:302:60 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\help_center_screen.dart:550:41 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\help_center_screen.dart:551:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\help_center_screen.dart:554:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\help_center_screen.dart:560:48 - use_build_context_synchronously
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\notification_settings_screen.dart:162:13 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\privacy_settings_screen.dart:211:13 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread. Try removing the invocation of 'toList' - lib\screens\settings\security_settings_screen.dart:96:93 - unnecessary_to_list_in_spreads
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\security_settings_screen.dart:159:13 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\security_settings_screen.dart:367:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\security_settings_screen.dart:374:43 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\security_settings_screen.dart:375:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\security_settings_screen.dart:378:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\security_settings_screen.dart:383:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\security_settings_screen.dart:389:41 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\security_settings_screen.dart:390:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\security_settings_screen.dart:393:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\settings_screen.dart:164:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\settings_screen.dart:168:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\settings_screen.dart:174:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\settings\settings_screen.dart:179:23 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\settings_screen.dart:245:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\face_verification_screen.dart:157:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\face_verification_screen.dart:159:73 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\payment_screen.dart:180:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\payment_screen.dart:308:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\payment_screen.dart:311:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\pending_screen.dart:106:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\review_screen.dart:180:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\review_screen.dart:233:71 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_intro_screen.dart:88:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_intro_screen.dart:98:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_intro_screen.dart:124:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_intro_screen.dart:481:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_intro_screen.dart:561:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_intro_screen.dart:802:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_intro_screen.dart:802:87 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_intro_screen.dart:812:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_success_screen.dart:46:75 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_success_screen.dart:79:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\settings\verification\verification_success_screen.dart:81:65 - deprecated_member_use
+   info - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/services.dart'. Try removing the import directive - lib\screens\thread_detail_screen.dart:1:8 - unnecessary_import
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\thread_detail_screen.dart:53:54 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\thread_detail_screen.dart:553:65 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext - lib\screens\thread_detail_screen.dart:686:48 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\thread_detail_screen.dart:1431:111 - deprecated_member_use
+warning - Unused import: 'local_notification_service.dart'. Try removing the import directive - lib\services\database_service.dart:7:8 - unused_import
+warning - Unused import: 'sound_service.dart'. Try removing the import directive - lib\services\database_service.dart:8:8 - unused_import
+warning - Unused import: '../features/chat/domain/entities/message_entity.dart'. Try removing the import directive - lib\services\database_service.dart:26:8 - unused_import
+   info - The private field _myReplies could be 'final'. Try making the field 'final' - lib\services\database_service.dart:86:20 - prefer_final_fields
+   info - The variable name 'GREATEST' isn't a lowerCamelCase identifier. Try changing the name to follow the lowerCamelCase style - lib\services\database_service.dart:2100:7 - non_constant_identifier_names
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre. Try replacing the use of the deprecated member with the replacement - lib\utils\app_theme.dart:47:9 - deprecated_member_use
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre. Try replacing the use of the deprecated member with the replacement - lib\utils\app_theme.dart:81:9 - deprecated_member_use
+   info - 'onBackground' is deprecated and shouldn't be used. Use onSurface instead. This feature was deprecated after v3.18.0-0.1.pre. Try replacing the use of the deprecated member with the replacement - lib\utils\app_theme.dart:83:9 - deprecated_member_use
+   info - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/services.dart'. Try removing the import directive - lib\widgets\comments_sheet.dart:1:8 - unnecessary_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\comments_sheet.dart:414:90 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\comments_sheet.dart:880:113 - deprecated_member_use
+   info - The private field _isBlocked could be 'final'. Try making the field 'final' - lib\widgets\comments_sheet.dart:959:8 - prefer_final_fields
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\comments_sheet.dart:1066:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\comments_sheet.dart:1108:38 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\comments_sheet.dart:1285:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\comments_sheet.dart:1286:49 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext - lib\widgets\comments_sheet.dart:1415:27 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\comments_sheet.dart:1419:47 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext - lib\widgets\custom_thread_card.dart:868:34 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext - lib\widgets\custom_thread_card.dart:886:15 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext - lib\widgets\custom_thread_card.dart:918:15 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\custom_thread_card.dart:1002:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\custom_thread_card.dart:1003:49 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\custom_thread_card.dart:1137:29 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\custom_thread_card.dart:1142:47 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\custom_thread_card.dart:1302:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\custom_thread_card.dart:1397:36 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\custom_thread_card.dart:1409:17 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\custom_thread_card.dart:1435:17 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\custom_thread_card.dart:1449:17 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\widgets\custom_thread_card.dart:1471:17 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\custom_thread_card.dart:1545:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\custom_thread_card.dart:1546:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\share_comment_sheet.dart:96:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\share_comment_sheet.dart:97:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\share_post_sheet.dart:96:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\share_post_sheet.dart:97:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\thread_shimmer.dart:154:20 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\verification\pigeon_primary_button.dart:80:73 - deprecated_member_use
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_db.dart:36:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_db.dart:38:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_db.dart:42:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_reposts_columns.dart:15:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_reposts_columns.dart:16:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_reposts_columns.dart:18:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_storage.dart:10:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_storage.dart:17:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_storage.dart:18:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_storage.dart:20:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_table_columns.dart:16:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_table_columns.dart:18:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_threads_columns.dart:16:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_threads_columns.dart:17:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\check_threads_columns.dart:19:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\create_buckets.dart:4:3 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\create_buckets.dart:11:3 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\create_buckets.dart:14:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\create_buckets.dart:16:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\create_buckets.dart:19:3 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\create_buckets.dart:22:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\create_buckets.dart:24:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:25:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:28:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:29:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:30:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:31:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:34:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:37:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:38:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:39:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:40:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\diagnose_e2ee.dart:43:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_repost.dart:17:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_repost.dart:21:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_repost.dart:32:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_repost.dart:33:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_repost.dart:36:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_thread.dart:10:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_thread.dart:27:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_thread.dart:28:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_insert_thread.dart:31:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query.dart:26:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query.dart:30:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query.dart:31:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query.dart:33:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:10:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:18:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:22:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:25:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:26:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:27:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:28:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:29:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:30:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:33:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_query_thread.dart:37:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:11:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:29:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:32:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:37:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:39:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:44:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:47:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:58:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:61:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:66:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:68:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - scratch\test_relation.dart:72:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:23:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:24:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:25:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:38:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:42:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:50:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:56:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:60:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\db_test.dart:61:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\e2ee_check.dart:11:5 - avoid_print
+warning - The value of the local variable 'res' isn't used. Try removing the variable or using it - test\e2ee_check.dart:38:15 - unused_local_variable
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\e2ee_check.dart:39:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\e2ee_check.dart:41:9 - avoid_print
+warning - The value of the local variable 'alicePrivateKeyBytes' isn't used. Try removing the variable or using it - test\e2ee_encryption_test.dart:14:13 - unused_local_variable
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\e2ee_encryption_test.dart:27:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\e2ee_encryption_test.dart:28:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\e2ee_encryption_test.dart:55:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - test\e2ee_encryption_test.dart:91:7 - avoid_print
+

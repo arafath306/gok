@@ -24,8 +24,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final _trxController = TextEditingController();
 
   static const _steps = ['Personal', 'Identity', 'Face', 'Review', 'Payment'];
-
-  static const _merchantNumber = '01313961899';
+  static const _bkashNumber = '01313961899';
 
   @override
   void dispose() {
@@ -35,16 +34,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   void _copyNumber() {
-    Clipboard.setData(const ClipboardData(text: _merchantNumber));
+    Clipboard.setData(const ClipboardData(text: _bkashNumber));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'bKash number copied',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+          'bKash number copied to clipboard',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
         ),
-        backgroundColor: context.greenAccent,
+        backgroundColor: const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -74,7 +73,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         SnackBar(
           content: Text(
             'Submission failed: $e',
-            style: GoogleFonts.inter(color: Colors.white),
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
@@ -89,6 +88,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final controller = context.watch<VerificationController>();
     final isSubmitting = controller.isSubmitting;
     final selectedPlanId = controller.request.selectedPlanId;
+    final isDark = context.isDarkMode;
 
     final plan = dbService.verificationPlans.firstWhere(
       (p) => p['id'] == selectedPlanId,
@@ -110,8 +110,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
               : double.tryParse(plan['discount_price'].toString()))
         : null;
 
-    final finalPriceVal = discountPrice ?? price;
-    final feeAmountStr = '৳${finalPriceVal.toStringAsFixed(0)}';
+    final double payableAmount = discountPrice ?? price;
+    final double savingsAmount = discountPrice != null ? (price - discountPrice) : 0.0;
 
     return Scaffold(
       backgroundColor: context.scaffoldBg,
@@ -128,11 +128,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Apply for Blue Badge',
+          'Verification Payment',
           style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
             color: context.textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
@@ -144,138 +145,191 @@ class _PaymentScreenState extends State<PaymentScreen> {
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text('Verify & Pay',
+                          style: GoogleFonts.inter(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                              color: context.textPrimary,
+                              letterSpacing: -0.4)),
+                      const SizedBox(height: 6),
                       Text(
-                        'Pay the verification fee',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'A membership fee to verify and maintain your Blue Badge ($planName).',
-                        style: GoogleFonts.inter(
-                          color: context.textSecondary,
-                          fontSize: 13,
-                        ),
+                        'Complete your verification by sending the bKash payment to the personal number below.',
+                        style: GoogleFonts.inter(color: context.textSecondary, fontSize: 13, height: 1.45),
                       ),
                       const SizedBox(height: 20),
 
-                      // bKash card
+                      // 1. Premium Invoice Statement Receipt Card
                       Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE2136E),
+                          color: context.cardBg,
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: context.border, width: 0.8),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFE2136E).withOpacity(0.25),
-                              blurRadius: 12,
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 10,
                               offset: const Offset(0, 4),
-                            ),
+                            )
                           ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          children: [
+                            // Invoice header banner
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: context.primaryAccent.withValues(alpha: 0.06),
+                                border: Border(bottom: BorderSide(color: context.border, width: 0.5)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'MEMBERSHIP INVOICE',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
+                                      color: context.primaryAccent,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                  Text(
+                                    selectedPlanId.toUpperCase(),
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12,
+                                      color: context.primaryAccent,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Line Items
+                            _buildInvoiceRow('Subscription Plan', planName, false),
+                            _buildInvoiceRow('Base Price', '৳${price.toStringAsFixed(0)}', false),
+                            if (discountPrice != null)
+                              _buildInvoiceRow('Offer Discount', '-৳${savingsAmount.toStringAsFixed(0)}', false, valueColor: const Color(0xFF10B981)),
+                            
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Divider(height: 1, thickness: 0.5),
+                            ),
+                            _buildInvoiceRow('Total Payable (BDT)', '৳${payableAmount.toStringAsFixed(0)}', true, valueColor: context.primaryAccent),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 2. bKash payment box
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE2136E).withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFE2136E).withValues(alpha: 0.15), width: 1),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFE2136E),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'bKash · Send Money',
+                                  'Send bKash Payment',
                                   style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFFE2136E),
                                     fontSize: 14,
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.account_balance_wallet_outlined,
-                                  color: Colors.white,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  _merchantNumber,
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontSize: 22,
                                     fontWeight: FontWeight.w800,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: _copyNumber,
-                                  icon: const Icon(
-                                    Icons.copy_rounded,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Colors.white24,
-                                    padding: const EdgeInsets.all(8),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 14),
                             Text(
-                              'Amount: $feeAmountStr',
+                              'Send ৳${payableAmount.toStringAsFixed(0)} to this personal bKash number:',
                               style: GoogleFonts.inter(
-                                color: Colors.white70,
                                 fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                                color: context.textPrimary,
+                                height: 1.45,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF10132A) : Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: context.border, width: 0.8),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    _bkashNumber,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 1.5,
+                                      color: context.textPrimary,
+                                    ),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: _copyNumber,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFE2136E).withValues(alpha: 0.1),
+                                      foregroundColor: const Color(0xFFE2136E),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    icon: const Icon(Icons.copy_rounded, size: 14),
+                                    label: Text(
+                                      'Copy',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      Text(
-                        'How to pay',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13.5,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const _StepLine(number: 1, text: 'Open your bKash app'),
-                      const _StepLine(
-                        number: 2,
-                        text: "Tap 'Send Money' and enter the number above",
-                      ),
-                      _StepLine(
-                        number: 3,
-                        text: 'Enter the amount: $feeAmountStr',
-                      ),
-                      const _StepLine(
-                        number: 4,
-                        text: 'Use your Pigeon username as reference',
-                      ),
-                      const _StepLine(
-                        number: 5,
-                        text:
-                            'Confirm with your PIN and copy the TrxID '
-                            'from the confirmation screen/SMS',
-                      ),
                       const SizedBox(height: 24),
 
+                      // 3. Inputs section
+                      Text('Enter Payment Details',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14.5,
+                              color: context.textPrimary,
+                              letterSpacing: -0.2)),
+                      const SizedBox(height: 12),
+                      
                       PigeonTextField(
-                        label: 'Your bKash number',
+                        label: 'Sender bKash Account Number',
                         hint: '01XXXXXXXXX',
                         controller: _senderController,
                         keyboardType: TextInputType.phone,
@@ -284,12 +338,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           size: 18,
                           color: context.textMuted,
                         ),
-                        validator: (v) => (v == null || v.trim().length < 11)
-                            ? 'Enter the number you paid from'
-                            : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Enter the number you paid from';
+                          }
+                          final phoneRegExp = RegExp(r'^(?:\+88|88)?(01[3-9]\d{8})$');
+                          if (!phoneRegExp.hasMatch(v.trim())) {
+                            return 'Enter a valid Bangladeshi phone number';
+                          }
+                          return null;
+                        },
                       ),
+                      const SizedBox(height: 6),
+
                       PigeonTextField(
-                        label: 'Transaction ID (TrxID)',
+                        label: 'bKash Transaction ID (TrxID)',
                         hint: 'e.g. 9F7K2L1A0B',
                         controller: _trxController,
                         prefixIcon: Icon(
@@ -297,43 +360,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           size: 18,
                           color: context.textMuted,
                         ),
-                        validator: (v) => (v == null || v.trim().length < 6)
-                            ? 'Enter the TrxID from your bKash SMS'
-                            : null,
-                      ),
-
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: context.primaryAccent.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: context.primaryAccent.withOpacity(0.1),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              size: 18,
-                              color: context.primaryAccent,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'We verify every transaction ID against our '
-                                'bKash statement before approving a badge. '
-                                'False TrxIDs will be rejected.',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: context.textSecondary,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Enter the TrxID from your bKash SMS';
+                          }
+                          final trxRegExp = RegExp(r'^[A-Z0-9]{8,12}$');
+                          if (!trxRegExp.hasMatch(v.trim().toUpperCase())) {
+                            return 'Enter a valid bKash transaction ID';
+                          }
+                          return null;
+                        },
                       ),
                     ],
                   ),
@@ -343,10 +379,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: PigeonPrimaryButton(
-                label: 'Submit Application',
-                icon: Icons.check_circle_outline,
+                label: 'Submit Verification',
+                icon: Icons.check_circle_outline_rounded,
                 isLoading: isSubmitting,
-                onPressed: _onSubmit,
+                onPressed: isSubmitting ? null : _onSubmit,
               ),
             ),
           ],
@@ -354,47 +390,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
     );
   }
-}
 
-class _StepLine extends StatelessWidget {
-  final int number;
-  final String text;
-
-  const _StepLine({required this.number, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildInvoiceRow(String label, String value, bool isTotal, {Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              color: context.primaryAccent,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '$number',
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: isTotal ? 14 : 12.5,
+              fontWeight: isTotal ? FontWeight.w900 : FontWeight.w500,
+              color: isTotal ? context.textPrimary : context.textSecondary,
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.inter(
-                fontSize: 12.5,
-                color: context.textPrimary,
-              ),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: isTotal ? 17 : 13,
+              fontWeight: isTotal ? FontWeight.w900 : FontWeight.bold,
+              color: valueColor ?? context.textPrimary,
             ),
           ),
         ],

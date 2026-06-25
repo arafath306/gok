@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -835,7 +836,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
-                    tileColor: Colors.redAccent.withOpacity(0.05),
+                    tileColor: Colors.redAccent.withValues(alpha: 0.05),
                   ),
                   const SizedBox(height: 8),
                   ListTile(
@@ -849,7 +850,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
-                    tileColor: Colors.redAccent.withOpacity(0.05),
+                    tileColor: Colors.redAccent.withValues(alpha: 0.05),
                   ),
                   if (sharedMedia.isNotEmpty) ...[
                     const SizedBox(height: 24),
@@ -957,6 +958,44 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
 
+    Widget buildHeaderActionButton({
+      required IconData icon,
+      required VoidCallback onTap,
+      double iconSize = 20,
+      double containerSize = 36,
+    }) {
+      return Container(
+        width: containerSize,
+        height: containerSize,
+        decoration: BoxDecoration(
+          color: context.isDarkMode
+              ? const Color(0xFF1E293B).withValues(alpha: 0.8)
+              : const Color(0xFFF1F5F9).withValues(alpha: 0.85),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: context.isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.05),
+            width: 0.8,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(containerSize / 2),
+            onTap: onTap,
+            child: Center(
+              child: Icon(
+                icon,
+                color: context.textPrimary,
+                size: iconSize,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: context.scaffoldBg,
       appBar: AppBar(
@@ -1051,23 +1090,25 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           if (!isBlocked) ...[
-            IconButton(
-              icon: Icon(Icons.phone_outlined,
-                  color: context.textPrimary, size: 21),
-              onPressed: () => _showComingSoon('Audio'),
+            buildHeaderActionButton(
+              icon: CupertinoIcons.phone_fill,
+              onTap: () => _showComingSoon('Audio'),
+              iconSize: 18,
             ),
-            IconButton(
-              icon: Icon(Icons.videocam_outlined,
-                  color: context.textPrimary, size: 22),
-              onPressed: () => _showComingSoon('Video'),
+            const SizedBox(width: 8),
+            buildHeaderActionButton(
+              icon: CupertinoIcons.videocam_fill,
+              onTap: () => _showComingSoon('Video'),
+              iconSize: 20,
             ),
+            const SizedBox(width: 8),
           ],
-          IconButton(
-            icon: Icon(Icons.info_outlined,
-                color: context.textPrimary, size: 20),
-            onPressed: _showMessengerProfile,
+          buildHeaderActionButton(
+            icon: CupertinoIcons.info,
+            onTap: _showMessengerProfile,
+            iconSize: 18,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
         ],
       ),
       body: Column(
@@ -1364,7 +1405,7 @@ class _MessageBubble extends StatelessWidget {
                     : Border.all(color: context.border, width: 0.8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.015),
+                    color: Colors.black.withValues(alpha: 0.015),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -1382,10 +1423,10 @@ class _MessageBubble extends StatelessWidget {
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: isMe
-                            ? Colors.white.withOpacity(0.15)
+                            ? Colors.white.withValues(alpha: 0.15)
                             : (context.isDarkMode
-                                ? Colors.white.withOpacity(0.05)
-                                : Colors.black.withOpacity(0.04)),
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.04)),
                         borderRadius: BorderRadius.circular(8),
                         border: Border(
                           left: BorderSide(

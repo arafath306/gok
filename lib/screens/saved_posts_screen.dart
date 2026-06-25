@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/profile.dart';
@@ -146,11 +147,11 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E824C).withOpacity(0.12),
+                                color: const Color(0xFF1E824C).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
-                                Icons.bookmark_rounded,
+                                CupertinoIcons.bookmark_fill,
                                 color: Color(0xFF1E824C),
                                 size: 22,
                               ),
@@ -254,10 +255,10 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
               margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E824C).withOpacity(0.06),
+                color: const Color(0xFF1E824C).withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF1E824C).withOpacity(0.15),
+                  color: const Color(0xFF1E824C).withValues(alpha: 0.15),
                 ),
               ),
               child: Row(
@@ -310,10 +311,10 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
               margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E824C).withOpacity(0.06),
+                color: const Color(0xFF1E824C).withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF1E824C).withOpacity(0.15),
+                  color: const Color(0xFF1E824C).withValues(alpha: 0.15),
                 ),
               ),
               child: Row(
@@ -494,17 +495,17 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                         children: [
                           Icon(
                             (comment['is_liked_by_me'] as bool? ?? false)
-                                ? Icons.favorite
-                                : Icons.favorite_border,
+                                ? CupertinoIcons.heart_fill
+                                : CupertinoIcons.heart,
                             size: 15,
                             color: (comment['is_liked_by_me'] as bool? ?? false)
                                 ? Colors.red
-                                : context.textSecondary,
+                                : context.textPrimary.withValues(alpha: 0.75),
                           ),
                           const SizedBox(width: 6),
                           Text(
                             "${comment['likes_count'] ?? 0}",
-                            style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.inter(fontSize: 13, color: context.textPrimary.withValues(alpha: 0.75), fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -528,11 +529,11 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                       },
                       child: Row(
                         children: [
-                          Icon(Icons.mode_comment_outlined, size: 15, color: context.textSecondary),
+                          Icon(CupertinoIcons.chat_bubble, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                           const SizedBox(width: 6),
                           Text(
                             "${comment['replies_count'] ?? 0}",
-                            style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.inter(fontSize: 13, color: context.textPrimary.withValues(alpha: 0.75), fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -565,17 +566,17 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                         children: [
                           Icon(
                             (comment['is_saved_by_me'] as bool? ?? false)
-                                ? Icons.bookmark
-                                : Icons.bookmark_border_rounded,
+                                ? CupertinoIcons.bookmark_fill
+                                : CupertinoIcons.bookmark,
                             size: 15,
                             color: (comment['is_saved_by_me'] as bool? ?? false)
                                 ? const Color(0xFF1E824C)
-                                : context.textSecondary,
+                                : context.textPrimary.withValues(alpha: 0.75),
                           ),
                           const SizedBox(width: 6),
                           Text(
                             "${comment['saves_count'] ?? 0}",
-                            style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.inter(fontSize: 13, color: context.textPrimary.withValues(alpha: 0.75), fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -596,11 +597,11 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                       },
                       child: Row(
                         children: [
-                          Icon(Icons.shortcut_outlined, size: 15, color: context.textSecondary),
+                          Icon(CupertinoIcons.arrowshape_turn_up_right, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                           const SizedBox(width: 6),
                           Text(
                             "${comment['shares_count'] ?? 0}",
-                            style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.inter(fontSize: 13, color: context.textPrimary.withValues(alpha: 0.75), fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -626,8 +627,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF1E824C).withOpacity(0.08),
-                  const Color(0xFF1E824C).withOpacity(0.15),
+                  const Color(0xFF1E824C).withValues(alpha: 0.08),
+                  const Color(0xFF1E824C).withValues(alpha: 0.15),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -635,7 +636,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.bookmark_border_rounded,
+              CupertinoIcons.bookmark,
               size: 48,
               color: Color(0xFF1E824C),
             ),
@@ -674,7 +675,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1E824C).withOpacity(0.3),
+                    color: const Color(0xFF1E824C).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -684,7 +685,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
-                    Icons.bookmark_add_rounded,
+                    CupertinoIcons.bookmark,
                     color: Colors.white,
                     size: 18,
                   ),

@@ -24,32 +24,70 @@ class VerificationSuccessScreen extends StatelessWidget {
         title: Text(
           'Verification Active',
           style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
             color: context.textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [context.primaryAccent, context.primaryAccent.withOpacity(0.8)],
+              
+              // Glowing outer verification ring
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF0095F6).withValues(alpha: 0.06),
+                    ),
                   ),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 44),
+                  Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF0095F6).withValues(alpha: 0.2),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF0095F6), Color(0xFF5B7FFF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFF0095F6),
+                          blurRadius: 16,
+                          offset: Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: const Icon(Icons.verified_rounded, color: Colors.white, size: 44),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
+              
+              // User info row
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
@@ -57,48 +95,66 @@ class VerificationSuccessScreen extends StatelessWidget {
                   Text(
                     request.fullName.isEmpty ? 'Pigeon User' : request.fullName,
                     style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: context.textPrimary),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                        color: context.textPrimary,
+                        letterSpacing: -0.4),
                   ),
                   const SizedBox(width: 6),
-                  Icon(Icons.verified,
-                      color: context.primaryAccent, size: 22),
+                  const Icon(Icons.verified_rounded,
+                      color: Color(0xFF0095F6), size: 23),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
                 '@${request.username.isEmpty ? 'username' : request.username}',
-                style: GoogleFonts.inter(color: context.textSecondary, fontSize: 14),
+                style: GoogleFonts.inter(
+                  color: context.textSecondary, 
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w500
+                ),
               ),
               const SizedBox(height: 32),
+              
+              // Congratulations card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: context.greenAccent.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: context.greenAccent.withOpacity(0.3)),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.15)),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Icon(Icons.check_circle, color: context.greenAccent),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "Congratulations! Your Pigeon Blue Badge is active.",
-                        style: GoogleFonts.inter(
-                            color: context.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13.5),
+                    const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 28),
+                    const SizedBox(height: 12),
+                    Text(
+                      "Identity Verified",
+                      style: GoogleFonts.inter(
+                        color: context.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Congratulations! Your Pigeon Blue Badge is now active. Your verified checkmark is visible next to your name across the platform.",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        color: context.textSecondary,
+                        fontSize: 13,
+                        height: 1.5,
                       ),
                     ),
                   ],
                 ),
               ),
+              
               const Spacer(),
+              
               PigeonPrimaryButton(
-                label: 'Go to Main Screen',
+                label: 'Go to Feed Home',
                 icon: Icons.home_rounded,
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(

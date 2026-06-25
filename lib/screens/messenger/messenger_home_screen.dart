@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
@@ -18,9 +19,26 @@ class MessengerHomeScreen extends StatefulWidget {
 }
 
 class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
+  late Future<List<Map<String, dynamic>>> _chatsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChats();
+  }
+
+  void _loadChats() {
+    _chatsFuture =
+        Provider.of<DatabaseService>(context, listen: false).fetchActiveChats();
+  }
+
   Future<void> _handleRefresh() async {
-    setState(() {});
-    await Future.delayed(const Duration(milliseconds: 600));
+    setState(() {
+      _chatsFuture =
+          Provider.of<DatabaseService>(context, listen: false)
+              .fetchActiveChats();
+    });
+    await _chatsFuture;
   }
 
   @override
@@ -34,11 +52,17 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
         backgroundColor: context.scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.menu_rounded, color: context.textPrimary, size: 24),
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
-          },
+        leading: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => Scaffold.of(context).openDrawer(),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16.0, right: 10.0),
+            child: Icon(
+              CupertinoIcons.ellipses_bubble,
+              color: context.textPrimary,
+              size: 26,
+            ),
+          ),
         ),
         titleSpacing: 0,
         title: Text(
@@ -73,10 +97,8 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
       body: RefreshIndicator(
         color: context.primaryAccent,
         onRefresh: _handleRefresh,
-        child: Consumer<DatabaseService>(
-          builder: (context, dbService, _) {
-            return FutureBuilder<List<Map<String, dynamic>>>(
-              future: dbService.fetchActiveChats(),
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _chatsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                   return Center(
@@ -118,7 +140,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).primaryColor,
+                                  backgroundColor: const Color(0xFF1E824C),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
@@ -278,12 +300,10 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                   );
                 },
               );
-            },
-          );
         },
       ),
-     ),
-      floatingActionButton: Padding(
+    ),
+    floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 72),
         child: FloatingActionButton.small(
           onPressed: () {
@@ -292,10 +312,10 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
               MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
             );
           },
-          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
+          backgroundColor: const Color(0xFF1E824C).withValues(alpha: 0.15),
           shape: const CircleBorder(),
           elevation: 0,
-          child: Icon(Icons.add, color: Theme.of(context).primaryColor, size: 23),
+          child: const Icon(Icons.add, color: Color(0xFF1E824C), size: 23),
         ),
       ),
     );

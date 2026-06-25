@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
@@ -272,7 +273,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     );
   }
 
-  Widget _buildTrendingItem(String rank, String tag, String postsCount) {
+  Widget _buildTrendingItem(String rank, String tag, String postsCount, {String? headline, String? summary}) {
+    final hasAiContext = headline != null && headline.isNotEmpty;
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -281,7 +284,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -289,32 +292,97 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Trending · #$rank",
-                    style: GoogleFonts.inter(
-                      color: context.textMuted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        "Trending · #$rank",
+                        style: GoogleFonts.inter(
+                          color: context.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (hasAiContext) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E824C).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: const Color(0xFF1E824C).withValues(alpha: 0.2), width: 0.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.auto_awesome_rounded,
+                                size: 10,
+                                color: Color(0xFF1E824C),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                "AI Context",
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF1E824C),
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 6),
                   Text(
-                    tag.startsWith('#') ? tag : '#$tag',
+                    hasAiContext ? headline : (tag.startsWith('#') ? tag : '#$tag'),
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: hasAiContext ? 16 : 15,
                       color: context.textPrimary,
-                      letterSpacing: -0.1,
+                      height: 1.25,
+                      letterSpacing: -0.15,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    postsCount,
+                    hasAiContext 
+                      ? "${tag.startsWith('#') ? tag : '#$tag'} · $postsCount"
+                      : postsCount,
                     style: GoogleFonts.inter(
-                      color: context.textMuted,
+                      color: hasAiContext ? const Color(0xFF1E824C) : context.textMuted,
                       fontSize: 12.5,
+                      fontWeight: hasAiContext ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),
+                  if (hasAiContext && summary != null && summary.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: context.isDarkMode
+                            ? const Color(0xFF151824)
+                            : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: context.isDarkMode
+                              ? const Color(0xFF1E293B)
+                              : Colors.grey.shade200,
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        summary,
+                        style: GoogleFonts.hindSiliguri(
+                          color: context.textSecondary,
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -333,7 +401,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     );
   }
 
-  Widget _buildRisingTopicItem(String topic, String growth) {
+  Widget _buildRisingTopicItem(String topic, String growth, {String? headline, String? summary}) {
+    final hasAiContext = headline != null && headline.isNotEmpty;
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -344,13 +414,15 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(top: 2),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.08),
+                color: Colors.blue.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -365,7 +437,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    topic.startsWith('#') ? topic : '#$topic',
+                    hasAiContext ? headline : (topic.startsWith('#') ? topic : '#$topic'),
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -375,19 +447,33 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    "Rising rapidly",
+                    hasAiContext 
+                      ? "${topic.startsWith('#') ? topic : '#$topic'} · Rising rapidly"
+                      : "Rising rapidly",
                     style: GoogleFonts.inter(
                       color: context.textMuted,
                       fontSize: 12,
                     ),
                   ),
+                  if (hasAiContext && summary != null && summary.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      summary,
+                      style: GoogleFonts.hindSiliguri(
+                        color: context.textSecondary,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -405,7 +491,9 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
     );
   }
 
-  Widget _buildDiscussedItem(String topic, String replies) {
+  Widget _buildDiscussedItem(String topic, String replies, {String? headline, String? summary}) {
+    final hasAiContext = headline != null && headline.isNotEmpty;
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -416,13 +504,15 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(top: 2),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.08),
+                color: Colors.orange.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -437,27 +527,41 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    topic.startsWith('#') ? topic : '#$topic',
+                    hasAiContext ? headline : (topic.startsWith('#') ? topic : '#$topic'),
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                       color: context.textPrimary,
                       letterSpacing: -0.1,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    "Highly active discussion",
+                    hasAiContext
+                      ? "${topic.startsWith('#') ? topic : '#$topic'} · Highly active"
+                      : "Highly active discussion",
                     style: GoogleFonts.inter(
                       color: context.textMuted,
                       fontSize: 12,
                     ),
                   ),
+                  if (hasAiContext && summary != null && summary.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      summary,
+                      style: GoogleFonts.hindSiliguri(
+                        color: context.textSecondary,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               replies,
               style: GoogleFonts.inter(
@@ -503,7 +607,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   "($count)",
                   style: GoogleFonts.inter(
                     color: isSelected
-                        ? const Color(0xFF1E824C).withOpacity(0.8)
+                        ? const Color(0xFF1E824C).withValues(alpha: 0.8)
                         : context.textMuted,
                     fontSize: 11.5,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -559,15 +663,18 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
             children: [
               Row(
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.menu_rounded, color: context.textPrimary),
-                    padding: EdgeInsets.zero,
-                    alignment: Alignment.centerLeft,
-                    onPressed: () {
-                      Scaffold.of(context).openDrawer();
-                    },
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Scaffold.of(context).openDrawer(),
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12.0, bottom: 2.0),
+                      child: Icon(
+                        CupertinoIcons.search,
+                        color: context.textPrimary,
+                        size: 26,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
                   Text(
                     "Explorer",
                     style: GoogleFonts.hindSiliguri(
@@ -575,6 +682,60 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                       fontWeight: FontWeight.bold,
                       color: context.textPrimary,
                     ),
+                  ),
+                  const Spacer(),
+                  // 3-dot menu
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert_rounded, color: context.textPrimary, size: 22),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    color: context.cardBg,
+                    elevation: 8,
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'refresh':
+                          _loadRecommendations();
+                          _loadTopics();
+                          break;
+                        case 'saved':
+                          Navigator.pushNamed(context, '/saved');
+                          break;
+                        case 'settings':
+                          Navigator.pushNamed(context, '/settings');
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'refresh',
+                        child: Row(
+                          children: [
+                            Icon(Icons.refresh_rounded, size: 18, color: context.textSecondary),
+                            const SizedBox(width: 10),
+                            Text('Refresh', style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'saved',
+                        child: Row(
+                          children: [
+                            Icon(Icons.bookmark_outline_rounded, size: 18, color: context.textSecondary),
+                            const SizedBox(width: 10),
+                            Text('Saved Posts', style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'settings',
+                        child: Row(
+                          children: [
+                            Icon(Icons.settings_outlined, size: 18, color: context.textSecondary),
+                            const SizedBox(width: 10),
+                            Text('Settings', style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -836,6 +997,8 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                   (index + 1).toString(),
                                   item['topic_name'] as String? ?? '',
                                   "$posts ${posts == 1 ? 'post' : 'posts'}",
+                                  headline: item['headline'] as String?,
+                                  summary: item['summary'] as String?,
                                 );
                               }),
                             const SizedBox(height: 12),
@@ -876,6 +1039,8 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                 return _buildRisingTopicItem(
                                   item['topic_name'] as String? ?? '',
                                   "$sign$growth% growth",
+                                  headline: item['headline'] as String?,
+                                  summary: item['summary'] as String?,
                                 );
                               }),
                             const SizedBox(height: 12),
@@ -916,6 +1081,8 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                                 return _buildDiscussedItem(
                                   item['topic_name'] as String? ?? '',
                                   "$replies ${replies == 1 ? 'reply' : 'replies'} today",
+                                  headline: item['headline'] as String?,
+                                  summary: item['summary'] as String?,
                                 );
                               }),
                             const SizedBox(height: 12),

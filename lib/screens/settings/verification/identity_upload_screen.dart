@@ -61,13 +61,13 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
               ListTile(
                 leading: Icon(Icons.camera_alt_outlined,
                     color: context.primaryAccent),
-                title: Text('Take a photo', style: GoogleFonts.inter(color: context.textPrimary)),
+                title: Text('Take a photo', style: GoogleFonts.inter(color: context.textPrimary, fontWeight: FontWeight.w600)),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
                 leading: Icon(Icons.photo_library_outlined,
                     color: context.primaryAccent),
-                title: Text('Choose from gallery', style: GoogleFonts.inter(color: context.textPrimary)),
+                title: Text('Choose from gallery', style: GoogleFonts.inter(color: context.textPrimary, fontWeight: FontWeight.w600)),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -131,9 +131,10 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
         title: Text(
           'Apply for Blue Badge',
           style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
             color: context.textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
@@ -145,57 +146,91 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Confirm your identity',
+                    Text('Confirm Your Identity',
                         style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: context.textPrimary)),
-                    const SizedBox(height: 4),
+                            fontSize: 19,
+                            fontWeight: FontWeight.w900,
+                            color: context.textPrimary,
+                            letterSpacing: -0.4)),
+                    const SizedBox(height: 6),
                     Text(
-                      'Your NID is securely stored and only used to verify '
-                      'your identity. It is never shown on your public profile.',
-                      style: GoogleFonts.inter(color: context.textSecondary, fontSize: 13),
+                      'Provide a government-issued photo ID. Make sure the details match your profile and the card is clearly readable.',
+                      style: GoogleFonts.inter(color: context.textSecondary, fontSize: 13, height: 1.45),
                     ),
                     const SizedBox(height: 24),
+                    
                     PigeonTextField(
-                      label: 'NID number',
-                      hint: 'Enter your National ID number',
+                      label: 'National ID (NID) Number',
+                      hint: 'Enter your 10 or 17 digit NID number',
                       controller: _nidController,
                       keyboardType: TextInputType.number,
                       prefixIcon: Icon(Icons.badge_outlined,
                           size: 18, color: context.textMuted),
                     ),
-                    const SizedBox(height: 4),
-                    Text('Upload your NID card',
+                    const SizedBox(height: 20),
+                    
+                    Text('Upload ID Documents',
                         style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13.5,
-                            color: context.textPrimary)),
-                    const SizedBox(height: 12),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14.5,
+                            color: context.textPrimary,
+                            letterSpacing: -0.2)),
+                    const SizedBox(height: 4),
+                    Text('Take clear photos of both the front and back of your NID card.',
+                        style: GoogleFonts.inter(color: context.textSecondary, fontSize: 12.5)),
+                    const SizedBox(height: 16),
+                    
                     Row(
                       children: [
                         Expanded(
                           child: IdUploadCard(
-                            title: 'Front side',
-                            subtitle: 'Tap to upload',
+                            title: 'Front Side',
+                            subtitle: 'Tap to upload NID front',
                             file: _front,
                             onTap: () => _pickImage(isFront: true),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: IdUploadCard(
-                            title: 'Back side',
-                            subtitle: 'Tap to upload',
+                            title: 'Back Side',
+                            subtitle: 'Tap to upload NID back',
                             file: _back,
                             onTap: () => _pickImage(isFront: false),
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.15)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Ensure there are no reflections or glares on the NID photos. All text must be perfectly legible for automatic verification checks to succeed.',
+                              style: GoogleFonts.inter(
+                                fontSize: 12.5,
+                                color: context.textSecondary,
+                                height: 1.45,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -204,7 +239,7 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: PigeonPrimaryButton(
-                label: 'Continue',
+                label: 'Save & Continue',
                 icon: Icons.arrow_forward_rounded,
                 onPressed: _onContinue,
               ),

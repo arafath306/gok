@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +14,7 @@ import 'edit_profile_screen.dart';
 import 'followers_following_screen.dart';
 import '../messenger/chat_screen.dart';
 import '../../widgets/custom_thread_card.dart';
+import '../create_thread_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   /// Pass userId to view another user's profile. Leave null for own profile.
@@ -510,22 +512,59 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ],
 
-        // Location (country)
-        if (profile?.country != null && profile!.country!.isNotEmpty) ...[
+        // Location (country) + Join date
+        if ((profile?.country != null && profile!.country!.isNotEmpty) ||
+            profile?.createdAt != null) ...[
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Icon(Icons.public_rounded, size: 14, color: context.textMuted),
-                const SizedBox(width: 5),
-                Text(
-                  profile.country!,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: context.textSecondary,
+                if (profile?.country != null &&
+                    profile!.country!.isNotEmpty) ...[
+                  Icon(Icons.public_rounded,
+                      size: 14, color: context.textMuted),
+                  const SizedBox(width: 5),
+                  Text(
+                    profile.country!,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: context.textSecondary,
+                    ),
                   ),
-                ),
+                ],
+                if (profile?.country != null &&
+                    profile!.country!.isNotEmpty &&
+                    profile.createdAt != null) ...[
+                  const SizedBox(width: 12),
+                  Text(
+                    '·',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: context.textMuted,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                if (profile?.createdAt != null) ...[
+                  Icon(Icons.calendar_today_rounded,
+                      size: 13, color: context.textMuted),
+                  const SizedBox(width: 5),
+                  Text(
+                    () {
+                      final dt = profile!.createdAt!;
+                      const months = [
+                        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                      ];
+                      return 'Joined ${months[dt.month - 1]} ${dt.year}';
+                    }(),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -662,9 +701,14 @@ class _ProfileScreenState extends State<ProfileScreen>
             if (_isOwnProfile) ...[
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CreateThreadScreen()),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0085FF),
+                  backgroundColor: const Color(0xFF1E824C),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20)),
@@ -754,7 +798,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 border: Border.all(color: context.border, width: 1.5),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.repeat_rounded,
+              child: Icon(CupertinoIcons.arrow_2_circlepath,
                   size: 34, color: context.textMuted),
             ),
             const SizedBox(height: 14),

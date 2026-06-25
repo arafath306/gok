@@ -26,6 +26,7 @@ class Profile {
   final bool isActiveStatusEnabled;
   final DateTime? lastSeen;
   final String? publicKey;
+  final DateTime? createdAt;
 
   Profile({
     required this.id,
@@ -55,6 +56,7 @@ class Profile {
     this.isActiveStatusEnabled = true,
     this.lastSeen,
     this.publicKey,
+    this.createdAt,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -88,6 +90,9 @@ class Profile {
       isActiveStatusEnabled: json['is_active_status_enabled'] as bool? ?? true,
       lastSeen: json['last_seen'] != null ? DateTime.tryParse(json['last_seen'] as String) : null,
       publicKey: json['public_key'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
     );
   }
 
@@ -120,6 +125,7 @@ class Profile {
       'is_active_status_enabled': isActiveStatusEnabled,
       'last_seen': lastSeen?.toIso8601String(),
       if (publicKey != null) 'public_key': publicKey,
+      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
   }
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/cupertino.dart';
 import '../utils/app_theme.dart';
 
 class ThreadShimmer extends StatefulWidget {
@@ -132,10 +132,10 @@ class _ThreadShimmerState extends State<ThreadShimmer>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildActionIconSkeleton(Icons.mode_comment_outlined, baseColor),
-                      _buildActionIconSkeleton(Icons.repeat_rounded, baseColor),
-                      _buildActionIconSkeleton(Icons.favorite_border_rounded, baseColor),
-                      _buildActionIconSkeleton(Icons.shortcut_outlined, baseColor),
+                      _buildActionIconSkeleton(CupertinoIcons.chat_bubble, baseColor),
+                      _buildActionIconSkeleton(CupertinoIcons.arrow_2_circlepath, baseColor),
+                      _buildActionIconSkeleton(CupertinoIcons.heart, baseColor),
+                      _buildActionIconSkeleton(CupertinoIcons.arrowshape_turn_up_right, baseColor),
                     ],
                   ),
                 ),
@@ -151,7 +151,7 @@ class _ThreadShimmerState extends State<ThreadShimmer>
     return Icon(
       icon,
       size: 18,
-      color: color.withOpacity(0.5),
+      color: color.withValues(alpha: 0.5),
     );
   }
 }

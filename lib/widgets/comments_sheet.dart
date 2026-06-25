@@ -1,6 +1,7 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
@@ -411,7 +412,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                Container(
                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                  decoration: BoxDecoration(
-                                                   color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                                   color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                                                    borderRadius: BorderRadius.circular(4),
                                                  ),
                                                  child: Text(
@@ -482,12 +483,12 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                 children: [
                                                   Icon(
                                                     (comment['is_liked_by_me'] as bool? ?? false)
-                                                        ? Icons.favorite
-                                                        : Icons.favorite_border,
+                                                        ? CupertinoIcons.heart_fill
+                                                        : CupertinoIcons.heart,
                                                     size: 15,
                                                     color: (comment['is_liked_by_me'] as bool? ?? false)
                                                         ? Colors.red
-                                                        : context.textSecondary,
+                                                        : context.textPrimary.withValues(alpha: 0.75),
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
@@ -495,7 +496,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                     style: GoogleFonts.inter(
                                                       fontSize: 13, 
                                                       fontWeight: FontWeight.w500,
-                                                      color: context.textSecondary,
+                                                      color: context.textPrimary.withValues(alpha: 0.75),
                                                     ),
                                                   ),
                                                 ],
@@ -518,14 +519,14 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               },
                                               child: Row(
                                                 children: [
-                                                  Icon(Icons.mode_comment_outlined, size: 15, color: context.textSecondary),
+                                                  Icon(CupertinoIcons.chat_bubble, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     "${comment['replies_count'] ?? 0}",
                                                     style: GoogleFonts.inter(
                                                       fontSize: 13, 
                                                       fontWeight: FontWeight.w500,
-                                                      color: context.textSecondary,
+                                                      color: context.textPrimary.withValues(alpha: 0.75),
                                                     ),
                                                   ),
                                                 ],
@@ -559,12 +560,12 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                 children: [
                                                   Icon(
                                                     (comment['is_saved_by_me'] as bool? ?? false)
-                                                        ? Icons.bookmark
-                                                        : Icons.bookmark_border_rounded,
+                                                        ? CupertinoIcons.bookmark_fill
+                                                        : CupertinoIcons.bookmark,
                                                     size: 15,
                                                     color: (comment['is_saved_by_me'] as bool? ?? false)
                                                         ? Theme.of(context).primaryColor
-                                                        : context.textSecondary,
+                                                        : context.textPrimary.withValues(alpha: 0.75),
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
@@ -572,7 +573,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                     style: GoogleFonts.inter(
                                                       fontSize: 13, 
                                                       fontWeight: FontWeight.w500,
-                                                      color: context.textSecondary,
+                                                      color: context.textPrimary.withValues(alpha: 0.75),
                                                     ),
                                                   ),
                                                 ],
@@ -594,14 +595,14 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                               },
                                               child: Row(
                                                 children: [
-                                                  Icon(Icons.shortcut_outlined, size: 15, color: context.textSecondary),
+                                                  Icon(CupertinoIcons.arrowshape_turn_up_right, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     "${comment['shares_count'] ?? 0}",
                                                     style: GoogleFonts.inter(
                                                       fontSize: 13, 
                                                       fontWeight: FontWeight.w500,
-                                                      color: context.textSecondary,
+                                                      color: context.textPrimary.withValues(alpha: 0.75),
                                                     ),
                                                   ),
                                                 ],
@@ -877,7 +878,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                             return TextButton(
                               onPressed: isEnabled ? _submitComment : null,
                               style: TextButton.styleFrom(
-                                backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey[300]?.withOpacity(0.4),
+                                backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey[300]?.withValues(alpha: 0.4),
                                 foregroundColor: isEnabled ? Colors.white : Colors.grey[400],
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -1284,8 +1285,8 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
       color: Colors.transparent,
       child: InkWell(
         onTap: item.onTap,
-        splashColor: const Color(0xFF7C4DFF).withOpacity(0.08),
-        highlightColor: const Color(0xFF7C4DFF).withOpacity(0.04),
+        splashColor: const Color(0xFF7C4DFF).withValues(alpha: 0.08),
+        highlightColor: const Color(0xFF7C4DFF).withValues(alpha: 0.04),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Row(
@@ -1418,7 +1419,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                           'Report submitted. Thank you for helping keep Pigeon safe.',
                         );
                       },
-                      splashColor: Colors.red.withOpacity(0.06),
+                      splashColor: Colors.red.withValues(alpha: 0.06),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 16),

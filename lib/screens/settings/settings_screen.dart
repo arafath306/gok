@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
@@ -243,7 +243,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   activeThumbColor: context.primaryAccent,
-                  activeTrackColor: context.primaryAccent.withOpacity(0.38),
+                  activeTrackColor: context.primaryAccent.withValues(alpha: 0.38),
                   value: settingsProvider.isDarkTheme,
                   onChanged: (val) {
                     settingsProvider.toggleTheme(val);

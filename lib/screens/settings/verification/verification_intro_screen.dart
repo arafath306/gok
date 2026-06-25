@@ -38,11 +38,28 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
     final plans = dbService.verificationPlans.isNotEmpty
         ? dbService.verificationPlans
         : [
-            {'id': 'weekly', 'name': 'Weekly Plan', 'price': 59.0, 'discount_price': null, 'interval_unit': 'week'},
-            {'id': 'monthly', 'name': 'Monthly Plan', 'price': 199.0, 'discount_price': null, 'interval_unit': 'month'},
-            {'id': 'yearly', 'name': 'Yearly Plan', 'price': 1999.0, 'discount_price': null, 'interval_unit': 'year'},
-            {'id': 'lifetime', 'name': 'Lifetime Plan', 'price': 4999.0, 'discount_price': null, 'interval_unit': 'lifetime'},
+            {'id': 'weekly', 'name': 'Weekly', 'price': 59.0, 'discount_price': null, 'interval_unit': 'week'},
+            {'id': 'monthly', 'name': 'Monthly', 'price': 199.0, 'discount_price': null, 'interval_unit': 'month'},
+            {'id': 'yearly', 'name': 'Yearly', 'price': 1999.0, 'discount_price': 1599.0, 'interval_unit': 'year'},
+            {'id': 'lifetime', 'name': 'Lifetime', 'price': 4999.0, 'discount_price': null, 'interval_unit': 'lifetime'},
           ];
+
+    // Find the currently selected plan details
+    final selectedPlan = plans.firstWhere(
+      (p) => p['id'] == selectedPlanId,
+      orElse: () => plans.first,
+    );
+
+    final selectedPlanName = selectedPlan['name'] as String;
+    final selectedPlanPrice = selectedPlan['price'] is num 
+        ? (selectedPlan['price'] as num).toDouble() 
+        : double.tryParse(selectedPlan['price'].toString()) ?? 199.0;
+    final selectedPlanDiscount = selectedPlan['discount_price'] != null
+        ? (selectedPlan['discount_price'] is num 
+            ? (selectedPlan['discount_price'] as num).toDouble() 
+            : double.tryParse(selectedPlan['discount_price'].toString()))
+        : null;
+    final selectedPlanInterval = selectedPlan['interval_unit'] as String;
 
     return Scaffold(
       backgroundColor: context.scaffoldBg,
@@ -55,11 +72,12 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Verification',
+          'Pigeon Verified',
           style: GoogleFonts.inter(
             fontSize: 16.5,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: context.textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
@@ -71,224 +89,160 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Beautiful glowing header visual
-              Center(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 16),
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Outer glowing circular ring
-                        Container(
-                          width: 106,
-                          height: 106,
+              // 1. Pulsating Radar Avatar Header (Biometric Scanner Feel)
+              _PulsingAvatarHeader(avatarUrl: dbService.myProfile?.avatarUrl),
+              const SizedBox(height: 28),
+
+              // 2. Section: Plan Custom Selection Tabs
+              _buildSectionHeader(context, "Select Subscription Model"),
+              const SizedBox(height: 12),
+              
+              // Sliding segments list
+              Container(
+                height: 48,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF1F3F5),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: plans.map<Widget>((plan) {
+                    final planId = plan['id'] as String;
+                    final planName = plan['name'] as String;
+                    final isSelected = selectedPlanId == planId;
+                    
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => controller.selectPlan(planId),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFF0095F6).withOpacity(0.06),
+                            color: isSelected 
+                                ? (context.isDarkMode ? const Color(0xFF2E3045) : Colors.white)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    )
+                                  ]
+                                : [],
                           ),
-                        ),
-                        // Middle thin ring
-                        Container(
-                          width: 92,
-                          height: 92,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF0095F6).withOpacity(0.15),
-                              width: 1.2,
+                          child: Text(
+                            planName,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              color: isSelected ? context.textPrimary : context.textSecondary,
                             ),
                           ),
-                        ),
-                        // Profile Avatar
-                        CircleAvatar(
-                          radius: 39,
-                          backgroundColor: context.isDarkMode ? const Color(0xFF1E293B) : Colors.grey[100],
-                          backgroundImage: dbService.myProfile?.avatarUrl != null && dbService.myProfile!.avatarUrl!.isNotEmpty
-                              ? NetworkImage(dbService.myProfile!.avatarUrl!)
-                              : null,
-                          child: (dbService.myProfile?.avatarUrl == null || dbService.myProfile!.avatarUrl!.isEmpty)
-                              ? Icon(Icons.person_rounded, size: 36, color: context.textSecondary)
-                              : null,
-                        ),
-                        // Blue Check Badge
-                        Positioned(
-                          right: 4,
-                          bottom: 4,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: context.scaffoldBg,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                )
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(2),
-                            child: const Icon(
-                              Icons.verified_rounded,
-                              color: Color(0xFF0095F6),
-                              size: 22,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Pigeon Verified',
-                      style: GoogleFonts.inter(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900,
-                        color: context.textPrimary,
-                        letterSpacing: -0.6,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        'Stand out, establish authenticity, and unlock dedicated safety and support tools.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w500,
-                          color: context.textSecondary,
-                          height: 1.45,
                         ),
                       ),
-                    ),
-                  ],
+                    );
+                  }).toList(),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
-              // Benefits
-              _buildSectionHeader(context, "Exclusive Benefits"),
-              const SizedBox(height: 8),
+              // 3. Featured Plan Detail Card (Facebook/Meta Verified Style)
+              _PremiumPlanInfoCard(
+                planId: selectedPlanId,
+                planName: selectedPlanName,
+                price: selectedPlanPrice,
+                discountPrice: selectedPlanDiscount,
+                interval: selectedPlanInterval,
+              ),
+              const SizedBox(height: 28),
+
+              // 4. Exclusive Benefits Redesigned
+              _buildSectionHeader(context, "What's Included in Pigeon Verified"),
+              const SizedBox(height: 12),
               _buildPremiumBenefitTile(
                 context,
                 icon: Icons.verified_rounded,
                 iconColor: const Color(0xFF0095F6),
                 title: "Verified Profile Badge",
-                description: "Let your followers know your account is authentic with a premium blue checkmark.",
+                description: "Establish authenticity. Let your followers and community know you are a verified public figure.",
               ),
               _buildPremiumBenefitTile(
                 context,
-                icon: Icons.security_rounded,
+                icon: Icons.shield_outlined,
                 iconColor: const Color(0xFF10B981),
-                title: "Advanced Impersonation Monitoring",
-                description: "Proactive account defense mechanism designed to prevent copycat profiles.",
+                title: "Impersonation Protection",
+                description: "Proactive, automated monitoring filters to safeguard your username and prevent copycat profiles.",
               ),
               _buildPremiumBenefitTile(
                 context,
-                icon: Icons.support_agent_rounded,
+                icon: Icons.chat_bubble_outline_rounded,
                 iconColor: const Color(0xFF8B5CF6),
                 title: "Direct Priority Support",
-                description: "Dedicated routing queue for your account tickets to receive help rapidly.",
+                description: "Dedicated account support helpdesk. Resolve support issues rapidly with real human support.",
               ),
               _buildPremiumBenefitTile(
                 context,
-                icon: Icons.star_rounded,
+                icon: Icons.auto_awesome_outlined,
                 iconColor: const Color(0xFFF59E0B),
-                title: "Exclusive Custom Features",
-                description: "Gain early access to beta customizations, exclusive badges, and layouts.",
+                title: "Exclusive Stickers & Features",
+                description: "Unlock premium verification stickers for chating and profile layout customization.",
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 28),
 
-              // Requirements
-              _buildSectionHeader(context, "Before You Apply"),
-              const SizedBox(height: 4),
-              Text(
-                "Verify that your account meets these fundamental guidelines before starting registration:",
-                style: GoogleFonts.inter(
-                  fontSize: 13.5,
-                  color: context.textSecondary,
-                  height: 1.4,
-                ),
-              ),
+              // 5. Requirements Checkbox List
+              _buildSectionHeader(context, "Eligibility Requirements"),
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
                   color: context.cardBg,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: context.border, width: 0.8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildRequirementItem(context, "A valid government photo ID card"),
-                    Divider(color: context.border, height: 1, thickness: 0.5),
-                    _buildRequirementItem(context, "A clear profile photo showing your full face"),
-                    Divider(color: context.border, height: 1, thickness: 0.5),
-                    _buildRequirementItem(context, "Complete profile details (Bio, birthdate, email)"),
-                    Divider(color: context.border, height: 1, thickness: 0.5),
-                    _buildRequirementItem(context, "Active history and standing on Pigeon"),
+                    _buildRequirementItem(context, "Must be at least 18 years of age"),
+                    _buildRequirementItem(context, "Must provide a government-issued photo ID card"),
+                    _buildRequirementItem(context, "Full profile picture showing your face clearly"),
+                    _buildRequirementItem(context, "Enabled 2FA or secure recovery email on account"),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 28),
 
-              // Process
-              _buildSectionHeader(context, "Simple 3-Step Review"),
-              const SizedBox(height: 16),
-              _buildTimelineStep(
-                context,
-                stepNumber: 1,
-                title: "Confirm Your Information",
-                description: "Review your auto-filled profile info, add phone, and upload ID documents.",
-                isLast: false,
-              ),
-              _buildTimelineStep(
-                context,
-                stepNumber: 2,
-                title: "Confirm Your Identity",
-                description: "Submit a clear face selfie for secure document comparison.",
-                isLast: false,
-              ),
-              _buildTimelineStep(
-                context,
-                stepNumber: 3,
-                title: "Review & Activate",
-                description: "Our compliance agents review your case and issue the badge upon approval.",
-                isLast: true,
-              ),
-              const SizedBox(height: 24),
-
-              // Security info card
+              // 6. Security/Data Privacy Statement
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: context.cardBg,
+                  color: const Color(0xFF0095F6).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: context.border, width: 0.8),
+                  border: Border.all(color: const Color(0xFF0095F6).withValues(alpha: 0.15)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lock_outline_rounded, color: context.primaryAccent, size: 20),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.verified_user_outlined, color: Color(0xFF0095F6), size: 22),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Your privacy is our priority',
+                            'Your Identity is Secure',
                             style: GoogleFonts.inter(
                               color: context.textPrimary,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14.5,
+                              fontSize: 14,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Documents and face selfie data are fully encrypted and only processed to confirm identity. Sensitive details are never shared or made public.',
+                            'We do not sell or share your identity details. NID images and face selfie records are immediately encrypted and processed for compliance check only.',
                             style: GoogleFonts.inter(
                               color: context.textSecondary,
-                              fontSize: 12.5,
+                              fontSize: 12,
                               height: 1.45,
                             ),
                           ),
@@ -298,119 +252,48 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
-              // Selection
-              _buildSectionHeader(context, "Select a Verification Plan"),
-              const SizedBox(height: 4),
-              Text(
-                "Choose the plan that suits you best. Cancel or adjust your subscription anytime.",
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: context.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Column(
-                children: plans.map<Widget>((plan) {
-                  final planId = plan['id'] as String;
-                  final planName = plan['name'] as String;
-                  final price = plan['price'] is num 
-                      ? (plan['price'] as num).toDouble() 
-                      : double.tryParse(plan['price'].toString()) ?? 199.0;
-                  final discountPrice = plan['discount_price'] != null
-                      ? (plan['discount_price'] is num 
-                          ? (plan['discount_price'] as num).toDouble() 
-                          : double.tryParse(plan['discount_price'].toString()))
-                      : null;
-                  final interval = plan['interval_unit'] as String;
-                  final isSelected = selectedPlanId == planId;
-
-                  String intervalText = '';
-                  if (interval == 'week') intervalText = '/week';
-                  if (interval == 'month') intervalText = '/month';
-                  if (interval == 'year') intervalText = '/year';
-                  if (interval == 'lifetime') intervalText = ' (one-time)';
-
-                  return _AnimatedPlanCard(
-                    planId: planId,
-                    planName: planName,
-                    price: price,
-                    discountPrice: discountPrice,
-                    intervalText: intervalText,
-                    isSelected: isSelected,
-                    onTap: () => controller.selectPlan(planId),
-                  );
-                }).toList(),
-              ),
-              if (selectedPlanId == 'yearly') ...[
-                const SizedBox(height: 6),
-                Center(
-                  child: Text(
-                    'Annual billing offers maximum savings.',
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF10B981),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.5,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 24),
-
-              // FAQ
+              // 7. Accordion FAQs
               _buildSectionHeader(context, "Frequently Asked Questions"),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               _SmartFAQItem(
-                question: 'Does paying guarantee my verification badge?', 
-                answer: 'No. All accounts must pass our security and identity criteria. If rejected, your subscription payment details can be managed or fully refunded.',
+                question: 'What happens to my payment if rejected?',
+                answer: 'All submitted verification requests are reviewed manually. If our compliance team rejects your request due to blur images or incorrect document formats, you will be given an option to re-apply for free or claim a full refund.',
               ),
               _SmartFAQItem(
-                question: 'Can I cancel or renew my subscription?', 
-                answer: 'Yes. You can manage or cancel your active subscription at any time. When your subscription ends, your badge remains active until the end of the billing period.',
+                question: 'Can I cancel my subscription anytime?',
+                answer: 'Yes, your subscription can be managed or canceled directly in Settings. Once canceled, your verified checkmark badge remains active until the end of the current billing interval.',
               ),
               _SmartFAQItem(
-                question: 'Will my profile badge disappear if I cancel?', 
-                answer: 'Yes. The verified badge and associated protection and support features are exclusive benefits of an active Pigeon Verified membership.',
+                question: 'Will my badge be removed if I change username?',
+                answer: 'Yes. To protect against profile impersonation, changing your username or full name will temporarily hide the verified checkmark until a fast re-verification is completed.',
               ),
               const SizedBox(height: 32),
 
-              // Bottom CTA
+              // 8. Bottom Action Panel
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: context.cardBg,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: context.border, width: 0.8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, -4),
+                    )
+                  ],
                 ),
                 child: Column(
                   children: [
-                    Text(
-                      'Ready to elevate your profile?',
-                      style: GoogleFonts.inter(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: context.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Begin verification and unlock premium benefits today.',
-                      style: GoogleFonts.inter(
-                        color: context.textSecondary,
-                        fontSize: 12.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
                     PigeonPrimaryButton(
-                      label: 'Continue',
+                      label: 'Subscribe & Continue',
                       icon: Icons.arrow_forward_rounded,
                       onPressed: () {
                         controller.resetApplication();
-                        // Carry over the selected plan
                         controller.selectPlan(selectedPlanId);
                         Navigator.push(
                           context,
@@ -421,7 +304,7 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
                     if (status != VerificationStatus.incomplete) ...[
                       const SizedBox(height: 12),
                       PigeonPrimaryButton(
-                        label: 'Check Application Status',
+                        label: 'Check Current Status',
                         outlined: true,
                         onPressed: () {
                           Navigator.push(
@@ -443,16 +326,13 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 12),
-      child: Text(
-        title,
-        style: GoogleFonts.inter(
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-          color: context.textPrimary,
-          letterSpacing: -0.3,
-        ),
+    return Text(
+      title,
+      style: GoogleFonts.inter(
+        fontSize: 15,
+        fontWeight: FontWeight.w800,
+        color: context.textPrimary,
+        letterSpacing: -0.3,
       ),
     );
   }
@@ -478,10 +358,10 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.08),
+              color: iconColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor, size: 22),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -491,8 +371,8 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
                 Text(
                   title,
                   style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.bold,
                     color: context.textPrimary,
                   ),
                 ),
@@ -500,7 +380,7 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
                 Text(
                   description,
                   style: GoogleFonts.inter(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     color: context.textSecondary,
                     height: 1.4,
                   ),
@@ -515,23 +395,16 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
 
   Widget _buildRequirementItem(BuildContext context, String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(2.5),
-            decoration: const BoxDecoration(
-              color: Color(0xFF10B981),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.check, size: 11, color: Colors.white),
-          ),
+          const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF10B981)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
               style: GoogleFonts.inter(
-                fontSize: 13.5,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: context.textPrimary,
               ),
@@ -541,72 +414,341 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
       ),
     );
   }
+}
 
-  Widget _buildTimelineStep(
-    BuildContext context, {
-    required int stepNumber,
-    required String title,
-    required String description,
-    required bool isLast,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: context.primaryAccent.withOpacity(0.1),
-                shape: BoxShape.circle,
-                border: Border.all(color: context.primaryAccent, width: 1.5),
+// Custom pulsing avatar widget representing high quality multinational style
+class _PulsingAvatarHeader extends StatefulWidget {
+  final String? avatarUrl;
+  const _PulsingAvatarHeader({this.avatarUrl});
+
+  @override
+  State<_PulsingAvatarHeader> createState() => _PulsingAvatarHeaderState();
+}
+
+class _PulsingAvatarHeaderState extends State<_PulsingAvatarHeader> with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return Center(
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          AnimatedBuilder(
+            animation: _pulseController,
+            builder: (context, child) {
+              final double value = _pulseController.value;
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Pulse Ring 1
+                  Transform.scale(
+                    scale: 1.0 + (value * 0.45),
+                    child: Opacity(
+                      opacity: (1.0 - value).clamp(0.0, 1.0),
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF0095F6), width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Pulse Ring 2
+                  Transform.scale(
+                    scale: 1.0 + (((value + 0.5) % 1.0) * 0.45),
+                    child: Opacity(
+                      opacity: (1.0 - ((value + 0.5) % 1.0)).clamp(0.0, 1.0),
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF0095F6), width: 1),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Solid Avatar frame
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark ? const Color(0xFF10132A) : Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0095F6).withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        )
+                      ],
+                    ),
+                  ),
+                  // Actual Avatar
+                  CircleAvatar(
+                    radius: 38,
+                    backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.grey[200],
+                    backgroundImage: widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty
+                        ? NetworkImage(widget.avatarUrl!)
+                        : null,
+                    child: (widget.avatarUrl == null || widget.avatarUrl!.isEmpty)
+                        ? Icon(Icons.person, size: 36, color: isDark ? Colors.white30 : Colors.black26)
+                        : null,
+                  ),
+                  // Glowing Badge Checkmark icon
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: const Icon(
+                        Icons.verified_rounded,
+                        color: Color(0xFF0095F6),
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Pigeon Verified',
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+              letterSpacing: -0.6,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'A subscription bundle to build your presence and credibility with safety tools and priority support.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+                color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                height: 1.45,
               ),
-              alignment: Alignment.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Premium details container for the selected plan
+class _PremiumPlanInfoCard extends StatelessWidget {
+  final String planId;
+  final String planName;
+  final double price;
+  final double? discountPrice;
+  final String interval;
+
+  const _PremiumPlanInfoCard({
+    required this.planId,
+    required this.planName,
+    required this.price,
+    this.discountPrice,
+    required this.interval,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Choose gradient theme based on planId
+    final LinearGradient cardGradient = planId == 'lifetime'
+        ? const LinearGradient(
+            colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : LinearGradient(
+            colors: isDark 
+                ? [const Color(0xFF2A2D4A), const Color(0xFF1B1D30)]
+                : [const Color(0xFFE3F2FD), const Color(0xFFF3E5F5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+
+    final Color textColor = planId == 'lifetime' 
+        ? Colors.white 
+        : (isDark ? Colors.white : const Color(0xFF0F172A));
+        
+    final Color subColor = planId == 'lifetime' 
+        ? Colors.white70 
+        : (isDark ? Colors.white70 : const Color(0xFF475569));
+
+    final double activePrice = discountPrice ?? price;
+    String billingInterval = 'each interval';
+    if (interval == 'week') billingInterval = 'billed weekly';
+    if (interval == 'month') billingInterval = 'billed monthly';
+    if (interval == 'year') billingInterval = 'billed annually';
+    if (interval == 'lifetime') billingInterval = 'one-time pay';
+
+    // Monthly equivalence math
+    String? equivalentMonthText;
+    if (interval == 'year') {
+      final monthlyEq = activePrice / 12;
+      equivalentMonthText = '৳${monthlyEq.toStringAsFixed(0)}/month equivalent';
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: cardGradient,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: planId == 'lifetime' 
+              ? const Color(0xFFF59E0B) 
+              : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$planName Package',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: textColor,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              if (discountPrice != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'PROMO OFFER',
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              if (discountPrice != null) ...[
+                Text(
+                  '৳${price.toStringAsFixed(0)}',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: planId == 'lifetime' ? Colors.white60 : Colors.grey,
+                    decoration: TextDecoration.lineThrough,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                '৳${activePrice.toStringAsFixed(0)}',
+                style: GoogleFonts.inter(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                interval == 'lifetime' ? '' : '/$interval',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            billingInterval,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: planId == 'lifetime' ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF0095F6),
+            ),
+          ),
+          if (equivalentMonthText != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.white60,
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Text(
-                '$stepNumber',
+                equivalentMonthText,
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: context.primaryAccent,
+                  fontWeight: FontWeight.w700,
+                  color: planId == 'lifetime' ? Colors.white : const Color(0xFF10B981),
                 ),
               ),
             ),
-            if (!isLast)
-              Container(
-                width: 1.2,
-                height: 48,
-                color: context.border,
-              ),
           ],
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: context.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: context.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-              if (!isLast) const SizedBox(height: 18),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -657,266 +799,64 @@ class _SmartFAQItemState extends State<_SmartFAQItem> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = context.primaryAccent;
-    return GestureDetector(
-      onTap: _toggleExpand,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.question,
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14.5,
-                      color: _isExpanded ? accentColor : context.textPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                RotationTransition(
-                  turns: _iconTurns,
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: _isExpanded ? accentColor : context.textSecondary,
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            child: SizedBox(
-              width: double.infinity,
-              child: _isExpanded
-                  ? Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Text(
-                        widget.answer,
-                        style: GoogleFonts.inter(
-                          color: context.textSecondary,
-                          fontSize: 13.5,
-                          height: 1.45,
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ),
-          Divider(color: context.border, height: 1, thickness: 0.5),
-        ],
-      ),
-    );
-  }
-}
-
-class _AnimatedPlanCard extends StatefulWidget {
-  final String planId;
-  final String planName;
-  final double price;
-  final double? discountPrice;
-  final String intervalText;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _AnimatedPlanCard({
-    required this.planId,
-    required this.planName,
-    required this.price,
-    this.discountPrice,
-    required this.intervalText,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  State<_AnimatedPlanCard> createState() => _AnimatedPlanCardState();
-}
-
-class _AnimatedPlanCardState extends State<_AnimatedPlanCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final accentColor = context.primaryAccent;
-    
-    String? badgeText;
-    Color? badgeBg;
-    Color? badgeTextColor;
-    
-    if (widget.planId == 'monthly') {
-      badgeText = 'Popular';
-      badgeBg = accentColor;
-      badgeTextColor = Colors.white;
-    } else if (widget.planId == 'yearly') {
-      badgeText = 'Best Value';
-      badgeBg = const Color(0xFF10B981);
-      badgeTextColor = Colors.white;
-    } else if (widget.planId == 'lifetime') {
-      badgeText = 'One-time';
-      badgeBg = const Color(0xFFF59E0B);
-      badgeTextColor = Colors.white;
-    }
-
+    final accentColor = const Color(0xFF0095F6);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: GestureDetector(
-        onTapDown: (_) => _controller.forward(),
-        onTapUp: (_) {
-          _controller.reverse();
-          widget.onTap();
-        },
-        onTapCancel: () => _controller.reverse(),
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: widget.isSelected 
-                  ? (context.isDarkMode ? accentColor.withOpacity(0.08) : accentColor.withOpacity(0.04))
-                  : context.cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: widget.isSelected ? accentColor : context.border,
-                width: widget.isSelected ? 1.8 : 0.8,
-              ),
-              boxShadow: widget.isSelected
-                  ? [
-                      BoxShadow(
-                        color: accentColor.withOpacity(0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ]
-                  : [],
-            ),
-            child: Row(
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.border, width: 0.8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: _toggleExpand,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.isSelected ? accentColor : context.textMuted,
-                      width: widget.isSelected ? 6 : 1.5,
-                    ),
-                    color: widget.isSelected ? Colors.white : Colors.transparent,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            widget.planName,
-                            style: GoogleFonts.inter(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: context.textPrimary,
-                            ),
-                          ),
-                          if (badgeText != null) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: badgeBg,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                badgeText,
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: badgeTextColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      if (widget.discountPrice != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Save ${((1 - (widget.discountPrice! / widget.price)) * 100).toStringAsFixed(0)}% off regular price',
-                          style: GoogleFonts.inter(
-                            fontSize: 11.5,
-                            color: const Color(0xFF10B981),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        if (widget.discountPrice != null) ...[
-                          Text(
-                            '৳${widget.price.toStringAsFixed(0)}',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: context.textMuted,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(
-                          '৳${(widget.discountPrice ?? widget.price).toStringAsFixed(0)}',
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: context.textPrimary,
-                          ),
+                    Expanded(
+                      child: Text(
+                        widget.question,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                          color: _isExpanded ? accentColor : context.textPrimary,
                         ),
-                      ],
+                      ),
                     ),
-                    Text(
-                      widget.intervalText,
-                      style: GoogleFonts.inter(
-                        fontSize: 11.5,
-                        color: context.textSecondary,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 12),
+                    RotationTransition(
+                      turns: _iconTurns,
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: _isExpanded ? accentColor : context.textSecondary,
+                        size: 20,
                       ),
                     ),
                   ],
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: _isExpanded
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(
+                              widget.answer,
+                              style: GoogleFonts.inter(
+                                color: context.textSecondary,
+                                fontSize: 12.5,
+                                height: 1.45,
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
                 ),
               ],
             ),

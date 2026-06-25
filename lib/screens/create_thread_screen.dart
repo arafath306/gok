@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -428,7 +428,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
               ElevatedButton(
                 onPressed: isEnabled ? _submit : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: const Color(0xFF1E824C),
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey[200],
                   disabledForegroundColor: Colors.grey[400],
@@ -573,7 +573,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                   decoration: BoxDecoration(
                                     color: context.isDarkMode ? const Color(0xFF1A2333) : const Color(0xFFEFF6FF),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.blue.withOpacity(0.2), width: 0.8),
+                                    border: Border.all(color: Colors.blue.withValues(alpha: 0.2), width: 0.8),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -611,7 +611,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                       border: Border.all(color: context.border, width: 0.8),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.08),
+                                          color: Colors.black.withValues(alpha: 0.08),
                                           blurRadius: 8,
                                           offset: const Offset(0, 3),
                                         ),
@@ -946,7 +946,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -1101,10 +1101,10 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           margin: const EdgeInsets.only(right: 6),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isActive ? color.withOpacity(0.12) : Colors.transparent,
+            color: isActive ? color.withValues(alpha: 0.12) : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isActive ? color.withOpacity(0.3) : Colors.transparent,
+              color: isActive ? color.withValues(alpha: 0.3) : Colors.transparent,
               width: 1,
             ),
           ),
@@ -1125,10 +1125,10 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       decoration: BoxDecoration(
         color: context.isDarkMode ? const Color(0xFF201608) : const Color(0xFFFFFDF5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(context.isDarkMode ? 0.05 : 0.08),
+            color: Colors.orange.withValues(alpha: context.isDarkMode ? 0.05 : 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -1210,7 +1210,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.08),
+                          color: Colors.red.withValues(alpha: 0.08),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
@@ -1306,7 +1306,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       decoration: BoxDecoration(
         color: context.isDarkMode ? const Color(0xFF062D1C) : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.teal.withOpacity(0.3)),
+        border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

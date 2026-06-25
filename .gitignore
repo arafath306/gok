@@ -22,5 +22,7 @@ debug.keystore
 .flutter-plugins
 .flutter-plugins-dependencies
 flutter-plugins-dependencies
+# Secrets and local configurations
+lib/core/config/app_config.dart
 *.log
 scratch/

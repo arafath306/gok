@@ -51,9 +51,10 @@ class _PendingScreenState extends State<PendingScreen> {
             status == VerificationStatus.rejected
                 ? 'Your request has been rejected. Please review details.'
                 : 'Still under review — check back later.',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -81,11 +82,12 @@ class _PendingScreenState extends State<PendingScreen> {
           },
         ),
         title: Text(
-          'Application Status',
+          'Verification Status',
           style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
             color: context.textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
@@ -98,69 +100,114 @@ class _PendingScreenState extends State<PendingScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Glowing status indicator icon box
                 Container(
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
                     color: (isRejected ? Colors.red : context.primaryAccent)
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.08),
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isRejected ? Colors.red : context.primaryAccent).withValues(alpha: 0.1),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      )
+                    ],
                   ),
                   child: Icon(
                     isRejected
-                        ? Icons.error_outline
-                        : Icons.hourglass_top_rounded,
-                    size: 44,
+                        ? Icons.error_outline_rounded
+                        : Icons.hourglass_empty_rounded,
+                    size: 40,
                     color: isRejected ? Colors.red : context.primaryAccent,
                   ),
                 ),
                 const SizedBox(height: 24),
+                
                 Text(
                   isRejected
-                      ? 'Application needs attention'
-                      : "You're in the queue",
+                      ? 'Application Rejected'
+                      : "Verification Under Review",
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: context.textPrimary),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: context.textPrimary,
+                      letterSpacing: -0.4),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Text(
                   isRejected
                       ? (request.rejectionReason ??
                           'There was an issue with your documents or payment. '
                               'Please check the details and try again.')
-                      : 'Our team is verifying your documents and bKash payment. '
-                          'This usually takes 24–48 hours. We\'ll enable the Blue '
+                      : 'Our team is currently validating your documents and bKash payment. '
+                          'This usually takes 24–48 hours. We\'ll issue the Blue '
                           'Badge on your profile as soon as it is approved.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
-                      fontSize: 13.5, color: context.textSecondary, height: 1.5),
+                      fontSize: 13, color: context.textSecondary, height: 1.5),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
+
+                // 2. Timeline Step Progress Details (Facebook/Meta Verified Style)
+                if (!isRejected) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: context.cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: context.border, width: 0.8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Verification Timeline',
+                          style: GoogleFonts.inter(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                            color: context.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTimelineRow('Step 1: Application Received', 'Completed', true, true),
+                        _buildTimelineRow('Step 2: bKash Payment Check', 'Processing', false, true),
+                        _buildTimelineRow('Step 3: Document Compliance Review', 'Pending', false, false),
+                        _buildTimelineRow('Step 4: Badge Activation', 'Pending', false, false, isLast: true),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Metadata Card
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: context.cardBg,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.border),
+                    border: Border.all(color: context.border, width: 0.8),
                   ),
                   child: Column(
                     children: [
-                      _StatusRow(label: 'Username', value: '@${request.username}'),
+                      _StatusRow(label: 'Username Handle', value: '@${request.username}'),
                       _StatusRow(
-                          label: 'TrxID', value: request.bkashTrxId.isEmpty ? '-' : request.bkashTrxId),
+                          label: 'bKash TrxID', value: request.bkashTrxId.isEmpty ? '-' : request.bkashTrxId),
                       _StatusRow(
-                        label: 'Status',
-                        value: isRejected ? 'Rejected' : 'Pending review',
+                        label: 'Status Code',
+                        value: isRejected ? 'Rejected' : 'Pending Review',
                         valueColor: isRejected ? Colors.red : context.primaryAccent,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 32),
+                
                 if (isRejected)
                   PigeonPrimaryButton(
                     label: 'Re-apply for Blue Badge',
@@ -177,14 +224,14 @@ class _PendingScreenState extends State<PendingScreen> {
                   )
                 else
                   PigeonPrimaryButton(
-                    label: 'Refresh Status',
+                    label: 'Check Status Update',
                     icon: Icons.refresh_rounded,
                     isLoading: _checking,
                     onPressed: () => _refresh(silent: false),
                   ),
                 const SizedBox(height: 12),
                 PigeonPrimaryButton(
-                  label: 'Back to Home',
+                  label: 'Back to Feed Home',
                   outlined: true,
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(
@@ -199,6 +246,79 @@ class _PendingScreenState extends State<PendingScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTimelineRow(String title, String status, bool isChecked, bool isActive, {bool isLast = false}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    Color stepColor = context.textMuted;
+    if (isChecked) {
+      stepColor = const Color(0xFF10B981);
+    } else if (isActive) {
+      stepColor = context.primaryAccent;
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: isChecked 
+                    ? const Color(0xFF10B981) 
+                    : (isActive ? context.primaryAccent : Colors.transparent),
+                border: Border.all(
+                  color: isChecked 
+                      ? const Color(0xFF10B981) 
+                      : (isActive ? context.primaryAccent : context.border), 
+                  width: 1.5,
+                ),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: isChecked 
+                  ? const Icon(Icons.check, size: 12, color: Colors.white) 
+                  : (isActive ? Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)) : const SizedBox()),
+            ),
+            if (!isLast)
+              Container(
+                width: 1.5,
+                height: 38,
+                color: isChecked ? const Color(0xFF10B981) : context.border,
+              ),
+          ],
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                status,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: stepColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

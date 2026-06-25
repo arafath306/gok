@@ -121,27 +121,14 @@ class OnboardingScreen extends StatelessWidget {
                     onTap: () => onFinish(false),
                   ),
 
-                  const SizedBox(height: 4),
-
-                  // Skip — bottom right
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => onFinish(false),
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(0, 28),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 2),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Skip',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF94A3B8),
-                        ),
-                      ),
+                  const SizedBox(height: 12),
+                  // Made by NGST — centered
+                  Text(
+                    'Made by NGST',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF94A3B8),
                     ),
                   ),
 

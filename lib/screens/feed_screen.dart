@@ -94,13 +94,47 @@ class _FeedScreenState extends State<FeedScreen> {
         leading: AnimatedOpacity(
           opacity: _showFullHeader ? 1.0 : 0.0,
           duration: const Duration(milliseconds: 200),
-          child: IconButton(
-            icon: Icon(Icons.menu_rounded, color: context.textPrimary, size: 24),
-            onPressed: _showFullHeader
-                ? () {
-                    Scaffold.of(context).openDrawer(); 
-                  }
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _showFullHeader
+                ? () => Scaffold.of(context).openDrawer()
                 : null,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 20,
+                    height: 2.2,
+                    decoration: BoxDecoration(
+                      color: context.textPrimary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 4.5),
+                  Container(
+                    width: 20,
+                    height: 2.2,
+                    decoration: BoxDecoration(
+                      color: context.textPrimary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 4.5),
+                  Container(
+                    width: 14,
+                    height: 2.2,
+                    decoration: BoxDecoration(
+                      color: context.textPrimary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
         centerTitle: true,
@@ -164,7 +198,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
-                    height: _showFullHeader ? 40 : 0,
+                    height: _showFullHeader ? 46 : 0,
                     child: AnimatedOpacity(
                       opacity: _showFullHeader ? 1.0 : 0.0,
                       duration: const Duration(milliseconds: 200),
@@ -178,7 +212,7 @@ class _FeedScreenState extends State<FeedScreen> {
                               bottom: BorderSide(color: context.border, width: 0.5),
                             ),
                           ),
-                          height: 40,
+                          height: 46,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(_tabs.length, (index) {
@@ -190,7 +224,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                   });
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  padding: const EdgeInsets.symmetric(horizontal: 28),
                                   alignment: Alignment.center,
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -198,19 +232,22 @@ class _FeedScreenState extends State<FeedScreen> {
                                       Text(
                                         _tabs[index],
                                         style: GoogleFonts.inter(
-                                          fontSize: 13.5,
-                                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                                          color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,
+                                          fontSize: 15,
+                                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                                          color: isSelected
+                                              ? const Color(0xFF1E824C)
+                                              : context.textSecondary,
+                                          letterSpacing: isSelected ? -0.2 : 0,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       AnimatedContainer(
                                         duration: const Duration(milliseconds: 200),
-                                        height: 2,
-                                        width: isSelected ? 24 : 0,
+                                        height: 3,
+                                        width: isSelected ? 32 : 0,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF1E824C),
-                                          borderRadius: BorderRadius.circular(1),
+                                          borderRadius: BorderRadius.circular(2),
                                         ),
                                       ),
                                     ],
@@ -281,7 +318,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                           color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
                                           borderRadius: BorderRadius.circular(16),
                                           border: Border.all(
-                                            color: context.border.withOpacity(0.5),
+                                            color: context.border.withValues(alpha: 0.5),
                                             width: 0.5,
                                           ),
                                         ),
@@ -298,8 +335,8 @@ class _FeedScreenState extends State<FeedScreen> {
                                             ),
                                             Icon(
                                               Icons.flutter_dash,
-                                              size: 15,
-                                              color: context.textMuted,
+                                              size: 22,
+                                              color: const Color(0xFF1E824C),
                                             ),
                                           ],
                                         ),
@@ -336,7 +373,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                           "Follow users",
                                           style: GoogleFonts.inter(
                                             fontSize: 14,
-                                            color: const Color(0xFF1E824C).withOpacity(0.6),
+                                            color: const Color(0xFF1E824C).withValues(alpha: 0.6),
                                             fontWeight: FontWeight.bold,
                                             decoration: TextDecoration.underline,
                                           ),
@@ -460,10 +497,10 @@ class _TrendingTopicPillState extends State<TrendingTopicPill> {
             height: 32,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E824C).withOpacity(0.08),
+              color: const Color(0xFF1E824C).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color(0xFF1E824C).withOpacity(0.2),
+                color: const Color(0xFF1E824C).withValues(alpha: 0.2),
                 width: 0.8,
               ),
             ),

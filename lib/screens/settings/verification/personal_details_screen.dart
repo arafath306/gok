@@ -138,9 +138,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         title: Text(
           'Apply for Blue Badge',
           style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
             color: context.textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
@@ -152,73 +153,102 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Personal details',
+                      Text('Confirm Personal Details',
                           style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: context.textPrimary)),
-                      const SizedBox(height: 4),
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                              color: context.textPrimary,
+                              letterSpacing: -0.4)),
+                      const SizedBox(height: 6),
                       Text(
-                        'This should match the name on your ID card.',
+                        'Your name, profile photo, and details should match the government-issued photo ID card you upload in the next step.',
                         style: GoogleFonts.inter(
-                            color: context.textSecondary, fontSize: 13),
+                          color: context.textSecondary, 
+                          fontSize: 13,
+                          height: 1.45
+                        ),
                       ),
                       const SizedBox(height: 24),
+                      
                       PigeonTextField(
-                        label: 'Full name',
+                        label: 'Full Name',
                         hint: 'e.g. Abdullah Al Mamun',
                         controller: _nameController,
                         validator: (v) => (v == null || v.trim().isEmpty)
                             ? 'Full name is required'
                             : null,
                       ),
+                      const SizedBox(height: 6),
+                      
                       PigeonTextField(
-                        label: 'Pigeon username',
+                        label: 'Pigeon Username',
                         hint: 'yourhandle',
                         controller: _usernameController,
                         validator: (v) => (v == null || v.trim().isEmpty)
                             ? 'Username is required'
                             : null,
                       ),
+                      const SizedBox(height: 6),
+
                       PigeonTextField(
-                        label: 'Date of birth',
+                        label: 'Date of Birth',
                         hint: 'Tap to select',
                         controller: TextEditingController(
                           text: _dob == null
                               ? ''
-                              : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
+                              : '${_dob!.day.toString().padLeft(2, '0')}/${_dob!.month.toString().padLeft(2, '0')}/${_dob!.year}',
                         ),
                         readOnly: true,
                         onTap: _pickDob,
                         prefixIcon: Icon(Icons.calendar_today_outlined,
                             size: 18, color: context.textMuted),
                       ),
+                      const SizedBox(height: 6),
+
                       PigeonTextField(
                         label: 'Email Address',
                         hint: 'your.email@example.com',
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        validator: (v) => (v == null || !v.contains('@'))
-                            ? 'Enter a valid email'
-                            : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Email is required';
+                          }
+                          final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          if (!emailRegExp.hasMatch(v.trim())) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
                       ),
+                      const SizedBox(height: 6),
+
                       PigeonTextField(
                         label: 'Phone Number',
                         hint: '01XXXXXXXXX',
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
-                        validator: (v) => (v == null || v.trim().length < 11)
-                            ? 'Enter a valid phone number'
-                            : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Phone number is required';
+                          }
+                          final phoneRegExp = RegExp(r'^(?:\+88|88)?(01[3-9]\d{8})$');
+                          if (!phoneRegExp.hasMatch(v.trim())) {
+                            return 'Enter a valid Bangladeshi phone number';
+                          }
+                          return null;
+                        },
                       ),
+                      const SizedBox(height: 6),
+
                       PigeonTextField(
-                        label: 'Short bio (optional)',
+                        label: 'Short Bio (Optional)',
                         hint: 'Tell us a little about yourself',
                         controller: _bioController,
                         maxLines: 3,
@@ -231,7 +261,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: PigeonPrimaryButton(
-                label: 'Continue',
+                label: 'Save & Continue',
                 icon: Icons.arrow_forward_rounded,
                 onPressed: _onContinue,
               ),

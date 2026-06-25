@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/dak_logo.dart';
@@ -37,7 +37,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
             ),
           ),
           content: Text(
-            'You are on the latest release!\n\nVersion: 2.0.0\nBuild: 20',
+            'You are on the latest release!\n\nVersion: 2.9.2\nBuild: 29',
             style: GoogleFonts.inter(color: context.textSecondary),
           ),
           actions: [
@@ -92,13 +92,13 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
               height: 90,
               decoration: BoxDecoration(
                 color: context.isDarkMode
-                    ? Colors.white.withOpacity(0.05)
+                    ? Colors.white.withValues(alpha: 0.05)
                     : const Color(0xFFF1F5F9),
                 shape: BoxShape.circle,
                 border: Border.all(color: context.border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(
+                    color: Colors.black.withValues(alpha: 
                       context.isDarkMode ? 0.2 : 0.04,
                     ),
                     blurRadius: 10,
@@ -126,7 +126,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           ),
           Center(
             child: Text(
-              'Version 2.0.0 (Build 20)',
+              'Version 2.9.2 (Build 29)',
               style: GoogleFonts.inter(fontSize: 13, color: context.textMuted),
             ),
           ),

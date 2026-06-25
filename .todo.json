@@ -1,0 +1,27 @@
+[
+  {
+    "content": "Inspect project structure",
+    "active_form": "Inspecting project structure",
+    "status": "completed"
+  },
+  {
+    "content": "Identify tech stack and entry points",
+    "active_form": "Identifying tech stack and entry points",
+    "status": "completed"
+  },
+  {
+    "content": "Run available checks",
+    "active_form": "Running available checks",
+    "status": "completed"
+  },
+  {
+    "content": "Review key code risks",
+    "active_form": "Reviewing key code risks",
+    "status": "completed"
+  },
+  {
+    "content": "Summarize review findings",
+    "active_form": "Summarizing review findings",
+    "status": "completed"
+  }
+]

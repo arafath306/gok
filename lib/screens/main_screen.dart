@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'feed_screen.dart';
@@ -61,6 +62,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
       _notificationSubscription = dbService.incomingNotificationStream.listen((event) {
         if (mounted) {
           _showInAppNotificationBanner(event);
+          dbService.fetchMyProfile();
         }
       });
     });
@@ -388,7 +390,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         children: [
           Icon(
             icon,
-            color: isActive ? context.primaryAccent : context.textPrimary,
+            color: isActive ? const Color(0xFF1E824C) : context.textPrimary,
             size: 26,
           ),
           if (badgeCount > 0)
@@ -423,7 +425,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         style: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-          color: isActive ? context.primaryAccent : context.textPrimary,
+          color: isActive ? const Color(0xFF1E824C) : context.textPrimary,
           letterSpacing: -0.1,
         ),
       ),
@@ -709,6 +711,7 @@ WhatsApp: +8801313961899''',
 
   Widget _buildBottomNavItem(int tabIndex, IconData activeIcon, IconData inactiveIcon, {int badgeCount = 0}) {
     final bool isSelected = _currentIndex == tabIndex;
+    final Color accentColor = context.greenAccent;
 
     return Expanded(
       child: GestureDetector(
@@ -719,29 +722,50 @@ WhatsApp: +8801313961899''',
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 6),
             Stack(
               clipBehavior: Clip.none,
+              alignment: Alignment.center,
               children: [
-                AnimatedScale(
-                  scale: isSelected ? 1.12 : 1.0,
+                AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutBack,
-                  child: Icon(
-                    isSelected ? activeIcon : inactiveIcon,
-                    color: isSelected ? const Color(0xFF1E824C) : context.textSecondary,
-                    size: 22,
+                  curve: Curves.easeOutCubic,
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isSelected 
+                        ? accentColor.withValues(alpha: 0.12)
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: AnimatedScale(
+                      scale: isSelected ? 1.15 : 1.0,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutBack,
+                      child: Icon(
+                        isSelected ? activeIcon : inactiveIcon,
+                        color: isSelected ? accentColor : context.textPrimary.withValues(alpha: 0.75),
+                        size: 24,
+                      ),
+                    ),
                   ),
                 ),
                 if (badgeCount > 0)
                   Positioned(
-                    right: -6,
-                    top: -6,
+                    right: -2,
+                    top: -2,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: Colors.redAccent,
                         borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 16,
@@ -760,18 +784,6 @@ WhatsApp: +8801313961899''',
                   ),
               ],
             ),
-            const SizedBox(height: 4),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-              width: isSelected ? 4 : 0,
-              height: 4,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1E824C),
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(height: 4),
           ],
         ),
       ),
@@ -816,7 +828,7 @@ WhatsApp: +8801313961899''',
                         children: [
                           _buildProfileHeader(context, myProfile),
                           _buildDrawerItem(
-                            icon: Icons.search_outlined,
+                            icon: CupertinoIcons.search,
                             title: "Explore",
                             isActive: _currentIndex == 1,
                             onTap: () {
@@ -825,7 +837,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: _currentIndex == 0 ? Icons.home_rounded : Icons.home_outlined,
+                            icon: _currentIndex == 0 ? CupertinoIcons.house_fill : CupertinoIcons.house,
                             title: "Home",
                             isActive: _currentIndex == 0,
                             onTap: () {
@@ -834,7 +846,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: _currentIndex == 2 ? Icons.forum_rounded : Icons.forum_outlined,
+                            icon: _currentIndex == 2 ? CupertinoIcons.ellipses_bubble_fill : CupertinoIcons.ellipses_bubble,
                             title: "Chat",
                             isActive: _currentIndex == 2,
                             badgeCount: dbService.unreadMessagesCount,
@@ -844,7 +856,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: _currentIndex == 3 ? Icons.notifications : Icons.notifications_outlined,
+                            icon: _currentIndex == 3 ? CupertinoIcons.bell_fill : CupertinoIcons.bell,
                             title: "Notifications",
                             isActive: _currentIndex == 3,
                             badgeCount: dbService.unreadNotificationsCount,
@@ -854,7 +866,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: Icons.tag_rounded,
+                            icon: CupertinoIcons.tag,
                             title: "Feeds",
                             isActive: false,
                             onTap: () {
@@ -863,7 +875,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: Icons.chat_bubble_outline_rounded,
+                            icon: CupertinoIcons.chat_bubble,
                             title: "Threads",
                             isActive: false,
                             onTap: () {
@@ -872,7 +884,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: Icons.bookmark_border_rounded,
+                            icon: CupertinoIcons.bookmark,
                             title: "Saved",
                             isActive: false,
                             onTap: () {
@@ -884,7 +896,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: _currentIndex == 4 ? Icons.person : Icons.person_outline_rounded,
+                            icon: _currentIndex == 4 ? CupertinoIcons.person_fill : CupertinoIcons.person,
                             title: "Profile",
                             isActive: _currentIndex == 4,
                             onTap: () {
@@ -893,7 +905,7 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: Icons.settings_outlined,
+                            icon: CupertinoIcons.settings,
                             title: "Settings",
                             isActive: false,
                             onTap: () {
@@ -987,10 +999,10 @@ WhatsApp: +8801313961899''',
                 ]).animate(_fabAnimationController),
                 child: FloatingActionButton(
                   heroTag: 'main_fab',
-                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
+                  backgroundColor: const Color(0xFF1E824C).withValues(alpha: 0.15),
                   shape: const CircleBorder(),
                   elevation: 0,
-                  mini: true,
+                  mini: false,
                   onPressed: () {
                     _fabAnimationController.forward(from: 0.0);
                     Future.delayed(const Duration(milliseconds: 180), () {
@@ -1003,9 +1015,9 @@ WhatsApp: +8801313961899''',
                     });
                   },
                   child: Icon(
-                    Icons.edit_rounded,
-                    color: Theme.of(context).primaryColor,
-                    size: 25,
+                    CupertinoIcons.pencil_ellipsis_rectangle,
+                    color: const Color(0xFF1E824C),
+                    size: 26,
                   ),
                 ),
               ),
@@ -1027,7 +1039,7 @@ WhatsApp: +8801313961899''',
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 25.0, sigmaY: 25.0),
                 child: Container(
-                  height: 52 + bottomPadding,
+                  height: 58 + bottomPadding,
                   decoration: BoxDecoration(
                     color: context.isDarkMode
                         ? Colors.black.withValues(alpha: 0.8)
@@ -1048,21 +1060,21 @@ WhatsApp: +8801313961899''',
                   child: SafeArea(
                     child: Row(
                       children: [
-                        _buildBottomNavItem(0, Icons.home_rounded, Icons.home_outlined),
-                        _buildBottomNavItem(1, Icons.search_rounded, Icons.search_rounded),
+                        _buildBottomNavItem(0, CupertinoIcons.house_fill, CupertinoIcons.house),
+                        _buildBottomNavItem(1, CupertinoIcons.search, CupertinoIcons.search),
                         _buildBottomNavItem(
                           2, 
-                          Icons.forum_rounded, 
-                          Icons.forum_outlined,
+                          CupertinoIcons.ellipses_bubble_fill, 
+                          CupertinoIcons.ellipses_bubble,
                           badgeCount: dbService.unreadMessagesCount,
                         ),
                         _buildBottomNavItem(
                           3, 
-                          Icons.notifications_rounded, 
-                          Icons.notifications_outlined,
+                          CupertinoIcons.bell_fill, 
+                          CupertinoIcons.bell,
                           badgeCount: dbService.unreadNotificationsCount,
                         ),
-                        _buildBottomNavItem(4, Icons.person_rounded, Icons.person_outline_rounded),
+                        _buildBottomNavItem(4, CupertinoIcons.person_fill, CupertinoIcons.person),
                       ],
                     ),
                   ),

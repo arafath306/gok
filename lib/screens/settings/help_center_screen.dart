@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/app_theme.dart';
@@ -216,7 +216,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       ),
                       boxShadow: isSelected ? [
                         BoxShadow(
-                          color: context.primaryAccent.withOpacity(0.3),
+                          color: context.primaryAccent.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         )
@@ -299,7 +299,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                             collapsedIconColor: context.textMuted,
                             leading: Icon(
                               _getCategoryIcon(faq['category']!),
-                              color: context.primaryAccent.withOpacity(0.8),
+                              color: context.primaryAccent.withValues(alpha: 0.8),
                               size: 20,
                             ),
                             title: Text(

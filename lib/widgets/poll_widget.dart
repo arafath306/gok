@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/thread_post.dart';
 import '../services/database_service.dart';
@@ -56,7 +56,7 @@ class PollWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isWinner 
-                          ? Colors.blue.withOpacity(0.3) 
+                          ? Colors.blue.withValues(alpha: 0.3) 
                           : context.border,
                       width: isWinner ? 1.2 : 0.8,
                     ),
@@ -78,8 +78,8 @@ class PollWidget extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: isWinner
-                                        ? [Colors.blue.withOpacity(0.25), Colors.blue.withOpacity(0.15)]
-                                        : [context.textSecondary.withOpacity(0.12), context.textSecondary.withOpacity(0.08)],
+                                        ? [Colors.blue.withValues(alpha: 0.25), Colors.blue.withValues(alpha: 0.15)]
+                                        : [context.textSecondary.withValues(alpha: 0.12), context.textSecondary.withValues(alpha: 0.08)],
                                   ),
                                 ),
                               ),
@@ -189,7 +189,7 @@ class PollWidget extends StatelessWidget {
                 height: 3.5,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.textMuted.withOpacity(0.6),
+                  color: context.textMuted.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(width: 8),

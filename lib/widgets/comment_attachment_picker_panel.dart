@@ -223,9 +223,9 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
 
       final Uri uri;
       if (queryTerm == "trending") {
-        uri = Uri.parse("https://api.giphy.com/v1/gifs/trending?api_key=dc6zaTOxFJmzC&limit=16&rating=g");
+        uri = Uri.parse("https://api.giphy.com/v1/gifs/trending?api_key=urWIAb5RB9P7NpOGNTTx2czRre4E0G4E&limit=16&rating=g");
       } else {
-        uri = Uri.parse("https://api.giphy.com/v1/gifs/search?api_key=dc6zaTOxFJmzC&q=${Uri.encodeComponent(queryTerm)}&limit=16&rating=g");
+        uri = Uri.parse("https://api.giphy.com/v1/gifs/search?api_key=urWIAb5RB9P7NpOGNTTx2czRre4E0G4E&q=${Uri.encodeComponent(queryTerm)}&limit=16&rating=g");
       }
 
       final HttpClientRequest request = await client.getUrl(uri);

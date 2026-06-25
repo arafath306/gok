@@ -45,9 +45,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
         title: Text(
           'Apply for Blue Badge',
           style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
             color: context.textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
@@ -59,65 +60,82 @@ class _ReviewScreenState extends State<ReviewScreen> {
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Review your application',
+                    Text('Review Application',
                         style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: context.textPrimary)),
-                    const SizedBox(height: 4),
+                            fontSize: 19,
+                            fontWeight: FontWeight.w900,
+                            color: context.textPrimary,
+                            letterSpacing: -0.4)),
+                    const SizedBox(height: 6),
                     Text(
-                      'Double check everything before you proceed to payment.',
-                      style: GoogleFonts.inter(color: context.textSecondary, fontSize: 13),
+                      'Verify that all information matches your official documents before submitting.',
+                      style: GoogleFonts.inter(color: context.textSecondary, fontSize: 13, height: 1.45),
                     ),
                     const SizedBox(height: 20),
                     
                     Container(
                       decoration: BoxDecoration(
                         color: context.cardBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: context.border),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: context.border, width: 0.8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
                       ),
+                      clipBehavior: Clip.antiAlias,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSectionHeader(context, 'Personal & Contact'),
-                          _buildDetailRow(context, 'Full name', request.fullName),
+                          _buildSectionHeader(context, 'Personal Details'),
+                          _buildDetailRow(context, 'Full Name', request.fullName),
                           _buildDetailRow(context, 'Username', '@${request.username}'),
-                          _buildDetailRow(context, 'Date of birth', request.dateOfBirth == null ? '-' : '${request.dateOfBirth!.day}/${request.dateOfBirth!.month}/${request.dateOfBirth!.year}'),
-                          _buildDetailRow(context, 'Phone', request.phone),
-                          _buildDetailRow(context, 'Email', request.email),
+                          _buildDetailRow(context, 'Date of Birth', request.dateOfBirth == null ? '-' : '${request.dateOfBirth!.day.toString().padLeft(2, '0')}/${request.dateOfBirth!.month.toString().padLeft(2, '0')}/${request.dateOfBirth!.year}'),
+                          _buildDetailRow(context, 'Phone Number', request.phone),
+                          _buildDetailRow(context, 'Email Address', request.email),
                           
-                          const Divider(height: 1),
+                          _buildSectionHeader(context, 'Documents & Biometrics'),
+                          _buildDetailRow(context, 'NID Card Number', request.nidNumber),
                           
-                          _buildSectionHeader(context, 'Identity & Face'),
-                          _buildDetailRow(context, 'NID number', request.nidNumber),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                             child: Row(
                               children: [
-                                Expanded(child: _buildImageThumb(context, 'Front', request.nidFront?.path)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildImageThumb(context, 'Back', request.nidBack?.path)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildImageThumb(context, 'Face', request.faceImage?.path)),
+                                Expanded(child: _buildImageThumb(context, 'NID Front', request.nidFront?.path)),
+                                const SizedBox(width: 12),
+                                Expanded(child: _buildImageThumb(context, 'NID Back', request.nidBack?.path)),
+                                const SizedBox(width: 12),
+                                Expanded(child: _buildImageThumb(context, 'Selfie Scan', request.faceImage?.path)),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
                     
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                     InkWell(
                       onTap: () => setState(() => _confirmed = !_confirmed),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _confirmed
+                              ? context.primaryAccent.withValues(alpha: 0.04)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _confirmed ? context.primaryAccent : Colors.transparent,
+                            width: 0.8,
+                          ),
+                        ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -127,6 +145,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                               child: Checkbox(
                                 value: _confirmed,
                                 activeColor: context.primaryAccent,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                                 onChanged: (v) =>
                                     setState(() => _confirmed = v ?? false),
                               ),
@@ -136,9 +155,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 2),
                                 child: Text(
-                                  'I confirm this information is accurate and the provided NID and photo belong to me.',
+                                  'I confirm all documents and credentials belong to me and represent official, valid, and correct records.',
                                   style: GoogleFonts.inter(
-                                      fontSize: 13, color: context.textPrimary, height: 1.4),
+                                      fontSize: 13, 
+                                      color: context.textPrimary, 
+                                      height: 1.45,
+                                      fontWeight: _confirmed ? FontWeight.w600 : FontWeight.normal),
                                 ),
                               ),
                             ),
@@ -153,7 +175,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: PigeonPrimaryButton(
-                label: 'Continue to Payment',
+                label: 'Proceed to Payment',
                 icon: Icons.arrow_forward_rounded,
                 onPressed: _confirmed
                     ? () {
@@ -177,15 +199,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: context.primaryAccent.withOpacity(0.08),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+        color: context.primaryAccent.withValues(alpha: 0.06),
+        border: Border(bottom: BorderSide(color: context.border, width: 0.5)),
       ),
       child: Text(
         title,
         style: GoogleFonts.inter(
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w800,
           fontSize: 13.5,
           color: context.primaryAccent,
+          letterSpacing: -0.2,
         ),
       ),
     );
@@ -204,6 +227,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               style: GoogleFonts.inter(
                 color: context.textSecondary,
                 fontSize: 12.5,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -214,7 +238,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               style: GoogleFonts.inter(
                 color: context.textPrimary,
                 fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -227,16 +251,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return Column(
       children: [
         Container(
-          height: 60,
+          height: 70,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: context.isDarkMode ? Colors.white10 : Colors.black.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: context.border),
+            color: context.isDarkMode ? const Color(0xFF10132A) : Colors.black.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.border, width: 0.8),
           ),
           child: path != null 
               ? ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                   child: Image.file(File(path), fit: BoxFit.cover),
                 )
               : Center(child: Icon(Icons.broken_image_outlined, size: 20, color: context.textMuted)),
@@ -247,7 +271,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           style: GoogleFonts.inter(
             fontSize: 11,
             color: context.textSecondary,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],

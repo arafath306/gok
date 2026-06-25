@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/chat_settings_provider.dart';
@@ -106,7 +106,7 @@ class ChatSettingsScreen extends StatelessWidget {
                 trailing: Switch(
                   value: provider.notificationSounds,
                   activeColor: const Color(0xFF0085FF),
-                  activeTrackColor: const Color(0xFF0085FF).withOpacity(0.25),
+                  activeTrackColor: const Color(0xFF0085FF).withValues(alpha: 0.25),
                   inactiveThumbColor: context.textMuted,
                   inactiveTrackColor: context.isDarkMode ? const Color(0xFF1E293B) : Colors.grey[200],
                   onChanged: (val) => provider.setNotificationSounds(val),
@@ -153,7 +153,7 @@ class ChatSettingsScreen extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0085FF).withOpacity(0.08) : Colors.transparent,
+          color: isSelected ? const Color(0xFF0085FF).withValues(alpha: 0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(

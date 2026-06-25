@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -151,7 +152,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               ),
               const SizedBox(height: 8),
               ListTile(
-                leading: Icon(Icons.repeat_rounded, color: context.textPrimary),
+                leading: Icon(CupertinoIcons.arrow_2_circlepath, color: context.textPrimary),
                 title: Text('Repost', style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
                 subtitle: Text('Instantly share this post to your feed', style: TextStyle(color: context.textSecondary, fontSize: 12)),
                 onTap: () {
@@ -658,15 +659,15 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                         ScaleTransition(scale: animation, child: child),
                     child: targetPost.isLikedByMe
                         ? const Icon(
-                            Icons.favorite,
+                            CupertinoIcons.heart_fill,
                             key: ValueKey<int>(1),
                             color: Colors.red,
                             size: 20,
                           )
                         : Icon(
-                            Icons.favorite_border,
+                            CupertinoIcons.heart,
                             key: const ValueKey<int>(0),
-                            color: context.textSecondary,
+                            color: context.textPrimary.withValues(alpha: 0.75),
                             size: 20,
                           ),
                   ),
@@ -676,7 +677,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               if (targetPost.likesCount > 0)
                 Text(
                   '${targetPost.likesCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary),
+                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
                 ),
               const SizedBox(width: 18),
               GestureDetector(
@@ -685,8 +686,8 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Icon(
-                    Icons.mode_comment_outlined,
-                    color: context.textSecondary,
+                    CupertinoIcons.chat_bubble,
+                    color: context.textPrimary.withValues(alpha: 0.75),
                     size: 20,
                   ),
                 ),
@@ -695,7 +696,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               if (targetPost.repliesCount > 0)
                 Text(
                   '${targetPost.repliesCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary),
+                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
                 ),
               const SizedBox(width: 18),
               GestureDetector(
@@ -704,10 +705,10 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Icon(
-                    Icons.repeat_rounded,
+                    CupertinoIcons.arrow_2_circlepath,
                     color: dbService.isReposted(targetPost.id) 
                         ? const Color(0xFF1E824C) 
-                        : context.textSecondary,
+                        : context.textPrimary.withValues(alpha: 0.75),
                     size: 20,
                   ),
                 ),
@@ -716,7 +717,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               if (targetPost.repostsCount > 0)
                 Text(
                   '${targetPost.repostsCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary),
+                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
                 ),
               const SizedBox(width: 18),
               GestureDetector(
@@ -740,8 +741,8 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Icon(
-                    dbService.isSaved(targetPost.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
-                    color: dbService.isSaved(targetPost.id) ? const Color(0xFF1E824C) : context.textSecondary,
+                    dbService.isSaved(targetPost.id) ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+                    color: dbService.isSaved(targetPost.id) ? const Color(0xFF1E824C) : context.textPrimary.withValues(alpha: 0.75),
                     size: 20,
                   ),
                 ),
@@ -750,7 +751,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               if (targetPost.savesCount > 0)
                 Text(
                   '${targetPost.savesCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary),
+                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
                 ),
               const SizedBox(width: 18),
               GestureDetector(
@@ -758,8 +759,8 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Icon(
-                    Icons.shortcut_outlined,
-                    color: context.textSecondary,
+                    CupertinoIcons.arrowshape_turn_up_right,
+                    color: context.textPrimary.withValues(alpha: 0.75),
                     size: 20,
                   ),
                 ),
@@ -768,7 +769,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               if (targetPost.sharesCount > 0)
                 Text(
                   '${targetPost.sharesCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textSecondary),
+                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
                 ),
             ],
           );
@@ -819,7 +820,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isWinner 
-                          ? Colors.blue.withOpacity(0.3) 
+                          ? Colors.blue.withValues(alpha: 0.3) 
                           : context.border,
                       width: isWinner ? 1.2 : 0.8,
                     ),
@@ -841,8 +842,8 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: isWinner
-                                        ? [Colors.blue.withOpacity(0.25), Colors.blue.withOpacity(0.15)]
-                                        : [context.textSecondary.withOpacity(0.12), context.textSecondary.withOpacity(0.08)],
+                                        ? [Colors.blue.withValues(alpha: 0.25), Colors.blue.withValues(alpha: 0.15)]
+                                        : [context.textSecondary.withValues(alpha: 0.12), context.textSecondary.withValues(alpha: 0.08)],
                                   ),
                                 ),
                               ),
@@ -952,7 +953,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 height: 3.5,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.textMuted.withOpacity(0.6),
+                  color: context.textMuted.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1244,8 +1245,8 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
       color: Colors.transparent,
       child: InkWell(
         onTap: item.onTap,
-        splashColor: const Color(0xFF1E824C).withOpacity(0.08),
-        highlightColor: const Color(0xFF1E824C).withOpacity(0.04),
+        splashColor: const Color(0xFF1E824C).withValues(alpha: 0.08),
+        highlightColor: const Color(0xFF1E824C).withValues(alpha: 0.04),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Row(
@@ -1385,7 +1386,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
                           );
                         }
                       },
-                      splashColor: Colors.red.withOpacity(0.06),
+                      splashColor: Colors.red.withValues(alpha: 0.06),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 16),
@@ -1792,8 +1793,8 @@ class _AuthorActionsSheetState extends State<_AuthorActionsSheet>
       color: Colors.transparent,
       child: InkWell(
         onTap: item.onTap,
-        splashColor: const Color(0xFF1E824C).withOpacity(0.08),
-        highlightColor: const Color(0xFF1E824C).withOpacity(0.04),
+        splashColor: const Color(0xFF1E824C).withValues(alpha: 0.08),
+        highlightColor: const Color(0xFF1E824C).withValues(alpha: 0.04),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Row(

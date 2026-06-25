@@ -308,9 +308,45 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       backgroundColor: context.scaffoldBg,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: IconButton(
-        icon: Icon(Icons.menu_rounded, color: context.textPrimary),
-        onPressed: () => Scaffold.of(context).openDrawer(),
+      leading: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Scaffold.of(context).openDrawer(),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 20,
+                height: 2.2,
+                decoration: BoxDecoration(
+                  color: context.textPrimary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 4.5),
+              Container(
+                width: 20,
+                height: 2.2,
+                decoration: BoxDecoration(
+                  color: context.textPrimary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 4.5),
+              Container(
+                width: 14,
+                height: 2.2,
+                decoration: BoxDecoration(
+                  color: context.textPrimary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       title: Text(
         'Notifications',

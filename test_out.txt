@@ -1,0 +1,8 @@
+00:00 +0: loading C:/Users/ARAFATH/StudioProjects/Dak/test/widget_test.dart
+00:00 +0: C:/Users/ARAFATH/StudioProjects/Dak/test/widget_test.dart: ThreadPost parses Supabase thread payload
+00:01 +1: C:/Users/ARAFATH/StudioProjects/Dak/test/e2ee_encryption_test.dart: End-to-End Encryption (E2EE) Cryptographic Verification ECDH Key Exchange and AES-GCM-256 Encryption/Decryption flow
+Alice Public Key: B7tTcbcEyziicEMJ+Fuv/kSBOSgtWclBtXk6CD9J21Q=
+Bob Public Key: tevUBflJofGbdVROx6PxUJMqNz0L6Kk299jDLCs5ogg=
+Encrypted Message stored in DB: E2EE:v1:preIZVukPfyQi1Dp:MW2Cg7EJ/y/5l3+QcCasjA==:ujwAOwLm1reXs0ysBLDt6W0gsDPniKH2VG8/NvHKhd3UKoPOnukO56eTvY83VkHkAKY50cpxdA==
+Decrypted Message by Bob: Hello Bob! This is an end-to-end encrypted message 🤫
+00:01 +2: All tests passed!

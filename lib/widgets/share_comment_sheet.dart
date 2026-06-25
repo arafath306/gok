@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -93,8 +94,8 @@ class _ShareCommentSheetState extends State<ShareCommentSheet> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: context.isDarkMode 
-                                        ? Colors.white.withOpacity(0.05) 
-                                        : Colors.black.withOpacity(0.03),
+                                        ? Colors.white.withValues(alpha: 0.05) 
+                                        : Colors.black.withValues(alpha: 0.03),
                                   ),
                                   child: Icon(
                                     Icons.person,
@@ -210,7 +211,7 @@ class _ShareCommentSheetState extends State<ShareCommentSheet> {
                           ),
                         ),
                         Icon(
-                          Icons.shortcut_outlined,
+                          CupertinoIcons.arrowshape_turn_up_right,
                           color: context.textPrimary,
                           size: 18,
                         ),

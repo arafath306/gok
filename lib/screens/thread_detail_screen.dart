@@ -1,6 +1,7 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
@@ -438,13 +439,13 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: context.textSecondary, size: 18),
+          Icon(icon, color: context.textPrimary.withValues(alpha: 0.75), size: 18),
           if (label.isNotEmpty && label != '0') ...[
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: context.textSecondary,
+                color: context.textPrimary.withValues(alpha: 0.75),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -552,7 +553,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -619,12 +620,12 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         children: [
                           Icon(
                             (comment['is_liked_by_me'] as bool? ?? false)
-                                ? Icons.favorite
-                                : Icons.favorite_border,
+                                ? CupertinoIcons.heart_fill
+                                : CupertinoIcons.heart,
                             size: 15,
                             color: (comment['is_liked_by_me'] as bool? ?? false)
                                 ? Colors.red
-                                : context.textSecondary,
+                                : context.textPrimary.withValues(alpha: 0.75),
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -632,7 +633,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 13, 
                               fontWeight: FontWeight.w500,
-                              color: context.textSecondary,
+                              color: context.textPrimary.withValues(alpha: 0.75),
                             ),
                           ),
                         ],
@@ -655,14 +656,14 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       },
                       child: Row(
                         children: [
-                          Icon(Icons.mode_comment_outlined, size: 15, color: context.textSecondary),
+                          Icon(CupertinoIcons.chat_bubble, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                           const SizedBox(width: 6),
                           Text(
                             "${comment['replies_count'] ?? 0}",
                             style: GoogleFonts.inter(
                               fontSize: 13, 
                               fontWeight: FontWeight.w500,
-                              color: context.textSecondary,
+                              color: context.textPrimary.withValues(alpha: 0.75),
                             ),
                           ),
                         ],
@@ -697,12 +698,12 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         children: [
                           Icon(
                             (comment['is_saved_by_me'] as bool? ?? false)
-                                ? Icons.bookmark
-                                : Icons.bookmark_border_rounded,
+                                ? CupertinoIcons.bookmark_fill
+                                : CupertinoIcons.bookmark,
                             size: 15,
                             color: (comment['is_saved_by_me'] as bool? ?? false)
                                 ? Theme.of(context).primaryColor
-                                : context.textSecondary,
+                                : context.textPrimary.withValues(alpha: 0.75),
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -710,7 +711,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 13, 
                               fontWeight: FontWeight.w500,
-                              color: context.textSecondary,
+                              color: context.textPrimary.withValues(alpha: 0.75),
                             ),
                           ),
                         ],
@@ -732,14 +733,14 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       },
                       child: Row(
                         children: [
-                          Icon(Icons.shortcut_outlined, size: 15, color: context.textSecondary),
+                          Icon(CupertinoIcons.arrowshape_turn_up_right, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                           const SizedBox(width: 6),
                           Text(
                             "${comment['shares_count'] ?? 0}",
                             style: GoogleFonts.inter(
                               fontSize: 13, 
                               fontWeight: FontWeight.w500,
-                              color: context.textSecondary,
+                              color: context.textPrimary.withValues(alpha: 0.75),
                             ),
                           ),
                         ],
@@ -1019,15 +1020,15 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                         ScaleTransition(scale: animation, child: child),
                                     child: activePost.isLikedByMe
                                         ? const Icon(
-                                            Icons.favorite,
+                                            CupertinoIcons.heart_fill,
                                             key: ValueKey<int>(1),
                                             color: Colors.red,
                                             size: 18,
                                           )
                                         : Icon(
-                                            Icons.favorite_border,
+                                            CupertinoIcons.heart,
                                             key: const ValueKey<int>(0),
-                                            color: context.textSecondary,
+                                            color: context.textPrimary.withValues(alpha: 0.75),
                                             size: 18,
                                           ),
                                   ),
@@ -1035,7 +1036,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                   Text(
                                     _formatCount(activePost.likesCount),
                                     style: TextStyle(
-                                      color: activePost.isLikedByMe ? Colors.red : context.textSecondary,
+                                      color: activePost.isLikedByMe ? Colors.red : context.textPrimary.withValues(alpha: 0.75),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -1045,7 +1046,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             ),
                             // Comment Button
                             _buildActionButton(
-                              icon: Icons.mode_comment_outlined,
+                              icon: CupertinoIcons.chat_bubble,
                               label: _formatCount(_comments.length),
                               onTap: () {
                                 showModalBottomSheet(
@@ -1066,10 +1067,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.repeat_rounded, 
+                                    CupertinoIcons.arrow_2_circlepath, 
                                     color: dbService.isReposted(activePost.id) 
                                         ? Theme.of(context).primaryColor 
-                                        : context.textSecondary, 
+                                        : context.textPrimary.withValues(alpha: 0.75), 
                                     size: 18,
                                   ),
                                   const SizedBox(width: 6),
@@ -1078,7 +1079,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                     style: TextStyle(
                                       color: dbService.isReposted(activePost.id) 
                                           ? Theme.of(context).primaryColor 
-                                          : context.textSecondary,
+                                          : context.textPrimary.withValues(alpha: 0.75),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -1109,8 +1110,8 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    dbService.isSaved(activePost.id) ? Icons.bookmark : Icons.bookmark_border_rounded,
-                                    color: dbService.isSaved(activePost.id) ? Theme.of(context).primaryColor : context.textSecondary,
+                                    dbService.isSaved(activePost.id) ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+                                    color: dbService.isSaved(activePost.id) ? Theme.of(context).primaryColor : context.textPrimary.withValues(alpha: 0.75),
                                     size: 18,
                                   ),
                                   if (activePost.savesCount > 0) ...[
@@ -1118,7 +1119,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                                     Text(
                                       _formatCount(activePost.savesCount),
                                       style: TextStyle(
-                                        color: dbService.isSaved(activePost.id) ? Theme.of(context).primaryColor : context.textSecondary,
+                                        color: dbService.isSaved(activePost.id) ? Theme.of(context).primaryColor : context.textPrimary.withValues(alpha: 0.75),
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -1129,7 +1130,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             ),
                             // Share Button
                             _buildActionButton(
-                              icon: Icons.shortcut_outlined,
+                              icon: CupertinoIcons.arrowshape_turn_up_right,
                               label: _formatCount(activePost.sharesCount),
                               onTap: () {
                                 _sharePost(context);
@@ -1431,7 +1432,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           return TextButton(
                             onPressed: isEnabled ? _postComment : null,
                             style: TextButton.styleFrom(
-                              backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey[300]?.withOpacity(0.4),
+                              backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey[300]?.withValues(alpha: 0.4),
                               foregroundColor: isEnabled ? Colors.white : Colors.grey[400],
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -1536,7 +1537,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
               ),
               const SizedBox(height: 8),
               ListTile(
-                leading: Icon(Icons.repeat_rounded, color: context.textPrimary),
+                leading: Icon(CupertinoIcons.arrow_2_circlepath, color: context.textPrimary),
                 title: Text('Repost', style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
                 subtitle: Text('Instantly share this post to your feed', style: TextStyle(color: context.textSecondary, fontSize: 12)),
                 onTap: () {

@@ -116,6 +116,6 @@ extension AppThemeExtension on BuildContext {
   Color get textPrimary    => isDarkMode ? Colors.white : const Color(0xFF0F172A);
   Color get textSecondary  => isDarkMode ? Colors.white70 : const Color(0xFF64748B);
   Color get textMuted      => isDarkMode ? Colors.white38 : const Color(0xFF94A3B8);
-  Color get primaryAccent  => const Color(0xFF7C4DFF);
+  Color get primaryAccent  => const Color(0xFF1E824C); // Brand green
   Color get greenAccent    => const Color(0xFF1E824C);
 }

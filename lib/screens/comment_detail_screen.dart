@@ -1,5 +1,6 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -401,12 +402,12 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                         children: [
                                           Icon(
                                             (_fatherComment['is_liked_by_me'] as bool? ?? false)
-                                                ? Icons.favorite
-                                                : Icons.favorite_border,
+                                                ? CupertinoIcons.heart_fill
+                                                : CupertinoIcons.heart,
                                             size: 15,
                                             color: (_fatherComment['is_liked_by_me'] as bool? ?? false)
                                                 ? Colors.red
-                                                : context.textSecondary,
+                                                : context.textPrimary.withValues(alpha: 0.75),
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
@@ -414,7 +415,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                             style: GoogleFonts.inter(
                                               fontSize: 13, 
                                               fontWeight: FontWeight.w500,
-                                              color: context.textSecondary,
+                                              color: context.textPrimary.withValues(alpha: 0.75),
                                             ),
                                           ),
                                         ],
@@ -426,14 +427,14 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                       onTap: () => _focusNode.requestFocus(),
                                       child: Row(
                                         children: [
-                                          Icon(Icons.mode_comment_outlined, size: 15, color: context.textSecondary),
+                                          Icon(CupertinoIcons.chat_bubble, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                                           const SizedBox(width: 6),
                                           Text(
                                             "${_fatherComment['replies_count'] ?? 0}",
                                             style: GoogleFonts.inter(
                                               fontSize: 13, 
                                               fontWeight: FontWeight.w500,
-                                              color: context.textSecondary,
+                                              color: context.textPrimary.withValues(alpha: 0.75),
                                             ),
                                           ),
                                         ],
@@ -466,12 +467,12 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                         children: [
                                           Icon(
                                             (_fatherComment['is_saved_by_me'] as bool? ?? false)
-                                                ? Icons.bookmark
-                                                : Icons.bookmark_border_rounded,
+                                                ? CupertinoIcons.bookmark_fill
+                                                : CupertinoIcons.bookmark,
                                             size: 15,
                                             color: (_fatherComment['is_saved_by_me'] as bool? ?? false)
                                                 ? Theme.of(context).primaryColor
-                                                : context.textSecondary,
+                                                : context.textPrimary.withValues(alpha: 0.75),
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
@@ -479,7 +480,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                             style: GoogleFonts.inter(
                                               fontSize: 13, 
                                               fontWeight: FontWeight.w500,
-                                              color: context.textSecondary,
+                                              color: context.textPrimary.withValues(alpha: 0.75),
                                             ),
                                           ),
                                         ],
@@ -500,14 +501,14 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                       },
                                       child: Row(
                                         children: [
-                                          Icon(Icons.shortcut_outlined, size: 15, color: context.textSecondary),
+                                          Icon(CupertinoIcons.arrowshape_turn_up_right, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                                           const SizedBox(width: 6),
                                           Text(
                                             "${_fatherComment['shares_count'] ?? 0}",
                                             style: GoogleFonts.inter(
                                               fontSize: 13, 
                                               fontWeight: FontWeight.w500,
-                                              color: context.textSecondary,
+                                              color: context.textPrimary.withValues(alpha: 0.75),
                                             ),
                                           ),
                                         ],
@@ -546,7 +547,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 40),
                             child: Column(
                               children: [
-                                Icon(Icons.mode_comment_outlined, size: 48, color: context.textMuted.withOpacity(0.3)),
+                                Icon(CupertinoIcons.chat_bubble, size: 48, color: context.textMuted.withValues(alpha: 0.3)),
                                 const SizedBox(height: 12),
                                 Text(
                                   "No replies yet. Be the first to reply!",
@@ -651,7 +652,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             IconButton(
-                                              icon: const Icon(Icons.more_horiz, size: 18, color: Colors.grey),
+                                              icon: const Icon(CupertinoIcons.ellipsis, size: 18, color: Colors.grey),
                                               padding: EdgeInsets.zero,
                                               constraints: const BoxConstraints(),
                                               onPressed: () => _showQuickActions(context, reply, dbService),
@@ -702,12 +703,12 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                                 children: [
                                                   Icon(
                                                     (reply['is_liked_by_me'] as bool? ?? false)
-                                                        ? Icons.favorite
-                                                        : Icons.favorite_border,
+                                                        ? CupertinoIcons.heart_fill
+                                                        : CupertinoIcons.heart,
                                                     size: 15,
                                                     color: (reply['is_liked_by_me'] as bool? ?? false)
                                                         ? Colors.red
-                                                        : context.textSecondary,
+                                                        : context.textPrimary.withValues(alpha: 0.75),
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
@@ -715,7 +716,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                                     style: GoogleFonts.inter(
                                                       fontSize: 13, 
                                                       fontWeight: FontWeight.w500,
-                                                      color: context.textSecondary,
+                                                      color: context.textPrimary.withValues(alpha: 0.75),
                                                     ),
                                                   ),
                                                 ],
@@ -737,14 +738,14 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                               },
                                               child: Row(
                                                 children: [
-                                                  Icon(Icons.mode_comment_outlined, size: 15, color: context.textSecondary),
+                                                  Icon(CupertinoIcons.chat_bubble, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     "${reply['replies_count'] ?? 0}",
                                                     style: GoogleFonts.inter(
                                                       fontSize: 13, 
                                                       fontWeight: FontWeight.w500,
-                                                      color: context.textSecondary,
+                                                      color: context.textPrimary.withValues(alpha: 0.75),
                                                     ),
                                                   ),
                                                 ],
@@ -777,12 +778,12 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                                 children: [
                                                   Icon(
                                                     (reply['is_saved_by_me'] as bool? ?? false)
-                                                        ? Icons.bookmark
-                                                        : Icons.bookmark_border_rounded,
+                                                        ? CupertinoIcons.bookmark_fill
+                                                        : CupertinoIcons.bookmark,
                                                     size: 15,
                                                     color: (reply['is_saved_by_me'] as bool? ?? false)
                                                         ? Theme.of(context).primaryColor
-                                                        : context.textSecondary,
+                                                        : context.textPrimary.withValues(alpha: 0.75),
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
@@ -790,7 +791,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                                     style: GoogleFonts.inter(
                                                       fontSize: 13, 
                                                       fontWeight: FontWeight.w500,
-                                                      color: context.textSecondary,
+                                                      color: context.textPrimary.withValues(alpha: 0.75),
                                                     ),
                                                   ),
                                                 ],
@@ -811,14 +812,14 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                               },
                                               child: Row(
                                                 children: [
-                                                  Icon(Icons.shortcut_outlined, size: 15, color: context.textSecondary),
+                                                  Icon(CupertinoIcons.arrowshape_turn_up_right, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     "${reply['shares_count'] ?? 0}",
                                                     style: GoogleFonts.inter(
                                                       fontSize: 13, 
                                                       fontWeight: FontWeight.w500,
-                                                      color: context.textSecondary,
+                                                      color: context.textPrimary.withValues(alpha: 0.75),
                                                     ),
                                                   ),
                                                 ],
@@ -1082,7 +1083,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                             return TextButton(
                               onPressed: isEnabled ? _submitReply : null,
                               style: TextButton.styleFrom(
-                                backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey[300]?.withOpacity(0.4),
+                                backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey[300]?.withValues(alpha: 0.4),
                                 foregroundColor: isEnabled ? Colors.white : Colors.grey[400],
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
