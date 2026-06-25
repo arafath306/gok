@@ -59,6 +59,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
       dbService.fetchVerificationPlans();
+
       _notificationSubscription = dbService.incomingNotificationStream.listen((event) {
         if (mounted) {
           _showInAppNotificationBanner(event);

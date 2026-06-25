@@ -15,11 +15,19 @@ import 'screens/auth/splash_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/app_theme.dart';
 import 'core/injection.dart';
-
 import 'core/config/app_config.dart';
+
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
 
   // Initialize Supabase
   await Supabase.initialize(

@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "528559248540",
-    "project_id": "dak-auth",
-    "storage_bucket": "dak-auth.firebasestorage.app"
+    "project_number": "5476050554",
+    "project_id": "pigeon-ngst",
+    "storage_bucket": "pigeon-ngst.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:528559248540:android:4a8456a46e00467c794959",
+        "mobilesdk_app_id": "1:5476050554:android:2d59113e754ddb1d943dc3",
         "android_client_info": {
-          "package_name": "app.ngst.dak"
+          "package_name": "com.pigeon.social"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAxpyiGa7kHXAmTFIiiwet6-84ZBmY-ZpY"
+          "current_key": "AIzaSyDvh1N0Pi3xCll1IqaGclL_e5ent_EtmUI"
         }
       ],
       "services": {
