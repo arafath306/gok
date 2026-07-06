@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../screens/full_screen_media_viewer.dart';
+import 'package:provider/provider.dart';
+import '../services/general_settings_provider.dart';
 
 class ThreadImageCarousel extends StatefulWidget {
   final List<String> imageUrls;
@@ -23,6 +25,18 @@ class _ThreadImageCarouselState extends State<ThreadImageCarousel> {
   Widget build(BuildContext context) {
     if (widget.imageUrls.isEmpty) return const SizedBox.shrink();
 
+    final lowDataMode = Provider.of<GeneralSettingsProvider>(context).lowDataMode;
+
+    // Helper to transform URL if in low data mode
+    String getOptimizedUrl(String originalUrl) {
+      if (!lowDataMode) return originalUrl;
+      // Convert standard public URL to render URL for transformation
+      if (originalUrl.contains('/object/public/')) {
+        return '${originalUrl.replaceFirst('/object/public/', '/render/image/public/')}?quality=20&width=300';
+      }
+      return originalUrl;
+    }
+
     final isSmall = widget.height <= 120;
     final borderRadius = BorderRadius.circular(isSmall ? 8.0 : 12.0);
 
@@ -42,7 +56,7 @@ class _ThreadImageCarouselState extends State<ThreadImageCarousel> {
         child: ClipRRect(
           borderRadius: borderRadius,
           child: CachedNetworkImage(
-            imageUrl: widget.imageUrls.first,
+            imageUrl: getOptimizedUrl(widget.imageUrls.first),
             height: widget.height,
             width: double.infinity,
             fit: BoxFit.cover,
@@ -98,7 +112,7 @@ class _ThreadImageCarouselState extends State<ThreadImageCarousel> {
                     );
                   },
                   child: CachedNetworkImage(
-                    imageUrl: widget.imageUrls[index],
+                    imageUrl: getOptimizedUrl(widget.imageUrls[index]),
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,

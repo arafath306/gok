@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,14 +8,22 @@ import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../utils/app_theme.dart';
 import '../models/thread_post.dart';
+import '../models/draft_post.dart';
+import '../services/draft_service.dart';
+import '../utils/routes.dart';
+import 'drafts_screen.dart';
 import 'photo_editor_screen.dart';
+import '../models/music_track.dart';
+import '../widgets/music_search_sheet.dart';
 
 
 class CreateThreadScreen extends StatefulWidget {
   final ThreadPost? quotePost;
   /// When non-null the screen is in "edit" mode: pre-fills text and saves via editPostContent.
   final ThreadPost? editPost;
-  const CreateThreadScreen({super.key, this.quotePost, this.editPost});
+  final DraftPost? draftPost;
+  final String? communityId;
+  const CreateThreadScreen({super.key, this.quotePost, this.editPost, this.draftPost, this.communityId});
 
   @override
   State<CreateThreadScreen> createState() => _CreateThreadScreenState();
@@ -63,15 +71,58 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
 
 
   bool _isLoadingExistingMedia = false;
+  
+  int _draftCount = 0;
+  final DraftService _draftService = DraftService();
+  MusicTrack? _selectedMusic;
 
   @override
   void initState() {
     super.initState();
     _contentController.addListener(_onContentChanged);
-    // Pre-fill content when editing an existing post
-    if (widget.editPost != null) {
+    _loadDraftCount();
+    
+    if (widget.draftPost != null) {
+      _contentController.text = widget.draftPost!.content;
+      _privacy = widget.draftPost!.audience;
+      _selectedLocation = widget.draftPost!.location;
+      if (widget.draftPost!.videoUrl != null) {
+        _videoUrlController.text = widget.draftPost!.videoUrl!;
+      }
+      if (widget.draftPost!.imagePaths.isNotEmpty) {
+        _loadDraftImages(widget.draftPost!.imagePaths);
+      }
+      if (widget.draftPost!.musicTrack != null) {
+        _selectedMusic = widget.draftPost!.musicTrack;
+      }
+    } else if (widget.editPost != null) {
       _contentController.text = widget.editPost!.content;
       _loadExistingMedia();
+    }
+  }
+
+  Future<void> _loadDraftCount() async {
+    final count = await _draftService.getDraftCount();
+    if (mounted) setState(() => _draftCount = count);
+  }
+
+  Future<void> _loadDraftImages(List<String> paths) async {
+    final List<Uint8List> loadedBytes = [];
+    for (var path in paths) {
+      try {
+        final file = File(path);
+        if (await file.exists()) {
+          loadedBytes.add(await file.readAsBytes());
+        }
+      } catch (e) {
+        debugPrint("Error loading draft image: $e");
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _selectedImagesBytesList.addAll(loadedBytes);
+        _originalImagesBytesList.addAll(loadedBytes);
+      });
     }
   }
 
@@ -207,7 +258,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     setState(() => _isUploadingImage = true);
     final db = Provider.of<DatabaseService>(context, listen: false);
 
-    // ── Edit mode: just update the existing post content ──────────────────
+    // â”€â”€ Edit mode: just update the existing post content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (widget.editPost != null) {
       List<String>? uploadedUrls;
       if (_selectedImagesBytesList.isNotEmpty) {
@@ -258,10 +309,13 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       return;
     }
 
-    // ── Create / Quote mode ───────────────────────────────────────────────
+    // â”€â”€ Create / Quote mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     String finalContent = text;
     if (_selectedLocation != null) {
-      finalContent += "\n\n📍 ${_selectedLocation}";
+      finalContent += "\n\nðŸ“ $_selectedLocation";
+    }
+    if (_selectedMusic != null) {
+      finalContent += " ðŸŽµDakMusicðŸŽµ${_selectedMusic!.toJson()}";
     }
 
     List<String>? pollOptions;
@@ -274,6 +328,25 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       if (filledOptions.length >= 2) {
         pollOptions = filledOptions;
         pollDuration = _pollDuration;
+      } else {
+        // Block submission and show error
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(children: [
+                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Text('Poll must have at least 2 options', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+              ]),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          setState(() => _isUploadingImage = false);
+        }
+        return;
       }
     }
 
@@ -311,19 +384,27 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
         audience: _privacy,
         pollOptions: pollOptions,
         pollDuration: pollDuration,
+        communityId: widget.communityId,
       );
     }
 
     if (mounted) {
       setState(() => _isUploadingImage = false);
       if (success) {
-        Navigator.pop(context);
+        if (widget.draftPost != null) {
+          await _draftService.deleteDrafts([widget.draftPost!.id]);
+        }
+        if (mounted) {
+          Navigator.pop(context);
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to publish post", style: GoogleFonts.inter()),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Failed to publish post", style: GoogleFonts.inter()),
+            ),
+          );
+        }
       }
     }
   }
@@ -388,6 +469,54 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     }
   }
 
+  Future<void> _handleClose() async {
+    final hasContent = _contentController.text.trim().isNotEmpty || _selectedImagesBytesList.isNotEmpty || _videoUrlController.text.isNotEmpty || _selectedMusic != null;
+    if (hasContent && widget.editPost == null && widget.quotePost == null) {
+      final action = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: context.cardBg,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text("Unsaved Changes", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
+          content: Text("Do you want to save this as a draft before closing?", style: GoogleFonts.inter(color: context.textSecondary)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, "delete"),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text("Delete Draft", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, "save"),
+              child: Text("Save Draft", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C))),
+            ),
+          ],
+        ),
+      );
+
+      if (action == "save") {
+        await _saveCurrentDraft();
+      } else if (action != "delete") {
+        return; // user tapped outside
+      }
+    }
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _saveCurrentDraft() async {
+    final id = widget.draftPost?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final draft = DraftPost(
+      id: id,
+      content: _contentController.text.trim(),
+      audience: _privacy,
+      location: _selectedLocation,
+      videoUrl: _videoUrlController.text.trim().isNotEmpty ? _videoUrlController.text.trim() : null,
+      updatedAt: DateTime.now(),
+      musicTrack: _selectedMusic,
+    );
+    await _draftService.saveDraft(draft, _selectedImagesBytesList);
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbService = Provider.of<DatabaseService>(context);
@@ -402,36 +531,45 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       children: [
         // Custom Header Bar (Clean & Identical across views)
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          decoration: BoxDecoration(
-            color: context.cardBg,
-            border: Border(
-              bottom: BorderSide(color: context.border, width: 0.8),
-            ),
-          ),
+          padding: const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 8),
+          color: context.cardBg,
           child: Row(
             children: [
               IconButton(
                 icon: Icon(Icons.close, color: context.textPrimary),
-                onPressed: () => Navigator.pop(context),
+                onPressed: _handleClose,
               ),
-              const Spacer(),
-              Text(
-                widget.editPost != null ? "Edit Post" : (widget.quotePost != null ? "Quote Post" : "Create New Post"),
-                style: GoogleFonts.inter(
-                  color: context.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
+              if (_draftCount > 0 && widget.editPost == null && widget.quotePost == null)
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(context, NoTransitionPageRoute(child: const DraftsScreen())).then((_) => _loadDraftCount());
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    foregroundColor: const Color(0xFF1E824C),
+                  ),
+                  child: Text("Drafts ($_draftCount)", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                 ),
-              ),
               const Spacer(),
+              if ((_contentController.text.trim().isNotEmpty || _selectedImagesBytesList.isNotEmpty || _selectedMusic != null) && widget.editPost == null && widget.quotePost == null)
+                TextButton(
+                  onPressed: () async {
+                    await _saveCurrentDraft();
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    foregroundColor: context.textPrimary,
+                  ),
+                  child: Text("Draft", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                ),
               ElevatedButton(
                 onPressed: isEnabled ? _submit : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E824C),
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey[200],
-                  disabledForegroundColor: Colors.grey[400],
+                  disabledBackgroundColor: Colors.grey.withValues(alpha: 0.2),
+                  disabledForegroundColor: Colors.grey.withValues(alpha: 0.5),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                   shape: RoundedRectangleBorder(
@@ -773,101 +911,146 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         ),
                       ] else if (_selectedImagesBytesList.isNotEmpty) ...[
                         const SizedBox(height: 16),
-                        SizedBox(
-                          height: 160,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: _selectedImagesBytesList.length + 1,
-                            itemBuilder: (context, index) {
-                              if (index == _selectedImagesBytesList.length) {
-                                // Add more card
-                                return GestureDetector(
-                                  onTap: _pickImages,
-                                  child: Container(
-                                    width: 120,
-                                    margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4),
-                                    decoration: BoxDecoration(
-                                      color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: context.border, width: 0.8),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                        Stack(
+                          alignment: Alignment.bottomCenter,
+                          children: [
+                            SizedBox(
+                              height: 160,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: _selectedImagesBytesList.length + 1,
+                                itemBuilder: (context, index) {
+                                  if (index == _selectedImagesBytesList.length) {
+                                    // Add more card
+                                    return GestureDetector(
+                                      onTap: _pickImages,
+                                      child: Container(
+                                        width: 120,
+                                        margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4),
+                                        decoration: BoxDecoration(
+                                          color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: context.border, width: 0.8),
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.add_photo_alternate_outlined, color: context.primaryAccent, size: 28),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              "Add More",
+                                              style: GoogleFonts.inter(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: context.textSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  final bytes = _selectedImagesBytesList[index];
+                                  return Container(
+                                    width: 140,
+                                    margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4),
+                                    child: Stack(
                                       children: [
-                                        Icon(Icons.add_photo_alternate_outlined, color: context.primaryAccent, size: 28),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          "Add More",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: context.textSecondary,
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.memory(
+                                            bytes,
+                                            width: 140,
+                                            height: 160,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 6,
+                                          right: 6,
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                _selectedImagesBytesList.removeAt(index);
+                                                _originalImagesBytesList.removeAt(index);
+                                                if (_selectedImagesBytesList.isEmpty) {
+                                                  _selectedMusic = null;
+                                                }
+                                              });
+                                            },
+                                            child: const CircleAvatar(
+                                              radius: 11,
+                                              backgroundColor: Colors.black54,
+                                              child: Icon(Icons.close, color: Colors.white, size: 12),
+                                            ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          bottom: 6,
+                                          left: 6,
+                                          child: GestureDetector(
+                                            onTap: () => _openPhotoEditorAtIndex(index),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black54,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(color: Colors.white24, width: 0.8),
+                                              ),
+                                              child: const Icon(
+                                                Icons.edit_rounded,
+                                                color: Colors.white,
+                                                size: 13,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
+                                  );
+                                },
+                              ),
+                            ),
+                            if (_selectedMusic != null)
+                              Positioned(
+                                left: 8,
+                                right: 20,
+                                bottom: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.75),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white30, width: 0.8),
                                   ),
-                                );
-                              }
-
-                              final bytes = _selectedImagesBytesList[index];
-                              return Container(
-                                width: 140,
-                                margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4),
-                                child: Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.memory(
-                                        bytes,
-                                        width: 140,
-                                        height: 160,
-                                        fit: BoxFit.cover,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.music_note, color: Colors.white, size: 14),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          "${_selectedMusic!.trackName} - ${_selectedMusic!.artistName}",
+                                          style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                    ),
-                                    Positioned(
-                                      top: 6,
-                                      right: 6,
-                                      child: GestureDetector(
+                                      GestureDetector(
                                         onTap: () {
                                           setState(() {
-                                            _selectedImagesBytesList.removeAt(index);
-                                            _originalImagesBytesList.removeAt(index);
+                                            _selectedMusic = null;
                                           });
                                         },
-                                        child: const CircleAvatar(
-                                          radius: 11,
-                                          backgroundColor: Colors.black54,
-                                          child: Icon(Icons.close, color: Colors.white, size: 12),
-                                        ),
+                                        child: const Icon(Icons.close, color: Colors.white70, size: 14),
                                       ),
-                                    ),
-                                    Positioned(
-                                      bottom: 6,
-                                      left: 6,
-                                      child: GestureDetector(
-                                        onTap: () => _openPhotoEditorAtIndex(index),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black54,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(color: Colors.white24, width: 0.8),
-                                          ),
-                                          child: const Icon(
-                                            Icons.edit_rounded,
-                                            color: Colors.white,
-                                            size: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                          ],
                         ),
                       ],
                       
@@ -1001,6 +1184,40 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     color: Colors.deepOrange,
                     isActive: false,
                     onTap: _pickCameraImage,
+                  ),
+                  _buildToolbarIcon(
+                    icon: Icons.music_note_rounded,
+                    tooltip: "Add Music",
+                    color: Colors.redAccent,
+                    isActive: _selectedMusic != null,
+                    onTap: () async {
+                      if (_selectedImagesBytesList.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Please add a photo first to attach music.",
+                              style: GoogleFonts.inter(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.redAccent,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                        return;
+                      }
+                      
+                      final selected = await showModalBottomSheet<MusicTrack>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => const MusicSearchSheet(),
+                      );
+                      if (selected != null) {
+                        setState(() {
+                          _selectedMusic = selected;
+                        });
+                      }
+                    },
                   ),
                   _buildToolbarIcon(
                     icon: Icons.play_circle_outline,

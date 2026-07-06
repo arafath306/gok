@@ -68,13 +68,14 @@ BEGIN
         GROUP BY category
     ),
 
-    -- C. Retrieve Candidates from 5 pools (last 7 days)
+    -- C. Retrieve Candidates from 4 pools (last 7 days)
     -- Pool 1: Interest Pool (Matches user's top categories)
     interest_pool AS (
         SELECT t.id AS thread_id, 'interest'::text AS pool_source
         FROM public.threads t
         JOIN user_category_weights w ON t.category = w.category
         WHERE t.created_at > (now() - INTERVAL '7 days')
+          AND (t.community_id IS NULL OR EXISTS (SELECT 1 FROM public.community_members cm WHERE cm.community_id = t.community_id AND cm.user_id = p_user_id))
           AND t.user_id != p_user_id
           AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
           AND t.user_id NOT IN (SELECT pr_user_id FROM not_followed_private_users)
@@ -88,6 +89,7 @@ BEGIN
         SELECT t.id AS thread_id, 'relationship'::text AS pool_source
         FROM public.threads t
         WHERE t.created_at > (now() - INTERVAL '7 days')
+          AND (t.community_id IS NULL OR EXISTS (SELECT 1 FROM public.community_members cm WHERE cm.community_id = t.community_id AND cm.user_id = p_user_id))
           AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
           AND t.id NOT IN (SELECT ex_thread_id FROM excluded_threads)
           AND (
@@ -103,6 +105,7 @@ BEGIN
         SELECT t.id AS thread_id, 'trending'::text AS pool_source
         FROM public.threads t
         WHERE t.created_at > (now() - INTERVAL '48 hours')
+          AND (t.community_id IS NULL OR EXISTS (SELECT 1 FROM public.community_members cm WHERE cm.community_id = t.community_id AND cm.user_id = p_user_id))
           AND t.user_id != p_user_id
           AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
           AND t.user_id NOT IN (SELECT pr_user_id FROM not_followed_private_users)
@@ -112,24 +115,13 @@ BEGIN
         LIMIT 100
     ),
 
-    -- Pool 4: Community Pool (User joined communities)
-    community_pool AS (
-        SELECT t.id AS thread_id, 'community'::text AS pool_source
-        FROM public.threads t
-        JOIN public.community_members m ON t.community_id = m.community_id
-        WHERE m.user_id = p_user_id
-          AND t.created_at > (now() - INTERVAL '7 days')
-          AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
-          AND t.id NOT IN (SELECT ex_thread_id FROM excluded_threads)
-        LIMIT 100
-    ),
-
     -- Pool 5: New Creator Pool (New unverified users, ensures exposure)
     new_creator_pool AS (
         SELECT t.id AS thread_id, 'new_creator'::text AS pool_source
         FROM public.threads t
         JOIN public.profiles p ON t.user_id = p.id
         WHERE p.created_at > (now() - INTERVAL '30 days')
+          AND (t.community_id IS NULL OR EXISTS (SELECT 1 FROM public.community_members cm WHERE cm.community_id = t.community_id AND cm.user_id = p_user_id))
           AND p.is_verified = false
           AND t.user_id != p_user_id
           AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
@@ -149,15 +141,14 @@ BEGIN
             UNION ALL
             SELECT thread_id, pool_source FROM trending_pool
             UNION ALL
-            SELECT thread_id, pool_source FROM community_pool
-            UNION ALL
             SELECT thread_id, pool_source FROM new_creator_pool
             UNION ALL
             SELECT id AS thread_id, 'self'::text AS pool_source
-            FROM public.threads
-            WHERE (user_id = p_user_id OR user_id IN (SELECT following_id FROM public.follows WHERE follower_id = p_user_id))
-              AND id NOT IN (SELECT ex_thread_id FROM excluded_threads)
-              AND user_id NOT IN (SELECT ex_user_id FROM excluded_users)
+            FROM public.threads t
+            WHERE (t.user_id = p_user_id OR t.user_id IN (SELECT following_id FROM public.follows WHERE follower_id = p_user_id))
+              AND (t.community_id IS NULL OR EXISTS (SELECT 1 FROM public.community_members cm WHERE cm.community_id = t.community_id AND cm.user_id = p_user_id))
+              AND t.id NOT IN (SELECT ex_thread_id FROM excluded_threads)
+              AND t.user_id NOT IN (SELECT ex_user_id FROM excluded_users)
             LIMIT 50
         ) subquery
         GROUP BY thread_id

@@ -12,9 +12,9 @@ import '../../utils/app_theme.dart';
 import '../settings/settings_screen.dart';
 import 'edit_profile_screen.dart';
 import 'followers_following_screen.dart';
-import '../messenger/chat_screen.dart';
 import '../../widgets/custom_thread_card.dart';
 import '../create_thread_screen.dart';
+import '../messenger/chat_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   /// Pass userId to view another user's profile. Leave null for own profile.
@@ -391,8 +391,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     onTap: () {
                       Navigator.push(
                         context,
-                        NoTransitionPageRoute(
-                          child: ChatScreen(otherUser: profile),
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(otherUser: profile),
                         ),
                       );
                     },

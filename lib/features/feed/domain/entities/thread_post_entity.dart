@@ -1,5 +1,6 @@
 import '../../../../models/profile.dart';
 import '../../../../models/poll_option.dart';
+import '../../../../models/music_track.dart';
 
 class ThreadPostEntity {
   final String id;
@@ -32,6 +33,9 @@ class ThreadPostEntity {
   final bool hasVotedPoll;
   final String? votedOptionId;
 
+  // Music Field
+  final MusicTrack? musicTrack;
+
   ThreadPostEntity({
     required this.id,
     required this.userId,
@@ -59,6 +63,7 @@ class ThreadPostEntity {
     this.pollExpiresAt,
     this.hasVotedPoll = false,
     this.votedOptionId,
+    this.musicTrack,
   });
 
   ThreadPostEntity copyWith({
@@ -88,6 +93,7 @@ class ThreadPostEntity {
     DateTime? pollExpiresAt,
     bool? hasVotedPoll,
     String? votedOptionId,
+    MusicTrack? musicTrack,
   }) {
     return ThreadPostEntity(
       id: id ?? this.id,
@@ -116,6 +122,8 @@ class ThreadPostEntity {
       pollExpiresAt: pollExpiresAt ?? this.pollExpiresAt,
       hasVotedPoll: hasVotedPoll ?? this.hasVotedPoll,
       votedOptionId: votedOptionId ?? this.votedOptionId,
+      musicTrack: musicTrack ?? this.musicTrack,
     );
   }
 }
+

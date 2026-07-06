@@ -14,6 +14,7 @@ abstract class IFeedRepository {
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
+    String? communityId,
   });
   Future<Either<Failure, void>> toggleLike(String threadId, bool shouldLike);
   Future<Either<Failure, bool>> togglePinPost(String threadId, bool isPinned);

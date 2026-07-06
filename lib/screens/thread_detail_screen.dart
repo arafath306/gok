@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:ui';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -19,6 +19,9 @@ import 'create_thread_screen.dart';
 import '../services/sound_service.dart';
 import '../widgets/thread_image_carousel.dart';
 import '../widgets/poll_widget.dart';
+import '../state/music_playback_controller.dart';
+import '../models/music_track.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import '../widgets/comment_attachment_picker_panel.dart';
 
@@ -376,6 +379,87 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     return '$count';
   }
 
+  Widget _buildSmallPlayButton(BuildContext context, MusicTrack track, String postId) {
+    return Consumer<MusicPlaybackController>(
+      builder: (context, controller, child) {
+        final isCurrent = controller.currentTrackId == track.trackId;
+        final isPlaying = isCurrent && controller.isPlaying;
+
+        return Positioned(
+          right: 8,
+          bottom: 8,
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              controller.play(track.trackId, track.previewUrl);
+            },
+            child: ClipOval(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.18),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Icon(
+                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMusicImageStack({
+    required BuildContext context,
+    required List<String> imageUrls,
+    required double height,
+    required MusicTrack? musicTrack,
+    required String postId,
+  }) {
+    if (musicTrack == null) {
+      return Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          ThreadImageCarousel(imageUrls: imageUrls, height: height),
+        ],
+      );
+    }
+
+    return VisibilityDetector(
+      key: Key('detail_music_$postId'),
+      onVisibilityChanged: (info) {
+        final controller = Provider.of<MusicPlaybackController>(
+          context,
+          listen: false,
+        );
+        controller.onPostVisibilityChanged(
+          postId,
+          musicTrack,
+          info.visibleFraction,
+        );
+      },
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          ThreadImageCarousel(imageUrls: imageUrls, height: height),
+          _buildSmallPlayButton(context, musicTrack, postId),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNestedOriginalPost(BuildContext context, DatabaseService dbService, ThreadPost origPost) {
     return GestureDetector(
       onTap: () {
@@ -422,9 +506,12 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
           ),
           if (origPost.imageUrls != null && origPost.imageUrls!.isNotEmpty) ...[
             const SizedBox(height: 6),
-            ThreadImageCarousel(
+            _buildMusicImageStack(
+              context: context,
               imageUrls: origPost.imageUrls!,
               height: 120,
+              musicTrack: origPost.musicTrack,
+              postId: origPost.id,
             ),
           ],
         ],
@@ -991,9 +1078,12 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           _buildNestedOriginalPost(context, dbService, activePost.repostedPost!),
                         if (activePost.imageUrls != null && activePost.imageUrls!.isNotEmpty) ...[
                           const SizedBox(height: 12),
-                          ThreadImageCarousel(
+                          _buildMusicImageStack(
+                            context: context,
                             imageUrls: activePost.imageUrls!,
                             height: 220,
+                            musicTrack: activePost.musicTrack,
+                            postId: activePost.id,
                           ),
                         ],
                         PollWidget(post: activePost, dbService: dbService),

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,7 +13,7 @@ import '../../utils/app_theme.dart';
 import '../profile/profile_screen.dart';
 import '../../widgets/comment_attachment_picker_panel.dart';
 
-// ─── ChatScreen ────────────────────────────────────────────────────────────
+// â”€â”€â”€ ChatScreen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class ChatScreen extends StatefulWidget {
   final Profile otherUser;
   const ChatScreen({super.key, required this.otherUser});
@@ -33,13 +32,13 @@ class _ChatScreenState extends State<ChatScreen> {
   // Optimistic pending messages
   final List<Map<String, dynamic>> _pendingMessages = [];
 
-  // Optimistically deleted IDs – hide them immediately before stream updates
+  // Optimistically deleted IDs â€“ hide them immediately before stream updates
   final Set<String> _deletedIds = {};
 
   Timer? _statusUpdateTimer;
   bool _isMuted = false;
 
-  // ── These are only managed at the top level (not inline in build) ──
+  // â”€â”€ These are only managed at the top level (not inline in build) â”€â”€
   Map<String, dynamic>? _replyingToMessage;
   bool _showEmojiPanel = false;
   int _pickerTabIndex = 0;
@@ -104,7 +103,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _scrollToBottom({bool animated = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -130,7 +129,7 @@ class _ChatScreenState extends State<ChatScreen> {
     ));
   }
 
-  // ─── Send text message ────────────────────────────────────────────────
+  // â”€â”€â”€ Send text message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _sendMessage(String text, Map<String, dynamic>? parentMsg) {
     if (text.isEmpty) return;
 
@@ -191,94 +190,100 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  // ─── Send media message ───────────────────────────────────────────────
+  // â”€â”€â”€ Send media message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Future<void> _sendMediaMessage() async {
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
       final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-          source: ImageSource.gallery, imageQuality: 70);
-      if (image == null) return;
+      final List<XFile> images = await picker.pickMultiImage(imageQuality: 70);
+      if (images.isEmpty) return;
 
-      final bytes = await image.readAsBytes();
-      final parentMsg = _replyingToMessage;
-      final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+      for (final image in images) {
+        final bytes = await image.readAsBytes();
+        final parentMsg = _replyingToMessage;
+        final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}_${image.name.hashCode}';
 
-      final tempMsg = {
-        'id': tempId,
-        'text': '',
-        'isMe': true,
-        'time': _formatToDhaka12Hr(DateTime.now()),
-        'created_at': DateTime.now().toUtc().toIso8601String(),
-        'is_read': false,
-        'is_sending': true,
-        'local_media_bytes': bytes,
-        'media_type': 'image',
-        if (parentMsg != null) ...{
-          'reply_to_id': parentMsg['id'],
-          'reply_to_text': parentMsg['text'],
-          'reply_to_sender':
-              parentMsg['isMe'] == true ? 'You' : _realtimeOtherUser.fullName,
+        final tempMsg = {
+          'id': tempId,
+          'text': '',
+          'isMe': true,
+          'time': _formatToDhaka12Hr(DateTime.now()),
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+          'is_read': false,
+          'is_sending': true,
+          'local_media_bytes': bytes,
+          'media_type': 'image',
+          if (parentMsg != null) ...{
+            'reply_to_id': parentMsg['id'],
+            'reply_to_text': parentMsg['text'],
+            'reply_to_sender':
+                parentMsg['isMe'] == true ? 'You' : _realtimeOtherUser.fullName,
+          }
+        };
+
+        if (mounted) {
+          setState(() {
+            _pendingMessages.add(tempMsg);
+            _replyingToMessage = null; // Clear reply quote after first image
+            _showEmojiPanel = false;
+          });
+          _scrollToBottom();
         }
-      };
 
-      setState(() {
-        _pendingMessages.add(tempMsg);
-        _replyingToMessage = null;
-        _showEmojiPanel = false;
-      });
-      _scrollToBottom();
-
-      dbService.uploadChatMedia(bytes).then((mediaUrl) async {
-        if (mediaUrl != null) {
+        dbService.uploadChatMedia(bytes).then((mediaUrl) async {
+          if (mediaUrl != null) {
+            if (mounted) {
+              setState(() {
+                final idx =
+                    _pendingMessages.indexWhere((m) => m['id'] == tempId);
+                if (idx != -1) _pendingMessages[idx]['media_url'] = mediaUrl;
+              });
+            }
+            String contentToSave = '';
+            if (parentMsg != null) {
+              contentToSave = jsonEncode({
+                'reply_to_id': parentMsg['id'],
+                'reply_to_text': parentMsg['text'] ?? '',
+                'reply_to_sender': parentMsg['isMe'] == true
+                    ? 'You'
+                    : _realtimeOtherUser.fullName,
+                'text': '',
+              });
+            }
+            await dbService.sendMessage(_realtimeOtherUser.id, contentToSave,
+                mediaUrl: mediaUrl, mediaType: 'image');
+          } else {
+            throw Exception('Media upload returned null');
+          }
+        }).then((_) {
           if (mounted) {
             setState(() {
               final idx =
                   _pendingMessages.indexWhere((m) => m['id'] == tempId);
-              if (idx != -1) _pendingMessages[idx]['media_url'] = mediaUrl;
+              if (idx != -1) _pendingMessages[idx]['is_sending'] = false;
             });
           }
-          String contentToSave = '';
-          if (parentMsg != null) {
-            contentToSave = jsonEncode({
-              'reply_to_id': parentMsg['id'],
-              'reply_to_text': parentMsg['text'] ?? '',
-              'reply_to_sender': parentMsg['isMe'] == true
-                  ? 'You'
-                  : _realtimeOtherUser.fullName,
-              'text': '',
-            });
+        }).catchError((err) {
+          debugPrint('Error sending media: $err');
+          if (mounted) {
+            setState(() =>
+                _pendingMessages.removeWhere((m) => m['id'] == tempId));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Failed to send image.', style: GoogleFonts.inter()),
+              backgroundColor: Colors.redAccent,
+            ));
           }
-          await dbService.sendMessage(_realtimeOtherUser.id, contentToSave,
-              mediaUrl: mediaUrl, mediaType: 'image');
-        } else {
-          throw Exception('Media upload returned null');
-        }
-      }).then((_) {
-        if (mounted) {
-          setState(() {
-            final idx =
-                _pendingMessages.indexWhere((m) => m['id'] == tempId);
-            if (idx != -1) _pendingMessages[idx]['is_sending'] = false;
-          });
-        }
-      }).catchError((err) {
-        debugPrint('Error sending media: $err');
-        if (mounted) {
-          setState(() =>
-              _pendingMessages.removeWhere((m) => m['id'] == tempId));
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Failed to send image.', style: GoogleFonts.inter()),
-            backgroundColor: Colors.redAccent,
-          ));
-        }
-      });
+        });
+
+        // Add a tiny delay between starting uploads to avoid identical timestamp IDs
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
     } catch (e) {
       debugPrint('Error picking media: $e');
     }
   }
 
-  // ─── Send GIF ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ Send GIF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _sendGifMessage(String gifUrl) {
     final parentMsg = _replyingToMessage;
     final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
@@ -339,7 +344,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  // ─── Edit message ─────────────────────────────────────────────────────
+  // â”€â”€â”€ Edit message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _showEditMessageDialog(String messageId, String currentText) {
     final controller = TextEditingController(text: currentText);
     showDialog(
@@ -401,7 +406,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // ─── Delete message ───────────────────────────────────────────────────
+  // â”€â”€â”€ Delete message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _confirmDeleteMessage(String messageId) {
     showDialog(
       context: context,
@@ -449,7 +454,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // ─── Message action menu ──────────────────────────────────────────────
+  // â”€â”€â”€ Message action menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _showMessageActionMenu(Map<String, dynamic> msg) {
     final bool isMe = msg['isMe'] as bool;
     final String? text = msg['text'] as String?;
@@ -570,7 +575,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // ─── Confirm block/delete conversation ───────────────────────────────
+  // â”€â”€â”€ Confirm block/delete conversation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _confirmBlockUser() {
     showDialog(
       context: context,
@@ -652,7 +657,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // ─── Messenger info bottom sheet ──────────────────────────────────────
+  // â”€â”€â”€ Messenger info bottom sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _showMessengerProfile() {
     showModalBottomSheet(
       context: context,
@@ -905,7 +910,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   String _formatToDhaka12Hr(DateTime dt) {
     final dhakaTime = dt.toUtc().add(const Duration(hours: 6));
     final hour24 = dhakaTime.hour;
@@ -916,7 +921,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return '$hour12:$minute $period';
   }
 
-  // ─── Build ────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   @override
   Widget build(BuildContext context) {
     // Only watch GeneralSettingsProvider (not DatabaseService) to prevent
@@ -924,31 +929,28 @@ class _ChatScreenState extends State<ChatScreen> {
     final settings =
         Provider.of<GeneralSettingsProvider>(context, listen: true);
     final myActiveStatusEnabled = settings.isActiveStatusEnabled;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isWide = screenWidth > 600;
 
-    // Read DatabaseService without listening – we use the stream for data
     final db = Provider.of<DatabaseService>(context, listen: false);
-    final bool isBlocked = db.isBlocked(_realtimeOtherUser.id);
-    final bool blockedByMe = db.isBlockedByMe(_realtimeOtherUser.id);
+    final bool isBlocked = context.select<DatabaseService, bool>(
+        (db) => db.blockedUserIds.contains(widget.otherUser.id));
+    final bool blockedByMe = context.select<DatabaseService, bool>(
+        (db) => db.blockedByMeIds.contains(widget.otherUser.id));
 
     final bool otherIsActive = _realtimeOtherUser.isActiveStatusEnabled &&
         _realtimeOtherUser.lastSeen != null &&
-        DateTime.now()
-                .difference(_realtimeOtherUser.lastSeen!)
-                .inMinutes <=
-            5;
+        DateTime.now().difference(_realtimeOtherUser.lastSeen!).inMinutes <= 5;
+
     final bool showGreenDot = myActiveStatusEnabled && otherIsActive;
 
     String statusText = 'Offline';
-    if (_realtimeOtherUser.isActiveStatusEnabled &&
-        _realtimeOtherUser.lastSeen != null) {
+    if (_realtimeOtherUser.isActiveStatusEnabled) {
       if (otherIsActive) {
         statusText = 'Active now';
-      } else {
-        final diff =
-            DateTime.now().difference(_realtimeOtherUser.lastSeen!);
-        if (diff.inMinutes < 1) {
-          statusText = 'Active just now';
-        } else if (diff.inMinutes < 60) {
+      } else if (_realtimeOtherUser.lastSeen != null) {
+        final diff = DateTime.now().difference(_realtimeOtherUser.lastSeen!);
+        if (diff.inMinutes < 60) {
           statusText = 'Active ${diff.inMinutes}m ago';
         } else if (diff.inHours < 24) {
           statusText = 'Active ${diff.inHours}h ago';
@@ -958,45 +960,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
 
-    Widget buildHeaderActionButton({
-      required IconData icon,
-      required VoidCallback onTap,
-      double iconSize = 20,
-      double containerSize = 36,
-    }) {
-      return Container(
-        width: containerSize,
-        height: containerSize,
-        decoration: BoxDecoration(
-          color: context.isDarkMode
-              ? const Color(0xFF1E293B).withValues(alpha: 0.8)
-              : const Color(0xFFF1F5F9).withValues(alpha: 0.85),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: context.isDarkMode
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.05),
-            width: 0.8,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(containerSize / 2),
-            onTap: onTap,
-            child: Center(
-              child: Icon(
-                icon,
-                color: context.textPrimary,
-                size: iconSize,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
+    Widget mainContent = Scaffold(
       backgroundColor: context.scaffoldBg,
       appBar: AppBar(
         backgroundColor: context.scaffoldBg,
@@ -1090,30 +1054,28 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           if (!isBlocked) ...[
-            buildHeaderActionButton(
-              icon: CupertinoIcons.phone_fill,
-              onTap: () => _showComingSoon('Audio'),
-              iconSize: 18,
+            IconButton(
+              icon: Icon(Icons.phone_outlined,
+                  color: context.textPrimary, size: 21),
+              onPressed: () => _showComingSoon('Audio'),
             ),
-            const SizedBox(width: 8),
-            buildHeaderActionButton(
-              icon: CupertinoIcons.videocam_fill,
-              onTap: () => _showComingSoon('Video'),
-              iconSize: 20,
+            IconButton(
+              icon: Icon(Icons.videocam_outlined,
+                  color: context.textPrimary, size: 22),
+              onPressed: () => _showComingSoon('Video'),
             ),
-            const SizedBox(width: 8),
           ],
-          buildHeaderActionButton(
-            icon: CupertinoIcons.info,
-            onTap: _showMessengerProfile,
-            iconSize: 18,
+          IconButton(
+            icon: Icon(Icons.info_outlined,
+                color: context.textPrimary, size: 20),
+            onPressed: _showMessengerProfile,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
         children: [
-          // ── Message list ──────────────────────────────────────────────
+          // â”€â”€ Message list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Expanded(
             child: _MessageList(
               stream: _messagesStream,
@@ -1130,7 +1092,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
-          // ── Composer ──────────────────────────────────────────────────
+          // â”€â”€ Composer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           isBlocked
               ? _buildBlockedBanner(context, blockedByMe, db)
               : _ChatComposer(
@@ -1150,6 +1112,36 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
         ],
       ),
+    );
+
+    if (isWide) {
+      mainContent = Center(
+        child: Container(
+          width: 600,
+          margin: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: context.scaffoldBg,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(color: context.border, width: 1),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: mainContent,
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: isWide ? context.cardBg : context.scaffoldBg,
+      body: mainContent,
     );
   }
 
@@ -1224,7 +1216,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-// ─── Isolated Message List ─────────────────────────────────────────────────
+// â”€â”€â”€ Isolated Message List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // This is a separate StatefulWidget so the stream update NEVER causes the
 // composer or the AppBar to rebuild.
 class _MessageList extends StatefulWidget {
@@ -1348,7 +1340,7 @@ class _MessageListState extends State<_MessageList> {
   }
 }
 
-// ─── Message Bubble ────────────────────────────────────────────────────────
+// â”€â”€â”€ Message Bubble â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _MessageBubble extends StatelessWidget {
   final Map<String, dynamic> msg;
   final VoidCallback onTap;
@@ -1361,9 +1353,7 @@ class _MessageBubble extends StatelessWidget {
     required this.onTap,
     required this.onReply,
     required this.onOpenMedia,
-  });
-
-  @override
+  });  @override
   Widget build(BuildContext context) {
     final bool isMe = msg['isMe'] as bool;
     final String? mediaUrl = msg['media_url'] as String?;
@@ -1375,6 +1365,228 @@ class _MessageBubble extends StatelessWidget {
     final String? replyToSender = msg['reply_to_sender'] as String?;
     final String? text = msg['text'] as String?;
 
+    final bool hasMedia = localMediaBytes != null || (mediaUrl != null && mediaUrl.isNotEmpty);
+
+    String timeStr = msg['time'] as String;
+    if (msg['created_at'] != null) {
+      try {
+        final dt = DateTime.parse(msg['created_at'] as String);
+        // Convert to Dhaka Time (GMT+6)
+        final dhakaTime = dt.toUtc().add(const Duration(hours: 6));
+        final hour24 = dhakaTime.hour;
+        final minute = dhakaTime.minute.toString().padLeft(2, '0');
+        final period = hour24 >= 12 ? 'PM' : 'AM';
+        int hour12 = hour24 % 12;
+        if (hour12 == 0) hour12 = 12;
+        timeStr = '$hour12:$minute $period';
+      } catch (_) {}
+    }
+
+    Widget buildTimeRow({required bool overlayMode}) {
+      final textStyle = GoogleFonts.inter(
+        fontSize: overlayMode ? 9.5 : 10,
+        color: overlayMode
+            ? Colors.white
+            : (isMe ? Colors.white60 : context.textMuted),
+      );
+
+      final iconColor = overlayMode
+          ? (isSending
+              ? Colors.white.withValues(alpha: 0.5)
+              : (isRead ? Colors.greenAccent : Colors.white.withValues(alpha: 0.8)))
+          : (isSending
+              ? Colors.white54
+              : (isRead ? Colors.greenAccent : Colors.white60));
+
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(timeStr, style: textStyle),
+          if (isMe) ...[
+            const SizedBox(width: 4),
+            Icon(
+              isSending
+                  ? Icons.schedule_rounded
+                  : (isRead ? Icons.done_all : Icons.done),
+              size: 12,
+              color: iconColor,
+            ),
+          ],
+        ],
+      );
+    }
+
+    Widget buildImageWidget(dynamic bytesOrUrl) {
+      final clipRadius = BorderRadius.only(
+        topLeft: replyToId == null ? const Radius.circular(16) : Radius.zero,
+        topRight: replyToId == null ? const Radius.circular(16) : Radius.zero,
+        bottomLeft: (text == null || text.isEmpty)
+            ? (isMe ? const Radius.circular(16) : Radius.zero)
+            : Radius.zero,
+        bottomRight: (text == null || text.isEmpty)
+            ? (isMe ? Radius.zero : const Radius.circular(16))
+            : Radius.zero,
+      );
+
+      final image = bytesOrUrl is Uint8List
+          ? Image.memory(
+              bytesOrUrl,
+              width: double.infinity,
+              height: 240,
+              fit: BoxFit.cover,
+            )
+          : Image.network(
+              bytesOrUrl as String,
+              width: double.infinity,
+              height: 240,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.broken_image, size: 50),
+            );
+
+      final imageWidget = bytesOrUrl is Uint8List
+          ? image
+          : GestureDetector(
+              onTap: () => onOpenMedia(bytesOrUrl as String),
+              child: image,
+            );
+
+      if (text == null || text.isEmpty) {
+        // Overlay time row on top of image
+        return ClipRRect(
+          borderRadius: clipRadius,
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              imageWidget,
+              Positioned(
+                bottom: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: buildTimeRow(overlayMode: true),
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // No overlay, just image
+        return ClipRRect(
+          borderRadius: clipRadius,
+          child: imageWidget,
+        );
+      }
+    }
+
+    Widget bubbleContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Reply quote
+        if (replyToId != null)
+          Padding(
+            padding: hasMedia
+                ? const EdgeInsets.fromLTRB(12, 10, 12, 6)
+                : EdgeInsets.zero,
+            child: Container(
+              margin: hasMedia ? EdgeInsets.zero : const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isMe
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : (context.isDarkMode
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.04)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border(
+                  left: BorderSide(
+                    color: isMe
+                        ? Colors.white70
+                        : context.primaryAccent,
+                    width: 3.5,
+                  ),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    replyToSender ?? 'Someone',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isMe
+                          ? Colors.white
+                          : context.primaryAccent,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    replyToText ?? '',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      color: isMe
+                          ? Colors.white70
+                          : context.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        // Media (image / GIF)
+        if (localMediaBytes != null) ...[
+          buildImageWidget(localMediaBytes),
+          if (text != null && text.isNotEmpty)
+            const SizedBox(height: 8),
+        ] else if (mediaUrl != null && mediaUrl.isNotEmpty) ...[
+          buildImageWidget(mediaUrl),
+          if (text != null && text.isNotEmpty)
+            const SizedBox(height: 8),
+        ],
+        // Text
+        if (text != null && text.isNotEmpty)
+          Padding(
+            padding: hasMedia
+                ? const EdgeInsets.fromLTRB(12, 6, 12, 4)
+                : EdgeInsets.zero,
+            child: Text(
+              text,
+              style: GoogleFonts.inter(
+                fontSize: 14.5,
+                color:
+                    isMe ? Colors.white : context.textPrimary,
+                height: 1.4,
+              ),
+            ),
+          ),
+        // Time + read receipt (only if NOT overlayed on media)
+        if (!hasMedia || (text != null && text.isNotEmpty))
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: hasMedia
+                  ? const EdgeInsets.only(right: 4, bottom: 2, top: 1, left: 12)
+                  : const EdgeInsets.only(top: 2, left: 16),
+              child: buildTimeRow(overlayMode: false),
+            ),
+          ),
+      ],
+    );
+
+    if (!hasMedia) {
+      bubbleContent = IntrinsicWidth(child: bubbleContent);
+    }
+
     return SwipeToReply(
       onReply: onReply,
       isMe: isMe,
@@ -1383,11 +1595,13 @@ class _MessageBubble extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.75),
+              maxWidth: (MediaQuery.of(context).size.width * 0.75).clamp(200.0, 450.0)),
           child: GestureDetector(
             onTap: onTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: hasMedia
+                  ? EdgeInsets.zero
+                  : const EdgeInsets.fromLTRB(12, 8, 8, 4),
               decoration: BoxDecoration(
                 color: isMe ? context.primaryAccent : context.cardBg,
                 borderRadius: BorderRadius.only(
@@ -1411,134 +1625,7 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Reply quote
-                  if (replyToId != null) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isMe
-                            ? Colors.white.withValues(alpha: 0.15)
-                            : (context.isDarkMode
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.black.withValues(alpha: 0.04)),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border(
-                          left: BorderSide(
-                            color: isMe
-                                ? Colors.white70
-                                : context.primaryAccent,
-                            width: 3.5,
-                          ),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            replyToSender ?? 'Someone',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: isMe
-                                  ? Colors.white
-                                  : context.primaryAccent,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            replyToText ?? '',
-                            style: GoogleFonts.inter(
-                              fontSize: 12.5,
-                              color: isMe
-                                  ? Colors.white70
-                                  : context.textSecondary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  // Local image bytes (optimistic)
-                  if (localMediaBytes != null) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.memory(
-                        localMediaBytes as dynamic,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    if (text != null && text.isNotEmpty)
-                      const SizedBox(height: 8),
-                  ] else if (mediaUrl != null && mediaUrl.isNotEmpty) ...[
-                    GestureDetector(
-                      onTap: () => onOpenMedia(mediaUrl),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          mediaUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 50),
-                        ),
-                      ),
-                    ),
-                    if (text != null && text.isNotEmpty)
-                      const SizedBox(height: 8),
-                  ],
-                  // Text
-                  if (text != null && text.isNotEmpty)
-                    Text(
-                      text,
-                      style: GoogleFonts.inter(
-                        fontSize: 14.5,
-                        color:
-                            isMe ? Colors.white : context.textPrimary,
-                        height: 1.4,
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                  // Time + read receipt
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        msg['time'] as String,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: isMe
-                              ? Colors.white60
-                              : context.textMuted,
-                        ),
-                      ),
-                      if (isMe) ...[
-                        const SizedBox(width: 6),
-                        Icon(
-                          isSending
-                              ? Icons.schedule_rounded
-                              : (isRead
-                                  ? Icons.done_all
-                                  : Icons.done),
-                          size: 13,
-                          color: isSending
-                              ? Colors.white54
-                              : (isRead
-                                  ? Colors.greenAccent
-                                  : Colors.white60),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
+              child: bubbleContent,
             ),
           ),
         ),
@@ -1547,9 +1634,9 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-// ─── Chat Composer ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Chat Composer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Completely isolated widget. Only rebuilds when its own state changes,
-// NOT when messages arrive. The input field is local — no external setState.
+// NOT when messages arrive. The input field is local â€” no external setState.
 class _ChatComposer extends StatefulWidget {
   final Map<String, dynamic>? replyingToMessage;
   final Profile realtimeOtherUser;
@@ -1809,7 +1896,7 @@ class _ToolbarBtn extends StatelessWidget {
   }
 }
 
-// ─── Full-screen Media Viewer ──────────────────────────────────────────────
+// â”€â”€â”€ Full-screen Media Viewer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class FullScreenMediaViewer extends StatelessWidget {
   final String mediaUrl;
   const FullScreenMediaViewer({super.key, required this.mediaUrl});
@@ -1863,7 +1950,7 @@ class FullScreenMediaViewer extends StatelessWidget {
   }
 }
 
-// ─── Swipe to Reply ────────────────────────────────────────────────────────
+// â”€â”€â”€ Swipe to Reply â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class SwipeToReply extends StatefulWidget {
   final Widget child;
   final VoidCallback onReply;

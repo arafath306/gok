@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
@@ -227,27 +227,61 @@ class SettingsScreen extends StatelessWidget {
             ),
             child: Consumer<GeneralSettingsProvider>(
               builder: (context, settingsProvider, _) {
-                return SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  secondary: Icon(
-                    settingsProvider.isDarkTheme ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                    color: context.textPrimary,
-                    size: 22,
-                  ),
-                  title: Text(
-                    'Dark Theme',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w500,
-                      color: context.textPrimary,
-                      fontSize: 14.5,
+                return Column(
+                  children: [
+                    SwitchListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      secondary: Icon(
+                        settingsProvider.isDarkTheme ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        color: context.textPrimary,
+                        size: 22,
+                      ),
+                      title: Text(
+                        'Dark Theme',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w500,
+                          color: context.textPrimary,
+                          fontSize: 14.5,
+                        ),
+                      ),
+                      activeThumbColor: context.primaryAccent,
+                      activeTrackColor: context.primaryAccent.withValues(alpha: 0.38),
+                      value: settingsProvider.isDarkTheme,
+                      onChanged: (val) {
+                        settingsProvider.toggleTheme(val);
+                      },
                     ),
-                  ),
-                  activeThumbColor: context.primaryAccent,
-                  activeTrackColor: context.primaryAccent.withValues(alpha: 0.38),
-                  value: settingsProvider.isDarkTheme,
-                  onChanged: (val) {
-                    settingsProvider.toggleTheme(val);
-                  },
+                    Divider(height: 1, color: context.border),
+                    SwitchListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      secondary: Icon(
+                        Icons.data_usage_rounded,
+                        color: context.textPrimary,
+                        size: 22,
+                      ),
+                      title: Text(
+                        'Low Data Mode',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w500,
+                          color: context.textPrimary,
+                          fontSize: 14.5,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Disables autoplay and reduces media quality.',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: context.textSecondary,
+                        ),
+                      ),
+                      activeThumbColor: context.primaryAccent,
+                      activeTrackColor: context.primaryAccent.withValues(alpha: 0.38),
+                      value: settingsProvider.lowDataMode,
+                      onChanged: (val) {
+                        settingsProvider.toggleLowDataMode(val);
+                      },
+                    ),
+                  ],
                 );
               },
             ),

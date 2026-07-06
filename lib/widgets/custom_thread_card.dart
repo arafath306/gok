@@ -1,15 +1,17 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
-import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../services/general_settings_provider.dart';
 import '../screens/thread_detail_screen.dart';
 import '../screens/create_thread_screen.dart';
+import '../screens/communities/community_detail_screen.dart';
 import '../utils/routes.dart';
 import '../utils/app_theme.dart';
 import 'comments_sheet.dart';
@@ -17,69 +19,27 @@ import '../screens/profile/profile_screen.dart';
 import 'share_post_sheet.dart';
 import '../services/sound_service.dart';
 import 'thread_image_carousel.dart';
+import '../state/music_playback_controller.dart';
+import '../models/music_track.dart';
 
 class CustomThreadCard extends StatefulWidget {
   final ThreadPost post;
+  final bool isCommunityModerator;
 
-  const CustomThreadCard({super.key, required this.post});
+  const CustomThreadCard({super.key, required this.post, this.isCommunityModerator = false});
 
   @override
   State<CustomThreadCard> createState() => _CustomThreadCardState();
 }
 
 class _CustomThreadCardState extends State<CustomThreadCard> {
-  List<Profile> _commenterProfiles = [];
 
   @override
   void initState() {
     super.initState();
-    _loadCommenterProfiles();
-  }
-
-  @override
-  void didUpdateWidget(CustomThreadCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final dbService = Provider.of<DatabaseService>(context, listen: false);
-    final effPost = widget.post.isRepost && widget.post.repostedPost != null ? widget.post.repostedPost! : widget.post;
-    final oldEffPost = oldWidget.post.isRepost && oldWidget.post.repostedPost != null ? oldWidget.post.repostedPost! : oldWidget.post;
-    final livePost = dbService.getLatestPost(effPost);
-    final oldLivePost = dbService.getLatestPost(oldEffPost);
-    if (oldEffPost.id != effPost.id ||
-        oldLivePost.repliesCount != livePost.repliesCount) {
-      _loadCommenterProfiles();
-    }
-  }
-
-  Future<void> _loadCommenterProfiles() async {
-    final dbService = Provider.of<DatabaseService>(context, listen: false);
-    final effPost = widget.post.isRepost && widget.post.repostedPost != null ? widget.post.repostedPost! : widget.post;
-    final livePost = dbService.getLatestPost(effPost);
-    if (livePost.repliesCount == 0) {
-      if (mounted) {
-        setState(() {
-          _commenterProfiles = [];
-        });
-      }
-      return;
-    }
-    try {
-      final comments = await dbService.fetchComments(effPost.id);
-      if (mounted) {
-        final List<Profile> profiles = [];
-        for (var comment in comments) {
-          final author = comment['author'] as Profile?;
-          if (author != null && !profiles.any((p) => p.id == author.id)) {
-            profiles.add(author);
-          }
-          if (profiles.length >= 3) break;
-        }
-        setState(() {
-          _commenterProfiles = profiles;
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading commenter profiles: $e");
-    }
+    // Commenter profile loading removed from initState to avoid
+    // N API calls when the feed renders. Avatars are shown lazily
+    // only after the comment sheet is opened.
   }
 
   void _sharePost(BuildContext context) {
@@ -109,6 +69,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             post: post,
             dbService: dbService,
             parentContext: context,
+            isCommunityModerator: widget.isCommunityModerator,
           );
         }
       },
@@ -122,9 +83,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
       backgroundColor: Colors.transparent,
       useSafeArea: true,
       builder: (context) => CommentsSheet(post: post),
-    ).then((_) {
-      _loadCommenterProfiles();
-    });
+    );
   }
 
   void _showRepostOptions(BuildContext context, DatabaseService dbService, ThreadPost post) {
@@ -192,6 +151,87 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
   }
 
 
+  Widget _buildSmallPlayButton(BuildContext context, MusicTrack track, String postId) {
+    return Consumer<MusicPlaybackController>(
+      builder: (context, controller, child) {
+        final isCurrent = controller.currentTrackId == track.trackId;
+        final isPlaying = isCurrent && controller.isPlaying;
+
+        return Positioned(
+          right: 8,
+          bottom: 8,
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              controller.play(track.trackId, track.previewUrl);
+            },
+            child: ClipOval(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.18),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Icon(
+                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMusicImageStack({
+    required BuildContext context,
+    required List<String> imageUrls,
+    required double height,
+    required MusicTrack? musicTrack,
+    required String postId,
+  }) {
+    if (musicTrack == null) {
+      return Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          ThreadImageCarousel(imageUrls: imageUrls, height: height),
+        ],
+      );
+    }
+
+    return VisibilityDetector(
+      key: Key('music_post_$postId'),
+      onVisibilityChanged: (info) {
+        final controller = Provider.of<MusicPlaybackController>(
+          context,
+          listen: false,
+        );
+        controller.onPostVisibilityChanged(
+          postId,
+          musicTrack,
+          info.visibleFraction,
+        );
+      },
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          ThreadImageCarousel(imageUrls: imageUrls, height: height),
+          _buildSmallPlayButton(context, musicTrack, postId),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNestedOriginalPost(BuildContext context, DatabaseService dbService, ThreadPost origPost) {
     return GestureDetector(
       onTap: () {
@@ -238,9 +278,12 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           ),
           if (origPost.imageUrls != null && origPost.imageUrls!.isNotEmpty) ...[
             const SizedBox(height: 6),
-            ThreadImageCarousel(
+            _buildMusicImageStack(
+              context: context,
               imageUrls: origPost.imageUrls!,
               height: 120,
+              musicTrack: origPost.musicTrack,
+              postId: origPost.id,
             ),
           ],
         ],
@@ -278,18 +321,15 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 6.0),
               child: IntrinsicHeight(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildLeftColumn(context, dbService, post),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: SingleChildScrollView(
-                        physics: const NeverScrollableScrollPhysics(),
-                        child: _buildRightColumn(context, dbService, post, isVerified),
-                      ),
+                      child: _buildRightColumn(context, dbService, post, isVerified),
                     ),
                   ],
                 ),
@@ -303,24 +343,17 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
   }
 
   Widget _buildLeftColumn(BuildContext context, DatabaseService dbService, ThreadPost post) {
-    final effPost = post.isRepost && post.repostedPost != null ? post.repostedPost! : post;
-    final hasReplies = effPost.repliesCount > 0 && _commenterProfiles.isNotEmpty;
     return Column(
       children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[800],
-              backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
-                  ? CachedNetworkImageProvider(post.author.avatarUrl!)
-                  : null,
-              child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
-                  ? const Icon(Icons.person, size: 20, color: Colors.white54)
-                  : null,
-            ),
-          ],
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: Colors.grey[800],
+          backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
+              ? CachedNetworkImageProvider(post.author.avatarUrl!)
+              : null,
+          child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
+              ? const Icon(Icons.person, size: 20, color: Colors.white54)
+              : null,
         ),
         const SizedBox(height: 8),
         Expanded(
@@ -329,169 +362,8 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             color: context.border,
           ),
         ),
-        const SizedBox(height: 8),
-        if (hasReplies) ...[
-          _buildRepliesAvatars(context),
-        ] else ...[
-          const SizedBox(height: 12),
-        ],
       ],
     );
-  }
-
-  Widget _buildRepliesAvatars(BuildContext context) {
-    if (_commenterProfiles.isEmpty) return const SizedBox.shrink();
-
-    final count = _commenterProfiles.length;
-
-    if (count == 1) {
-      final avatarUrl = _commenterProfiles[0].avatarUrl;
-      return Container(
-        width: 18,
-        height: 18,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: context.scaffoldBg, width: 1.5),
-        ),
-        child: ClipOval(
-          child: avatarUrl != null && avatarUrl.isNotEmpty
-              ? CachedNetworkImage(
-                  imageUrl: avatarUrl,
-                  fit: BoxFit.cover,
-                  errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
-                )
-              : Container(color: const Color(0xFF1E824C)),
-        ),
-      );
-    } else if (count == 2) {
-      final avatarUrl0 = _commenterProfiles[0].avatarUrl;
-      final avatarUrl1 = _commenterProfiles[1].avatarUrl;
-      return SizedBox(
-        width: 24,
-        height: 18,
-        child: Stack(
-          children: [
-            Positioned(
-              left: 0,
-              bottom: 0,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.scaffoldBg, width: 1.5),
-                ),
-                child: ClipOval(
-                  child: avatarUrl0 != null && avatarUrl0.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: avatarUrl0,
-                          fit: BoxFit.cover,
-                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
-                        )
-                      : Container(color: const Color(0xFF1E824C)),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 0,
-              top: 0,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.scaffoldBg, width: 1.5),
-                ),
-                child: ClipOval(
-                  child: avatarUrl1 != null && avatarUrl1.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: avatarUrl1,
-                          fit: BoxFit.cover,
-                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
-                        )
-                      : Container(color: const Color(0xFF1E824C)),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      final avatarUrl0 = _commenterProfiles[0].avatarUrl;
-      final avatarUrl1 = _commenterProfiles[1].avatarUrl;
-      final avatarUrl2 = _commenterProfiles[2].avatarUrl;
-      return SizedBox(
-        width: 28,
-        height: 22,
-        child: Stack(
-          children: [
-            Positioned(
-              left: 0,
-              top: 2,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.scaffoldBg, width: 1.2),
-                ),
-                child: ClipOval(
-                  child: avatarUrl0 != null && avatarUrl0.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: avatarUrl0,
-                          fit: BoxFit.cover,
-                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
-                        )
-                      : Container(color: const Color(0xFF1E824C)),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 13,
-                height: 13,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.scaffoldBg, width: 1.2),
-                ),
-                child: ClipOval(
-                  child: avatarUrl1 != null && avatarUrl1.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: avatarUrl1,
-                          fit: BoxFit.cover,
-                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
-                        )
-                      : Container(color: const Color(0xFF1E824C)),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 9,
-              bottom: 6,
-              child: Container(
-                width: 11,
-                height: 11,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.scaffoldBg, width: 1.2),
-                ),
-                child: ClipOval(
-                  child: avatarUrl2 != null && avatarUrl2.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: avatarUrl2,
-                          fit: BoxFit.cover,
-                          errorWidget: (c, u, e) => Container(color: const Color(0xFF1E824C)),
-                        )
-                      : Container(color: const Color(0xFF1E824C)),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
   }
 
   Widget _buildRightColumn(
@@ -576,6 +448,42 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
             ),
           ],
         ),
+        if (post.community != null) ...[
+          const SizedBox(height: 2),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                NoTransitionPageRoute(
+                  child: CommunityDetailScreen(community: post.community!),
+                ),
+              );
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  CupertinoIcons.group,
+                  size: 13,
+                  color: Color(0xFF1E824C),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    post.community!.name,
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1E824C),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 3),
         Text(
           post.content,
@@ -589,9 +497,12 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           _buildNestedOriginalPost(context, dbService, post.repostedPost!),
         if (post.imageUrls != null && post.imageUrls!.isNotEmpty) ...[
           const SizedBox(height: 8),
-          ThreadImageCarousel(
+          _buildMusicImageStack(
+            context: context,
             imageUrls: post.imageUrls!,
             height: 220,
+            musicTrack: post.musicTrack,
+            postId: post.id,
           ),
         ],
         if (post.videoUrl != null && post.videoUrl!.isNotEmpty) ...[
@@ -604,11 +515,13 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               decoration: BoxDecoration(
                 color: Colors.black,
                 borderRadius: BorderRadius.circular(12.0),
-                image: const DecorationImage(
-                  image: NetworkImage("https://images.unsplash.com/photo-1492691527719-9d1e07e534b4"),
-                  fit: BoxFit.cover,
-                  opacity: 0.6,
-                ),
+                image: Provider.of<GeneralSettingsProvider>(context).lowDataMode 
+                    ? null
+                    : const DecorationImage(
+                        image: NetworkImage("https://images.unsplash.com/photo-1492691527719-9d1e07e534b4"),
+                        fit: BoxFit.cover,
+                        opacity: 0.6,
+                      ),
               ),
               alignment: Alignment.center,
               child: Column(
@@ -636,91 +549,48 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           ),
         ],
         _buildPollSection(context, dbService, post),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         (() {
           final targetPost = post.isRepost && post.repostedPost != null ? post.repostedPost! : post;
           return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
+              _buildActionItem(
+                context: context,
+                icon: targetPost.isLikedByMe ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+                color: targetPost.isLikedByMe ? Colors.red : context.textPrimary,
+                isActive: targetPost.isLikedByMe,
+                count: targetPost.likesCount,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  // Play bubble pop sound only when liking (not unliking)
                   if (!targetPost.isLikedByMe) {
                     SoundService.playLike();
                   }
                   dbService.toggleLike(targetPost.id, !targetPost.isLikedByMe);
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) =>
-                        ScaleTransition(scale: animation, child: child),
-                    child: targetPost.isLikedByMe
-                        ? const Icon(
-                            CupertinoIcons.heart_fill,
-                            key: ValueKey<int>(1),
-                            color: Colors.red,
-                            size: 20,
-                          )
-                        : Icon(
-                            CupertinoIcons.heart,
-                            key: const ValueKey<int>(0),
-                            color: context.textPrimary.withValues(alpha: 0.75),
-                            size: 20,
-                          ),
-                  ),
-                ),
               ),
-              const SizedBox(width: 6),
-              if (targetPost.likesCount > 0)
-                Text(
-                  '${targetPost.likesCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
-                ),
-              const SizedBox(width: 18),
-              GestureDetector(
+              _buildActionItem(
+                context: context,
+                icon: CupertinoIcons.chat_bubble,
+                color: context.textPrimary,
+                isActive: false,
+                count: targetPost.repliesCount,
                 onTap: () => _showCommentsBottomSheet(context, post),
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Icon(
-                    CupertinoIcons.chat_bubble,
-                    color: context.textPrimary.withValues(alpha: 0.75),
-                    size: 20,
-                  ),
-                ),
               ),
-              const SizedBox(width: 6),
-              if (targetPost.repliesCount > 0)
-                Text(
-                  '${targetPost.repliesCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
-                ),
-              const SizedBox(width: 18),
-              GestureDetector(
+              _buildActionItem(
+                context: context,
+                icon: CupertinoIcons.arrow_2_circlepath,
+                color: dbService.isReposted(targetPost.id) ? const Color(0xFF1E824C) : context.textPrimary,
+                isActive: dbService.isReposted(targetPost.id),
+                count: targetPost.repostsCount,
                 onTap: () => _showRepostOptions(context, dbService, post),
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Icon(
-                    CupertinoIcons.arrow_2_circlepath,
-                    color: dbService.isReposted(targetPost.id) 
-                        ? const Color(0xFF1E824C) 
-                        : context.textPrimary.withValues(alpha: 0.75),
-                    size: 20,
-                  ),
-                ),
               ),
-              const SizedBox(width: 6),
-              if (targetPost.repostsCount > 0)
-                Text(
-                  '${targetPost.repostsCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
-                ),
-              const SizedBox(width: 18),
-              GestureDetector(
+              _buildActionItem(
+                context: context,
+                icon: dbService.isSaved(targetPost.id) ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+                color: dbService.isSaved(targetPost.id) ? const Color(0xFF1E824C) : context.textPrimary,
+                isActive: dbService.isSaved(targetPost.id),
+                count: targetPost.savesCount,
                 onTap: () {
                   final wasSaved = dbService.isSaved(targetPost.id);
                   dbService.toggleSaveThread(targetPost.id);
@@ -738,39 +608,15 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                     ),
                   );
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Icon(
-                    dbService.isSaved(targetPost.id) ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
-                    color: dbService.isSaved(targetPost.id) ? const Color(0xFF1E824C) : context.textPrimary.withValues(alpha: 0.75),
-                    size: 20,
-                  ),
-                ),
               ),
-              const SizedBox(width: 6),
-              if (targetPost.savesCount > 0)
-                Text(
-                  '${targetPost.savesCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
-                ),
-              const SizedBox(width: 18),
-              GestureDetector(
+              _buildActionItem(
+                context: context,
+                icon: CupertinoIcons.arrowshape_turn_up_right,
+                color: context.textPrimary,
+                isActive: false,
+                count: targetPost.sharesCount,
                 onTap: () => _sharePost(context),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Icon(
-                    CupertinoIcons.arrowshape_turn_up_right,
-                    color: context.textPrimary.withValues(alpha: 0.75),
-                    size: 20,
-                  ),
-                ),
               ),
-              const SizedBox(width: 6),
-              if (targetPost.sharesCount > 0)
-                Text(
-                  '${targetPost.sharesCount}',
-                  style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
-                ),
             ],
           );
         })(),
@@ -828,27 +674,31 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(9),
                     child: Stack(
+                      alignment: Alignment.center,
                       children: [
                         // Progress fill animation
-                        TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 0.0, end: percent),
-                          duration: const Duration(milliseconds: 700),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, val, child) {
-                            return FractionallySizedBox(
-                              widthFactor: val,
-                              heightFactor: 1.0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isWinner
-                                        ? [Colors.blue.withValues(alpha: 0.25), Colors.blue.withValues(alpha: 0.15)]
-                                        : [context.textSecondary.withValues(alpha: 0.12), context.textSecondary.withValues(alpha: 0.08)],
+                        Positioned.fill(
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 0.0, end: percent),
+                            duration: const Duration(milliseconds: 700),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, val, child) {
+                              return FractionallySizedBox(
+                                widthFactor: val,
+                                heightFactor: 1.0,
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: isWinner
+                                          ? [Colors.blue.withValues(alpha: 0.25), Colors.blue.withValues(alpha: 0.15)]
+                                          : [context.textSecondary.withValues(alpha: 0.12), context.textSecondary.withValues(alpha: 0.08)],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                         // Label & stats row
                         Padding(
@@ -990,6 +840,36 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
     }
     return "Less than a minute left";
   }
+
+  Widget _buildActionItem({
+    required BuildContext context,
+    required IconData icon,
+    required Color color,
+    required bool isActive,
+    required int count,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          if (count > 0) ...[
+            const SizedBox(width: 2),
+            Text(
+              '$count',
+              style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
 }
 
 // ─── Quick Actions Bottom Sheet (Twitter/X Style) ─────────────────────────────
@@ -997,11 +877,13 @@ class _QuickActionsSheet extends StatefulWidget {
   final ThreadPost post;
   final DatabaseService dbService;
   final BuildContext parentContext;
+  final bool isCommunityModerator;
 
   const _QuickActionsSheet({
     required this.post,
     required this.dbService,
     required this.parentContext,
+    this.isCommunityModerator = false,
   });
 
   @override
@@ -1134,14 +1016,7 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
           }
         },
       ),
-      _QuickActionItem(
-        icon: Icons.playlist_add_outlined,
-        label: 'Add/remove from Lists',
-        onTap: () {
-          Navigator.pop(context);
-          _showSuccessSnackBar(context, 'List updated for @$username');
-        },
-      ),
+
       _QuickActionItem(
         icon: _isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
         label: _isMuted ? 'Unmute @$username' : 'Mute @$username',
@@ -1195,6 +1070,17 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
           _showReportSheet(parentCtx);
         },
       ),
+      if (widget.isCommunityModerator)
+        _QuickActionItem(
+          icon: Icons.delete_outline,
+          label: 'Delete post as Moderator',
+          isDanger: true,
+          onTap: () {
+            Navigator.pop(context);
+            // Re-use _showDeleteConfirm but from _QuickActionsSheet
+            _showDeleteConfirm(widget.parentContext);
+          },
+        ),
     ];
 
     return Container(
@@ -1413,6 +1299,51 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: context.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Delete Post?',
+          style: GoogleFonts.inter(
+              fontWeight: FontWeight.bold, color: context.textPrimary),
+        ),
+        content: Text(
+          'As a moderator, you can delete this post. This action cannot be undone.',
+          style: GoogleFonts.inter(fontSize: 14, color: Colors.black54, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text('Cancel',
+                style: GoogleFonts.inter(
+                    color: Colors.grey[600], fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              final success = await widget.dbService.deletePost(widget.post.id);
+              if (success && ctx.mounted) {
+                _showSuccessSnackBar(ctx, 'Post deleted successfully');
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Delete',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

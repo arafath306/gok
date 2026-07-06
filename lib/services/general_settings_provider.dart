@@ -7,6 +7,17 @@ class GeneralSettingsProvider with ChangeNotifier {
   final _supabase = Supabase.instance.client;
   String get _currentUid => _supabase.auth.currentUser?.id ?? '';
 
+  GeneralSettingsProvider() {
+    _loadLocalSettings();
+  }
+
+  Future<void> _loadLocalSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isDarkTheme = prefs.getBool('isDarkTheme') ?? false;
+    _lowDataMode = prefs.getBool('lowDataMode') ?? false;
+    notifyListeners();
+  }
+
   // Privacy State
   bool _isPrivateAccount = false;
   bool get isPrivateAccount => _isPrivateAccount;
@@ -502,14 +513,26 @@ class GeneralSettingsProvider with ChangeNotifier {
   }
 
   // Theme Settings
-  bool _isDarkTheme = false; // Default to light (consistent with onboarding)
+  bool _isDarkTheme = false;
 
   bool get isDarkTheme => _isDarkTheme;
-
   ThemeMode get themeMode => _isDarkTheme ? ThemeMode.dark : ThemeMode.light;
 
-  void toggleTheme(bool val) {
+  Future<void> toggleTheme(bool val) async {
     _isDarkTheme = val;
     notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkTheme', val);
+  }
+
+  // Low Data Mode
+  bool _lowDataMode = false;
+  bool get lowDataMode => _lowDataMode;
+
+  Future<void> toggleLowDataMode(bool val) async {
+    _lowDataMode = val;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('lowDataMode', val);
   }
 }

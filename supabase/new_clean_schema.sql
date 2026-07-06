@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     gender TEXT,
     birthdate TEXT,
     is_private BOOLEAN DEFAULT false NOT NULL,
+    fcm_token TEXT,
     allow_mentions TEXT DEFAULT 'everyone' NOT NULL, -- 'everyone', 'people_you_follow', 'no_one'
     filter_adult BOOLEAN DEFAULT true NOT NULL,
     autoplay_videos BOOLEAN DEFAULT true NOT NULL,
@@ -42,13 +43,33 @@ ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, username, full_name, avatar_url, is_private)
+  INSERT INTO public.profiles (
+    id, 
+    username, 
+    full_name, 
+    avatar_url, 
+    is_private,
+    phone,
+    gender,
+    birthdate,
+    division,
+    city,
+    village,
+    zip
+  )
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'username', 'user_' || SUBSTRING(NEW.id::text FROM 1 FOR 8)),
     COALESCE(NEW.raw_user_meta_data->>'full_name', 'Dak User'),
     NEW.raw_user_meta_data->>'avatar_url',
-    false
+    false,
+    NEW.raw_user_meta_data->>'phone',
+    NEW.raw_user_meta_data->>'gender',
+    NEW.raw_user_meta_data->>'birthdate',
+    NEW.raw_user_meta_data->>'division',
+    NEW.raw_user_meta_data->>'city',
+    NEW.raw_user_meta_data->>'village',
+    NEW.raw_user_meta_data->>'zip'
   );
   RETURN NEW;
 END;

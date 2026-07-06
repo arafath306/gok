@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'dart:ui';
@@ -11,10 +12,12 @@ import 'create_thread_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
+import '../services/presence_service.dart';
 import 'messenger/messenger_home_screen.dart';
 import 'settings/settings_screen.dart';
 import 'settings/beta_center_screen.dart';
 import 'saved_posts_screen.dart';
+import 'communities/community_home_screen.dart';
 import '../utils/app_theme.dart';
 
 class MainScreen extends StatefulWidget {
@@ -58,6 +61,13 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
+      
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser != null) {
+        PresenceService().initialize(currentUser.id);
+        PresenceService().updatePage('/home');
+      }
+      
       dbService.fetchVerificationPlans();
 
       _notificationSubscription = dbService.incomingNotificationStream.listen((event) {
@@ -165,35 +175,13 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
       _currentIndex = index;
     });
     _pageController.jumpToPage(index);
+    
+    const pages = ['/home', '/explore', '/messages', '/notifications', '/profile'];
+    if (index >= 0 && index < pages.length) {
+      PresenceService().updatePage(pages[index]);
+    }
   }
 
-  void _showMockFeatureDialog(BuildContext context, String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.cardBg,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          "$feature coming soon!",
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
-        ),
-        content: Text(
-          "We are actively working on building the $feature feature to match the complete social media experience. Stay tuned!",
-          style: GoogleFonts.inter(color: context.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Dismiss",
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showHelpDialog(BuildContext context) {
     showDialog(
@@ -341,7 +329,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           ),
           const SizedBox(height: 2),
           Text(
-            "@${myProfile?.username ?? 'arafath306'}.bsky.social",
+            "@${myProfile?.username ?? 'arafath306'}",
             style: GoogleFonts.inter(
               fontSize: 14,
               color: context.textSecondary,
@@ -876,12 +864,17 @@ WhatsApp: +8801313961899''',
                             },
                           ),
                           _buildDrawerItem(
-                            icon: CupertinoIcons.chat_bubble,
-                            title: "Threads",
+                            icon: CupertinoIcons.person_3_fill,
+                            title: "Community",
                             isActive: false,
                             onTap: () {
                               Navigator.pop(context);
-                              _showMockFeatureDialog(context, "Threads");
+                              Navigator.push(
+                                context,
+                                NoTransitionPageRoute(
+                                  child: const CommunityHomeScreen(),
+                                ),
+                              );
                             },
                           ),
                           _buildDrawerItem(
@@ -1000,9 +993,9 @@ WhatsApp: +8801313961899''',
                 ]).animate(_fabAnimationController),
                 child: FloatingActionButton(
                   heroTag: 'main_fab',
-                  backgroundColor: const Color(0xFF1E824C).withValues(alpha: 0.15),
+                  backgroundColor: const Color(0xFF1E824C),
                   shape: const CircleBorder(),
-                  elevation: 0,
+                  elevation: 3,
                   mini: false,
                   onPressed: () {
                     _fabAnimationController.forward(from: 0.0);
@@ -1015,10 +1008,10 @@ WhatsApp: +8801313961899''',
                       }
                     });
                   },
-                  child: Icon(
-                    CupertinoIcons.pencil_ellipsis_rectangle,
-                    color: const Color(0xFF1E824C),
-                    size: 26,
+                  child: const Icon(
+                    CupertinoIcons.create,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
               ),

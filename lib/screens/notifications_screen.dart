@@ -7,6 +7,7 @@ import '../features/notifications/domain/usecases/clear_notification_inbox_use_c
 import 'settings/notification_settings_screen.dart';
 import '../utils/routes.dart';
 import '../utils/app_theme.dart';
+import '../widgets/custom_menu_button.dart';
 import 'profile/profile_screen.dart';
 import 'thread_detail_screen.dart';
 import '../models/notification.dart';
@@ -245,7 +246,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       // Navigate to the actor's profile
       final actorId = item.rawNotifications.first.actor.id;
       final isOwn = actorId == (db.myProfile?.id ?? db.currentUid);
-      if (context.mounted) {
+      if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -308,46 +309,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       backgroundColor: context.scaffoldBg,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => Scaffold.of(context).openDrawer(),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 20,
-                height: 2.2,
-                decoration: BoxDecoration(
-                  color: context.textPrimary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 4.5),
-              Container(
-                width: 20,
-                height: 2.2,
-                decoration: BoxDecoration(
-                  color: context.textPrimary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 4.5),
-              Container(
-                width: 14,
-                height: 2.2,
-                decoration: BoxDecoration(
-                  color: context.textPrimary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      leading: const CustomMenuButton(),
       title: Text(
         'Notifications',
         style: GoogleFonts.inter(
@@ -648,8 +610,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         return (Icons.repeat_rounded, const Color(0xFF00ACC1), 'Repost');
       case 'reply':
         return (Icons.reply_rounded, const Color(0xFF1E88E5), 'Reply');
+      case 'generic':
+      case 'message':
+        return (Icons.notifications_rounded, const Color(0xFF0085FF), 'System');
       default:
         return (Icons.notifications_rounded, const Color(0xFF0085FF), type);
     }
   }
+
+
 }

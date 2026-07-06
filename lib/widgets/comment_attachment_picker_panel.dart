@@ -28,6 +28,7 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
   bool _isLoadingGifs = false;
   List<String> _gifUrls = [];
   String _activeCategory = "Smileys";
+  double _panelHeight = 280.0;
   
   // Category tabs for emoji picker
   final List<Map<String, dynamic>> _emojiCategories = [
@@ -268,7 +269,7 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 280,
+      height: _panelHeight,
       decoration: BoxDecoration(
         color: context.cardBg,
         border: Border(
@@ -277,6 +278,32 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
       ),
       child: Column(
         children: [
+          // Drag handle bar
+          GestureDetector(
+            onVerticalDragUpdate: (details) {
+              setState(() {
+                _panelHeight = (_panelHeight - details.delta.dy).clamp(
+                  250.0,
+                  MediaQuery.of(context).size.height * 0.75,
+                );
+              });
+            },
+            child: Container(
+              width: double.infinity,
+              color: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+          ),
           // Tab bar header
           Container(
             height: 38,

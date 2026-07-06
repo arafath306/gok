@@ -14,14 +14,30 @@ class ChatRepositoryImpl implements IChatRepository {
   final sb.SupabaseClient supabaseClient;
   final E2EEService e2eeService;
 
-  ChatRepositoryImpl(this.remoteDataSource, this.supabaseClient, this.e2eeService);
+  ChatRepositoryImpl(
+    this.remoteDataSource,
+    this.supabaseClient,
+    this.e2eeService,
+  );
 
-  String get _currentUid => supabaseClient.auth.currentUser?.id ?? '';
+  // Use Supabase.instance.client for more reliable access during token refresh
+  String get _currentUid =>
+      sb.Supabase.instance.client.auth.currentUser?.id ??
+      supabaseClient.auth.currentUser?.id ??
+      '';
 
   final Map<String, String?> _publicKeyCache = {};
+  final Map<String, String> _decryptedCache = {};
 
   Future<String> _decryptContent(String content, String senderPublicKey) async {
-    if (content.startsWith('E2EE:v1:')) {
+    if (!content.startsWith('E2EE:v1:')) {
+      return content;
+    }
+    final cached = _decryptedCache[content];
+    if (cached != null) {
+      return cached;
+    }
+    try {
       final parts = content.split(':');
       if (parts.length == 5) {
         // format: E2EE : v1 : nonce : mac : ciphertext
@@ -29,13 +45,19 @@ class ChatRepositoryImpl implements IChatRepository {
         final macBase64 = parts[3];
         final cipherTextBase64 = parts[4];
         final decrypted = await e2eeService.decryptMessage(
-          cipherTextBase64, 
-          nonceBase64, 
-          macBase64, 
+          cipherTextBase64,
+          nonceBase64,
+          macBase64,
           senderPublicKey,
         );
-        return decrypted ?? '🔒 Decryption failed';
+        // If decryption returns null, show empty string (not error)
+        final result = decrypted ?? '';
+        _decryptedCache[content] = result;
+        return result;
       }
+    } catch (_) {
+      // Silently ignore decrypt errors — show empty string
+      return '';
     }
     return content;
   }
@@ -46,45 +68,74 @@ class ChatRepositoryImpl implements IChatRepository {
       final data = await remoteDataSource.fetchActiveChatsRaw(_currentUid);
       final Map<String, Map<String, dynamic>> conversations = {};
 
-      for (final json in data) {
+      // Parallel decrypt the content of each message first
+      final decryptedContents = await Future.wait(
+        data.map((json) async {
+          final senderId = json['sender_id'] as String;
+          final isMeSender = senderId == _currentUid;
+          final otherUserMap = isMeSender ? json['receiver'] : json['sender'];
+
+          if (otherUserMap == null) return '';
+          final otherProfile = Profile.fromJson(
+            otherUserMap as Map<String, dynamic>,
+          );
+
+          final content = json['content'] as String? ?? '';
+          if (content.startsWith('E2EE:v1:') &&
+              otherProfile.publicKey != null) {
+            return await _decryptContent(content, otherProfile.publicKey!);
+          }
+          return content;
+        }),
+      );
+
+      for (int i = 0; i < data.length; i++) {
+        final json = data[i];
         final senderId = json['sender_id'] as String;
         final isMeSender = senderId == _currentUid;
         final otherUserMap = isMeSender ? json['receiver'] : json['sender'];
-        
+
         if (otherUserMap == null) continue;
-        final otherProfile = Profile.fromJson(otherUserMap as Map<String, dynamic>);
+        final otherProfile = Profile.fromJson(
+          otherUserMap as Map<String, dynamic>,
+        );
         final otherId = otherProfile.id;
+        _publicKeyCache[otherId] = otherProfile.publicKey;
 
-        String content = json['content'] as String? ?? '';
-        
-        // Only decrypt the last message if we have the other user's public key
-        if (content.startsWith('E2EE:v1:') && otherProfile.publicKey != null) {
-            content = await _decryptContent(content, otherProfile.publicKey!);
-        }
+        String content = decryptedContents[i];
 
-        if (content.startsWith('{') && content.endsWith('}') && content.contains('reply_to_id')) {
+        if (content.startsWith('{') &&
+            content.endsWith('}') &&
+            content.contains('reply_to_id')) {
           try {
-            final Map<String, dynamic> jsonReply = jsonDecode(content) as Map<String, dynamic>;
+            final Map<String, dynamic> jsonReply =
+                jsonDecode(content) as Map<String, dynamic>;
             content = jsonReply['text'] as String? ?? '';
           } catch (_) {}
         }
 
         final String mediaUrl = json['media_url'] as String? ?? '';
-        final String displayMessage = content.isNotEmpty 
-            ? content 
+        final String displayMessage = content.isNotEmpty
+            ? content
             : (mediaUrl.isNotEmpty ? '📷 Photo' : '');
 
         if (!conversations.containsKey(otherId)) {
           conversations[otherId] = {
             'profile': otherProfile,
             'lastMessage': displayMessage,
-            'lastMessageTime': _getRelativeTime(DateTime.parse(json['created_at'] as String)),
-            'unreadCount': (json['is_read'] == false && json['receiver_id'] == _currentUid) ? 1 : 0,
+            'lastMessageTime': _getRelativeTime(
+              DateTime.parse(json['created_at'] as String),
+            ),
+            'unreadCount':
+                (json['is_read'] == false && json['receiver_id'] == _currentUid)
+                ? 1
+                : 0,
             'timeRaw': json['created_at'] as String,
           };
         } else {
           if (json['is_read'] == false && json['receiver_id'] == _currentUid) {
-            conversations[otherId]!['unreadCount'] = (conversations[otherId]!['unreadCount'] as int) + 1;
+            conversations[otherId]!['unreadCount'] =
+                (conversations[otherId]!['unreadCount'] as int) + 1;
           }
         }
       }
@@ -106,29 +157,48 @@ class ChatRepositoryImpl implements IChatRepository {
         if (_publicKeyCache.containsKey(otherUserId)) {
           otherPublicKey = _publicKeyCache[otherUserId];
         } else {
-          final otherProfileRes = await supabaseClient.from('profiles').select('public_key').eq('id', otherUserId).single();
+          final otherProfileRes = await supabaseClient
+              .from('profiles')
+              .select('public_key')
+              .eq('id', otherUserId)
+              .single();
           otherPublicKey = otherProfileRes['public_key'] as String?;
           _publicKeyCache[otherUserId] = otherPublicKey;
         }
 
-        final data = await remoteDataSource.fetchMessagesRaw(_currentUid, otherUserId);
+        final data = await remoteDataSource.fetchMessagesRaw(
+          _currentUid,
+          otherUserId,
+        );
+
+        final otherPublicKeyVal = otherPublicKey;
+        final decryptedTexts = await Future.wait(
+          data.map((json) async {
+            final text = json['content'] as String? ?? '';
+            if (text.startsWith('E2EE:v1:') && otherPublicKeyVal != null) {
+              return await _decryptContent(text, otherPublicKeyVal);
+            }
+            return text;
+          }),
+        );
+
         final List<MessageEntity> messages = [];
 
-        for (final json in data) {
-          String text = json['content'] as String? ?? '';
+        for (int i = 0; i < data.length; i++) {
+          final json = data[i];
+          String text = decryptedTexts[i];
           final isMe = json['sender_id'] == _currentUid;
-          
-          if (text.startsWith('E2EE:v1:') && otherPublicKey != null) {
-              text = await _decryptContent(text, otherPublicKey);
-          }
 
           String? replyToId;
           String? replyToText;
           String? replyToSender;
 
-          if (text.startsWith('{') && text.endsWith('}') && text.contains('reply_to_id')) {
+          if (text.startsWith('{') &&
+              text.endsWith('}') &&
+              text.contains('reply_to_id')) {
             try {
-              final Map<String, dynamic> jsonReply = jsonDecode(text) as Map<String, dynamic>;
+              final Map<String, dynamic> jsonReply =
+                  jsonDecode(text) as Map<String, dynamic>;
               replyToId = jsonReply['reply_to_id'] as String?;
               replyToText = jsonReply['reply_to_text'] as String?;
               replyToSender = jsonReply['reply_to_sender'] as String?;
@@ -136,21 +206,25 @@ class ChatRepositoryImpl implements IChatRepository {
             } catch (_) {}
           }
 
-          messages.add(MessageEntity(
-            id: json['id'] as String,
-            text: text,
-            isMe: isMe,
-            time: _getRelativeTime(DateTime.parse(json['created_at'] as String)),
-            createdAt: json['created_at'] as String,
-            mediaUrl: json['media_url'] as String?,
-            mediaType: json['media_type'] as String?,
-            isRead: json['is_read'] as bool? ?? false,
-            replyToId: replyToId,
-            replyToText: replyToText,
-            replyToSender: replyToSender,
-          ));
+          messages.add(
+            MessageEntity(
+              id: json['id'] as String,
+              text: text,
+              isMe: isMe,
+              time: _getRelativeTime(
+                DateTime.parse(json['created_at'] as String),
+              ),
+              createdAt: json['created_at'] as String,
+              mediaUrl: json['media_url'] as String?,
+              mediaType: json['media_type'] as String?,
+              isRead: json['is_read'] as bool? ?? false,
+              replyToId: replyToId,
+              replyToText: replyToText,
+              replyToSender: replyToSender,
+            ),
+          );
         }
-        
+
         if (!controller.isClosed) {
           controller.add(messages);
         }
@@ -163,9 +237,24 @@ class ChatRepositoryImpl implements IChatRepository {
 
     loadAndPush();
 
-    final subscription = remoteDataSource.getMessagesRealtimeStream(otherUserId).listen((_) {
-      loadAndPush();
-    });
+    final subscription = remoteDataSource
+        .getMessagesRealtimeStream(otherUserId)
+        .listen((payload) {
+          final record = payload.newRecord.isNotEmpty
+              ? payload.newRecord
+              : payload.oldRecord;
+          if (record.isNotEmpty) {
+            final senderId = record['sender_id'] as String?;
+            final receiverId = record['receiver_id'] as String?;
+            final isRelevant =
+                (senderId == _currentUid && receiverId == otherUserId) ||
+                (senderId == otherUserId && receiverId == _currentUid);
+            if (!isRelevant) {
+              return;
+            }
+          }
+          loadAndPush();
+        });
 
     controller.onCancel = () {
       subscription.cancel();
@@ -176,9 +265,22 @@ class ChatRepositoryImpl implements IChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> sendMessage(String receiverId, String content, {String? mediaUrl, String? mediaType}) async {
+  Future<Either<Failure, void>> sendMessage(
+    String receiverId,
+    String content, {
+    String? mediaUrl,
+    String? mediaType,
+  }) async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return Left(ServerFailure('User not authenticated'));
     try {
-      await remoteDataSource.sendMessage(_currentUid, receiverId, content, mediaUrl: mediaUrl, mediaType: mediaType);
+      await remoteDataSource.sendMessage(
+        uid,
+        receiverId,
+        content,
+        mediaUrl: mediaUrl,
+        mediaType: mediaType,
+      );
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -187,8 +289,10 @@ class ChatRepositoryImpl implements IChatRepository {
 
   @override
   Future<Either<Failure, void>> markMessagesAsRead(String otherUserId) async {
+    final uid = _currentUid;
+    if (uid.isEmpty) return Left(ServerFailure('User not authenticated'));
     try {
-      await remoteDataSource.markMessagesAsRead(_currentUid, otherUserId);
+      await remoteDataSource.markMessagesAsRead(uid, otherUserId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -198,7 +302,10 @@ class ChatRepositoryImpl implements IChatRepository {
   @override
   Future<Either<Failure, bool>> deleteConversation(String otherUserId) async {
     try {
-      final result = await remoteDataSource.deleteConversation(_currentUid, otherUserId);
+      final result = await remoteDataSource.deleteConversation(
+        _currentUid,
+        otherUserId,
+      );
       return Right(result);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -216,9 +323,18 @@ class ChatRepositoryImpl implements IChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> editMessage(String messageId, String receiverId, String newContent) async {
+  Future<Either<Failure, void>> editMessage(
+    String messageId,
+    String receiverId,
+    String newContent,
+  ) async {
     try {
-      await remoteDataSource.editMessage(messageId, _currentUid, receiverId, newContent);
+      await remoteDataSource.editMessage(
+        messageId,
+        _currentUid,
+        receiverId,
+        newContent,
+      );
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -247,7 +363,8 @@ class ChatRepositoryImpl implements IChatRepository {
     if (hour12 == 0) hour12 = 12;
     final timeStr = '$hour12:$minute $period';
 
-    final isToday = dhakaTime.year == nowDhaka.year &&
+    final isToday =
+        dhakaTime.year == nowDhaka.year &&
         dhakaTime.month == nowDhaka.month &&
         dhakaTime.day == nowDhaka.day;
 

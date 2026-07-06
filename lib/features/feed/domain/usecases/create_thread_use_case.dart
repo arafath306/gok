@@ -13,6 +13,7 @@ class CreateThreadUseCase {
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
+    String? communityId,
   }) {
     return repository.createThread(
       content,
@@ -21,6 +22,7 @@ class CreateThreadUseCase {
       audience: audience,
       pollOptions: pollOptions,
       pollExpiresAt: pollExpiresAt,
+      communityId: communityId,
     );
   }
 }

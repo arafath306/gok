@@ -1,4 +1,3 @@
-﻿import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -7,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
+import '../services/general_settings_provider.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/comment_detail_screen.dart';
 import 'share_comment_sheet.dart';
@@ -60,6 +60,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
     setState(() => _isLoading = true);
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
+      debugPrint("DEBUG: _effectiveThreadId is '$_effectiveThreadId', widget.post.id is '${widget.post.id}'");
       final comments = await dbService.fetchComments(_effectiveThreadId);
       if (mounted) {
         setState(() {
@@ -965,6 +966,11 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
   @override
   void initState() {
     super.initState();
+    final author = widget.comment['author'] as Profile;
+    _isFollowing = widget.dbService.isFollowingUser(author.id);
+    _isMuted = widget.dbService.isMuted(author.id);
+    _isBlocked = widget.dbService.isBlocked(author.id);
+
     _staggerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -1183,37 +1189,48 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
               ? Icons.person_remove_outlined
               : Icons.person_add_alt_1_outlined,
           label: _isFollowing ? 'Unfollow @$username' : 'Follow @$username',
-          onTap: () {
-            setState(() => _isFollowing = !_isFollowing);
+          onTap: () async {
+            final wasFollowing = _isFollowing;
+            setState(() {
+              _isFollowing = !wasFollowing;
+            });
+            final parentCtx = widget.parentContext;
             Navigator.pop(context);
-            _showSuccessSnackBar(
-              context,
-              _isFollowing
-                  ? 'You unfollowed @$username'
-                  : 'You are now following @$username',
-            );
+            await widget.dbService.toggleFollowUser(author.id);
+            if (parentCtx.mounted) {
+              _showSuccessSnackBar(
+                parentCtx,
+                wasFollowing
+                    ? 'You unfollowed @$username'
+                    : 'You are now following @$username',
+              );
+            }
           },
         ),
-        _CommentQuickActionItem(
-          icon: Icons.playlist_add_outlined,
-          label: 'Add/remove from Lists',
-          onTap: () {
-            Navigator.pop(context);
-            _showSuccessSnackBar(context, 'List updated for @$username');
-          },
-        ),
+
         _CommentQuickActionItem(
           icon: _isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined,
           label: _isMuted ? 'Unmute @$username' : 'Mute @$username',
-          onTap: () {
-            setState(() => _isMuted = !_isMuted);
+          onTap: () async {
+            final wasMuted = _isMuted;
+            setState(() {
+              _isMuted = !wasMuted;
+            });
+            final parentCtx = widget.parentContext;
             Navigator.pop(context);
-            _showSuccessSnackBar(
-              context,
-              _isMuted ? '@$username unmuted' : '@$username has been muted',
-              undoLabel: 'Undo',
-              onUndo: () {},
-            );
+            final settingsProvider = Provider.of<GeneralSettingsProvider>(parentCtx, listen: false);
+            if (wasMuted) {
+              await settingsProvider.unmuteAccount(author.id);
+            } else {
+              await settingsProvider.muteUserById(author.id);
+            }
+            await widget.dbService.fetchBlockedMutedLists();
+            if (parentCtx.mounted) {
+              _showSuccessSnackBar(
+                parentCtx,
+                wasMuted ? '@$username unmuted' : '@$username has been muted',
+              );
+            }
           },
         ),
         _CommentQuickActionItem(
@@ -1221,8 +1238,13 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
           label: _isBlocked ? 'Unblock @$username' : 'Block @$username',
           isDanger: true,
           onTap: () {
+            final parentCtx = widget.parentContext;
             Navigator.pop(context);
-            _showBlockConfirm(context, username);
+            if (_isBlocked) {
+              _unblockUser(parentCtx, author.id, username);
+            } else {
+              _showBlockConfirm(parentCtx, username);
+            }
           },
         ),
         _CommentQuickActionItem(
@@ -1332,9 +1354,15 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                     color: context.textSecondary, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogCtx);
-              _showSuccessSnackBar(ctx, '@$username has been blocked');
+              final author = widget.comment['author'] as Profile;
+              final settingsProvider = Provider.of<GeneralSettingsProvider>(ctx, listen: false);
+              await settingsProvider.blockUserById(author.id);
+              await widget.dbService.fetchBlockedMutedLists();
+              if (ctx.mounted) {
+                _showSuccessSnackBar(ctx, '@$username has been blocked');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -1349,6 +1377,15 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
         ],
       ),
     );
+  }
+
+  Future<void> _unblockUser(BuildContext ctx, String targetId, String username) async {
+    final settingsProvider = Provider.of<GeneralSettingsProvider>(ctx, listen: false);
+    await settingsProvider.unblockAccount(targetId);
+    await widget.dbService.fetchBlockedMutedLists();
+    if (ctx.mounted) {
+      _showSuccessSnackBar(ctx, '@$username has been unblocked');
+    }
   }
 
   void _showReportSheet(BuildContext ctx, String commentId) {

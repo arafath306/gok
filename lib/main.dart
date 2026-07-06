@@ -4,11 +4,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
+import 'services/community_service.dart';
 import 'services/notification_settings_provider.dart';
 import 'services/chat_settings_provider.dart';
 import 'services/general_settings_provider.dart';
 import 'state/verification_controller.dart';
+import 'state/music_playback_controller.dart';
 import 'services/local_notification_service.dart';
+import 'services/push_notification_service.dart';
 import 'screens/auth/onboarding_screen.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/splash_screen.dart';
@@ -32,7 +35,7 @@ void main() async {
   // Initialize Supabase
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
-    anonKey: AppConfig.supabaseAnonKey,
+    publishableKey: AppConfig.supabaseAnonKey,
   );
 
   // Initialize dependency injection
@@ -40,6 +43,7 @@ void main() async {
 
   // Initialize notifications
   await LocalNotificationService.initialize();
+  await PushNotificationService().initialize();
 
   runApp(
     MultiProvider(
@@ -50,11 +54,14 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ChatSettingsProvider()),
         ChangeNotifierProvider(create: (_) => GeneralSettingsProvider()),
         ChangeNotifierProvider(create: (_) => VerificationController()),
+        ChangeNotifierProvider(create: (_) => MusicPlaybackController()),
+        ChangeNotifierProvider(create: (_) => CommunityService()),
       ],
       child: const PigeonApp(),
     ),
   );
 }
+
 
 class PigeonApp extends StatelessWidget {
   const PigeonApp({super.key});

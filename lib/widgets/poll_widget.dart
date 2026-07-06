@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/thread_post.dart';
 import '../services/database_service.dart';
@@ -64,27 +64,31 @@ class PollWidget extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(9),
                     child: Stack(
+                      alignment: Alignment.center,
                       children: [
                         // Progress fill animation
-                        TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 0.0, end: percent),
-                          duration: const Duration(milliseconds: 700),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, val, child) {
-                            return FractionallySizedBox(
-                              widthFactor: val,
-                              heightFactor: 1.0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isWinner
-                                        ? [Colors.blue.withValues(alpha: 0.25), Colors.blue.withValues(alpha: 0.15)]
-                                        : [context.textSecondary.withValues(alpha: 0.12), context.textSecondary.withValues(alpha: 0.08)],
+                        Positioned.fill(
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 0.0, end: percent),
+                            duration: const Duration(milliseconds: 700),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, val, child) {
+                              return FractionallySizedBox(
+                                widthFactor: val,
+                                heightFactor: 1.0,
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: isWinner
+                                          ? [Colors.blue.withValues(alpha: 0.25), Colors.blue.withValues(alpha: 0.15)]
+                                          : [context.textSecondary.withValues(alpha: 0.12), context.textSecondary.withValues(alpha: 0.08)],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                         // Label & stats row
                         Padding(

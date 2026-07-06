@@ -64,8 +64,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .from('messages')
         .select()
         .or('and(sender_id.eq.$currentUserId,receiver_id.eq.$otherUserId),and(sender_id.eq.$otherUserId,receiver_id.eq.$currentUserId)')
-        .order('created_at', ascending: true);
-    return response as List<dynamic>;
+        .order('created_at', ascending: false)
+        .limit(100);
+    final list = response as List<dynamic>;
+    return list.reversed.toList();
   }
 
   @override

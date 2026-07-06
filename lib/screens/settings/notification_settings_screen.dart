@@ -159,7 +159,7 @@ class _NotifSettingTile extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: context.primaryAccent,
             inactiveTrackColor: context.isDarkMode ? Colors.grey[800] : Colors.black12,
             inactiveThumbColor: Colors.white,

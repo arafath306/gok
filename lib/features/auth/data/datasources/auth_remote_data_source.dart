@@ -98,6 +98,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       data: {
         'username': defaultUsername,
         'full_name': fullName,
+        'phone': phone,
+        'gender': gender,
+        'birthdate': birthdate,
+        'division': division,
+        'city': city,
+        'village': village,
+        'zip': zip,
       },
     );
 

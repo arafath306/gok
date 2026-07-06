@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
@@ -19,7 +18,8 @@ class MessengerHomeScreen extends StatefulWidget {
 }
 
 class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
-  late Future<List<Map<String, dynamic>>> _chatsFuture;
+  List<Map<String, dynamic>> _chats = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -27,18 +27,21 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
     _loadChats();
   }
 
-  void _loadChats() {
-    _chatsFuture =
-        Provider.of<DatabaseService>(context, listen: false).fetchActiveChats();
+  Future<void> _loadChats() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final chats = await dbService.fetchActiveChats();
+    if (mounted) {
+      setState(() {
+        _chats = chats;
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _handleRefresh() async {
-    setState(() {
-      _chatsFuture =
-          Provider.of<DatabaseService>(context, listen: false)
-              .fetchActiveChats();
-    });
-    await _chatsFuture;
+    await _loadChats();
   }
 
   @override
@@ -52,17 +55,9 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
         backgroundColor: context.scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        leading: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => Scaffold.of(context).openDrawer(),
-          child: Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 10.0),
-            child: Icon(
-              CupertinoIcons.ellipses_bubble,
-              color: context.textPrimary,
-              size: 26,
-            ),
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.menu_rounded, color: context.textPrimary, size: 24),
+          onPressed: () => Scaffold.of(context).openDrawer(),
         ),
         titleSpacing: 0,
         title: Text(
@@ -80,12 +75,10 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
           ),
           IconButton(
             icon: Icon(Icons.settings_outlined, color: context.textPrimary, size: 22),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ChatSettingsScreen()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatSettingsScreen()),
+            ),
           ),
           const SizedBox(width: 8),
         ],
@@ -97,19 +90,10 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
       body: RefreshIndicator(
         color: context.primaryAccent,
         onRefresh: _handleRefresh,
-        child: FutureBuilder<List<Map<String, dynamic>>>(
-            future: _chatsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                  return Center(
-                    child: CircularProgressIndicator(color: context.primaryAccent),
-                  );
-                }
-
-                final activeChats = snapshot.data ?? [];
-
-                if (activeChats.isEmpty) {
-                  return ListView(
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: context.primaryAccent))
+            : _chats.isEmpty
+                ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       SizedBox(
@@ -133,14 +117,12 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
-                                  );
-                                },
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
+                                ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1E824C),
+                                  backgroundColor: Theme.of(context).primaryColor,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
@@ -152,10 +134,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                                 icon: const Icon(Icons.add_comment_rounded, size: 15),
                                 label: Text(
                                   'New chat',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -163,159 +142,146 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                         ),
                       ),
                     ],
-                  );
-                }
+                  )
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: _chats.length,
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 72),
+                    separatorBuilder: (_, __) => Divider(height: 1, color: context.border),
+                    itemBuilder: (context, index) {
+                      final chat = _chats[index];
+                      final Profile profile = chat['profile'] as Profile;
+                      final String lastMsg = chat['last_message'] as String;
+                      final String time = chat['last_message_time'] as String;
+                      final int unreadCount = chat['unread_count'] as int;
 
-                return ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: activeChats.length,
-                padding: const EdgeInsets.fromLTRB(0, 8, 0, 72),
-                separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
-                itemBuilder: (context, index) {
-                  final chat = activeChats[index];
-                  final Profile profile = chat['profile'] as Profile;
-                  final String lastMsg = chat['last_message'] as String;
-                  final String time = chat['last_message_time'] as String;
-                  final int unreadCount = chat['unread_count'] as int;
+                      final bool otherIsActive = profile.isActiveStatusEnabled &&
+                          profile.lastSeen != null &&
+                          DateTime.now().difference(profile.lastSeen!).inMinutes <= 5;
+                      final bool showGreenDot = myActiveStatusEnabled && otherIsActive;
 
-                  final bool otherIsActive = profile.isActiveStatusEnabled &&
-                      profile.lastSeen != null &&
-                      DateTime.now().difference(profile.lastSeen!).inMinutes <= 5;
-                  final bool showGreenDot = myActiveStatusEnabled && otherIsActive;
-
-                  return ListTile(
-                    tileColor: Colors.transparent,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChatScreen(otherUser: profile),
-                        ),
-                      );
-                    },
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: context.border,
-                          backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
-                              ? NetworkImage(profile.avatarUrl!)
-                              : null,
-                        ),
-                        if (showGreenDot)
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: context.scaffoldBg,
-                                  width: 2.5,
+                      return ListTile(
+                        tileColor: Colors.transparent,
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => ChatScreen(otherUser: profile)),
+                          );
+                          // Refresh inbox after returning from chat
+                          _loadChats();
+                        },
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        leading: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: context.border,
+                              backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                                  ? NetworkImage(profile.avatarUrl!)
+                                  : null,
+                              child: (profile.avatarUrl == null || profile.avatarUrl!.isEmpty)
+                                  ? Icon(Icons.person, size: 22, color: context.textMuted)
+                                  : null,
+                            ),
+                            if (showGreenDot)
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: context.scaffoldBg, width: 2.5),
+                                  ),
                                 ),
                               ),
+                          ],
+                        ),
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      profile.fullName,
+                                      style: GoogleFonts.hindSiliguri(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: context.textPrimary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (profile.isVerified) ...[
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.verified, color: Colors.blue, size: 15),
+                                  ],
+                                ],
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
+                            Text(
+                              time,
+                              style: GoogleFonts.inter(
+                                color: unreadCount > 0 ? context.primaryAccent : context.textMuted,
+                                fontSize: 12,
+                                fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Flexible(
+                              Expanded(
                                 child: Text(
-                                  profile.fullName,
+                                  lastMsg,
                                   style: GoogleFonts.hindSiliguri(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: context.textPrimary,
+                                    color: unreadCount > 0 ? context.textPrimary : context.textSecondary,
+                                    fontSize: 13.5,
+                                    fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (profile.isVerified) ...[
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.verified,
-                                  color: Colors.blue,
-                                  size: 15,
+                              if (unreadCount > 0)
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                  child: Text(
+                                    "$unreadCount",
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
                                 ),
-                              ],
                             ],
                           ),
                         ),
-                        Text(
-                          time,
-                          style: GoogleFonts.inter(
-                            color: unreadCount > 0 ? context.primaryAccent : context.textMuted,
-                            fontSize: 12,
-                            fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              lastMsg,
-                              style: GoogleFonts.hindSiliguri(
-                                color: unreadCount > 0 ? context.textPrimary : context.textSecondary,
-                                fontSize: 13.5,
-                                fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (unreadCount > 0)
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                "$unreadCount",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-        },
+                      );
+                    },
+                  ),
       ),
-    ),
-    floatingActionButton: Padding(
+      floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 72),
         child: FloatingActionButton.small(
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
             );
+            // Refresh chat list after new chat is started
+            _loadChats();
           },
-          backgroundColor: const Color(0xFF1E824C).withValues(alpha: 0.15),
+          backgroundColor: const Color(0xFF1E824C),
           shape: const CircleBorder(),
-          elevation: 0,
-          child: const Icon(Icons.add, color: Color(0xFF1E824C), size: 23),
+          elevation: 3,
+          child: const Icon(Icons.add, color: Colors.white, size: 23),
         ),
       ),
     );

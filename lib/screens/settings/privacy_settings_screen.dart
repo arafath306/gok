@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/general_settings_provider.dart';
+import '../../state/music_playback_controller.dart';
 import '../../utils/app_theme.dart';
 import '../messenger/chat_settings_screen.dart';
 import 'blocked_accounts_screen.dart';
@@ -50,6 +51,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       ),
       body: Consumer<GeneralSettingsProvider>(
         builder: (context, provider, _) {
+          final musicController = Provider.of<MusicPlaybackController>(context);
           return ListView(
             padding: const EdgeInsets.symmetric(vertical: 16),
             children: [
@@ -120,6 +122,15 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 value: provider.autoplayVideos,
                 onChanged: (val) {
                   provider.updatePrivacy(autoplayVideos: val);
+                },
+              ),
+              _buildSwitchTile(
+                context,
+                title: 'Autoplay Music',
+                subtitle: 'Automatically play music tracks on post images.',
+                value: musicController.autoplayMusic,
+                onChanged: (val) {
+                  musicController.setAutoplayMusic(val);
                 },
               ),
               const SizedBox(height: 16),
@@ -208,7 +219,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: context.primaryAccent,
             inactiveTrackColor: context.isDarkMode ? Colors.grey[800] : Colors.black12,
             inactiveThumbColor: Colors.white,

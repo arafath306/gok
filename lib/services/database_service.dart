@@ -64,6 +64,7 @@ class DatabaseService with ChangeNotifier {
       pollExpiresAt: entity.pollExpiresAt,
       hasVotedPoll: entity.hasVotedPoll,
       votedOptionId: entity.votedOptionId,
+      musicTrack: entity.musicTrack,
     );
   }
 
@@ -406,8 +407,13 @@ class DatabaseService with ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  // Cached UID — set on signIn/tokenRefresh, cleared only on signOut.
+  // This prevents empty-UUID errors during Supabase token refresh windows
+  // where auth.currentUser briefly returns null.
+  String _cachedUid = '';
+
   // Supabase session UID — used for all database operations (UUID format)
-  String get _supabaseSessionUid => _supabase.auth.currentUser?.id ?? '';
+  String get _supabaseSessionUid => _supabase.auth.currentUser?.id ?? _cachedUid;
 
   // Effective UID: ONLY use Supabase session UID (UUID format).
   // Firebase UID is NOT a valid UUID and CANNOT be used for Supabase queries.
@@ -439,18 +445,24 @@ class DatabaseService with ChangeNotifier {
   Timer? _lastSeenTimer;
 
   DatabaseService() {
+    // Initialize _cachedUid from existing session (app restart after login)
+    _cachedUid = _supabase.auth.currentUser?.id ?? '';
+
     // Listen to Supabase auth state — auto-reload when session established
     _supabaseAuthSub = _supabase.auth.onAuthStateChange.listen((data) {
       debugPrint('[DB] Supabase auth event: ${data.event}');
       if (data.event == AuthChangeEvent.signedIn ||
           data.event == AuthChangeEvent.tokenRefreshed ||
           data.event == AuthChangeEvent.initialSession) {
-        // Only load data if we have a valid Supabase session with UUID
-        if (_supabaseSessionUid.isNotEmpty) {
-          debugPrint('[DB] Supabase UID available: $_supabaseSessionUid');
+        // Cache the UID so it survives brief token refresh windows
+        final uid = data.session?.user.id ?? _supabase.auth.currentUser?.id ?? '';
+        if (uid.isNotEmpty) {
+          _cachedUid = uid;
+          debugPrint('[DB] Supabase UID cached: $_cachedUid');
           _onUserReady();
         }
       } else if (data.event == AuthChangeEvent.signedOut) {
+        _cachedUid = '';
         _clearAllData();
       }
     });
@@ -1211,6 +1223,7 @@ class DatabaseService with ChangeNotifier {
     String? audience,
     List<String>? pollOptions,
     Duration? pollDuration,
+    String? communityId,
   }) async {
     DateTime? pollExpiresAt;
     if (pollDuration != null) {
@@ -1223,6 +1236,7 @@ class DatabaseService with ChangeNotifier {
       audience: audience,
       pollOptions: pollOptions,
       pollExpiresAt: pollExpiresAt,
+      communityId: communityId,
     );
     return result.fold(
       (failure) {
@@ -2298,7 +2312,6 @@ class DatabaseService with ChangeNotifier {
     );
   }
 
-  int GREATEST(int a, int b) => a > b ? a : b;
 
   // --- Reposts Operation ---
 
@@ -2515,6 +2528,21 @@ class DatabaseService with ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> reportCommunity(String communityId, String communityName, String reason) async {
+    if (_currentUid.isEmpty) return false;
+    try {
+      await _supabase.from('reports').insert({
+        'user_id': _currentUid,
+        'reason': 'Community Report ($communityName, ID: $communityId): $reason',
+      });
+      return true;
+    } catch (e) {
+      debugPrint("Report community error: $e");
+      return false;
+    }
+  }
+
 
   Future<bool> hideThreadForCurrentUser(String threadId) async {
     if (_currentUid.isEmpty) return false;
@@ -2947,7 +2975,7 @@ class DatabaseService with ChangeNotifier {
         
         final threadsRes = await _supabase
             .from('threads')
-            .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
+            .select('*, profiles!user_id(*), communities(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
             .inFilter('id', threadIds);
 
         final List<dynamic> threadsData = threadsRes as List<dynamic>;
@@ -2962,7 +2990,7 @@ class DatabaseService with ChangeNotifier {
       try {
         final repostsRes = await _supabase
             .from('reposts')
-            .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id))')
+            .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*))' )
             .order('created_at', ascending: false)
             .limit(20);
 
@@ -3008,7 +3036,7 @@ class DatabaseService with ChangeNotifier {
       try {
         final response = await _supabase
             .from('threads')
-            .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
+            .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
             .order('created_at', ascending: false)
             .limit(limit)
             .range(offset, offset + limit - 1);

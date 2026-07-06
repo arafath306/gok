@@ -15,6 +15,7 @@ abstract class FeedRemoteDataSource {
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
+    String? communityId,
   });
   Future<void> toggleLike(String userId, String threadId, bool shouldLike);
   Future<bool> togglePinPost(String threadId, bool isPinned);
@@ -48,7 +49,8 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
   Future<List<dynamic>> fetchFeedRaw() async {
     final response = await supabaseClient
         .from('threads')
-        .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
+        .select('*, profiles!user_id(*), communities(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
+        .isFilter('community_id', null)
         .order('created_at', ascending: false);
     return response as List<dynamic>;
   }
@@ -57,7 +59,7 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
   Future<List<dynamic>> fetchRepostsRaw() async {
     final response = await supabaseClient
         .from('reposts')
-        .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*))')
+        .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), communities(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*))')
         .order('created_at', ascending: false);
     return response as List<dynamic>;
   }
@@ -66,7 +68,7 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
   Future<List<dynamic>> fetchMyThreadsRaw(String userId) async {
     final response = await supabaseClient
         .from('threads')
-        .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
+        .select('*, profiles!user_id(*), communities(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
         .eq('user_id', userId)
         .order('created_at', ascending: false);
     return response as List<dynamic>;
@@ -76,7 +78,7 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
   Future<List<dynamic>> fetchUserThreadsRaw(String userId) async {
     final response = await supabaseClient
         .from('threads')
-        .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
+        .select('*, profiles!user_id(*), communities(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
         .eq('user_id', userId)
         .order('created_at', ascending: false);
     return response as List<dynamic>;
@@ -95,7 +97,7 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
 
     final response = await supabaseClient
         .from('threads')
-        .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
+        .select('*, profiles!user_id(*), communities(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
         .inFilter('id', threadIds)
         .order('created_at', ascending: false);
     return response as List<dynamic>;
@@ -119,6 +121,7 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
+    String? communityId,
   }) async {
     final Map<String, dynamic> insertData = {
       'user_id': userId,
@@ -126,6 +129,7 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
       'image_urls': imageUrls,
       'video_url': videoUrl,
       if (audience != null) 'audience': audience,
+      if (communityId != null) 'community_id': communityId,
     };
     if (pollExpiresAt != null) {
       insertData['poll_expires_at'] = pollExpiresAt.toUtc().toIso8601String();

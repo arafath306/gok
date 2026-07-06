@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'profile.dart';
 import 'poll_option.dart';
+import 'music_track.dart';
+import 'community.dart';
 
 class ThreadPost {
   final String id;
@@ -21,6 +24,8 @@ class ThreadPost {
   final bool hideFromProfile;
   final bool isHiddenFromMe;
   final int viewsCount;
+  final String? communityId;
+  final Community? community;
 
   final bool isRepost;
   final ThreadPost? repostedPost;
@@ -31,6 +36,9 @@ class ThreadPost {
   final DateTime? pollExpiresAt;
   final bool hasVotedPoll;
   final String? votedOptionId;
+
+  // Music Field
+  final MusicTrack? musicTrack;
 
   ThreadPost({
     required this.id,
@@ -45,6 +53,8 @@ class ThreadPost {
     this.savesCount = 0,
     this.sharesCount = 0,
     this.viewsCount = 0,
+    this.communityId,
+    this.community,
     required this.createdAt,
     this.isLikedByMe = false,
     this.reactionType,
@@ -59,6 +69,7 @@ class ThreadPost {
     this.pollExpiresAt,
     this.hasVotedPoll = false,
     this.votedOptionId,
+    this.musicTrack,
   });
 
   int get totalPollVotes {
@@ -136,11 +147,31 @@ class ThreadPost {
     final expiresAtStr = json['poll_expires_at'] as String?;
     final expiresAt = expiresAtStr != null ? DateTime.parse(expiresAtStr).toLocal() : null;
 
+    // Parse Music Suffix from Content
+    String cleanContent = json['content'] as String? ?? '';
+    MusicTrack? parsedMusicTrack;
+    if (cleanContent.contains('🎵DakMusic🎵')) {
+      final parts = cleanContent.split('🎵DakMusic🎵');
+      cleanContent = parts[0];
+      if (parts.length > 1) {
+        try {
+          parsedMusicTrack = MusicTrack.fromJson(parts[1].trim());
+        } catch (e) {
+          debugPrint("Error parsing music track from post JSON: $e");
+        }
+      }
+    }
+
+    Community? parsedCommunity;
+    if (json['communities'] != null) {
+      parsedCommunity = Community.fromJson(json['communities'] as Map<String, dynamic>);
+    }
+
     return ThreadPost(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       author: authorProfile,
-      content: json['content'] as String,
+      content: cleanContent,
       imageUrls: parsedImages,
       videoUrl: json['video_url'] as String?,
       likesCount: (json['likes_count'] as int?) ?? 0,
@@ -149,6 +180,8 @@ class ThreadPost {
       savesCount: (json['saves_count'] as int?) ?? 0,
       sharesCount: (json['shares_count'] as int?) ?? 0,
       viewsCount: (json['views_count'] as int?) ?? 0,
+      communityId: json['community_id'] as String?,
+      community: parsedCommunity,
       createdAt: formatRelativeTime(json['created_at'] as String?),
       isLikedByMe: isLiked,
       reactionType: isLiked ? '❤️' : null,
@@ -165,6 +198,7 @@ class ThreadPost {
       pollExpiresAt: expiresAt,
       hasVotedPoll: isVoted,
       votedOptionId: votedOptId,
+      musicTrack: parsedMusicTrack,
     );
   }
 
@@ -181,6 +215,8 @@ class ThreadPost {
     int? savesCount,
     int? sharesCount,
     int? viewsCount,
+    String? communityId,
+    Community? community,
     String? createdAt,
     bool? isLikedByMe,
     String? reactionType,
@@ -195,6 +231,7 @@ class ThreadPost {
     DateTime? pollExpiresAt,
     bool? hasVotedPoll,
     String? votedOptionId,
+    MusicTrack? musicTrack,
   }) {
     return ThreadPost(
       id: id ?? this.id,
@@ -209,6 +246,8 @@ class ThreadPost {
       savesCount: savesCount ?? this.savesCount,
       sharesCount: sharesCount ?? this.sharesCount,
       viewsCount: viewsCount ?? this.viewsCount,
+      communityId: communityId ?? this.communityId,
+      community: community ?? this.community,
       createdAt: createdAt ?? this.createdAt,
       isLikedByMe: isLikedByMe ?? this.isLikedByMe,
       reactionType: reactionType ?? this.reactionType,
@@ -223,6 +262,8 @@ class ThreadPost {
       pollExpiresAt: pollExpiresAt ?? this.pollExpiresAt,
       hasVotedPoll: hasVotedPoll ?? this.hasVotedPoll,
       votedOptionId: votedOptionId ?? this.votedOptionId,
+      musicTrack: musicTrack ?? this.musicTrack,
     );
   }
 }
+

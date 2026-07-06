@@ -44,7 +44,6 @@ class AppTheme {
         brightness: Brightness.light,
         primary: primary,
         secondary: secondary,
-        background: lightBackground,
         surface: lightCard,
       ),
       useMaterial3: true,
@@ -69,7 +68,7 @@ class AppTheme {
       ),
     );
   }
-
+ 
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
@@ -78,9 +77,7 @@ class AppTheme {
       colorScheme: const ColorScheme.dark(
         primary: primary,
         secondary: secondary,
-        background: background, // #070B16
         surface: surface, // #0D1323
-        onBackground: Colors.white,
         onSurface: Colors.white,
       ),
       useMaterial3: true,
