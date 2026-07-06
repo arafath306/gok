@@ -29,7 +29,7 @@ BEGIN
     SELECT full_name INTO sender_name FROM public.profiles WHERE id = NEW.sender_id;
     
     push_title := sender_name;
-    push_body := NEW.content;
+    push_body := 'Sent you a new message';
     
   ELSIF TG_TABLE_NAME = 'comments' THEN
     -- Get the owner of the thread (post) being commented on
