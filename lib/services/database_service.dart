@@ -1059,7 +1059,14 @@ class DatabaseService with ChangeNotifier {
           .limit(20);
 
       final List<dynamic> data = response as List<dynamic>;
-      final List<ThreadPost> results = data.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      final List<ThreadPost> results = [];
+      for (final json in data) {
+        try {
+          results.add(ThreadPost.fromJson(json, currentUid: _currentUid));
+        } catch (e, stacktrace) {
+          debugPrint('Error parsing thread post in searchThreads: $e\n$stacktrace');
+        }
+      }
       
       // Filter out blocked/muted users, private users we don't follow, and posts hidden from current user
       results.removeWhere((post) {
@@ -2681,7 +2688,14 @@ class DatabaseService with ChangeNotifier {
           .inFilter('id', threadIds);
       
       final List<dynamic> threadsData = threadsRes as List<dynamic>;
-      final posts = threadsData.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+      final List<ThreadPost> posts = [];
+      for (final json in threadsData) {
+        try {
+          posts.add(ThreadPost.fromJson(json, currentUid: _currentUid));
+        } catch (e, stacktrace) {
+          debugPrint('Error parsing thread post in fetchFeed: $e\\n$stacktrace');
+        }
+      }
       
       posts.sort((a, b) => threadIds.indexOf(a.id).compareTo(threadIds.indexOf(b.id)));
       
@@ -2979,7 +2993,14 @@ class DatabaseService with ChangeNotifier {
             .inFilter('id', threadIds);
 
         final List<dynamic> threadsData = threadsRes as List<dynamic>;
-        final List<ThreadPost> posts = threadsData.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+        final List<ThreadPost> posts = [];
+        for (final json in threadsData) {
+          try {
+            posts.add(ThreadPost.fromJson(json, currentUid: _currentUid));
+          } catch (e, stacktrace) {
+            debugPrint('Error parsing thread post in get_personalized_feed: $e\\n$stacktrace');
+          }
+        }
         
         // Sort posts back into the ranked order returned by get_personalized_feed
         posts.sort((a, b) => threadIds.indexOf(a.id).compareTo(threadIds.indexOf(b.id)));
@@ -3042,7 +3063,14 @@ class DatabaseService with ChangeNotifier {
             .range(offset, offset + limit - 1);
         
         final List<dynamic> threadsData = response as List<dynamic>;
-        final List<ThreadPost> posts = threadsData.map((json) => ThreadPost.fromJson(json, currentUid: _currentUid)).toList();
+        final List<ThreadPost> posts = [];
+        for (final json in threadsData) {
+          try {
+            posts.add(ThreadPost.fromJson(json, currentUid: _currentUid));
+          } catch (e, stacktrace) {
+            debugPrint('Error parsing thread post in communities: $e\\n$stacktrace');
+          }
+        }
         fetchedPosts.addAll(posts);
       } catch (fallbackError) {
         debugPrint("AI Feed fallback direct query failed: $fallbackError");
