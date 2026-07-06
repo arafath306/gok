@@ -109,12 +109,12 @@ class _ChatScreenState extends State<ChatScreen> {
       if (_scrollController.hasClients) {
         if (animated) {
           _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
+            0.0,
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOut,
           );
         } else {
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          _scrollController.jumpTo(0.0);
         }
       }
     });
@@ -1296,10 +1296,6 @@ class _MessageListState extends State<_MessageList> {
           });
         }
 
-        // Scroll to bottom when new data arrives
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          widget.onScrollToBottom();
-        });
 
         if (display.isEmpty) {
           return Center(
@@ -1315,15 +1311,18 @@ class _MessageListState extends State<_MessageList> {
           );
         }
 
+        final List<Map<String, dynamic>> reversedDisplay = display.reversed.toList();
+
         return ListView.builder(
+          reverse: true,
           controller: widget.scrollController,
           padding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          itemCount: display.length,
+          itemCount: reversedDisplay.length,
           // RepaintBoundary prevents individual message rebuilds from
           // propagating up to the ListView.
           itemBuilder: (context, index) {
-            final msg = display[index];
+            final msg = reversedDisplay[index];
             return RepaintBoundary(
               child: _MessageBubble(
                 key: ValueKey(msg['id']),

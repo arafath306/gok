@@ -209,7 +209,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
 
           // ── Feed content ─────────────────────────────────────────────
           Expanded(
-            child: dbService.isLoading
+            child: (dbService.isLoading && dbService.personalizedFeed.isEmpty && dbService.feed.isEmpty)
                 ? const ThreadShimmer()
                 // IndexedStack keeps BOTH lists alive so each tab
                 // independently remembers its scroll position.

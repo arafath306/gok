@@ -314,7 +314,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               ? const Color(0xFF070B13).withValues(alpha: 0.6)
               : const Color(0xFFF8FAFC),
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
@@ -550,81 +550,51 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   Widget _buildStepIndicator() {
     final isDark = context.isDarkMode;
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildStepCircle(1),
-            _buildStepConnector(1),
-            _buildStepCircle(2),
-            _buildStepConnector(2),
-            _buildStepCircle(3),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          "Step $_signUpStep of 3",
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+    return Container(
+      width: 150,
+      margin: const EdgeInsets.only(top: 8),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: _buildDynamicSegment(1, isDark)),
+              const SizedBox(width: 6),
+              Expanded(child: _buildDynamicSegment(2, isDark)),
+              const SizedBox(width: 6),
+              Expanded(child: _buildDynamicSegment(3, isDark)),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            "Step $_signUpStep of 3",
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStepCircle(int step) {
-    final isDark = context.isDarkMode;
+  Widget _buildDynamicSegment(int step, bool isDark) {
     bool isCompleted = _signUpStep > step;
     bool isActive = _signUpStep == step;
+    
+    Color bgColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    if (isCompleted || isActive) bgColor = const Color(0xFF5B7FFF);
 
-    return Container(
-      width: 28,
-      height: 28,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: 6,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isCompleted || isActive
-            ? const Color(0xFF5B7FFF)
-            : isDark
-                ? const Color(0xFF1E293B)
-                : const Color(0xFFE2E8F0),
-        border: isActive
-            ? Border.all(
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
-                width: 1.5)
-            : Border.all(color: Colors.transparent),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(3),
+        boxShadow: isActive ? [
+           BoxShadow(color: const Color(0xFF5B7FFF).withValues(alpha: 0.4), blurRadius: 6, offset: const Offset(0, 2))
+        ] : [],
       ),
-      alignment: Alignment.center,
-      child: isCompleted
-          ? const Icon(Icons.check, color: Colors.white, size: 16)
-          : Text(
-              "$step",
-              style: GoogleFonts.inter(
-                color: isCompleted || isActive
-                    ? Colors.white
-                    : isDark
-                        ? Colors.white38
-                        : const Color(0xFF94A3B8),
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-    );
-  }
-
-  Widget _buildStepConnector(int stepAfter) {
-    final isDark = context.isDarkMode;
-    bool isPassed = _signUpStep > stepAfter;
-    return Container(
-      width: 40,
-      height: 2,
-      color: isPassed
-          ? const Color(0xFF5B7FFF)
-          : isDark
-              ? const Color(0xFF1E293B)
-              : const Color(0xFFE2E8F0),
     );
   }
 
@@ -1080,122 +1050,125 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
                     children: [
-                      const SizedBox(height: 24),
-
-                      // Back button (signup steps >= 1)
-                      if (_isSignUp && _signUpStep < 4)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: backBtnBg,
-                              border: Border.all(color: backBtnBorder),
-                              boxShadow: isDark
-                                  ? []
-                                  : [
-                                      BoxShadow(
-                                        color: Colors.black
-                                            .withValues(alpha: 0.06),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                            ),
-                            child: IconButton(
-                              constraints: const BoxConstraints(
-                                  minWidth: 36, minHeight: 36),
-                              padding: const EdgeInsets.all(6),
-                              icon: Icon(Icons.arrow_back,
-                                  color: backBtnIconColor, size: 18),
-                              onPressed: () {
-                                if (_signUpStep > 1) {
-                                  setState(() => _signUpStep--);
-                                } else {
-                                  setState(() => _isSignUp = false);
-                                }
-                              },
-                            ),
-                          ),
-                        )
-                      else
-                        const SizedBox(height: 2),
-
-                      // HERO: animated logo + sparkles
-                      if (!isKeyboardOpen) ...[
-                        AnimatedBuilder(
-                          animation: Listenable.merge([
-                            _floatController,
-                            _glowController,
-                            _sparkleController,
-                          ]),
-                          builder: (context, child) {
-                            return Transform.translate(
-                              offset: Offset(0, _floatAnimation.value * 0.4),
-                              child: Center(
-                                child: SizedBox(
-                                  height: 125,
-                                  width: 125,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    alignment: Alignment.center,
-                                    children: [
-                                      // Glow ring
-                                      Transform.scale(
-                                        scale: _glowAnimation.value,
-                                        child: Container(
-                                          width: 110,
-                                          height: 110,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            gradient: RadialGradient(
-                                              colors: [
-                                                const Color(0xFF5B7FFF)
-                                                    .withValues(alpha: isDark ? 0.32 : 0.16),
-                                                const Color(0xFF7B5FFF)
-                                                    .withValues(alpha: isDark ? 0.14 : 0.06),
-                                                Colors.transparent,
-                                              ],
-                                              stops: const [0.0, 0.5, 1.0],
+                      // Wrap back button and logo in a Stack to save vertical space
+                      SizedBox(
+                        height: isKeyboardOpen ? 48 : 125,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // HERO: animated logo + sparkles (centered)
+                            if (!isKeyboardOpen)
+                              Align(
+                                alignment: Alignment.center,
+                                child: AnimatedBuilder(
+                                  animation: Listenable.merge([
+                                    _floatController,
+                                    _glowController,
+                                    _sparkleController,
+                                  ]),
+                                  builder: (context, child) {
+                                    return Transform.translate(
+                                      offset: Offset(0, _floatAnimation.value * 0.4),
+                                      child: SizedBox(
+                                        height: 125,
+                                        width: 125,
+                                        child: Stack(
+                                          clipBehavior: Clip.none,
+                                          alignment: Alignment.center,
+                                          children: [
+                                            // Glow ring
+                                            Transform.scale(
+                                              scale: _glowAnimation.value,
+                                              child: Container(
+                                                width: 110,
+                                                height: 110,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  gradient: RadialGradient(
+                                                    colors: [
+                                                      const Color(0xFF5B7FFF).withValues(alpha: isDark ? 0.32 : 0.16),
+                                                      const Color(0xFF7B5FFF).withValues(alpha: isDark ? 0.14 : 0.06),
+                                                      Colors.transparent,
+                                                    ],
+                                                    stops: const [0.0, 0.5, 1.0],
+                                                  ),
+                                                ),
+                                              ),
                                             ),
-                                          ),
-                                        ),
-                                      ),
-                                      // Ring stroke
-                                      Transform.scale(
-                                        scale: _glowAnimation.value * 0.97,
-                                        child: Container(
-                                          width: 104,
-                                          height: 104,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: const Color(0xFF5B7FFF)
-                                                  .withValues(alpha: isDark ? 0.2 : 0.12),
-                                              width: 1.2,
+                                            // Ring stroke
+                                            Transform.scale(
+                                              scale: _glowAnimation.value * 0.97,
+                                              child: Container(
+                                                width: 104,
+                                                height: 104,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: const Color(0xFF5B7FFF).withValues(alpha: isDark ? 0.2 : 0.12),
+                                                    width: 1.2,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
-                                          ),
+                                            // App logo
+                                            ClipOval(
+                                              child: Image.asset(
+                                                'assets/logo_transparent.png',
+                                                width: 90,
+                                                height: 90,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                            // Sparkles
+                                            ..._buildSparkles(_sparkleController.value),
+                                          ],
                                         ),
                                       ),
-                                      // App logo
-                                      ClipOval(
-                                        child: Image.asset(
-                                          'assets/logo_transparent.png',
-                                          width: 90,
-                                          height: 90,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      // Sparkles
-                                      ..._buildSparkles(_sparkleController.value),
-                                    ],
+                                    );
+                                  },
+                                ),
+                              ),
+
+                            // Back button (top left)
+                            if (_isSignUp && _signUpStep < 4)
+                              Align(
+                                alignment: Alignment.topLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: backBtnBg,
+                                      border: Border.all(color: backBtnBorder),
+                                      boxShadow: isDark
+                                          ? []
+                                          : [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: 0.06),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                    ),
+                                    child: IconButton(
+                                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                      padding: const EdgeInsets.all(6),
+                                      icon: Icon(Icons.arrow_back, color: backBtnIconColor, size: 18),
+                                      onPressed: () {
+                                        if (_signUpStep > 1) {
+                                          setState(() => _signUpStep--);
+                                        } else {
+                                          setState(() => _isSignUp = false);
+                                        }
+                                      },
+                                    ),
                                   ),
                                 ),
                               ),
-                            );
-                          },
+                          ],
                         ),
-                        const SizedBox(height: 12),
+                      ),
+                      const SizedBox(height: 12),
 
                         if (!_isSignUp || _signUpStep < 3) ...[
                           Text(
@@ -1273,8 +1246,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 16),
-                      ],
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),

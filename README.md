@@ -98,8 +98,8 @@ Pigeon/
 
 ```bash
 # Clone the repository
-git clone https://github.com/arafath306/gok.git
-cd gok
+git clone https://github.com/arafath306/pigeon.git
+cd pigeon
 
 # Get packages
 flutter pub get

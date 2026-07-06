@@ -235,8 +235,10 @@ class CommunityService extends ChangeNotifier {
       // Increment count
       await _supabase.rpc('increment_community_member_count', params: {'c_id': communityId});
       
-      await fetchJoinedCommunities();
-      await fetchRecommendedCommunities();
+      await Future.wait([
+        fetchJoinedCommunities(),
+        fetchRecommendedCommunities(),
+      ]);
       return true;
     } catch (e) {
       debugPrint("Error joining community: $e");
@@ -256,8 +258,10 @@ class CommunityService extends ChangeNotifier {
       // Decrement count
       await _supabase.rpc('decrement_community_member_count', params: {'c_id': communityId});
       
-      await fetchJoinedCommunities();
-      await fetchRecommendedCommunities();
+      await Future.wait([
+        fetchJoinedCommunities(),
+        fetchRecommendedCommunities(),
+      ]);
       return true;
     } catch (e) {
       debugPrint("Error leaving community: $e");

@@ -28,6 +28,12 @@ class MainScreen extends StatefulWidget {
 }
 
 class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
+  void openDrawer() {
+    scaffoldKey.currentState?.openDrawer();
+  }
+
   int _currentIndex = 0;
   late PageController _pageController;
   late AnimationController _fabAnimationController;
@@ -798,6 +804,7 @@ WhatsApp: +8801313961899''',
     ];
 
     return Scaffold(
+      key: scaffoldKey,
       backgroundColor: context.scaffoldBg,
       extendBody: true,
       drawer: Drawer(

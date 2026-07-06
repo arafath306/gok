@@ -123,10 +123,31 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     final channel = supabaseClient.channel('messages_realtime:$otherUserId');
     final controller = StreamController<sb.PostgresChangePayload>();
     
+    final myId = supabaseClient.auth.currentUser?.id ?? '';
+    
     final subscription = channel.onPostgresChanges(
       event: sb.PostgresChangeEvent.all,
       schema: 'public',
       table: 'messages',
+      filter: sb.PostgresChangeFilter(
+        type: sb.PostgresChangeFilterType.eq,
+        column: 'receiver_id',
+        value: myId,
+      ),
+      callback: (payload) {
+        if (!controller.isClosed) {
+          controller.add(payload);
+        }
+      },
+    ).onPostgresChanges(
+      event: sb.PostgresChangeEvent.all,
+      schema: 'public',
+      table: 'messages',
+      filter: sb.PostgresChangeFilter(
+        type: sb.PostgresChangeFilterType.eq,
+        column: 'sender_id',
+        value: myId,
+      ),
       callback: (payload) {
         if (!controller.isClosed) {
           controller.add(payload);

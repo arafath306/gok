@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
 import '../models/thread_post.dart';
@@ -478,9 +480,38 @@ class DatabaseService with ChangeNotifier {
     _clearAllData();
   }
 
+  Future<void> _loadCachedAIFeed() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? cachedJson = prefs.getString('cached_ai_feed_$_currentUid');
+      if (cachedJson != null) {
+        final List<dynamic> decodedList = jsonDecode(cachedJson);
+        final List<ThreadPost> cachedPosts = [];
+        for (final json in decodedList) {
+          try {
+            cachedPosts.add(ThreadPost.fromJson(json, currentUid: _currentUid));
+          } catch (e) {
+            debugPrint('Error parsing cached post: $e');
+          }
+        }
+        if (cachedPosts.isNotEmpty && _personalizedFeed.isEmpty) {
+          _personalizedFeed = cachedPosts;
+          _updateCache(cachedPosts);
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading cached feed: $e');
+    }
+  }
+
   void _onUserReady() async {
     _isLoading = true;
     notifyListeners();
+    
+    // Load offline cached feed first
+    await _loadCachedAIFeed();
+    
     await fetchBlockedMutedLists();
     fetchMyProfile();
     fetchFollowingList();
@@ -529,6 +560,16 @@ class DatabaseService with ChangeNotifier {
     // Unsubscribe if channels already exist
     unsubscribeRealtime();
 
+    // -------------------------------------------------------------------------
+    // PRODUCTION SCALABILITY FIX:
+    // Global subscriptions to threads, likes, comments, follows, and poll_votes
+    // have been disabled. Subscribing to these tables globally causes massive
+    // performance issues and connection crashes when the user base grows, 
+    // as every user receives every global event.
+    // Use pull-to-refresh instead for these global feeds.
+    // -------------------------------------------------------------------------
+
+    /*
     _threadsChannel = _supabase
         .channel('public:threads')
         .onPostgresChanges(
@@ -572,9 +613,6 @@ class DatabaseService with ChangeNotifier {
             schema: 'public',
             table: 'comments',
             callback: (payload) {
-              // Only update the reply count in the feed cache — do NOT call fetchFeed()
-              // because that triggers notifyListeners() which rebuilds CommentsSheet and
-              // can cause the nested comment system to appear to revert.
               final threadId = (payload.newRecord['thread_id'] ?? payload.oldRecord['thread_id']) as String?;
               final parentId = (payload.newRecord['parent_id'] ?? payload.oldRecord['parent_id']) as String?;
               if (threadId != null && parentId == null) {
@@ -594,13 +632,19 @@ class DatabaseService with ChangeNotifier {
               fetchMyProfile();
             })
         .subscribe();
+    */
 
     _notificationsChannel = _supabase
-        .channel('public:notifications')
+        .channel('public:notifications:$_currentUid')
         .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: _currentUid,
+            ),
             callback: (payload) {
               fetchNotifications();
               fetchUnreadCounts();
@@ -615,11 +659,16 @@ class DatabaseService with ChangeNotifier {
         .subscribe();
 
     _messagesChannel = _supabase
-        .channel('public:messages')
+        .channel('public:messages:$_currentUid')
         .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'messages',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'receiver_id',
+              value: _currentUid,
+            ),
             callback: (payload) {
               fetchUnreadCounts();
               
@@ -633,11 +682,16 @@ class DatabaseService with ChangeNotifier {
         .subscribe();
 
     _blocksChannel = _supabase
-        .channel('public:blocks')
+        .channel('public:blocks:$_currentUid')
         .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'blocks',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: _currentUid,
+            ),
             callback: (payload) {
               fetchBlockedMutedLists();
               fetchFeed(silent: true);
@@ -645,17 +699,23 @@ class DatabaseService with ChangeNotifier {
         .subscribe();
 
     _mutesChannel = _supabase
-        .channel('public:mutes')
+        .channel('public:mutes:$_currentUid')
         .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'mutes',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: _currentUid,
+            ),
             callback: (payload) {
               fetchBlockedMutedLists();
               fetchFeed(silent: true);
             })
         .subscribe();
 
+    /*
     _pollVotesChannel = _supabase
         .channel('public:poll_votes')
         .onPostgresChanges(
@@ -669,6 +729,7 @@ class DatabaseService with ChangeNotifier {
               }
             })
         .subscribe();
+    */
   }
 
   void unsubscribeRealtime() {
@@ -1197,14 +1258,18 @@ class DatabaseService with ChangeNotifier {
     final result = await sl<GetFeedUseCase>()(silent: silent);
     result.fold(
       (failure) {
-        _isLoading = false;
+        if (!silent) {
+          _isLoading = false;
+        }
         notifyListeners();
         debugPrint("Fetch feed error: ${failure.message}");
       },
       (entities) {
         _feed = entities.map((e) => _entityToModel(e)).toList();
         _updateCache(_feed);
-        _isLoading = false;
+        if (!silent) {
+          _isLoading = false;
+        }
         notifyListeners();
       },
     );
@@ -3052,26 +3117,49 @@ class DatabaseService with ChangeNotifier {
       debugPrint("Fetch personalized AI feed RPC error: $e. Falling back to direct fetch.");
     }
 
-    // Fallback: If we couldn't load any posts from RPC (due to error or empty result), fetch directly from threads
-    if (fetchedPosts.isEmpty) {
+    // Fallback/Padding: If we couldn't load enough posts from RPC, fetch directly from threads to pad the feed
+    if (fetchedPosts.length < limit) {
+      final int remainingLimit = limit - fetchedPosts.length;
       try {
-        final response = await _supabase
+        var query = _supabase
             .from('threads')
-            .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)')
-            .order('created_at', ascending: false)
-            .limit(limit)
-            .range(offset, offset + limit - 1);
-        
-        final List<dynamic> threadsData = response as List<dynamic>;
-        final List<ThreadPost> posts = [];
-        for (final json in threadsData) {
-          try {
-            posts.add(ThreadPost.fromJson(json, currentUid: _currentUid));
-          } catch (e, stacktrace) {
-            debugPrint('Error parsing thread post in communities: $e\\n$stacktrace');
-          }
+            .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*)');
+            
+        if (fetchedPosts.isNotEmpty) {
+           final existingIds = fetchedPosts.map((p) => p.id).toList();
+           // Avoid adding .not() on TransformBuilder. Just filter existingIds in memory later
+           // Fetch a bit extra in case of overlaps
+           final response = await query
+               .order('created_at', ascending: false)
+               .limit(limit + fetchedPosts.length);
+               
+           final List<dynamic> threadsData = response as List<dynamic>;
+           for (final json in threadsData) {
+             try {
+               final post = ThreadPost.fromJson(json, currentUid: _currentUid);
+               if (!existingIds.contains(post.id) && fetchedPosts.length < limit) {
+                 fetchedPosts.add(post);
+               }
+             } catch (e, stacktrace) {
+               debugPrint('Error parsing thread post in fallback: $e\\n$stacktrace');
+             }
+           }
+        } else {
+           // Normal paginated fetch
+           final response = await query
+               .order('created_at', ascending: false)
+               .limit(limit)
+               .range(offset, offset + limit - 1);
+               
+           final List<dynamic> threadsData = response as List<dynamic>;
+           for (final json in threadsData) {
+             try {
+               fetchedPosts.add(ThreadPost.fromJson(json, currentUid: _currentUid));
+             } catch (e, stacktrace) {
+               debugPrint('Error parsing thread post in fallback: $e\\n$stacktrace');
+             }
+           }
         }
-        fetchedPosts.addAll(posts);
       } catch (fallbackError) {
         debugPrint("AI Feed fallback direct query failed: $fallbackError");
       }
@@ -3101,13 +3189,26 @@ class DatabaseService with ChangeNotifier {
 
     _updateCache(fetchedPosts);
 
+    // Save to offline cache if this was the main fetch (not loadMore)
+    if (!loadMore) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final String jsonString = jsonEncode(_personalizedFeed.take(30).map((e) => e.toJson()).toList());
+        await prefs.setString('cached_ai_feed_$_currentUid', jsonString);
+      } catch (e) {
+        debugPrint('Error saving cached feed: $e');
+      }
+    }
+
     if (fetchedPosts.length < limit) {
       _aiFeedHasMore = false;
     } else {
       _aiFeedPage++;
     }
 
-    _isLoading = false;
+    if (!silent && !loadMore) {
+      _isLoading = false;
+    }
     notifyListeners();
   }
 

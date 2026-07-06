@@ -202,6 +202,38 @@ class ThreadPost {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'profiles': author.toJson(),
+      'content': content,
+      'image_urls': imageUrls,
+      'video_url': videoUrl,
+      'likes_count': likesCount,
+      'replies_count': repliesCount,
+      'reposts_count': repostsCount,
+      'saves_count': savesCount,
+      'shares_count': sharesCount,
+      'views_count': viewsCount,
+      'community_id': communityId,
+      'communities': community?.toJson(),
+      'created_at': createdAt, // This is a formatted string, we save it back directly
+      'is_pinned': isPinned,
+      'mute_notifications': muteNotifications,
+      'hide_from_profile': hideFromProfile,
+      'is_repost': isRepost,
+      'reposted_post': repostedPost?.toJson(),
+      'quote_text': quoteText,
+      'poll_options': pollOptions?.map((e) => e.toJson()).toList(),
+      'poll_expires_at': pollExpiresAt?.toIso8601String(),
+      'likes': isLikedByMe ? [{'user_id': userId}] : null, // Simulate like for current user mapping
+      'thread_hides': isHiddenFromMe ? [{'user_id': userId}] : null,
+      'poll_votes': hasVotedPoll && votedOptionId != null ? [{'user_id': userId, 'poll_option_id': votedOptionId}] : null,
+      if (musicTrack != null) 'content': '$content🎵DakMusic🎵${musicTrack!.toJson()}', // Restore original payload for music
+    };
+  }
+
   ThreadPost copyWith({
     String? id,
     String? userId,

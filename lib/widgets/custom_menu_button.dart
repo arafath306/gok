@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
+import '../screens/main_screen.dart';
 
 class CustomMenuButton extends StatelessWidget {
   final VoidCallback? onTap;
@@ -10,7 +11,10 @@ class CustomMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap ?? () => Scaffold.of(context).openDrawer(),
+      onTap: onTap ?? () {
+        final mainState = context.findAncestorStateOfType<MainScreenState>();
+        mainState?.openDrawer();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         child: Column(

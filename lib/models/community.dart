@@ -47,6 +47,23 @@ class Community {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'handle': handle,
+      'topic': topic,
+      'description': description,
+      'avatar_url': avatarUrl,
+      'banner_url': bannerUrl,
+      'privacy': privacy,
+      'owner_id': ownerId,
+      'member_count': memberCount,
+      'is_verified': isVerified,
+      'created_at': createdAt,
+    };
+  }
+
   Community copyWith({
     String? id,
     String? name,

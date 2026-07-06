@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../../services/general_settings_provider.dart';
 import '../../models/profile.dart';
@@ -903,8 +904,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                     style: GoogleFonts.hindSiliguri(
                         fontSize: 15, color: Colors.red)),
                 onTap: () {
-                  Navigator.pop(context);
-                  // handled by auth service
+                  Navigator.pop(context); // close bottom sheet
+                  Provider.of<AuthService>(context, listen: false).handleSignout();
+                  Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
                 },
               ),
             ] else ...[

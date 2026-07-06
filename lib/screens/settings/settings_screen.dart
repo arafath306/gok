@@ -480,6 +480,7 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () {
               Navigator.pop(ctx);
               Provider.of<AuthService>(context, listen: false).handleSignout();
+              Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,

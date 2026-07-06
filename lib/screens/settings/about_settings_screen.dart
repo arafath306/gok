@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/dak_logo.dart';
@@ -37,7 +37,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
             ),
           ),
           content: Text(
-            'You are on the latest release!\n\nVersion: 2.9.2\nBuild: 29',
+            'You are on the latest release!\n\nVersion: 2.9.3\nBuild: 30',
             style: GoogleFonts.inter(color: context.textSecondary),
           ),
           actions: [
@@ -126,7 +126,7 @@ class _AboutSettingsScreenState extends State<AboutSettingsScreen> {
           ),
           Center(
             child: Text(
-              'Version 2.9.2 (Build 29)',
+              'Version 2.9.3 (Build 30)',
               style: GoogleFonts.inter(fontSize: 13, color: context.textMuted),
             ),
           ),

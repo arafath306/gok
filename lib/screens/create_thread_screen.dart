@@ -1337,6 +1337,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
 
   Widget _buildPollCreator() {
     return Container(
+      width: double.infinity,
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1438,8 +1439,11 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
               ),
             );
           }),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 12,
             children: [
               if (_pollControllers.length < 4)
                 TextButton.icon(
@@ -1462,6 +1466,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
               else
                 const SizedBox.shrink(),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     "Duration: ",
