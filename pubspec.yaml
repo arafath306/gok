@@ -37,13 +37,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/logo.png
     - assets/logo_transparent.png
-    - assets/pigeon_logo.png
     - assets/onboarding_illus_4.png
-    - assets/auth_clouds.png
-    - assets/auth_dove.png
-    - assets/auth_glow_ring.png
     - assets/dak_icon.png
     - assets/sounds/pop.mp3
     - assets/sounds/chime.wav
