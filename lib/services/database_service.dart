@@ -1911,11 +1911,21 @@ class DatabaseService with ChangeNotifier {
       final senderPublicKey = senderProfile?.publicKey;
       if (senderPublicKey != null && senderPublicKey.isNotEmpty) {
         try {
-          final decrypted = await sl<E2EEService>().decryptMessage(
-            rawContent,
-            senderPublicKey,
-          );
-          body = (decrypted != null && decrypted.isNotEmpty) ? decrypted : 'Sent you a message';
+          final parts = rawContent.split(':');
+          if (parts.length == 5) {
+            final nonceBase64 = parts[2];
+            final macBase64 = parts[3];
+            final cipherTextBase64 = parts[4];
+            final decrypted = await sl<E2EEService>().decryptMessage(
+              cipherTextBase64,
+              nonceBase64,
+              macBase64,
+              senderPublicKey,
+            );
+            body = (decrypted != null && decrypted.isNotEmpty) ? decrypted : 'Sent you a message';
+          } else {
+            body = 'Sent you a message';
+          }
         } catch (e) {
           debugPrint('Notification decryption error: $e');
           body = 'Sent you a message';
