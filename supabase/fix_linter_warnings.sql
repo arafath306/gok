@@ -53,6 +53,7 @@ CREATE POLICY "Allow insert on audit_logs" ON public.audit_logs FOR INSERT TO au
 
 -- notifications
 DROP POLICY IF EXISTS "Allow anyone to insert notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Allow authenticated users to insert notifications" ON public.notifications;
 CREATE POLICY "Allow authenticated users to insert notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 
 -- poll_options
@@ -65,6 +66,7 @@ CREATE POLICY "Allow authenticated users to insert post_topics" ON public.post_t
 
 -- support_tickets
 DROP POLICY IF EXISTS "Allow public to insert support tickets" ON public.support_tickets;
+DROP POLICY IF EXISTS "Allow authenticated users to insert support tickets" ON public.support_tickets;
 CREATE POLICY "Allow authenticated users to insert support tickets" ON public.support_tickets FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 
 -- topics
@@ -76,6 +78,7 @@ CREATE POLICY "Allow authenticated users to update topics" ON public.topics FOR 
 
 -- system_settings (Restricting to service_role instead of fully public updates)
 DROP POLICY IF EXISTS "Allow authenticated users to modify system_settings" ON public.system_settings;
+DROP POLICY IF EXISTS "Allow service_role to modify system_settings" ON public.system_settings;
 CREATE POLICY "Allow service_role to modify system_settings" ON public.system_settings TO service_role USING (true) WITH CHECK (true);
 
 -- 4. FIX: PUBLIC CAN EXECUTE SECURITY DEFINER FUNCTION (0028)
