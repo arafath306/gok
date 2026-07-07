@@ -1,0 +1,97 @@
+-- ============================================================================
+-- SCRIPT TO FIX SUPABASE DATABASE SECURITY LINTER WARNINGS
+-- Copy this entire file and run it in your Supabase SQL Editor.
+-- ============================================================================
+
+-- 1. FIX: FUNCTION SEARCH PATH MUTABLE (0011)
+-- Set explicit search_path for SECURITY DEFINER functions
+ALTER FUNCTION public.handle_new_user SET search_path = public;
+ALTER FUNCTION public.handle_comment_change SET search_path = public;
+ALTER FUNCTION public.handle_repost_change SET search_path = public;
+ALTER FUNCTION public.handle_follow_change SET search_path = public;
+ALTER FUNCTION public.handle_like_change SET search_path = public;
+ALTER FUNCTION public.notify_on_comment SET search_path = public;
+ALTER FUNCTION public.notify_on_like SET search_path = public;
+ALTER FUNCTION public.notify_on_follow SET search_path = public;
+ALTER FUNCTION public.increment_thread_views SET search_path = public;
+ALTER FUNCTION public.extract_words_and_hashtags SET search_path = public;
+ALTER FUNCTION public.sync_thread_topics SET search_path = public;
+ALTER FUNCTION public.get_topic_threads SET search_path = public;
+ALTER FUNCTION public.get_ai_feed_threads SET search_path = public;
+ALTER FUNCTION public.get_ai_feed SET search_path = public;
+ALTER FUNCTION public.score_thread SET search_path = public;
+ALTER FUNCTION public.log_user_interaction SET search_path = public;
+ALTER FUNCTION public.get_personalized_feed SET search_path = public;
+ALTER FUNCTION public.clear_feed_cache_on_new_post SET search_path = public;
+ALTER FUNCTION public.handle_verification_request_insert SET search_path = public;
+ALTER FUNCTION public.handle_verification_request_update SET search_path = public;
+ALTER FUNCTION public.increment_shares_count SET search_path = public;
+ALTER FUNCTION public.handle_saved_posts_change SET search_path = public;
+ALTER FUNCTION public.increment_comment_shares_count SET search_path = public;
+ALTER FUNCTION public.handle_saved_comments_change SET search_path = public;
+ALTER FUNCTION public.get_trending_topics SET search_path = public;
+ALTER FUNCTION public.get_rising_topics SET search_path = public;
+ALTER FUNCTION public.get_most_discussed_topics SET search_path = public;
+ALTER FUNCTION public.increment_community_member_count SET search_path = public;
+ALTER FUNCTION public.decrement_community_member_count SET search_path = public;
+ALTER FUNCTION public.notify_fcm_edge_function SET search_path = public;
+ALTER FUNCTION public.generate_all_topic_headlines SET search_path = public;
+ALTER FUNCTION public.generate_topic_headline SET search_path = public;
+ALTER FUNCTION public.grant_verified_badge SET search_path = public;
+
+-- 2. FIX: EXTENSION IN PUBLIC (0014)
+-- Move pg_net out of the public schema
+CREATE SCHEMA IF NOT EXISTS extensions;
+ALTER EXTENSION pg_net SET SCHEMA extensions;
+
+-- 3. FIX: PERMISSIVE RLS POLICIES (0024)
+-- Replace WITH CHECK (true) with WITH CHECK (auth.uid() IS NOT NULL)
+
+-- audit_logs
+DROP POLICY IF EXISTS "Allow insert on audit_logs" ON public.audit_logs;
+CREATE POLICY "Allow insert on audit_logs" ON public.audit_logs FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+
+-- notifications
+DROP POLICY IF EXISTS "Allow anyone to insert notifications" ON public.notifications;
+CREATE POLICY "Allow authenticated users to insert notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+
+-- poll_options
+DROP POLICY IF EXISTS "Allow authenticated users to insert poll_options" ON public.poll_options;
+CREATE POLICY "Allow authenticated users to insert poll_options" ON public.poll_options FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+
+-- post_topics
+DROP POLICY IF EXISTS "Allow authenticated users to insert post_topics" ON public.post_topics;
+CREATE POLICY "Allow authenticated users to insert post_topics" ON public.post_topics FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+
+-- support_tickets
+DROP POLICY IF EXISTS "Allow public to insert support tickets" ON public.support_tickets;
+CREATE POLICY "Allow authenticated users to insert support tickets" ON public.support_tickets FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+
+-- topics
+DROP POLICY IF EXISTS "Allow authenticated users to insert topics" ON public.topics;
+CREATE POLICY "Allow authenticated users to insert topics" ON public.topics FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Allow authenticated users to update topics" ON public.topics;
+CREATE POLICY "Allow authenticated users to update topics" ON public.topics FOR UPDATE TO authenticated USING (auth.uid() IS NOT NULL) WITH CHECK (auth.uid() IS NOT NULL);
+
+-- system_settings (Restricting to service_role instead of fully public updates)
+DROP POLICY IF EXISTS "Allow authenticated users to modify system_settings" ON public.system_settings;
+CREATE POLICY "Allow service_role to modify system_settings" ON public.system_settings TO service_role USING (true) WITH CHECK (true);
+
+-- 4. FIX: PUBLIC CAN EXECUTE SECURITY DEFINER FUNCTION (0028)
+-- Revoke execution from anonymous users for secure functions
+REVOKE EXECUTE ON FUNCTION public.clear_feed_cache_on_new_post FROM anon;
+REVOKE EXECUTE ON FUNCTION public.decrement_community_member_count FROM anon;
+REVOKE EXECUTE ON FUNCTION public.generate_all_topic_headlines FROM anon;
+REVOKE EXECUTE ON FUNCTION public.generate_topic_headline FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_personalized_feed FROM anon;
+REVOKE EXECUTE ON FUNCTION public.grant_verified_badge FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_comment_change FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_follow_change FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_like_change FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_repost_change FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_saved_comments_change FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_saved_posts_change FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_verification_request_insert FROM anon;
+REVOKE EXECUTE ON FUNCTION public.increment_community_member_count FROM anon;
