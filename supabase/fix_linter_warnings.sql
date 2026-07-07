@@ -79,19 +79,40 @@ DROP POLICY IF EXISTS "Allow authenticated users to modify system_settings" ON p
 CREATE POLICY "Allow service_role to modify system_settings" ON public.system_settings TO service_role USING (true) WITH CHECK (true);
 
 -- 4. FIX: PUBLIC CAN EXECUTE SECURITY DEFINER FUNCTION (0028)
--- Revoke execution from anonymous users for secure functions
-REVOKE EXECUTE ON FUNCTION public.clear_feed_cache_on_new_post FROM anon;
-REVOKE EXECUTE ON FUNCTION public.decrement_community_member_count FROM anon;
-REVOKE EXECUTE ON FUNCTION public.generate_all_topic_headlines FROM anon;
-REVOKE EXECUTE ON FUNCTION public.generate_topic_headline FROM anon;
-REVOKE EXECUTE ON FUNCTION public.get_personalized_feed FROM anon;
-REVOKE EXECUTE ON FUNCTION public.grant_verified_badge FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_comment_change FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_follow_change FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_like_change FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_new_user FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_repost_change FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_saved_comments_change FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_saved_posts_change FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_verification_request_insert FROM anon;
-REVOKE EXECUTE ON FUNCTION public.increment_community_member_count FROM anon;
+-- In Postgres, functions are granted to PUBLIC by default. We must revoke from PUBLIC.
+-- Revoke from PUBLIC for ALL listed SECURITY DEFINER functions:
+REVOKE EXECUTE ON FUNCTION public.clear_feed_cache_on_new_post FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.decrement_community_member_count FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.generate_all_topic_headlines FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.generate_topic_headline FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_personalized_feed FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.grant_verified_badge FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.revoke_verified_badge FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_comment_change FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_follow_change FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_like_change FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_repost_change FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_saved_comments_change FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_saved_posts_change FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_verification_request_insert FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_verification_request_update FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.increment_community_member_count FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.increment_comment_shares_count FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.increment_shares_count FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.increment_thread_views FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.log_user_interaction FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.notify_fcm_edge_function FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.notify_on_comment FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.notify_on_follow FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.notify_on_like FROM PUBLIC;
+
+-- 5. GRANT EXECUTE TO AUTHENTICATED ONLY FOR FRONTEND RPCs
+-- Triggers and admin functions remain restricted. Only allow app-facing RPCs for logged-in users.
+GRANT EXECUTE ON FUNCTION public.decrement_community_member_count TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_community_member_count TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_comment_shares_count TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_shares_count TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_thread_views TO authenticated;
+GRANT EXECUTE ON FUNCTION public.log_user_interaction TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_personalized_feed TO authenticated;
