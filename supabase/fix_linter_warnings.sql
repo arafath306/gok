@@ -81,41 +81,43 @@ DROP POLICY IF EXISTS "Allow authenticated users to modify system_settings" ON p
 DROP POLICY IF EXISTS "Allow service_role to modify system_settings" ON public.system_settings;
 CREATE POLICY "Allow service_role to modify system_settings" ON public.system_settings TO service_role USING (true) WITH CHECK (true);
 
--- 4. FIX: PUBLIC CAN EXECUTE SECURITY DEFINER FUNCTION (0028)
--- In Postgres, functions are granted to PUBLIC by default. We must revoke from PUBLIC.
--- Revoke from PUBLIC for ALL listed SECURITY DEFINER functions:
-REVOKE EXECUTE ON FUNCTION public.clear_feed_cache_on_new_post FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.decrement_community_member_count FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.generate_all_topic_headlines FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.generate_topic_headline FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.get_personalized_feed FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.grant_verified_badge FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.revoke_verified_badge FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_comment_change FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_follow_change FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_like_change FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_new_user FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_repost_change FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_saved_comments_change FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_saved_posts_change FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_verification_request_insert FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.handle_verification_request_update FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.increment_community_member_count FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.increment_comment_shares_count FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.increment_shares_count FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.increment_thread_views FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.log_user_interaction FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.notify_fcm_edge_function FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.notify_on_comment FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.notify_on_follow FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.notify_on_like FROM PUBLIC;
+-- 4. FIX: PUBLIC CAN EXECUTE SECURITY DEFINER FUNCTION (0028 & 0029)
+-- In Postgres, functions are granted to PUBLIC by default. We must revoke from PUBLIC, anon, and authenticated.
+-- Using exact signatures to ensure the correct function is modified.
+REVOKE EXECUTE ON FUNCTION public.clear_feed_cache_on_new_post() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.decrement_community_member_count(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.generate_all_topic_headlines() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.generate_topic_headline(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.get_personalized_feed(uuid, integer, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.grant_verified_badge(uuid, text, timestamp with time zone) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.revoke_verified_badge(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_comment_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_follow_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_like_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_repost_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_saved_comments_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_saved_posts_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_verification_request_insert() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_verification_request_update() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.increment_community_member_count(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.increment_comment_shares_count(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.increment_shares_count(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.increment_thread_views(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.log_user_interaction(uuid, uuid, text, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_fcm_edge_function() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_comment() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_follow() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_like() FROM PUBLIC, anon, authenticated;
 
 -- 5. GRANT EXECUTE TO AUTHENTICATED ONLY FOR FRONTEND RPCs
--- Triggers and admin functions remain restricted. Only allow app-facing RPCs for logged-in users.
-GRANT EXECUTE ON FUNCTION public.decrement_community_member_count TO authenticated;
-GRANT EXECUTE ON FUNCTION public.increment_community_member_count TO authenticated;
-GRANT EXECUTE ON FUNCTION public.increment_comment_shares_count TO authenticated;
-GRANT EXECUTE ON FUNCTION public.increment_shares_count TO authenticated;
-GRANT EXECUTE ON FUNCTION public.increment_thread_views TO authenticated;
-GRANT EXECUTE ON FUNCTION public.log_user_interaction TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_personalized_feed TO authenticated;
+-- Only allow app-facing RPCs for logged-in users.
+-- Note: Supabase Linter (0029) will still warn about these because they are SECURITY DEFINER.
+-- This is an ACCEPTED RISK because the app frontend needs to call them. You can ignore those specific warnings.
+GRANT EXECUTE ON FUNCTION public.decrement_community_member_count(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_community_member_count(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_comment_shares_count(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_shares_count(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_thread_views(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.log_user_interaction(uuid, uuid, text, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_personalized_feed(uuid, integer, integer) TO authenticated;
