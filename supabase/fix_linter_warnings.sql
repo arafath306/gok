@@ -40,9 +40,9 @@ ALTER FUNCTION public.generate_topic_headline SET search_path = public;
 ALTER FUNCTION public.grant_verified_badge SET search_path = public;
 
 -- 2. FIX: EXTENSION IN PUBLIC (0014)
--- Move pg_net out of the public schema
-CREATE SCHEMA IF NOT EXISTS extensions;
-ALTER EXTENSION pg_net SET SCHEMA extensions;
+-- 2. FIX: EXTENSION IN PUBLIC (0014)
+-- pg_net does not support SET SCHEMA, so we skip this warning to avoid dropping the extension and losing queue data.
+-- If you want to fix it in the future, you would have to DROP EXTENSION pg_net CASCADE and recreate it in the extensions schema.
 
 -- 3. FIX: PERMISSIVE RLS POLICIES (0024)
 -- Replace WITH CHECK (true) with WITH CHECK (auth.uid() IS NOT NULL)
