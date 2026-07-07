@@ -34,6 +34,7 @@ import '../features/profile/domain/usecases/fetch_admin_verification_requests_us
 import '../features/profile/domain/usecases/update_verification_request_status_use_case.dart';
 import '../features/notifications/domain/usecases/show_notification_use_case.dart';
 import '../features/notifications/domain/usecases/play_sound_use_case.dart';
+import '../core/security/e2ee_service.dart';
 
 class DatabaseService with ChangeNotifier {
   final _supabase = Supabase.instance.client;
@@ -1903,9 +1904,28 @@ class DatabaseService with ChangeNotifier {
   void _handleIncomingMessage(Map<String, dynamic> msg) async {
     final senderProfile = await fetchProfile(msg['sender_id'] as String);
     final senderName = senderProfile?.fullName ?? "Someone";
-    final body = (msg['content'] as String?)?.isNotEmpty == true
-        ? msg['content'] as String
-        : '📷 Photo';
+    final rawContent = msg['content'] as String? ?? '';
+
+    String body;
+    if (rawContent.startsWith('E2EE:v1:')) {
+      final senderPublicKey = senderProfile?.publicKey;
+      if (senderPublicKey != null && senderPublicKey.isNotEmpty) {
+        try {
+          final decrypted = await sl<E2EEService>().decryptMessage(
+            rawContent,
+            senderPublicKey,
+          );
+          body = (decrypted != null && decrypted.isNotEmpty) ? decrypted : 'Sent you a message';
+        } catch (e) {
+          debugPrint('Notification decryption error: $e');
+          body = 'Sent you a message';
+        }
+      } else {
+        body = 'Sent you a message';
+      }
+    } else {
+      body = rawContent.isNotEmpty ? rawContent : '📷 Photo';
+    }
 
     // Play chime sound
     sl<PlaySoundUseCase>().call(SoundType.chime);

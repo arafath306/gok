@@ -33,6 +33,14 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/launcher_icon_solid.png"
+  adaptive_icon_background: "assets/launcher_background.png"
+  adaptive_icon_foreground: "assets/launcher_foreground.png"
 
 flutter:
   uses-material-design: true
@@ -44,4 +52,7 @@ flutter:
     - assets/sounds/chime.wav
     - assets/sounds/send.wav
     - assets/sounds/ping.mp3
+    - assets/launcher_background.png
+    - assets/launcher_foreground.png
+    - assets/launcher_icon_solid.png
 
