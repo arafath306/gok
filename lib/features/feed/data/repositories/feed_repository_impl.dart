@@ -179,10 +179,12 @@ class FeedRepositoryImpl implements IFeedRepository {
     String content, {
     List<String>? imageUrls,
     String? videoUrl,
+    String? audioUrl,
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
     String? communityId,
+    bool isSubscriberOnly = false,
   }) async {
     try {
       final result = await remoteDataSource.createThread(
@@ -190,10 +192,12 @@ class FeedRepositoryImpl implements IFeedRepository {
         content,
         imageUrls: imageUrls,
         videoUrl: videoUrl,
+        audioUrl: audioUrl,
         audience: audience,
         pollOptions: pollOptions,
         pollExpiresAt: pollExpiresAt,
         communityId: communityId,
+        isSubscriberOnly: isSubscriberOnly,
       );
       return Right(result);
     } catch (e) {

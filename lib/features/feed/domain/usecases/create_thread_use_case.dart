@@ -10,19 +10,23 @@ class CreateThreadUseCase {
     String content, {
     List<String>? imageUrls,
     String? videoUrl,
+    String? audioUrl,
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
     String? communityId,
+    bool isSubscriberOnly = false,
   }) {
     return repository.createThread(
       content,
       imageUrls: imageUrls,
       videoUrl: videoUrl,
+      audioUrl: audioUrl,
       audience: audience,
       pollOptions: pollOptions,
       pollExpiresAt: pollExpiresAt,
       communityId: communityId,
+      isSubscriberOnly: isSubscriberOnly,
     );
   }
 }

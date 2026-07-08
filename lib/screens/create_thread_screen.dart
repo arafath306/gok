@@ -15,7 +15,10 @@ import 'drafts_screen.dart';
 import 'photo_editor_screen.dart';
 import '../models/music_track.dart';
 import '../widgets/music_search_sheet.dart';
-
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
+import '../services/general_settings_provider.dart';
 
 class CreateThreadScreen extends StatefulWidget {
   final ThreadPost? quotePost;
@@ -40,6 +43,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   bool _showImageInput = false;
   bool _showVideoInput = false;
   bool _isAnonymous = false;
+  bool _isSubscriberOnly = false;
 
   final List<Uint8List> _selectedImagesBytesList = [];
   final List<Uint8List> _originalImagesBytesList = [];
@@ -68,7 +72,11 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   bool _isRecording = false;
   int _recordingSeconds = 0;
   Timer? _recordingTimer;
-
+  
+  final _audioRecorder = AudioRecorder();
+  final _audioPlayer = AudioPlayer();
+  String? _recordedAudioPath;
+  bool _isPlayingAudio = false;
 
   bool _isLoadingExistingMedia = false;
   
@@ -175,12 +183,69 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     });
   }
 
+  // --- Voice Recorder Methods ---
+  Future<void> _startRecording() async {
+    try {
+      if (await _audioRecorder.hasPermission()) {
+        final dir = await getTemporaryDirectory();
+        final path = '${dir.path}/voice_post_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        
+        await _audioRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+        setState(() {
+          _isRecording = true;
+          _recordingSeconds = 0;
+        });
+        _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          setState(() {
+            _recordingSeconds++;
+          });
+        });
+      }
+    } catch (e) {
+      debugPrint("Error starting record: $e");
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      final path = await _audioRecorder.stop();
+      _recordingTimer?.cancel();
+      setState(() {
+        _isRecording = false;
+        _recordedAudioPath = path;
+      });
+    } catch (e) {
+      debugPrint("Error stopping record: $e");
+    }
+  }
+
+  void _deleteRecording() {
+    setState(() {
+      _recordedAudioPath = null;
+      _recordingSeconds = 0;
+      _showVoiceRecorder = false;
+    });
+  }
+
+  Future<void> _toggleAudioPreview() async {
+    if (_recordedAudioPath == null) return;
+    if (_isPlayingAudio) {
+      await _audioPlayer.pause();
+      setState(() => _isPlayingAudio = false);
+    } else {
+      await _audioPlayer.play(DeviceFileSource(_recordedAudioPath!));
+      setState(() => _isPlayingAudio = true);
+    }
+  }
+
   @override
   void dispose() {
     _contentController.removeListener(_onContentChanged);
     _contentController.dispose();
     _imageUrlController.dispose();
     _videoUrlController.dispose();
+    _audioRecorder.dispose();
+    _audioPlayer.dispose();
     _recordingTimer?.cancel();
     for (var controller in _pollControllers) {
       controller.dispose();
@@ -370,6 +435,16 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       uploadedUrls = [imageUrl];
     }
 
+    String? audioPublicUrl;
+    if (_recordedAudioPath != null) {
+      try {
+        final bytes = await File(_recordedAudioPath!).readAsBytes();
+        audioPublicUrl = await db.uploadPostAudio(bytes, 'm4a');
+      } catch (e) {
+        debugPrint("Voice post upload failed: $e");
+      }
+    }
+
     final bool success;
     if (widget.quotePost != null) {
       success = await db.repostThread(
@@ -381,10 +456,12 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
         finalContent,
         imageUrls: uploadedUrls,
         videoUrl: videoUrl.isNotEmpty ? videoUrl : null,
+        audioUrl: audioPublicUrl,
         audience: _privacy,
         pollOptions: pollOptions,
         pollDuration: pollDuration,
         communityId: widget.communityId,
+        isSubscriberOnly: _isSubscriberOnly,
       );
     }
 
@@ -521,7 +598,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   Widget build(BuildContext context) {
     final dbService = Provider.of<DatabaseService>(context);
     final prof = dbService.myProfile;
-    final isEnabled = _contentController.text.trim().isNotEmpty && _charCount <= 500 && !_isUploadingImage;
+    final isEnabled = (_contentController.text.trim().isNotEmpty || _recordedAudioPath != null) && _charCount <= 500 && !_isUploadingImage;
     
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWide = screenWidth > 600;
@@ -1054,6 +1131,58 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                         ),
                       ],
                       
+                      // Voice Recorder UI
+                      if (_showVoiceRecorder) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: context.border),
+                          ),
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: _recordedAudioPath != null
+                                    ? _toggleAudioPreview
+                                    : (_isRecording ? _stopRecording : _startRecording),
+                                child: CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: _isRecording ? Colors.redAccent : const Color(0xFF1E824C),
+                                  child: Icon(
+                                    _recordedAudioPath != null
+                                        ? (_isPlayingAudio ? Icons.pause : Icons.play_arrow)
+                                        : (_isRecording ? Icons.stop : Icons.mic),
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _recordedAudioPath != null
+                                      ? "Voice message recorded"
+                                      : (_isRecording
+                                          ? "Recording... ${_recordingSeconds}s"
+                                          : "Tap microphone to record"),
+                                  style: GoogleFonts.inter(
+                                    color: context.textPrimary,
+                                    fontWeight: _isRecording || _recordedAudioPath != null ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                              if (_recordedAudioPath != null)
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                  onPressed: _deleteRecording,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      
                       // Custom Image URL Input
                       if (_showImageInput) ...[
                         const SizedBox(height: 12),
@@ -1237,8 +1366,15 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     icon: Icons.mic_outlined,
                     tooltip: "Voice Message",
                     color: Colors.teal,
-                    isActive: false,
-                    onTap: () => _showComingSoonDialog("Voice messaging"),
+                    isActive: _showVoiceRecorder,
+                    onTap: () {
+                      final settings = context.read<GeneralSettingsProvider>();
+                      if (settings.isVoicePostEnabled) {
+                        setState(() => _showVoiceRecorder = !_showVoiceRecorder);
+                      } else {
+                        _showComingSoonDialog("Voice messaging (Pending Admin Approval)");
+                      }
+                    },
                   ),
                   _buildToolbarIcon(
                     icon: Icons.location_on_outlined,
@@ -1254,6 +1390,14 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     isActive: false,
                     onTap: () => _showComingSoonDialog("Anonymous posting"),
                   ),
+                  if (Provider.of<DatabaseService>(context).myProfile?.canMonetize == true)
+                    _buildToolbarIcon(
+                      icon: Icons.monetization_on_outlined,
+                      tooltip: "Subscribers Only",
+                      color: Colors.amber,
+                      isActive: _isSubscriberOnly,
+                      onTap: () => setState(() => _isSubscriberOnly = !_isSubscriberOnly),
+                    ),
                   _buildToolbarIcon(
                     icon: Icons.auto_awesome_outlined,
                     tooltip: "AI Writer",

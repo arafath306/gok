@@ -12,6 +12,8 @@ abstract class ChatRemoteDataSource {
   Stream<sb.PostgresChangePayload> getMessagesRealtimeStream(String otherUserId);
   Future<void> editMessage(String messageId, String senderId, String receiverId, String content);
   Future<void> deleteMessage(String messageId);
+  void sendTypingEvent(String currentUserId, String otherUserId, bool isTyping);
+  Stream<Map<String, dynamic>> getTypingStream(String currentUserId, String otherUserId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -174,5 +176,47 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   @override
   Future<void> deleteMessage(String messageId) async {
     await supabaseClient.from('messages').delete().eq('id', messageId);
+  }
+
+  @override
+  void sendTypingEvent(String currentUserId, String otherUserId, bool isTyping) {
+    // Generate a unique room ID regardless of who is sender/receiver
+    final roomIds = [currentUserId, otherUserId]..sort();
+    final roomId = 'typing_${roomIds[0]}_${roomIds[1]}';
+    
+    final channel = supabaseClient.channel(roomId);
+    channel.subscribe((status, [error]) {
+      if (status == sb.RealtimeSubscribeStatus.subscribed) {
+        channel.sendBroadcastMessage(
+          event: 'typing',
+          payload: {'user_id': currentUserId, 'is_typing': isTyping},
+        );
+      }
+    });
+  }
+
+  @override
+  Stream<Map<String, dynamic>> getTypingStream(String currentUserId, String otherUserId) {
+    final roomIds = [currentUserId, otherUserId]..sort();
+    final roomId = 'typing_${roomIds[0]}_${roomIds[1]}';
+    
+    final controller = StreamController<Map<String, dynamic>>();
+    final channel = supabaseClient.channel(roomId);
+    
+    channel.onBroadcast(
+      event: 'typing',
+      callback: (payload) {
+        if (!controller.isClosed) {
+          controller.add(payload);
+        }
+      },
+    ).subscribe();
+
+    controller.onCancel = () {
+      supabaseClient.removeChannel(channel);
+      controller.close();
+    };
+
+    return controller.stream;
   }
 }

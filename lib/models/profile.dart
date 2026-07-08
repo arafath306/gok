@@ -23,6 +23,7 @@ class Profile {
   final bool filterAdult;
   final bool autoplayVideos;
   final bool verificationRequested;
+  final bool canMonetize;
   final bool isActiveStatusEnabled;
   final DateTime? lastSeen;
   final String? publicKey;
@@ -53,6 +54,7 @@ class Profile {
     this.filterAdult = true,
     this.autoplayVideos = true,
     this.verificationRequested = false,
+    this.canMonetize = false,
     this.isActiveStatusEnabled = true,
     this.lastSeen,
     this.publicKey,
@@ -87,8 +89,9 @@ class Profile {
       filterAdult: json['filter_adult'] as bool? ?? true,
       autoplayVideos: json['autoplay_videos'] as bool? ?? true,
       verificationRequested: json['verification_requested'] as bool? ?? false,
+      canMonetize: json['can_monetize'] as bool? ?? false,
       isActiveStatusEnabled: json['is_active_status_enabled'] as bool? ?? true,
-      lastSeen: json['last_seen'] != null ? DateTime.tryParse(json['last_seen'] as String) : null,
+      lastSeen: _parseUtcTime(json['last_seen'] as String?),
       publicKey: json['public_key'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
@@ -122,10 +125,19 @@ class Profile {
       'filter_adult': filterAdult,
       'autoplay_videos': autoplayVideos,
       'verification_requested': verificationRequested,
+      'can_monetize': canMonetize,
       'is_active_status_enabled': isActiveStatusEnabled,
       'last_seen': lastSeen?.toIso8601String(),
       if (publicKey != null) 'public_key': publicKey,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
+  }
+
+  static DateTime? _parseUtcTime(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+    if (!dateStr.contains('Z') && !dateStr.contains('+') && !dateStr.contains('-')) {
+      dateStr += 'Z';
+    }
+    return DateTime.tryParse(dateStr)?.toLocal();
   }
 }

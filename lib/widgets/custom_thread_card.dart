@@ -21,6 +21,9 @@ import '../services/sound_service.dart';
 import 'thread_image_carousel.dart';
 import '../state/music_playback_controller.dart';
 import '../models/music_track.dart';
+import '../state/monetization_controller.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'voice_post_player.dart';
 
 class CustomThreadCard extends StatefulWidget {
   final ThreadPost post;
@@ -142,7 +145,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                   );
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -372,6 +375,9 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
     ThreadPost post,
     bool isVerified,
   ) {
+    final monetization = Provider.of<MonetizationController>(context);
+    final bool isLocked = post.isSubscriberOnly && post.userId != dbService.currentUid && !monetization.isSubscribedTo(post.userId);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -485,7 +491,52 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           ),
         ],
         const SizedBox(height: 3),
-        Text(
+        if (isLocked)
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.cardBg.withValues(alpha: 0.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "This content is for subscribers only.",
+                      style: GoogleFonts.hindSiliguri(
+                        fontSize: 16.5,
+                        color: context.textPrimary,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          // Go to profile and trigger subscribe
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProfileScreen(userId: post.userId),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.lock_open, size: 18),
+                        label: const Text("Unlock"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          foregroundColor: Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else ...[
+          Text(
           post.content,
           style: GoogleFonts.hindSiliguri(
             fontSize: 16.5,
@@ -547,6 +598,10 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               ),
             ),
           ),
+        ],
+        if (post.audioUrl != null && post.audioUrl!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          VoicePostPlayer(audioUrl: post.audioUrl!),
         ],
         _buildPollSection(context, dbService, post),
         const SizedBox(height: 8),
@@ -621,7 +676,8 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           );
         })(),
         const SizedBox(height: 8),
-      ],
+      ], // end of else ...[
+      ], // end of Column children
     );
   }
 
@@ -1943,3 +1999,4 @@ class _HidePostForUsersSheetState extends State<_HidePostForUsersSheet> {
     );
   }
 }
+

@@ -12,10 +12,12 @@ abstract class FeedRemoteDataSource {
     String content, {
     List<String>? imageUrls,
     String? videoUrl,
+    String? audioUrl,
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
     String? communityId,
+    bool isSubscriberOnly = false,
   });
   Future<void> toggleLike(String userId, String threadId, bool shouldLike);
   Future<bool> togglePinPost(String threadId, bool isPinned);
@@ -118,18 +120,22 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
     String content, {
     List<String>? imageUrls,
     String? videoUrl,
+    String? audioUrl,
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
     String? communityId,
+    bool isSubscriberOnly = false,
   }) async {
     final Map<String, dynamic> insertData = {
       'user_id': userId,
       'content': content,
       'image_urls': imageUrls,
       'video_url': videoUrl,
+      if (audioUrl != null) 'audio_url': audioUrl,
       if (audience != null) 'audience': audience,
       if (communityId != null) 'community_id': communityId,
+      'is_subscriber_only': isSubscriberOnly,
     };
     if (pollExpiresAt != null) {
       insertData['poll_expires_at'] = pollExpiresAt.toUtc().toIso8601String();

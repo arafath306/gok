@@ -11,10 +11,12 @@ abstract class IFeedRepository {
     String content, {
     List<String>? imageUrls,
     String? videoUrl,
+    String? audioUrl,
     String? audience,
     List<String>? pollOptions,
     DateTime? pollExpiresAt,
     String? communityId,
+    bool isSubscriberOnly = false,
   });
   Future<Either<Failure, void>> toggleLike(String threadId, bool shouldLike);
   Future<Either<Failure, bool>> togglePinPost(String threadId, bool isPinned);

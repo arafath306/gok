@@ -63,6 +63,7 @@ class DatabaseService with ChangeNotifier {
       isRepost: entity.isRepost,
       repostedPost: entity.repostedPost != null ? _entityToModel(entity.repostedPost!) : null,
       quoteText: entity.quoteText,
+      isSubscriberOnly: entity.isSubscriberOnly,
       pollOptions: entity.pollOptions,
       pollExpiresAt: entity.pollExpiresAt,
       hasVotedPoll: entity.hasVotedPoll,
@@ -444,6 +445,7 @@ class DatabaseService with ChangeNotifier {
   RealtimeChannel? _blocksChannel;
   RealtimeChannel? _mutesChannel;
   RealtimeChannel? _pollVotesChannel;
+  RealtimeChannel? _profilesChannel;
   StreamSubscription<AuthState>? _supabaseAuthSub;
   Timer? _lastSeenTimer;
 
@@ -716,6 +718,22 @@ class DatabaseService with ChangeNotifier {
             })
         .subscribe();
 
+    _profilesChannel = _supabase
+        .channel('public:profiles:$_currentUid')
+        .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'profiles',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'id',
+              value: _currentUid,
+            ),
+            callback: (payload) {
+              fetchMyProfile();
+            })
+        .subscribe();
+
     /*
     _pollVotesChannel = _supabase
         .channel('public:poll_votes')
@@ -751,6 +769,10 @@ class DatabaseService with ChangeNotifier {
     if (_pollVotesChannel != null) {
       _supabase.removeChannel(_pollVotesChannel!);
       _pollVotesChannel = null;
+    }
+    if (_profilesChannel != null) {
+      _supabase.removeChannel(_profilesChannel!);
+      _profilesChannel = null;
     }
   }
 
@@ -1111,14 +1133,19 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
-  Future<List<ThreadPost>> searchThreads(String query) async {
+  Future<List<ThreadPost>> searchThreads(String query, {String? communityId}) async {
     if (query.trim().isEmpty) return [];
     try {
-      final response = await _supabase
+      var dbQuery = _supabase
           .from('threads')
           .select('*, profiles!user_id(*), likes(user_id), thread_hides(user_id)')
-          .ilike('content', '%$query%')
-          .limit(20);
+          .ilike('content', '%$query%');
+          
+      if (communityId != null) {
+        dbQuery = dbQuery.eq('community_id', communityId);
+      }
+      
+      final response = await dbQuery.limit(20);
 
       final List<dynamic> data = response as List<dynamic>;
       final List<ThreadPost> results = [];
@@ -1230,6 +1257,19 @@ class DatabaseService with ChangeNotifier {
     }
   }
 
+  /// Uploads a voice post. Uses the 'avatars' bucket with a
+  /// 'voice_posts/' subfolder prefix.
+  Future<String?> uploadPostAudio(Uint8List bytes, String extension) async {
+    if (_currentUid.isEmpty) return null;
+    try {
+      final path = 'voice_posts/$_currentUid/voice_${DateTime.now().millisecondsSinceEpoch}.$extension';
+      return await _uploadToStorage('avatars', path, bytes);
+    } catch (e) {
+      debugPrint("Upload voice post error: $e");
+      return null;
+    }
+  }
+
   Future<bool> deleteProfileImage(bool isAvatar) async {
     if (_currentUid.isEmpty) return false;
     _isLoading = true;
@@ -1293,10 +1333,12 @@ class DatabaseService with ChangeNotifier {
     String content, {
     List<String>? imageUrls,
     String? videoUrl,
+    String? audioUrl,
     String? audience,
     List<String>? pollOptions,
     Duration? pollDuration,
     String? communityId,
+    bool isSubscriberOnly = false,
   }) async {
     DateTime? pollExpiresAt;
     if (pollDuration != null) {
@@ -1306,10 +1348,12 @@ class DatabaseService with ChangeNotifier {
       content,
       imageUrls: imageUrls,
       videoUrl: videoUrl,
+      audioUrl: audioUrl,
       audience: audience,
       pollOptions: pollOptions,
       pollExpiresAt: pollExpiresAt,
       communityId: communityId,
+      isSubscriberOnly: isSubscriberOnly,
     );
     return result.fold(
       (failure) {
@@ -2112,6 +2156,16 @@ class DatabaseService with ChangeNotifier {
       },
       (success) => success,
     );
+  }
+
+  void sendTypingEvent(String otherUserId, bool isTyping) {
+    if (_currentUid.isEmpty) return;
+    sl<IChatRepository>().sendTypingEvent(_currentUid, otherUserId, isTyping);
+  }
+
+  Stream<Map<String, dynamic>> getTypingStream(String otherUserId) {
+    if (_currentUid.isEmpty) return const Stream.empty();
+    return sl<IChatRepository>().getTypingStream(_currentUid, otherUserId);
   }
 
   Future<bool> editMessage(String messageId, String receiverId, String newContent) async {

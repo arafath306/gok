@@ -19,15 +19,31 @@ import 'verification/verification_intro_screen.dart';
 import 'verification/pending_screen.dart';
 import '../../state/verification_controller.dart';
 import '../../models/verification_request.dart';
+import '../../state/monetization_controller.dart';
+import '../profile/subscription_dashboard_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   final VoidCallback? onSwitchToProfile;
   const SettingsScreen({super.key, this.onSwitchToProfile});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MonetizationController>(context, listen: false).fetchGlobalStatus();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final dbService = Provider.of<DatabaseService>(context);
     final myProfile = dbService.myProfile;
+    final monetization = Provider.of<MonetizationController>(context);
 
     return Scaffold(
       backgroundColor: context.scaffoldBg,
@@ -60,8 +76,8 @@ class SettingsScreen extends StatelessWidget {
           GestureDetector(
             onTap: () {
               Navigator.pop(context);
-              if (onSwitchToProfile != null) {
-                onSwitchToProfile!();
+              if (widget.onSwitchToProfile != null) {
+                widget.onSwitchToProfile!();
               }
             },
             child: Container(
@@ -184,6 +200,18 @@ class SettingsScreen extends StatelessWidget {
                 });
               },
             ),
+            if (monetization.isEnabledGlobally && myProfile?.canMonetize == true)
+              _SettingsTileItem(
+                icon: Icons.monetization_on_outlined,
+                title: 'Creator Monetization',
+                trailingText: 'Dashboard',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SubscriptionDashboardScreen()),
+                  );
+                },
+              ),
             _SettingsTileItem(
               icon: Icons.lock_outline_rounded,
               title: 'Privacy',

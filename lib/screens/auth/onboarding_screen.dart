@@ -16,8 +16,11 @@ class OnboardingScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F8FD),
-      body: SafeArea(
-        child: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SafeArea(
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 24),
@@ -137,6 +140,8 @@ class OnboardingScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
         ),
       ),
     );

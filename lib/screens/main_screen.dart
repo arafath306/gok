@@ -9,9 +9,12 @@ import 'notifications_screen.dart';
 import 'profile/profile_screen.dart';
 import '../utils/routes.dart';
 import 'create_thread_screen.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import '../state/monetization_controller.dart';
 import '../services/presence_service.dart';
 import 'messenger/messenger_home_screen.dart';
 import 'settings/settings_screen.dart';
@@ -72,6 +75,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
       if (currentUser != null) {
         PresenceService().initialize(currentUser.id);
         PresenceService().updatePage('/home');
+        Provider.of<MonetizationController>(context, listen: false).fetchMySubscriptions(currentUser.id);
       }
       
       dbService.fetchVerificationPlans();
@@ -282,7 +286,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, myProfile) {
+  Widget _buildProfileHeader(BuildContext context, myProfile, {bool isDesktop = false}) {
     return Padding(
       padding: const EdgeInsets.only(left: 24.0, top: 24.0, bottom: 20.0, right: 24.0),
       child: Column(
@@ -290,7 +294,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.pop(context);
+              if (!isDesktop) Navigator.pop(context);
               setTab(4);
             },
             child: CircleAvatar(
@@ -304,7 +308,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
           const SizedBox(height: 16),
           GestureDetector(
             onTap: () {
-              Navigator.pop(context);
+              if (!isDesktop) Navigator.pop(context);
               setTab(4);
             },
             child: Row(
@@ -648,7 +652,7 @@ WhatsApp: +8801313961899''',
     );
   }
 
-  Widget _buildFooterButtons(BuildContext context) {
+  Widget _buildFooterButtons(BuildContext context, {bool isDesktop = false}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       child: Row(
@@ -656,7 +660,7 @@ WhatsApp: +8801313961899''',
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.pop(context);
+                if (!isDesktop) Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const BetaCenterScreen()),
@@ -785,8 +789,211 @@ WhatsApp: +8801313961899''',
     );
   }
 
+  Widget _buildNavigationSidebar(BuildContext context, DatabaseService dbService, {required bool isDesktop}) {
+    final myProfile = dbService.myProfile;
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildProfileHeader(context, myProfile, isDesktop: isDesktop),
+                  _buildDrawerItem(
+                    icon: CupertinoIcons.search,
+                    title: "Explore",
+                    isActive: _currentIndex == 1,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      setTab(1);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: _currentIndex == 0 ? CupertinoIcons.house_fill : CupertinoIcons.house,
+                    title: "Home",
+                    isActive: _currentIndex == 0,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      setTab(0);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: _currentIndex == 2 ? CupertinoIcons.ellipses_bubble_fill : CupertinoIcons.ellipses_bubble,
+                    title: "Chat",
+                    isActive: _currentIndex == 2,
+                    badgeCount: dbService.unreadMessagesCount,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      setTab(2);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: _currentIndex == 3 ? CupertinoIcons.bell_fill : CupertinoIcons.bell,
+                    title: "Notifications",
+                    isActive: _currentIndex == 3,
+                    badgeCount: dbService.unreadNotificationsCount,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      setTab(3);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: CupertinoIcons.tag,
+                    title: "Feeds",
+                    isActive: false,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      setTab(0);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: CupertinoIcons.person_3_fill,
+                    title: "Community",
+                    isActive: false,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        NoTransitionPageRoute(
+                          child: const CommunityHomeScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: CupertinoIcons.bookmark,
+                    title: "Saved",
+                    isActive: false,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        NoTransitionPageRoute(child: const SavedPostsScreen()),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: _currentIndex == 4 ? CupertinoIcons.person_fill : CupertinoIcons.person,
+                    title: "Profile",
+                    isActive: _currentIndex == 4,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      setTab(4);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: CupertinoIcons.settings,
+                    title: "Settings",
+                    isActive: false,
+                    onTap: () {
+                      if (!isDesktop) Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        NoTransitionPageRoute(
+                          child: SettingsScreen(
+                            onSwitchToProfile: () => setTab(4),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  if (isDesktop)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const CreateThreadScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E824C),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            "Post",
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Divider(height: 1, color: context.border),
+          _buildFooterLinks(context),
+          _buildFooterButtons(context, isDesktop: isDesktop),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRightSidebar(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search Bar
+            Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: context.border.withValues(alpha: 0.5), width: 0.5),
+              ),
+              child: Row(
+                children: [
+                  Icon(CupertinoIcons.search, size: 20, color: context.textMuted),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setTab(1), // Go to search screen
+                      child: Text(
+                        "Search Pigeon...",
+                        style: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              "Trending Topics",
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: context.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Expanded(child: TrendingTopicsListDesktop()),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = MediaQuery.of(context).size.width > 800;
+
     final List<Widget> screens = [
       FeedScreen(
         onNavigateToChaStation: () => setTab(2),
@@ -803,6 +1010,89 @@ WhatsApp: +8801313961899''',
       const ProfileScreen(),
     ];
 
+    Widget mainBody = SafeArea(
+      bottom: false,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification notification) {
+          if (notification is ScrollUpdateNotification) {
+            if (notification.metrics.axis == Axis.vertical) {
+              final double scrollDelta = notification.scrollDelta ?? 0;
+              if (scrollDelta > 2.0) {
+                if (_showBars) setState(() { _showBars = false; });
+                _startScrollStopTimer();
+              } else if (scrollDelta < -2.0) {
+                if (!_showBars) setState(() { _showBars = true; });
+                _cancelScrollStopTimer();
+              }
+              if (notification.metrics.pixels <= 0) {
+                if (!_showBars) setState(() { _showBars = true; });
+                _cancelScrollStopTimer();
+              }
+            }
+          } else if (notification is ScrollEndNotification) {
+            if (!_showBars) _startScrollStopTimer();
+          }
+          return false;
+        },
+        child: PageView(
+          controller: _pageController,
+          physics: const BouncingScrollPhysics(),
+          onPageChanged: (index) {
+            if (index != _currentIndex) {
+              setState(() {
+                _currentIndex = index;
+                _showBars = true;
+              });
+            }
+          },
+          children: screens,
+        ),
+      ),
+    );
+
+    if (isDesktop) {
+      return Scaffold(
+        key: scaffoldKey,
+        backgroundColor: context.scaffoldBg,
+        body: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Left Sidebar
+            Container(
+              width: 280,
+              decoration: BoxDecoration(
+                border: Border(right: BorderSide(color: context.border, width: 0.5)),
+              ),
+              child: Consumer<DatabaseService>(
+                builder: (context, dbService, _) {
+                  return _buildNavigationSidebar(context, dbService, isDesktop: true);
+                },
+              ),
+            ),
+            
+            // Center Feed
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: mainBody,
+                ),
+              ),
+            ),
+
+            // Right Sidebar
+            Container(
+              width: 320,
+              decoration: BoxDecoration(
+                border: Border(left: BorderSide(color: context.border, width: 0.5)),
+              ),
+              child: _buildRightSidebar(context),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: context.scaffoldBg,
@@ -811,182 +1101,11 @@ WhatsApp: +8801313961899''',
         backgroundColor: context.scaffoldBg,
         child: Consumer<DatabaseService>(
           builder: (context, dbService, _) {
-            final myProfile = dbService.myProfile;
-            return SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildProfileHeader(context, myProfile),
-                          _buildDrawerItem(
-                            icon: CupertinoIcons.search,
-                            title: "Explore",
-                            isActive: _currentIndex == 1,
-                            onTap: () {
-                              Navigator.pop(context);
-                              setTab(1);
-                            },
-                          ),
-                          _buildDrawerItem(
-                            icon: _currentIndex == 0 ? CupertinoIcons.house_fill : CupertinoIcons.house,
-                            title: "Home",
-                            isActive: _currentIndex == 0,
-                            onTap: () {
-                              Navigator.pop(context);
-                              setTab(0);
-                            },
-                          ),
-                          _buildDrawerItem(
-                            icon: _currentIndex == 2 ? CupertinoIcons.ellipses_bubble_fill : CupertinoIcons.ellipses_bubble,
-                            title: "Chat",
-                            isActive: _currentIndex == 2,
-                            badgeCount: dbService.unreadMessagesCount,
-                            onTap: () {
-                              Navigator.pop(context);
-                              setTab(2);
-                            },
-                          ),
-                          _buildDrawerItem(
-                            icon: _currentIndex == 3 ? CupertinoIcons.bell_fill : CupertinoIcons.bell,
-                            title: "Notifications",
-                            isActive: _currentIndex == 3,
-                            badgeCount: dbService.unreadNotificationsCount,
-                            onTap: () {
-                              Navigator.pop(context);
-                              setTab(3);
-                            },
-                          ),
-                          _buildDrawerItem(
-                            icon: CupertinoIcons.tag,
-                            title: "Feeds",
-                            isActive: false,
-                            onTap: () {
-                              Navigator.pop(context);
-                              setTab(0);
-                            },
-                          ),
-                          _buildDrawerItem(
-                            icon: CupertinoIcons.person_3_fill,
-                            title: "Community",
-                            isActive: false,
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                NoTransitionPageRoute(
-                                  child: const CommunityHomeScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildDrawerItem(
-                            icon: CupertinoIcons.bookmark,
-                            title: "Saved",
-                            isActive: false,
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                NoTransitionPageRoute(child: const SavedPostsScreen()),
-                              );
-                            },
-                          ),
-                          _buildDrawerItem(
-                            icon: _currentIndex == 4 ? CupertinoIcons.person_fill : CupertinoIcons.person,
-                            title: "Profile",
-                            isActive: _currentIndex == 4,
-                            onTap: () {
-                              Navigator.pop(context);
-                              setTab(4);
-                            },
-                          ),
-                          _buildDrawerItem(
-                            icon: CupertinoIcons.settings,
-                            title: "Settings",
-                            isActive: false,
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                NoTransitionPageRoute(
-                                  child: SettingsScreen(
-                                    onSwitchToProfile: () => setTab(4),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Divider(height: 1, color: context.border),
-                  _buildFooterLinks(context),
-                  _buildFooterButtons(context),
-                ],
-              ),
-            );
+            return _buildNavigationSidebar(context, dbService, isDesktop: false);
           },
         ),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (ScrollNotification notification) {
-            if (notification is ScrollUpdateNotification) {
-              if (notification.metrics.axis == Axis.vertical) {
-                final double scrollDelta = notification.scrollDelta ?? 0;
-                if (scrollDelta > 2.0) {
-                  if (_showBars) {
-                    setState(() {
-                      _showBars = false;
-                    });
-                  }
-                  _startScrollStopTimer();
-                } else if (scrollDelta < -2.0) {
-                  if (!_showBars) {
-                    setState(() {
-                      _showBars = true;
-                    });
-                  }
-                  _cancelScrollStopTimer();
-                }
-                if (notification.metrics.pixels <= 0) {
-                  if (!_showBars) {
-                    setState(() {
-                      _showBars = true;
-                    });
-                  }
-                  _cancelScrollStopTimer();
-                }
-              }
-            } else if (notification is ScrollEndNotification) {
-              if (!_showBars) {
-                _startScrollStopTimer();
-              }
-            }
-            return false;
-          },
-          child: PageView(
-            controller: _pageController,
-            physics: const BouncingScrollPhysics(),
-            onPageChanged: (index) {
-              if (index != _currentIndex) {
-                setState(() {
-                  _currentIndex = index;
-                  _showBars = true;
-                });
-              }
-            },
-            children: screens,
-          ),
-        ),
-      ),
+      body: mainBody,
       floatingActionButton: (_currentIndex == 0 || _currentIndex == 4)
           ? AnimatedScale(
               scale: _showBars ? 1.0 : 0.0,
@@ -1015,16 +1134,11 @@ WhatsApp: +8801313961899''',
                       }
                     });
                   },
-                  child: const Icon(
-                    CupertinoIcons.create,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  child: const Icon(CupertinoIcons.create, color: Colors.white, size: 24),
                 ),
               ),
             )
           : null,
-
       bottomNavigationBar: AnimatedSlide(
         offset: _showBars ? Offset.zero : const Offset(0, 1.3),
         duration: const Duration(milliseconds: 400),
@@ -1085,6 +1199,74 @@ WhatsApp: +8801313961899''',
           },
         ),
       ),
+    );
+  }
+}
+
+class TrendingTopicsListDesktop extends StatefulWidget {
+  const TrendingTopicsListDesktop({super.key});
+  @override
+  State<TrendingTopicsListDesktop> createState() => _TrendingTopicsListDesktopState();
+}
+
+class _TrendingTopicsListDesktopState extends State<TrendingTopicsListDesktop> {
+  List<String> _topics = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTopics();
+  }
+
+  Future<void> _loadTopics() async {
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final trending = await dbService.fetchTrendingTopics();
+    if (mounted) {
+      setState(() {
+        _topics = trending.map((t) => t['topic_name'] as String).toList();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_topics.isEmpty) {
+      return Text("No trending topics yet.", style: GoogleFonts.inter(color: context.textSecondary));
+    }
+    return ListView.separated(
+      shrinkWrap: true,
+      itemCount: _topics.length > 8 ? 8 : _topics.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final topic = _topics[index];
+        final displayTopic = topic.startsWith('#') ? topic : '#$topic';
+        return GestureDetector(
+          onTap: () {
+            context.findAncestorStateOfType<MainScreenState>()?.setTab(1);
+          },
+          child: Row(
+            children: [
+              const Icon(Icons.local_fire_department_rounded, size: 16, color: Color(0xFF1E824C)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  displayTopic,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: context.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

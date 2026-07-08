@@ -377,4 +377,14 @@ class ChatRepositoryImpl implements IChatRepository {
       return '$day/$month/$year, $timeStr';
     }
   }
+
+  @override
+  void sendTypingEvent(String currentUserId, String otherUserId, bool isTyping) {
+    remoteDataSource.sendTypingEvent(currentUserId, otherUserId, isTyping);
+  }
+
+  @override
+  Stream<Map<String, dynamic>> getTypingStream(String currentUserId, String otherUserId) {
+    return remoteDataSource.getTypingStream(currentUserId, otherUserId);
+  }
 }

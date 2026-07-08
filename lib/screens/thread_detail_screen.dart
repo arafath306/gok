@@ -24,6 +24,7 @@ import '../models/music_track.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import '../widgets/comment_attachment_picker_panel.dart';
+import '../widgets/voice_post_player.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
   final ThreadPost post;
@@ -1085,6 +1086,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             musicTrack: activePost.musicTrack,
                             postId: activePost.id,
                           ),
+                        ],
+                        if (activePost.audioUrl != null && activePost.audioUrl!.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          VoicePostPlayer(audioUrl: activePost.audioUrl!),
                         ],
                         PollWidget(post: activePost, dbService: dbService),
                         Divider(height: 24, color: context.border),

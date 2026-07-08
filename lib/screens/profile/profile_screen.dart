@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../../services/general_settings_provider.dart';
@@ -12,10 +13,13 @@ import '../../utils/routes.dart';
 import '../../utils/app_theme.dart';
 import '../settings/settings_screen.dart';
 import 'edit_profile_screen.dart';
+import 'subscription_payment_screen.dart';
 import 'followers_following_screen.dart';
 import '../../widgets/custom_thread_card.dart';
 import '../create_thread_screen.dart';
 import '../messenger/chat_screen.dart';
+import '../../state/monetization_controller.dart';
+
 
 class ProfileScreen extends StatefulWidget {
   /// Pass userId to view another user's profile. Leave null for own profile.
@@ -36,6 +40,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   List<ThreadPost> _replies = [];
   List<ThreadPost> _reposts = [];
   bool _isLoading = false;
+  
+  double? _creatorPrice;
 
   final List<String> _tabs = [
     'Posts', 'Replies', 'Reposts', 'Media',
@@ -89,6 +95,18 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     _replies = await dbService.fetchUserRepliedThreads(targetId);
     _reposts = await dbService.fetchUserReposts(targetId);
+
+    // Fetch monetization info if this is someone else and they can monetize
+    if (!_isOwnProfile && _viewedProfile?.canMonetize == true) {
+      try {
+        final res = await Supabase.instance.client.from('creator_settings').select('monthly_price').eq('creator_id', targetId).maybeSingle();
+        if (res != null) {
+          _creatorPrice = (res['monthly_price'] as num?)?.toDouble();
+        }
+      } catch (e) {
+        debugPrint("Error fetching creator price: $e");
+      }
+    }
 
     if (mounted) {
       setState(() {
@@ -399,6 +417,31 @@ class _ProfileScreenState extends State<ProfileScreen>
                     },
                   ),
                 ],
+                if (_creatorPrice != null && _creatorPrice! > 0) ...(() {
+                  final mc = Provider.of<MonetizationController>(context, listen: true);
+                  final isSubbed = mc.isSubscribedTo(widget.userId!);
+                  return [
+                    const SizedBox(width: 8),
+                    _filledBtn(
+                      isSubbed ? 'Subscribed' : 'Subscribe',
+                      onTap: isSubbed 
+                        ? () {} // Maybe add unsubscribe later
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SubscriptionPaymentScreen(
+                                  creatorId: widget.userId!,
+                                  creatorName: profile!.fullName,
+                                  planPrice: _creatorPrice!,
+                                ),
+                              ),
+                            );
+                          },
+                      outlined: isSubbed,
+                    ),
+                  ];
+                }()),
               ],
             ],
           ),

@@ -9,6 +9,7 @@ import 'services/notification_settings_provider.dart';
 import 'services/chat_settings_provider.dart';
 import 'services/general_settings_provider.dart';
 import 'state/verification_controller.dart';
+import 'state/monetization_controller.dart';
 import 'state/music_playback_controller.dart';
 import 'services/local_notification_service.dart';
 import 'services/push_notification_service.dart';
@@ -42,8 +43,12 @@ void main() async {
   await initInjection();
 
   // Initialize notifications
-  await LocalNotificationService.initialize();
-  await PushNotificationService().initialize();
+  try {
+    await LocalNotificationService.initialize();
+    await PushNotificationService().initialize();
+  } catch (e) {
+    debugPrint("Notification initialization failed: $e");
+  }
 
   runApp(
     MultiProvider(
@@ -54,6 +59,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ChatSettingsProvider()),
         ChangeNotifierProvider(create: (_) => GeneralSettingsProvider()),
         ChangeNotifierProvider(create: (_) => VerificationController()),
+        ChangeNotifierProvider(create: (_) => MonetizationController()),
         ChangeNotifierProvider(create: (_) => MusicPlaybackController()),
         ChangeNotifierProvider(create: (_) => CommunityService()),
       ],
@@ -78,35 +84,6 @@ class PigeonApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: settingsProvider.themeMode,
       builder: (context, child) {
-        final double screenWidth = MediaQuery.of(context).size.width;
-        final bool isWide = screenWidth > 600;
-        if (isWide) {
-          const double targetWidth = 500;
-          return Container(
-            color: settingsProvider.isDarkTheme ? const Color(0xFF000000) : const Color(0xFFF4F6F8), // Premium web background
-            child: Center(
-              child: Container(
-                width: targetWidth,
-                decoration: BoxDecoration(
-                  color: settingsProvider.isDarkTheme ? const Color(0xFF0D0F1A) : Colors.white,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 20,
-                      spreadRadius: 1,
-                    )
-                  ],
-                ),
-                child: MediaQuery(
-                  data: MediaQuery.of(context).copyWith(
-                    size: Size(targetWidth, MediaQuery.of(context).size.height),
-                  ),
-                  child: child!,
-                ),
-              ),
-            ),
-          );
-        }
         return child ?? const SizedBox.shrink();
       },
       home: const AuthGate(),

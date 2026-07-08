@@ -11,6 +11,7 @@ class ThreadPost {
   final String content;
   final List<String>? imageUrls;
   final String? videoUrl;
+  final String? audioUrl;
   final int likesCount;
   final int repliesCount;
   final int repostsCount;
@@ -30,6 +31,7 @@ class ThreadPost {
   final bool isRepost;
   final ThreadPost? repostedPost;
   final String? quoteText;
+  final bool isSubscriberOnly;
 
   // Poll Fields
   final List<PollOption>? pollOptions;
@@ -47,6 +49,7 @@ class ThreadPost {
     required this.content,
     this.imageUrls,
     this.videoUrl,
+    this.audioUrl,
     this.likesCount = 0,
     this.repliesCount = 0,
     this.repostsCount = 0,
@@ -65,6 +68,7 @@ class ThreadPost {
     this.isRepost = false,
     this.repostedPost,
     this.quoteText,
+    this.isSubscriberOnly = false,
     this.pollOptions,
     this.pollExpiresAt,
     this.hasVotedPoll = false,
@@ -174,6 +178,7 @@ class ThreadPost {
       content: cleanContent,
       imageUrls: parsedImages,
       videoUrl: json['video_url'] as String?,
+      audioUrl: json['audio_url'] as String?,
       likesCount: (json['likes_count'] as int?) ?? 0,
       repliesCount: (json['replies_count'] as int?) ?? 0,
       repostsCount: (json['reposts_count'] as int?) ?? 0,
@@ -194,6 +199,7 @@ class ThreadPost {
           ? ThreadPost.fromJson(json['reposted_post'] as Map<String, dynamic>, currentUid: currentUid)
           : null,
       quoteText: json['quote_text'] as String?,
+      isSubscriberOnly: json['is_subscriber_only'] ?? false,
       pollOptions: parsedPollOptions,
       pollExpiresAt: expiresAt,
       hasVotedPoll: isVoted,
@@ -225,6 +231,7 @@ class ThreadPost {
       'is_repost': isRepost,
       'reposted_post': repostedPost?.toJson(),
       'quote_text': quoteText,
+      'is_subscriber_only': isSubscriberOnly,
       'poll_options': pollOptions?.map((e) => e.toJson()).toList(),
       'poll_expires_at': pollExpiresAt?.toIso8601String(),
       'likes': isLikedByMe ? [{'user_id': userId}] : null, // Simulate like for current user mapping
@@ -241,6 +248,7 @@ class ThreadPost {
     String? content,
     List<String>? imageUrls,
     String? videoUrl,
+    String? audioUrl,
     int? likesCount,
     int? repliesCount,
     int? repostsCount,
@@ -272,6 +280,7 @@ class ThreadPost {
       content: content ?? this.content,
       imageUrls: imageUrls ?? this.imageUrls,
       videoUrl: videoUrl ?? this.videoUrl,
+      audioUrl: audioUrl ?? this.audioUrl,
       likesCount: likesCount ?? this.likesCount,
       repliesCount: repliesCount ?? this.repliesCount,
       repostsCount: repostsCount ?? this.repostsCount,

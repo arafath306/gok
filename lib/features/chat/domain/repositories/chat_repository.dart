@@ -11,5 +11,6 @@ abstract class IChatRepository {
   Future<Either<Failure, String?>> uploadChatMedia(Uint8List bytes);
   Future<Either<Failure, void>> editMessage(String messageId, String receiverId, String newContent);
   Future<Either<Failure, void>> deleteMessage(String messageId);
+  void sendTypingEvent(String currentUserId, String otherUserId, bool isTyping);
+  Stream<Map<String, dynamic>> getTypingStream(String currentUserId, String otherUserId);
 }
-

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/profile.dart';
@@ -43,6 +44,10 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _showEmojiPanel = false;
   int _pickerTabIndex = 0;
 
+  StreamSubscription<Map<String, dynamic>>? _typingSub;
+  bool _otherIsTyping = false;
+  Timer? _typingTimer;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +64,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _statusUpdateTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _refreshOtherUserStatus();
+    });
+
+    _typingSub = dbService.getTypingStream(widget.otherUser.id).listen((event) {
+      if (!mounted) return;
+      final userId = event['user_id'];
+      final isTyping = event['is_typing'] == true;
+      if (userId == widget.otherUser.id) {
+        setState(() => _otherIsTyping = isTyping);
+        _typingTimer?.cancel();
+        if (isTyping) {
+          _typingTimer = Timer(const Duration(seconds: 3), () {
+            if (mounted) setState(() => _otherIsTyping = false);
+          });
+        }
+      }
     });
   }
 
@@ -100,6 +120,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _scrollController.dispose();
     _statusUpdateTimer?.cancel();
+    _typingSub?.cancel();
+    _typingTimer?.cancel();
     super.dispose();
   }
 
@@ -888,9 +910,10 @@ class _ChatScreenState extends State<ChatScreen> {
                           },
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(6),
-                            child: Image.network(url,
+                            child: CachedNetworkImage(
+                                imageUrl: url,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorWidget: (_, __, ___) => Container(
                                     color: context.border,
                                     child: Icon(Icons.broken_image,
                                         color: context.textMuted))),
@@ -958,6 +981,10 @@ class _ChatScreenState extends State<ChatScreen> {
           statusText = 'Active ${diff.inDays}d ago';
         }
       }
+    }
+
+    if (_otherIsTyping) {
+      statusText = 'Typing...';
     }
 
     Widget mainContent = Scaffold(
@@ -1037,10 +1064,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         statusText,
                         style: GoogleFonts.inter(
                           fontSize: 11,
-                          color: otherIsActive
+                          color: (_otherIsTyping || otherIsActive)
                               ? Colors.green
                               : context.textMuted,
-                          fontWeight: otherIsActive
+                          fontWeight: (_otherIsTyping || otherIsActive)
                               ? FontWeight.w600
                               : FontWeight.normal,
                         ),
@@ -1053,18 +1080,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
         actions: [
-          if (!isBlocked) ...[
-            IconButton(
-              icon: Icon(Icons.phone_outlined,
-                  color: context.textPrimary, size: 21),
-              onPressed: () => _showComingSoon('Audio'),
-            ),
-            IconButton(
-              icon: Icon(Icons.videocam_outlined,
-                  color: context.textPrimary, size: 22),
-              onPressed: () => _showComingSoon('Video'),
-            ),
-          ],
+
           IconButton(
             icon: Icon(Icons.info_outlined,
                 color: context.textPrimary, size: 20),
@@ -1435,12 +1451,12 @@ class _MessageBubble extends StatelessWidget {
               height: 240,
               fit: BoxFit.cover,
             )
-          : Image.network(
-              bytesOrUrl as String,
+          : CachedNetworkImage(
+              imageUrl: bytesOrUrl as String,
               width: double.infinity,
               height: 240,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
+              errorWidget: (context, url, error) =>
                   const Icon(Icons.broken_image, size: 50),
             );
 
@@ -1667,6 +1683,8 @@ class _ChatComposerState extends State<_ChatComposer> {
   final TextEditingController _ctrl = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
+  bool _isTyping = false;
+  Timer? _typingTimer;
 
   @override
   void initState() {
@@ -1674,11 +1692,41 @@ class _ChatComposerState extends State<_ChatComposer> {
     _ctrl.addListener(() {
       final has = _ctrl.text.trim().isNotEmpty;
       if (has != _hasText) setState(() => _hasText = has);
+
+      if (has) {
+        if (!_isTyping) {
+          _isTyping = true;
+          Provider.of<DatabaseService>(context, listen: false)
+              .sendTypingEvent(widget.realtimeOtherUser.id, true);
+        }
+        _typingTimer?.cancel();
+        _typingTimer = Timer(const Duration(seconds: 2), () {
+          if (_isTyping) {
+            _isTyping = false;
+            if (mounted) {
+              Provider.of<DatabaseService>(context, listen: false)
+                  .sendTypingEvent(widget.realtimeOtherUser.id, false);
+            }
+          }
+        });
+      } else {
+        if (_isTyping) {
+          _isTyping = false;
+          _typingTimer?.cancel();
+          Provider.of<DatabaseService>(context, listen: false)
+              .sendTypingEvent(widget.realtimeOtherUser.id, false);
+        }
+      }
     });
   }
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
+    if (_isTyping) {
+      Provider.of<DatabaseService>(context, listen: false)
+          .sendTypingEvent(widget.realtimeOtherUser.id, false);
+    }
     _ctrl.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -1938,9 +1986,9 @@ class FullScreenMediaViewer extends StatelessWidget {
         child: InteractiveViewer(
           clipBehavior: Clip.none,
           maxScale: 4.0,
-          child: Image.network(
-            mediaUrl,
-            errorBuilder: (context, error, stackTrace) =>
+          child: CachedNetworkImage(
+            imageUrl: mediaUrl,
+            errorWidget: (context, url, error) =>
                 const Icon(Icons.broken_image, color: Colors.white, size: 50),
           ),
         ),

@@ -1042,8 +1042,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ),
 
           // 3. Main content
-          SafeArea(
-            child: Column(
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: SafeArea(
+                child: Column(
               children: [
                 // ── Top hero section ──────────────────────────────────────
                 Padding(
@@ -1436,6 +1439,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
+              ),
+            ),
         ],
       ),
     );

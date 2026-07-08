@@ -26,6 +26,7 @@ class ThreadPostEntity {
   final bool isRepost;
   final ThreadPostEntity? repostedPost;
   final String? quoteText;
+  final bool isSubscriberOnly;
 
   // Poll Fields
   final List<PollOption>? pollOptions;
@@ -59,6 +60,7 @@ class ThreadPostEntity {
     this.isRepost = false,
     this.repostedPost,
     this.quoteText,
+    this.isSubscriberOnly = false,
     this.pollOptions,
     this.pollExpiresAt,
     this.hasVotedPoll = false,
@@ -89,6 +91,7 @@ class ThreadPostEntity {
     bool? isRepost,
     ThreadPostEntity? repostedPost,
     String? quoteText,
+    bool? isSubscriberOnly,
     List<PollOption>? pollOptions,
     DateTime? pollExpiresAt,
     bool? hasVotedPoll,
@@ -118,6 +121,7 @@ class ThreadPostEntity {
       isRepost: isRepost ?? this.isRepost,
       repostedPost: repostedPost ?? this.repostedPost,
       quoteText: quoteText ?? this.quoteText,
+      isSubscriberOnly: isSubscriberOnly ?? this.isSubscriberOnly,
       pollOptions: pollOptions ?? this.pollOptions,
       pollExpiresAt: pollExpiresAt ?? this.pollExpiresAt,
       hasVotedPoll: hasVotedPoll ?? this.hasVotedPoll,

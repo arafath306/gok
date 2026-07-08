@@ -14,6 +14,7 @@ import '../../models/thread_post.dart';
 import '../../widgets/custom_thread_card.dart';
 import '../../widgets/thread_shimmer.dart';
 import '../create_thread_screen.dart';
+import 'community_thread_search_screen.dart';
 
 class CommunityDetailScreen extends StatefulWidget {
   final Community community;
@@ -187,8 +188,11 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                       _coverIconButton(
                         icon: Icons.search_rounded,
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Search coming soon")),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CommunityThreadSearchScreen(community: widget.community),
+                            ),
                           );
                         },
                       ),
@@ -1163,17 +1167,18 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                           
                           if (ok) {
                             await _fetchData();
-                            if (mounted) {
+                            if (bctx.mounted) {
                               Navigator.pop(bctx);
-                              // ignore: use_build_context_synchronously
+                            }
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("Community updated successfully.")),
                               );
                             }
                           } else {
                             setSheetState(() => isSaving = false);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                            if (bctx.mounted) {
+                              ScaffoldMessenger.of(bctx).showSnackBar(
                                 const SnackBar(content: Text("Failed to update community details.")),
                               );
                             }

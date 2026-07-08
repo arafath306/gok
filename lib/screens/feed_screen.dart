@@ -141,6 +141,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
     final dbService = Provider.of<DatabaseService>(context);
     final prof = dbService.myProfile;
     final topPadding = MediaQuery.of(context).padding.top;
+    final bool isDesktop = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
       backgroundColor: context.scaffoldBg,
@@ -169,7 +170,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
                         child: Row(
                           children: [
                             // Hamburger button
-                            const CustomMenuButton(),
+                            if (!isDesktop) const CustomMenuButton(),
                             // Centred logo
                             Expanded(
                               child: Center(child: DakLogo(size: 42)),

@@ -37,6 +37,9 @@ class GeneralSettingsProvider with ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  bool _isVoicePostEnabled = false;
+  bool get isVoicePostEnabled => _isVoicePostEnabled;
+
   Future<void> fetchSettings() async {
     final uid = _currentUid;
     if (uid.isEmpty) return;
@@ -86,7 +89,19 @@ class GeneralSettingsProvider with ChangeNotifier {
         }
       }
 
-      // 3. Fetch muted accounts
+      // 3. Fetch global feature flags
+      try {
+        final sysRes = await _supabase.from('system_settings').select('key, value').inFilter('key', ['enable_voice_posts']);
+        for (var row in sysRes) {
+          if (row['key'] == 'enable_voice_posts') {
+            _isVoicePostEnabled = row['value'] == 'true';
+          }
+        }
+      } catch (e) {
+        debugPrint("Error fetching system settings: $e");
+      }
+
+      // 4. Fetch muted accounts
       final mutedRes = await _supabase
           .from('mutes')
           .select('muted_id')
