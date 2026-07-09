@@ -93,7 +93,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   ),
                 )
               else
-                ...sessions.map((session) => _buildSessionTile(context, provider, session)).toList(),
+                ...sessions.map((session) => _buildSessionTile(context, provider, session)),
             ],
           );
         },

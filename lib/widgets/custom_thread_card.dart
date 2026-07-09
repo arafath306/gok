@@ -22,7 +22,7 @@ import 'thread_image_carousel.dart';
 import '../state/music_playback_controller.dart';
 import '../models/music_track.dart';
 import '../state/monetization_controller.dart';
-import 'package:audioplayers/audioplayers.dart';
+
 import 'voice_post_player.dart';
 
 class CustomThreadCard extends StatefulWidget {

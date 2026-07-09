@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../../../core/security/e2ee_service.dart';
 abstract class ChatRemoteDataSource {
@@ -45,7 +45,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         }
       }
     } catch (e) {
-      print('Encryption failed: $e');
+      debugPrint('Encryption failed: $e');
     }
     return content; // Fallback to plain text if encryption fails or receiver has no key
   }
@@ -81,8 +81,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       'receiver_id': receiverId,
       'content': encryptedContent,
       'is_read': false,
-      if (mediaUrl != null) 'media_url': mediaUrl,
-      if (mediaType != null) 'media_type': mediaType,
+      'media_url': ?mediaUrl,
+      'media_type': ?mediaType,
     });
   }
 

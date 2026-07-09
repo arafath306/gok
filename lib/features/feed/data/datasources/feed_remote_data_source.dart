@@ -132,9 +132,9 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
       'content': content,
       'image_urls': imageUrls,
       'video_url': videoUrl,
-      if (audioUrl != null) 'audio_url': audioUrl,
-      if (audience != null) 'audience': audience,
-      if (communityId != null) 'community_id': communityId,
+      'audio_url': ?audioUrl,
+      'audience': ?audience,
+      'community_id': ?communityId,
       'is_subscriber_only': isSubscriberOnly,
     };
     if (pollExpiresAt != null) {
@@ -229,8 +229,8 @@ class FeedRemoteDataSourceImpl implements FeedRemoteDataSource {
       'user_id': userId,
       'thread_id': threadId,
       'content': content,
-      if (parentId != null) 'parent_id': parentId,
-      if (imageUrl != null) 'image_url': imageUrl,
+      'parent_id': ?parentId,
+      'image_url': ?imageUrl,
     });
     return true;
   }

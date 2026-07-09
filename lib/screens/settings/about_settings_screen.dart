@@ -525,7 +525,7 @@ WhatsApp: +8801313961899''',
               Expanded(
                 child: ListView.separated(
                   itemCount: licenses.length,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (context, index) =>
                       Divider(height: 1, color: context.border),
                   itemBuilder: (context, index) {
                     final item = licenses[index];

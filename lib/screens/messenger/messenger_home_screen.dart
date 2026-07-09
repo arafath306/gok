@@ -11,7 +11,7 @@ import 'member_search_sheet.dart';
 import '../../services/general_settings_provider.dart';
 
 class MessengerHomeScreen extends StatefulWidget {
-  const MessengerHomeScreen({Key? key}) : super(key: key);
+  const MessengerHomeScreen({super.key});
 
   @override
   State<MessengerHomeScreen> createState() => _MessengerHomeScreenState();
@@ -147,7 +147,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     itemCount: _chats.length,
                     padding: const EdgeInsets.fromLTRB(0, 8, 0, 72),
-                    separatorBuilder: (_, __) => Divider(height: 1, color: context.border),
+                    separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
                     itemBuilder: (context, index) {
                       final chat = _chats[index];
                       final Profile profile = chat['profile'] as Profile;

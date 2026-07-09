@@ -41,8 +41,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   bool _privacyOpen = false;
   int _charCount = 0;
   bool _showImageInput = false;
-  bool _showVideoInput = false;
-  bool _isAnonymous = false;
+  final bool _showVideoInput = false;
+  final bool _isAnonymous = false;
   bool _isSubscriberOnly = false;
 
   final List<Uint8List> _selectedImagesBytesList = [];

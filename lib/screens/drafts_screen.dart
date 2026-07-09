@@ -191,10 +191,15 @@ class _DraftsScreenState extends State<DraftsScreen> {
                     
                     String previewText = draft.content;
                     if (previewText.isEmpty) {
-                      if (draft.imagePaths.isNotEmpty) previewText = "[Image attached]";
-                      else if (draft.videoUrl != null) previewText = "[Video attached]";
-                      else if (draft.pollOptions != null) previewText = "[Poll attached]";
-                      else previewText = "Empty draft";
+                      if (draft.imagePaths.isNotEmpty) {
+                        previewText = "[Image attached]";
+                      } else if (draft.videoUrl != null) {
+                        previewText = "[Video attached]";
+                      } else if (draft.pollOptions != null) {
+                        previewText = "[Poll attached]";
+                      } else {
+                        previewText = "Empty draft";
+                      }
                     }
 
                     return InkWell(

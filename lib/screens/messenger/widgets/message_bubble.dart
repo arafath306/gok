@@ -1,0 +1,304 @@
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../utils/app_theme.dart';
+import 'swipe_to_reply.dart';
+
+
+class MessageBubble extends StatelessWidget {
+  final Map<String, dynamic> msg;
+  final VoidCallback onTap;
+  final VoidCallback onReply;
+  final void Function(String) onOpenMedia;
+
+  const MessageBubble({
+    super.key,
+    required this.msg,
+    required this.onTap,
+    required this.onReply,
+    required this.onOpenMedia,
+  });  @override
+  Widget build(BuildContext context) {
+    final bool isMe = msg['isMe'] as bool;
+    final String? mediaUrl = msg['media_url'] as String?;
+    final localMediaBytes = msg['local_media_bytes'];
+    final bool isRead = msg['is_read'] as bool? ?? false;
+    final bool isSending = msg['is_sending'] as bool? ?? false;
+    final String? replyToId = msg['reply_to_id'] as String?;
+    final String? replyToText = msg['reply_to_text'] as String?;
+    final String? replyToSender = msg['reply_to_sender'] as String?;
+    final String? text = msg['text'] as String?;
+
+    final bool hasMedia = localMediaBytes != null || (mediaUrl != null && mediaUrl.isNotEmpty);
+
+    String timeStr = msg['time'] as String;
+    if (msg['created_at'] != null) {
+      try {
+        final dt = DateTime.parse(msg['created_at'] as String);
+        // Convert to Dhaka Time (GMT+6)
+        final dhakaTime = dt.toUtc().add(const Duration(hours: 6));
+        final hour24 = dhakaTime.hour;
+        final minute = dhakaTime.minute.toString().padLeft(2, '0');
+        final period = hour24 >= 12 ? 'PM' : 'AM';
+        int hour12 = hour24 % 12;
+        if (hour12 == 0) hour12 = 12;
+        timeStr = '$hour12:$minute $period';
+      } catch (_) {}
+    }
+
+    Widget buildTimeRow({required bool overlayMode}) {
+      final textStyle = GoogleFonts.inter(
+        fontSize: overlayMode ? 9.5 : 10,
+        color: overlayMode
+            ? Colors.white
+            : (isMe ? Colors.white60 : context.textMuted),
+      );
+
+      final iconColor = overlayMode
+          ? (isSending
+              ? Colors.white.withValues(alpha: 0.5)
+              : (isRead ? Colors.greenAccent : Colors.white.withValues(alpha: 0.8)))
+          : (isSending
+              ? Colors.white54
+              : (isRead ? Colors.greenAccent : Colors.white60));
+
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(timeStr, style: textStyle),
+          if (isMe) ...[
+            const SizedBox(width: 4),
+            Icon(
+              isSending
+                  ? Icons.schedule_rounded
+                  : (isRead ? Icons.done_all : Icons.done),
+              size: 12,
+              color: iconColor,
+            ),
+          ],
+        ],
+      );
+    }
+
+    Widget buildImageWidget(dynamic bytesOrUrl) {
+      final clipRadius = BorderRadius.only(
+        topLeft: replyToId == null ? const Radius.circular(16) : Radius.zero,
+        topRight: replyToId == null ? const Radius.circular(16) : Radius.zero,
+        bottomLeft: (text == null || text.isEmpty)
+            ? (isMe ? const Radius.circular(16) : Radius.zero)
+            : Radius.zero,
+        bottomRight: (text == null || text.isEmpty)
+            ? (isMe ? Radius.zero : const Radius.circular(16))
+            : Radius.zero,
+      );
+
+      final image = bytesOrUrl is Uint8List
+          ? Image.memory(
+              bytesOrUrl,
+              width: double.infinity,
+              height: 240,
+              fit: BoxFit.cover,
+            )
+          : CachedNetworkImage(
+              imageUrl: bytesOrUrl as String,
+              width: double.infinity,
+              height: 240,
+              fit: BoxFit.cover,
+              errorWidget: (context, url, error) =>
+                  const Icon(Icons.broken_image, size: 50),
+            );
+
+      final imageWidget = bytesOrUrl is Uint8List
+          ? image
+          : GestureDetector(
+              onTap: () => onOpenMedia(bytesOrUrl as String),
+              child: image,
+            );
+
+      if (text == null || text.isEmpty) {
+        // Overlay time row on top of image
+        return ClipRRect(
+          borderRadius: clipRadius,
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              imageWidget,
+              Positioned(
+                bottom: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: buildTimeRow(overlayMode: true),
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // No overlay, just image
+        return ClipRRect(
+          borderRadius: clipRadius,
+          child: imageWidget,
+        );
+      }
+    }
+
+    Widget bubbleContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Reply quote
+        if (replyToId != null)
+          Padding(
+            padding: hasMedia
+                ? const EdgeInsets.fromLTRB(12, 10, 12, 6)
+                : EdgeInsets.zero,
+            child: Container(
+              margin: hasMedia ? EdgeInsets.zero : const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isMe
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : (context.isDarkMode
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.04)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border(
+                  left: BorderSide(
+                    color: isMe
+                        ? Colors.white70
+                        : context.primaryAccent,
+                    width: 3.5,
+                  ),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    replyToSender ?? 'Someone',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isMe
+                          ? Colors.white
+                          : context.primaryAccent,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    replyToText ?? '',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      color: isMe
+                          ? Colors.white70
+                          : context.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        // Media (image / GIF)
+        if (localMediaBytes != null) ...[
+          buildImageWidget(localMediaBytes),
+          if (text != null && text.isNotEmpty)
+            const SizedBox(height: 8),
+        ] else if (mediaUrl != null && mediaUrl.isNotEmpty) ...[
+          buildImageWidget(mediaUrl),
+          if (text != null && text.isNotEmpty)
+            const SizedBox(height: 8),
+        ],
+        // Text
+        if (text != null && text.isNotEmpty)
+          Padding(
+            padding: hasMedia
+                ? const EdgeInsets.fromLTRB(12, 6, 12, 4)
+                : EdgeInsets.zero,
+            child: Text(
+              text,
+              style: GoogleFonts.inter(
+                fontSize: 14.5,
+                color:
+                    isMe ? Colors.white : context.textPrimary,
+                height: 1.4,
+              ),
+            ),
+          ),
+        // Time + read receipt (only if NOT overlayed on media)
+        if (!hasMedia || (text != null && text.isNotEmpty))
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: hasMedia
+                  ? const EdgeInsets.only(right: 4, bottom: 2, top: 1, left: 12)
+                  : const EdgeInsets.only(top: 2, left: 16),
+              child: buildTimeRow(overlayMode: false),
+            ),
+          ),
+      ],
+    );
+
+    if (!hasMedia) {
+      bubbleContent = IntrinsicWidth(child: bubbleContent);
+    }
+
+    return SwipeToReply(
+      onReply: onReply,
+      isMe: isMe,
+      child: Align(
+        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          constraints: BoxConstraints(
+              maxWidth: (MediaQuery.of(context).size.width * 0.75).clamp(200.0, 450.0)),
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: hasMedia
+                  ? EdgeInsets.zero
+                  : const EdgeInsets.fromLTRB(12, 8, 8, 4),
+              decoration: BoxDecoration(
+                color: isMe ? context.primaryAccent : context.cardBg,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: isMe
+                      ? const Radius.circular(16)
+                      : const Radius.circular(0),
+                  bottomRight: isMe
+                      ? const Radius.circular(0)
+                      : const Radius.circular(16),
+                ),
+                border: isMe
+                    ? null
+                    : Border.all(color: context.border, width: 0.8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.015),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: bubbleContent,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// â”€â”€â”€ Chat Composer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Completely isolated widget. Only rebuilds when its own state changes,
+// NOT when messages arrive. The input field is local â€” no external setState.

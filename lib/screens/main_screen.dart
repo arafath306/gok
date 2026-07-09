@@ -9,10 +9,8 @@ import 'notifications_screen.dart';
 import 'profile/profile_screen.dart';
 import '../utils/routes.dart';
 import 'create_thread_screen.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../state/monetization_controller.dart';
 import '../services/presence_service.dart';
@@ -1241,7 +1239,7 @@ class _TrendingTopicsListDesktopState extends State<TrendingTopicsListDesktop> {
     return ListView.separated(
       shrinkWrap: true,
       itemCount: _topics.length > 8 ? 8 : _topics.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final topic = _topics[index];
         final displayTopic = topic.startsWith('#') ? topic : '#$topic';
