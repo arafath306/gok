@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import '../../services/auth_service.dart';
+import '../../utils/app_theme.dart';
+
+class TwoFactorSetupScreen extends StatefulWidget {
+  const TwoFactorSetupScreen({super.key});
+
+  @override
+  State<TwoFactorSetupScreen> createState() => _TwoFactorSetupScreenState();
+}
+
+class _TwoFactorSetupScreenState extends State<TwoFactorSetupScreen> {
+  final TextEditingController _codeController = TextEditingController();
+  sb.AuthMFAEnrollResponse? _enrollResponse;
+  bool _isLoading = true;
+  bool _isVerifying = false;
+  String? _errorMsg;
+
+  @override
+  void initState() {
+    super.initState();
+    _startEnrollment();
+  }
+
+  void _startEnrollment() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final response = await authService.enrollMfa();
+    if (mounted) {
+      setState(() {
+        _enrollResponse = response;
+        _isLoading = false;
+        if (response == null) {
+          _errorMsg = 'Failed to initiate 2FA enrollment.';
+        }
+      });
+    }
+  }
+
+  void _verifyAndActivate() async {
+    final code = _codeController.text.trim();
+    if (code.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a 6-digit code.')),
+      );
+      return;
+    }
+
+    if (_enrollResponse == null) return;
+
+    setState(() {
+      _isVerifying = true;
+      _errorMsg = null;
+    });
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final success = await authService.verifyMfa(_enrollResponse!.id, code);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('2FA has been successfully activated!'),
+          backgroundColor: context.primaryAccent,
+        ),
+      );
+      Navigator.pop(context, true); // true = success
+    } else {
+      setState(() {
+        _isVerifying = false;
+        _errorMsg = authService.errorMessage ?? 'Invalid verification code.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.scaffoldBg,
+      appBar: AppBar(
+        backgroundColor: context.scaffoldBg,
+        elevation: 0,
+        title: Text(
+          'Setup 2FA',
+          style: GoogleFonts.inter(color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: context.textPrimary, size: 22),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMsg != null && _enrollResponse == null
+              ? Center(
+                  child: Text(
+                    _errorMsg!,
+                    style: GoogleFonts.inter(color: Colors.redAccent),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '1. Scan QR Code',
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimary),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Use an Authenticator app (like Google Authenticator or Authy) to scan this QR code.',
+                        style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: QrImageView(
+                          data: _enrollResponse!.totp!.uri,
+                          version: QrVersions.auto,
+                          size: 200.0,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Text(
+                        '2. Verify Code',
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimary),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Enter the 6-digit code generated by your app to verify and activate 2FA.',
+                        style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _codeController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 6,
+                        style: GoogleFonts.inter(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold, color: context.textPrimary),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          counterText: '',
+                          hintText: '000000',
+                          hintStyle: GoogleFonts.inter(color: context.textMuted.withValues(alpha: 0.5)),
+                        ),
+                      ),
+                      if (_errorMsg != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMsg!,
+                          style: GoogleFonts.inter(color: Colors.redAccent, fontSize: 13),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isVerifying ? null : _verifyAndActivate,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: context.primaryAccent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          child: _isVerifying
+                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : Text(
+                                  'Activate 2FA',
+                                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+    );
+  }
+}

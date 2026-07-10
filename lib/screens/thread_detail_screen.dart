@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
+import '../services/general_settings_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -858,15 +859,35 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     final dbService = Provider.of<DatabaseService>(context);
     final activePost = dbService.getLatestPost(widget.post);
 
+    final settings = Provider.of<GeneralSettingsProvider>(context);
+    final isPriorityEnabled = settings.isAlgorithmicPriorityEnabled;
+
+    int getPriority(Map<String, dynamic> c) {
+      if (!isPriorityEnabled) return 0;
+      final p = c['profiles'] as Map<String, dynamic>?;
+      if (p == null) return 0;
+      if (p['badge_type'] == 'gold') return 3;
+      if (p['badge_type'] == 'gray') return 2;
+      if (p['is_verified'] == true) return 1;
+      return 0;
+    }
+
     // Sort comments based on selected sort option
     final sortedComments = List<Map<String, dynamic>>.from(_comments);
-    if (_sortBy == "Newest") {
-      sortedComments.sort((a, b) => (b['created_at_raw'] ?? b['created_at'] ?? '').compareTo(a['created_at_raw'] ?? a['created_at'] ?? ''));
-    } else if (_sortBy == "Oldest") {
-      sortedComments.sort((a, b) => (a['created_at_raw'] ?? a['created_at'] ?? '').compareTo(b['created_at_raw'] ?? b['created_at'] ?? ''));
-    } else {
-      sortedComments.sort((a, b) => (b['likes_count'] ?? 0).compareTo(a['likes_count'] ?? 0));
-    }
+    
+    sortedComments.sort((a, b) {
+      final pA = getPriority(a);
+      final pB = getPriority(b);
+      if (pA != pB) return pB.compareTo(pA); // higher priority first
+
+      if (_sortBy == "Newest") {
+        return (b['created_at_raw'] ?? b['created_at'] ?? '').compareTo(a['created_at_raw'] ?? a['created_at'] ?? '');
+      } else if (_sortBy == "Oldest") {
+        return (a['created_at_raw'] ?? a['created_at'] ?? '').compareTo(b['created_at_raw'] ?? b['created_at'] ?? '');
+      } else {
+        return (b['likes_count'] ?? 0).compareTo(a['likes_count'] ?? 0);
+      }
+    });
 
     // Separate top-level comments and nested replies
     final topLevelComments = sortedComments.where((c) => c['parent_id'] == null).toList();

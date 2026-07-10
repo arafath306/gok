@@ -15,6 +15,7 @@ class Profile {
   final String? village;
   final String? zip;
   final bool isVerified;
+  final String? badgeType;
   final DateTime? verifiedExpiresAt;
   final String? birthdate;
   final String? gender;
@@ -46,6 +47,7 @@ class Profile {
     this.village,
     this.zip,
     this.isVerified = false,
+    this.badgeType,
     this.verifiedExpiresAt,
     this.birthdate,
     this.gender,
@@ -79,6 +81,7 @@ class Profile {
       village: json['village'] as String?,
       zip: json['zip'] as String?,
       isVerified: json['is_verified'] as bool? ?? false,
+      badgeType: json['badge_type'] as String?,
       verifiedExpiresAt: json['verified_expires_at'] != null 
           ? DateTime.tryParse(json['verified_expires_at'] as String) 
           : null,
@@ -117,6 +120,7 @@ class Profile {
       'village': village,
       'zip': zip,
       'is_verified': isVerified,
+      'badge_type': badgeType,
       'verified_expires_at': verifiedExpiresAt?.toIso8601String(),
       'birthdate': birthdate,
       'gender': gender,

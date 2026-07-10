@@ -27,6 +27,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
   final _commentController = TextEditingController();
   final _focusNode = FocusNode();
   List<Map<String, dynamic>> _comments = [];
+  List<Map<String, dynamic>> _sortedComments = [];
   bool _isLoading = false;
   String _sortBy = "Most relevant";
   
@@ -56,6 +57,37 @@ class _CommentsSheetState extends State<CommentsSheet> {
       ? widget.post.repostedPost!.id
       : widget.post.id;
 
+  void _sortComments() {
+    final settings = Provider.of<GeneralSettingsProvider>(context, listen: false);
+    final isPriorityEnabled = settings.isAlgorithmicPriorityEnabled;
+
+    int getPriority(Map<String, dynamic> c) {
+      if (!isPriorityEnabled) return 0;
+      final author = c['author'];
+      if (author == null) return 0;
+      if (author.badgeType == 'gold') return 3;
+      if (author.badgeType == 'gray') return 2;
+      if (author.isVerified == true) return 1;
+      return 0;
+    }
+
+    _sortedComments = List<Map<String, dynamic>>.from(_comments);
+    
+    _sortedComments.sort((a, b) {
+      final pA = getPriority(a);
+      final pB = getPriority(b);
+      if (pA != pB) return pB.compareTo(pA);
+
+      if (_sortBy == "Newest") {
+        return (b['created_at_raw'] ?? b['created_at'] ?? '').compareTo(a['created_at_raw'] ?? a['created_at'] ?? '');
+      } else if (_sortBy == "Oldest") {
+        return (a['created_at_raw'] ?? a['created_at'] ?? '').compareTo(b['created_at_raw'] ?? b['created_at'] ?? '');
+      } else {
+        return (b['likes_count'] ?? 0).compareTo(a['likes_count'] ?? 0);
+      }
+    });
+  }
+
   Future<void> _loadComments() async {
     setState(() => _isLoading = true);
     try {
@@ -66,6 +98,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
         setState(() {
           // Filter: only display top-level comments (parent_id == null)
           _comments = comments.where((c) => c['parent_id'] == null).toList();
+          _sortComments();
           _isLoading = false;
         });
       }
@@ -213,7 +246,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
         child: Column(
           children: [
             // Drag handle
-            const SizedBox(height: 8),
+            const SizedBox(height: 2),
             Container(
               width: 40,
               height: 4,
@@ -300,14 +333,36 @@ class _CommentsSheetState extends State<CommentsSheet> {
                           ),
                         )
                       : (() {
-                          final sortedComments = List<Map<String, dynamic>>.from(_comments);
-                          if (_sortBy == "Newest") {
-                            sortedComments.sort((a, b) => (b['created_at_raw'] ?? b['created_at'] ?? '').compareTo(a['created_at_raw'] ?? a['created_at'] ?? ''));
-                          } else if (_sortBy == "Oldest") {
-                            sortedComments.sort((a, b) => (a['created_at_raw'] ?? a['created_at'] ?? '').compareTo(b['created_at_raw'] ?? b['created_at'] ?? ''));
-                          } else {
-                            sortedComments.sort((a, b) => (b['likes_count'] ?? 0).compareTo(a['likes_count'] ?? 0));
+                          final settings = Provider.of<GeneralSettingsProvider>(context);
+                          final isPriorityEnabled = settings.isAlgorithmicPriorityEnabled;
+
+                          int getPriority(Map<String, dynamic> c) {
+                            if (!isPriorityEnabled) return 0;
+                            // Wait, in comments_sheet, is 'profiles' available or is it mapped to 'author'?
+                            // Let's check the code: final Profile author = comment['author'] as Profile;
+                            final author = c['author'];
+                            if (author == null) return 0;
+                            if (author.badgeType == 'gold') return 3;
+                            if (author.badgeType == 'gray') return 2;
+                            if (author.isVerified == true) return 1;
+                            return 0;
                           }
+
+                          final sortedComments = List<Map<String, dynamic>>.from(_comments);
+                          
+                          sortedComments.sort((a, b) {
+                            final pA = getPriority(a);
+                            final pB = getPriority(b);
+                            if (pA != pB) return pB.compareTo(pA);
+
+                            if (_sortBy == "Newest") {
+                              return (b['created_at_raw'] ?? b['created_at'] ?? '').compareTo(a['created_at_raw'] ?? a['created_at'] ?? '');
+                            } else if (_sortBy == "Oldest") {
+                              return (a['created_at_raw'] ?? a['created_at'] ?? '').compareTo(b['created_at_raw'] ?? b['created_at'] ?? '');
+                            } else {
+                              return (b['likes_count'] ?? 0).compareTo(a['likes_count'] ?? 0);
+                            }
+                          });
                           return ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             itemCount: sortedComments.length,
@@ -317,7 +372,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                             final isPostAuthor = author.id == widget.post.userId;
 
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
+                              margin: const EdgeInsets.only(bottom: 4),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -447,7 +502,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                           ),
                                         ),
                                         if (comment['image_url'] != null && (comment['image_url'] as String).isNotEmpty) ...[
-                                          const SizedBox(height: 8),
+                                          const SizedBox(height: 2),
                                           ClipRRect(
                                             borderRadius: BorderRadius.circular(12),
                                             child: Image.network(
@@ -460,7 +515,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                             ),
                                           ),
                                         ],
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 2),
 
                                         // Action Row
                                         Row(
@@ -1277,7 +1332,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 2),
             ...List.generate(actions.length, (i) {
               final action = actions[i];
               return AnimatedBuilder(

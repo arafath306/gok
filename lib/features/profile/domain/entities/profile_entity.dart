@@ -15,6 +15,7 @@ class ProfileEntity {
   final String? village;
   final String? zip;
   final bool isVerified;
+  final String? badgeType;
   final DateTime? verifiedExpiresAt;
   final String? birthdate;
   final String? gender;
@@ -43,6 +44,7 @@ class ProfileEntity {
     this.village,
     this.zip,
     this.isVerified = false,
+    this.badgeType,
     this.verifiedExpiresAt,
     this.birthdate,
     this.gender,

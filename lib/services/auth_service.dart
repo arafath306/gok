@@ -8,11 +8,16 @@ import '../features/auth/domain/usecases/login_use_case.dart';
 import '../features/auth/domain/usecases/signup_use_case.dart';
 import '../features/auth/domain/usecases/sign_out_use_case.dart';
 
+enum LoginResult { success, requires2FA, failure }
+
 class AuthService with ChangeNotifier {
   final sb.SupabaseClient _supabaseClient = sb.Supabase.instance.client;
 
   sb.User? _currentUser;
   sb.User? get currentUser => _currentUser;
+
+  bool _requires2FA = false;
+  bool get requires2FA => _requires2FA;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -49,9 +54,10 @@ class AuthService with ChangeNotifier {
   bool get isUserSignedIn => _currentUser != null;
   String get currentUid => _currentUser?.id ?? '';
 
-  Future<bool> handleLogin(String email, String password) async {
+  Future<LoginResult> handleLogin(String email, String password) async {
     _isLoading = true;
     _errorMessage = null;
+    _requires2FA = false;
     notifyListeners();
 
     final result = await _loginUseCase(email, password);
@@ -61,15 +67,80 @@ class AuthService with ChangeNotifier {
         _isLoading = false;
         _errorMessage = failure.message;
         notifyListeners();
-        return false;
+        return LoginResult.failure;
       },
-      (userEntity) {
+      (userEntity) async {
+        try {
+          final res = _supabaseClient.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (res.nextLevel == sb.AuthenticatorAssuranceLevels.aal2 && res.currentLevel == sb.AuthenticatorAssuranceLevels.aal1) {
+            _requires2FA = true;
+            _isLoading = false;
+            notifyListeners();
+            return LoginResult.requires2FA;
+          }
+        } catch (e) {
+          debugPrint('Error checking AAL: $e');
+        }
+        
         _currentUser = _supabaseClient.auth.currentUser;
         _isLoading = false;
         notifyListeners();
-        return true;
+        return LoginResult.success;
       },
     );
+  }
+
+  Future<sb.AuthMFAEnrollResponse?> enrollMfa() async {
+    try {
+      final response = await _supabaseClient.auth.mfa.enroll(factorType: sb.FactorType.totp);
+      return response;
+    } catch (e) {
+      debugPrint('Error enrolling MFA: $e');
+      return null;
+    }
+  }
+
+  Future<bool> verifyMfa(String factorId, String code) async {
+    try {
+      final challenge = await _supabaseClient.auth.mfa.challenge(factorId: factorId);
+      await _supabaseClient.auth.mfa.verify(
+        factorId: factorId,
+        challengeId: challenge.id,
+        code: code,
+      );
+      _requires2FA = false;
+      _currentUser = _supabaseClient.auth.currentUser;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Invalid 2FA code.';
+      notifyListeners();
+      debugPrint('Error verifying MFA: $e');
+      return false;
+    }
+  }
+
+  Future<bool> unenrollMfa(String factorId) async {
+    try {
+      await _supabaseClient.auth.mfa.unenroll(factorId);
+      return true;
+    } catch (e) {
+      debugPrint('Error unenrolling MFA: $e');
+      return false;
+    }
+  }
+
+  Future<sb.Factor?> getEnrolledFactor() async {
+    try {
+      final factors = await _supabaseClient.auth.mfa.listFactors();
+      if (factors.all.isNotEmpty) {
+        final verified = factors.all.where((f) => f.status == sb.FactorStatus.verified).toList();
+        if (verified.isNotEmpty) return verified.first;
+      }
+    } catch (e) {
+      debugPrint('Error listing MFA factors: $e');
+    }
+    return null;
   }
 
   Future<bool> handleSignup({

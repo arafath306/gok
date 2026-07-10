@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../state/monetization_controller.dart';
 import '../services/presence_service.dart';
+import '../services/general_settings_provider.dart';
 import 'messenger/messenger_home_screen.dart';
 import 'settings/settings_screen.dart';
 import 'settings/beta_center_screen.dart';
@@ -74,6 +75,8 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         PresenceService().initialize(currentUser.id);
         PresenceService().updatePage('/home');
         Provider.of<MonetizationController>(context, listen: false).fetchMySubscriptions(currentUser.id);
+        Provider.of<MonetizationController>(context, listen: false).fetchGlobalStatus();
+        Provider.of<GeneralSettingsProvider>(context, listen: false).fetchSettings();
       }
       
       dbService.fetchVerificationPlans();

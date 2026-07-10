@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../utils/app_theme.dart';
+import '../../../utils/chat_themes.dart';
 import 'swipe_to_reply.dart';
+import 'chat_voice_player.dart';
 
 
 class MessageBubble extends StatelessWidget {
   final Map<String, dynamic> msg;
+  final ChatTheme activeTheme;
   final VoidCallback onTap;
   final VoidCallback onReply;
   final void Function(String) onOpenMedia;
@@ -15,6 +18,7 @@ class MessageBubble extends StatelessWidget {
   const MessageBubble({
     super.key,
     required this.msg,
+    required this.activeTheme,
     required this.onTap,
     required this.onReply,
     required this.onOpenMedia,
@@ -28,9 +32,30 @@ class MessageBubble extends StatelessWidget {
     final String? replyToId = msg['reply_to_id'] as String?;
     final String? replyToText = msg['reply_to_text'] as String?;
     final String? replyToSender = msg['reply_to_sender'] as String?;
+    final String? mediaType = msg['media_type'] as String?;
     final String? text = msg['text'] as String?;
 
-    final bool hasMedia = localMediaBytes != null || (mediaUrl != null && mediaUrl.isNotEmpty);
+    if (mediaType == 'theme_change') {
+      final themeName = getChatThemeById(text).name;
+      final who = isMe ? 'You' : 'Someone';
+      final textToShow = (text != null && text.startsWith('custom:'))
+          ? '$who changed the chat wallpaper'
+          : '$who changed the chat theme to $themeName';
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        alignment: Alignment.center,
+        child: Text(
+          textToShow,
+          style: GoogleFonts.inter(
+            fontSize: 12.5,
+            color: context.textMuted,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
+    final bool hasMedia = (localMediaBytes != null || (mediaUrl != null && mediaUrl.isNotEmpty)) && mediaType != 'audio';
 
     String timeStr = msg['time'] as String;
     if (msg['created_at'] != null) {
@@ -208,15 +233,17 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
           ),
-        // Media (image / GIF)
-        if (localMediaBytes != null) ...[
+        // Media (image / GIF / audio)
+        if (mediaType == 'audio') ...[
+          if (mediaUrl != null && mediaUrl.isNotEmpty)
+            ChatVoicePlayer(audioUrl: mediaUrl, isMe: isMe),
+          if (text != null && text.isNotEmpty) const SizedBox(height: 8),
+        ] else if (localMediaBytes != null) ...[
           buildImageWidget(localMediaBytes),
-          if (text != null && text.isNotEmpty)
-            const SizedBox(height: 8),
+          if (text != null && text.isNotEmpty) const SizedBox(height: 8),
         ] else if (mediaUrl != null && mediaUrl.isNotEmpty) ...[
           buildImageWidget(mediaUrl),
-          if (text != null && text.isNotEmpty)
-            const SizedBox(height: 8),
+          if (text != null && text.isNotEmpty) const SizedBox(height: 8),
         ],
         // Text
         if (text != null && text.isNotEmpty)
@@ -229,7 +256,9 @@ class MessageBubble extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 14.5,
                 color:
-                    isMe ? Colors.white : context.textPrimary,
+                    isMe 
+                      ? (activeTheme.isDark ? Colors.white : Colors.black87)
+                      : context.textPrimary,
                 height: 1.4,
               ),
             ),
@@ -268,7 +297,16 @@ class MessageBubble extends StatelessWidget {
                   ? EdgeInsets.zero
                   : const EdgeInsets.fromLTRB(12, 8, 8, 4),
               decoration: BoxDecoration(
-                color: isMe ? context.primaryAccent : context.cardBg,
+                color: isMe
+                    ? (activeTheme.gradientColors == null ? activeTheme.primaryColor : null)
+                    : context.cardBg,
+                gradient: (isMe && activeTheme.gradientColors != null)
+                    ? LinearGradient(
+                        colors: activeTheme.gradientColors!,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),

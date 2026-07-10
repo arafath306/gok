@@ -48,6 +48,7 @@ extension ProfileExtension on DatabaseService {
         final profile = Profile.fromJson(response);
         if (userId == _currentUid) {
           _myProfile = profile;
+          _saveProfileToCache(profile);
           updateState();
         }
         return profile;
@@ -75,11 +76,35 @@ extension ProfileExtension on DatabaseService {
     }
   }
 
+  Future<void> _loadCachedProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? cachedJson = prefs.getString('cached_profile_$_currentUid');
+      if (cachedJson != null) {
+        final decodedMap = jsonDecode(cachedJson) as Map<String, dynamic>;
+        _myProfile = Profile.fromJson(decodedMap);
+        updateState();
+      }
+    } catch (e) {
+      debugPrint('Error loading cached profile: $e');
+    }
+  }
+
+  Future<void> _saveProfileToCache(Profile profile) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('cached_profile_$_currentUid', jsonEncode(profile.toJson()));
+    } catch (e) {
+      debugPrint('Error saving profile to cache: $e');
+    }
+  }
+
   Future<void> fetchMyProfile() async {
     if (_currentUid.isEmpty) return;
     final result = await fetchProfile(_currentUid);
     if (result != null) {
       _myProfile = result;
+      await _saveProfileToCache(result);
       _checkBadgeExpiration();
       updateState();
     }

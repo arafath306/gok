@@ -7,6 +7,7 @@ import '../../../../models/profile.dart';
 import '../../domain/entities/message_entity.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../datasources/chat_remote_data_source.dart';
+import '../datasources/local_chat_db.dart';
 import '../../../../core/security/e2ee_service.dart';
 
 class ChatRepositoryImpl implements IChatRepository {
@@ -149,87 +150,100 @@ class ChatRepositoryImpl implements IChatRepository {
   @override
   Stream<List<MessageEntity>> getMessagesStream(String otherUserId) {
     final controller = StreamController<List<MessageEntity>>();
+    List<MessageEntity> currentMessages = [];
+    String? otherPublicKeyVal;
+
+    Future<MessageEntity?> parseMessage(Map<String, dynamic> json) async {
+      String text = json['content'] as String? ?? '';
+      if (text.startsWith('E2EE:v1:') && otherPublicKeyVal != null) {
+        text = await _decryptContent(text, otherPublicKeyVal!);
+      }
+
+      final isMe = json['sender_id'] == _currentUid;
+      String? replyToId;
+      String? replyToText;
+      String? replyToSender;
+
+      if (text.startsWith('{') &&
+          text.endsWith('}') &&
+          text.contains('reply_to_id')) {
+        try {
+          final Map<String, dynamic> jsonReply =
+              jsonDecode(text) as Map<String, dynamic>;
+          replyToId = jsonReply['reply_to_id'] as String?;
+          replyToText = jsonReply['reply_to_text'] as String?;
+          replyToSender = jsonReply['reply_to_sender'] as String?;
+          text = jsonReply['text'] as String? ?? '';
+        } catch (_) {}
+      }
+
+      return MessageEntity(
+        id: json['id'] as String,
+        text: text,
+        isMe: isMe,
+        time: _getRelativeTime(
+          DateTime.parse(json['created_at'] as String),
+        ),
+        createdAt: json['created_at'] as String,
+        mediaUrl: json['media_url'] as String?,
+        mediaType: json['media_type'] as String?,
+        isRead: json['is_read'] as bool? ?? false,
+        replyToId: replyToId,
+        replyToText: replyToText,
+        replyToSender: replyToSender,
+      );
+    }
 
     Future<void> loadAndPush() async {
       try {
-        // Get cached public key or fetch from Supabase
-        String? otherPublicKey;
+        // 1. Immediately load from local SQLite cache and push to UI (Instant)
+        final localMessages = await LocalChatDatabase.instance.getCachedMessages(_currentUid, otherUserId);
+        if (localMessages.isNotEmpty) {
+          currentMessages = localMessages;
+          if (!controller.isClosed) {
+            controller.add(List.from(currentMessages));
+          }
+        }
+
+        // 2. Fetch public key for decryption if not cached
         if (_publicKeyCache.containsKey(otherUserId)) {
-          otherPublicKey = _publicKeyCache[otherUserId];
+          otherPublicKeyVal = _publicKeyCache[otherUserId];
         } else {
           final otherProfileRes = await supabaseClient
               .from('profiles')
               .select('public_key')
               .eq('id', otherUserId)
-              .single();
-          otherPublicKey = otherProfileRes['public_key'] as String?;
-          _publicKeyCache[otherUserId] = otherPublicKey;
+              .maybeSingle();
+          if (otherProfileRes != null) {
+            otherPublicKeyVal = otherProfileRes['public_key'] as String?;
+            _publicKeyCache[otherUserId] = otherPublicKeyVal;
+          }
         }
 
+        // 3. Fetch from remote in background to sync any new/missing messages
         final data = await remoteDataSource.fetchMessagesRaw(
           _currentUid,
           otherUserId,
         );
 
-        final otherPublicKeyVal = otherPublicKey;
-        final decryptedTexts = await Future.wait(
-          data.map((json) async {
-            final text = json['content'] as String? ?? '';
-            if (text.startsWith('E2EE:v1:') && otherPublicKeyVal != null) {
-              return await _decryptContent(text, otherPublicKeyVal);
-            }
-            return text;
-          }),
-        );
-
         final List<MessageEntity> messages = [];
-
-        for (int i = 0; i < data.length; i++) {
-          final json = data[i];
-          String text = decryptedTexts[i];
-          final isMe = json['sender_id'] == _currentUid;
-
-          String? replyToId;
-          String? replyToText;
-          String? replyToSender;
-
-          if (text.startsWith('{') &&
-              text.endsWith('}') &&
-              text.contains('reply_to_id')) {
-            try {
-              final Map<String, dynamic> jsonReply =
-                  jsonDecode(text) as Map<String, dynamic>;
-              replyToId = jsonReply['reply_to_id'] as String?;
-              replyToText = jsonReply['reply_to_text'] as String?;
-              replyToSender = jsonReply['reply_to_sender'] as String?;
-              text = jsonReply['text'] as String? ?? '';
-            } catch (_) {}
-          }
-
-          messages.add(
-            MessageEntity(
-              id: json['id'] as String,
-              text: text,
-              isMe: isMe,
-              time: _getRelativeTime(
-                DateTime.parse(json['created_at'] as String),
-              ),
-              createdAt: json['created_at'] as String,
-              mediaUrl: json['media_url'] as String?,
-              mediaType: json['media_type'] as String?,
-              isRead: json['is_read'] as bool? ?? false,
-              replyToId: replyToId,
-              replyToText: replyToText,
-              replyToSender: replyToSender,
-            ),
-          );
+        for (final json in data) {
+          final msg = await parseMessage(json);
+          if (msg != null) messages.add(msg);
         }
 
+        // 4. Update local cache with decrypted messages
+        if (messages.isNotEmpty) {
+          await LocalChatDatabase.instance.cacheMessages(messages, _currentUid, otherUserId);
+        }
+
+        // 5. Update UI with fully synced messages
+        currentMessages = messages;
         if (!controller.isClosed) {
-          controller.add(messages);
+          controller.add(List.from(currentMessages));
         }
       } catch (e) {
-        if (!controller.isClosed) {
+        if (!controller.isClosed && currentMessages.isEmpty) {
           controller.add([]);
         }
       }
@@ -239,22 +253,46 @@ class ChatRepositoryImpl implements IChatRepository {
 
     final subscription = remoteDataSource
         .getMessagesRealtimeStream(otherUserId)
-        .listen((payload) {
-          final record = payload.newRecord.isNotEmpty
-              ? payload.newRecord
-              : payload.oldRecord;
-          if (record.isNotEmpty) {
-            final senderId = record['sender_id'] as String?;
-            final receiverId = record['receiver_id'] as String?;
-            final isRelevant =
-                (senderId == _currentUid && receiverId == otherUserId) ||
-                (senderId == otherUserId && receiverId == _currentUid);
-            if (!isRelevant) {
-              return;
-            }
+        .listen((payload) async {
+      final record =
+          payload.newRecord.isNotEmpty ? payload.newRecord : payload.oldRecord;
+      if (record.isNotEmpty) {
+        final senderId = record['sender_id'] as String?;
+        final receiverId = record['receiver_id'] as String?;
+        final isRelevant =
+            (senderId == _currentUid && receiverId == otherUserId) ||
+            (senderId == otherUserId && receiverId == _currentUid);
+        if (!isRelevant) {
+          return;
+        }
+      }
+
+      if (payload.eventType == sb.PostgresChangeEvent.insert) {
+        final newMsg = await parseMessage(payload.newRecord);
+        if (newMsg != null) {
+          currentMessages.add(newMsg);
+          await LocalChatDatabase.instance.cacheMessage(newMsg, _currentUid, otherUserId);
+          if (!controller.isClosed) controller.add(List.from(currentMessages));
+        }
+      } else if (payload.eventType == sb.PostgresChangeEvent.delete) {
+        final deletedId = payload.oldRecord['id'] as String;
+        currentMessages.removeWhere((m) => m.id == deletedId);
+        await LocalChatDatabase.instance.deleteMessage(deletedId);
+        if (!controller.isClosed) controller.add(List.from(currentMessages));
+      } else if (payload.eventType == sb.PostgresChangeEvent.update) {
+        final newMsg = await parseMessage(payload.newRecord);
+        if (newMsg != null) {
+          final idx = currentMessages.indexWhere((m) => m.id == newMsg.id);
+          if (idx != -1) {
+            currentMessages[idx] = newMsg;
+            await LocalChatDatabase.instance.cacheMessage(newMsg, _currentUid, otherUserId);
+            if (!controller.isClosed) controller.add(List.from(currentMessages));
           }
-          loadAndPush();
-        });
+        }
+      } else {
+        loadAndPush();
+      }
+    });
 
     controller.onCancel = () {
       subscription.cancel();
@@ -313,9 +351,9 @@ class ChatRepositoryImpl implements IChatRepository {
   }
 
   @override
-  Future<Either<Failure, String?>> uploadChatMedia(Uint8List bytes) async {
+  Future<Either<Failure, String?>> uploadChatMedia(Uint8List bytes, {String extension = 'jpg', String contentType = 'image/jpeg'}) async {
     try {
-      final result = await remoteDataSource.uploadChatMedia(_currentUid, bytes);
+      final result = await remoteDataSource.uploadChatMedia(_currentUid, bytes, extension: extension, contentType: contentType);
       return Right(result);
     } catch (e) {
       return Left(ServerFailure(e.toString()));

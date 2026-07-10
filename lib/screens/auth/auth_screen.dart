@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import '../../services/auth_service.dart';
+import 'two_factor_verification_screen.dart';
 import '../../utils/app_theme.dart';
 import 'forgot_password_screen.dart';
 
@@ -116,9 +117,20 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       return;
     }
 
-    final success = await authService.handleLogin(identifier, password);
-    if (success && mounted) {
+    final result = await authService.handleLogin(identifier, password);
+    if (!mounted) return;
+    
+    if (result == LoginResult.success) {
       widget.onLoginSuccess();
+    } else if (result == LoginResult.requires2FA) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TwoFactorVerificationScreen(
+            onVerificationSuccess: widget.onLoginSuccess,
+          ),
+        ),
+      );
     }
   }
 

@@ -67,8 +67,8 @@ extension MessagingExtension on DatabaseService {
     );
   }
 
-  Future<String?> uploadChatMedia(Uint8List bytes) async {
-    final result = await sl<UploadChatMediaUseCase>()(bytes);
+  Future<String?> uploadChatMedia(Uint8List bytes, {String extension = 'jpg', String contentType = 'image/jpeg'}) async {
+    final result = await sl<UploadChatMediaUseCase>()(bytes, extension: extension, contentType: contentType);
     return result.fold(
       (failure) {
         debugPrint("Upload chat media error: ${failure.message}");

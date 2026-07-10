@@ -89,6 +89,9 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     super.initState();
     _contentController.addListener(_onContentChanged);
     _loadDraftCount();
+    _audioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _isPlayingAudio = false);
+    });
     
     if (widget.draftPost != null) {
       _contentController.text = widget.draftPost!.content;
@@ -318,7 +321,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     final imageUrl = _imageUrlController.text.trim();
     final videoUrl = _videoUrlController.text.trim();
 
-    if (text.isEmpty) return;
+    if (text.isEmpty && _recordedAudioPath == null && _selectedImagesBytesList.isEmpty && imageUrl.isEmpty && videoUrl.isEmpty && _selectedMusic == null) return;
 
     setState(() => _isUploadingImage = true);
     final db = Provider.of<DatabaseService>(context, listen: false);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../profile/verification_dashboard_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
@@ -178,13 +179,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 controller.checkStatus(dbService).then((status) {
                   if (!context.mounted) return;
                   if (myProfile?.isVerified == true) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Your Profile Verification is Active!',
-                            style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-                        backgroundColor: context.greenAccent,
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const VerificationDashboardScreen()),
                     );
                   } else if (myProfile?.verificationRequested == true || status == VerificationStatus.pendingReview || status == VerificationStatus.rejected) {
                     Navigator.push(
@@ -200,7 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 });
               },
             ),
-            if (monetization.isEnabledGlobally && myProfile?.canMonetize == true)
+            if (monetization.isEnabledGlobally || myProfile?.canMonetize == true)
               _SettingsTileItem(
                 icon: Icons.monetization_on_outlined,
                 title: 'Creator Monetization',

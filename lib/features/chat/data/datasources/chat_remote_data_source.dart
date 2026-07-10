@@ -8,7 +8,7 @@ abstract class ChatRemoteDataSource {
   Future<void> sendMessage(String senderId, String receiverId, String content, {String? mediaUrl, String? mediaType});
   Future<void> markMessagesAsRead(String currentUserId, String otherUserId);
   Future<bool> deleteConversation(String currentUserId, String otherUserId);
-  Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes);
+  Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes, {String extension = 'jpg', String contentType = 'image/jpeg'});
   Stream<sb.PostgresChangePayload> getMessagesRealtimeStream(String otherUserId);
   Future<void> editMessage(String messageId, String senderId, String receiverId, String content);
   Future<void> deleteMessage(String messageId);
@@ -23,6 +23,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   ChatRemoteDataSourceImpl(this.supabaseClient, this.e2eeService);
 
   final Map<String, String?> _publicKeyCache = {};
+  final Map<String, sb.RealtimeChannel> _typingChannels = {};
 
   // Helper method to encrypt content before sending
   Future<String> _encryptContent(String content, String receiverId) async {
@@ -106,13 +107,13 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }
 
   @override
-  Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes) async {
-    final path = 'posts/$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.jpg';
+  Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes, {String extension = 'jpg', String contentType = 'image/jpeg'}) async {
+    final path = 'posts/$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.$extension';
     await supabaseClient.storage.from('avatars').uploadBinary(
       path,
       bytes,
-      fileOptions: const sb.FileOptions(
-        contentType: 'image/jpeg',
+      fileOptions: sb.FileOptions(
+        contentType: contentType,
         upsert: true,
       ),
     );
@@ -184,15 +185,31 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     final roomIds = [currentUserId, otherUserId]..sort();
     final roomId = 'typing_${roomIds[0]}_${roomIds[1]}';
     
-    final channel = supabaseClient.channel(roomId);
-    channel.subscribe((status, [error]) {
-      if (status == sb.RealtimeSubscribeStatus.subscribed) {
-        channel.sendBroadcastMessage(
-          event: 'typing',
-          payload: {'user_id': currentUserId, 'is_typing': isTyping},
-        );
-      }
-    });
+    sb.RealtimeChannel? channel = _typingChannels[roomId];
+    if (channel == null) {
+      channel = supabaseClient.channel(roomId);
+      _typingChannels[roomId] = channel;
+      channel.subscribe((status, [error]) {
+        if (status == sb.RealtimeSubscribeStatus.subscribed) {
+          try {
+            channel!.sendBroadcastMessage(
+              event: 'typing',
+              payload: {'user_id': currentUserId, 'is_typing': isTyping},
+            );
+          } catch (_) {}
+        }
+      });
+      return;
+    }
+
+    try {
+      channel.sendBroadcastMessage(
+        event: 'typing',
+        payload: {'user_id': currentUserId, 'is_typing': isTyping},
+      );
+    } catch (e) {
+      // ignore
+    }
   }
 
   @override
@@ -201,7 +218,13 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     final roomId = 'typing_${roomIds[0]}_${roomIds[1]}';
     
     final controller = StreamController<Map<String, dynamic>>();
-    final channel = supabaseClient.channel(roomId);
+    
+    sb.RealtimeChannel? channel = _typingChannels[roomId];
+    if (channel == null) {
+      channel = supabaseClient.channel(roomId);
+      _typingChannels[roomId] = channel;
+      channel.subscribe();
+    }
     
     channel.onBroadcast(
       event: 'typing',
@@ -210,10 +233,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           controller.add(payload);
         }
       },
-    ).subscribe();
+    );
 
     controller.onCancel = () {
-      supabaseClient.removeChannel(channel);
+      supabaseClient.removeChannel(channel!);
+      _typingChannels.remove(roomId);
       controller.close();
     };
 

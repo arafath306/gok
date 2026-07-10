@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import '../full_screen_media_viewer.dart';
+
+import 'package:cached_network_image/cached_network_image.dart';
+
+import '../../widgets/verification_badge.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/auth_service.dart';
@@ -203,15 +207,27 @@ class _ProfileScreenState extends State<ProfileScreen>
           children: [
             // Cover Image Area
             GestureDetector(
-              onTap: _isOwnProfile ? () => _pickAndUploadImage(db, false) : null,
+              onTap: ((profile?.coverUrl ?? '').isNotEmpty) ? () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FullScreenMediaViewer(
+                        imageUrls: [profile?.coverUrl ?? ''],
+                        initialIndex: 0,
+                      ),
+                    ),
+                  );
+                } : null,
               child: Container(
                 height: coverHeight,
                 width: double.infinity,
                 color: Colors.grey[200],
-                child: profile?.coverUrl != null && profile!.coverUrl!.isNotEmpty
-                    ? Image.network(
-                        profile.coverUrl!,
+                child: (profile?.coverUrl ?? '').isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: profile?.coverUrl ?? '',
                         fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(color: Colors.grey[300]),
+                        errorWidget: (context, url, error) => Container(color: Colors.grey[200]),
                       )
                     : Container(
                         decoration: const BoxDecoration(
@@ -313,7 +329,17 @@ class _ProfileScreenState extends State<ProfileScreen>
               top: avatarHeightOffset,
               left: 16,
               child: GestureDetector(
-                onTap: _isOwnProfile ? () => _pickAndUploadImage(db, true) : null,
+                onTap: ((profile?.avatarUrl ?? '').isNotEmpty) ? () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FullScreenMediaViewer(
+                        imageUrls: [profile?.avatarUrl ?? ''],
+                        initialIndex: 0,
+                      ),
+                    ),
+                  );
+                } : null,
                 child: Stack(
                   children: [
                     Container(
@@ -331,37 +357,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ],
                       ),
                       child: ClipOval(
-                        child: profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty
-                            ? Image.network(
-                                profile.avatarUrl!,
+                        child: (profile?.avatarUrl ?? '').isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: profile?.avatarUrl ?? '',
                                 fit: BoxFit.cover,
-                                loadingBuilder: (_, child, progress) =>
-                                    progress == null
-                                        ? child
-                                        : _defaultAvatar(size: avatarRadius * 2),
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _defaultAvatar(size: avatarRadius * 2),
+                                placeholder: (context, url) => _defaultAvatar(size: avatarRadius * 2),
+                                errorWidget: (context, url, error) => _defaultAvatar(size: avatarRadius * 2),
                               )
                             : _defaultAvatar(size: avatarRadius * 2),
                       ),
                     ),
-                    if (_isOwnProfile)
-                      Positioned(
-                        bottom: 2,
-                        right: 2,
-                        child: Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF0085FF),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.edit_rounded,
-                            color: Colors.white,
-                            size: 11,
-                          ),
-                        ),
-                      ),
+
                   ],
                 ),
               ),
@@ -474,11 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       (_isOwnProfile && db.myProfile?.isVerified == true) ||
                       (profile != null && profile.id == db.currentUid && db.myProfile?.isVerified == true)) ...[
                     const SizedBox(width: 6),
-                    const Icon(
-                      Icons.verified,
-                      color: Colors.blue,
-                      size: 18,
-                    ),
+                    VerificationBadge(isVerified: profile?.isVerified ?? false, badgeType: profile?.badgeType, size: 20),
                   ],
                 ],
               ),
@@ -1056,51 +1058,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Future<void> _pickAndUploadImage(DatabaseService db, bool isAvatar) async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
-      );
-      if (image == null) return;
-      
-       final bytes = await image.readAsBytes();
-      final success = await db.updateProfileImage(bytes, isAvatar);
-      if (!mounted) return;
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isAvatar ? 'Profile photo updated successfully.' : 'Cover photo updated successfully.',
-              style: GoogleFonts.inter(),
-            ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to upload image. Please try again.',
-              style: GoogleFonts.inter(),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint("Pick image error: $e");
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error: $e',
-            style: GoogleFonts.inter(),
-          ),
-        ),
-      );
-    }
-  }
-
+  
   Widget _buildBlockedProfileView(BuildContext context, DatabaseService db, String targetId, bool blockedByMe) {
     final username = _viewedProfile?.username ?? 'user';
     final fullName = _viewedProfile?.fullName ?? 'User';

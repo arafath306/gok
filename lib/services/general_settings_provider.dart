@@ -40,6 +40,12 @@ class GeneralSettingsProvider with ChangeNotifier {
   bool _isVoicePostEnabled = false;
   bool get isVoicePostEnabled => _isVoicePostEnabled;
 
+  bool _isTieredBadgesEnabled = false;
+  bool get isTieredBadgesEnabled => _isTieredBadgesEnabled;
+
+  bool _isAlgorithmicPriorityEnabled = false;
+  bool get isAlgorithmicPriorityEnabled => _isAlgorithmicPriorityEnabled;
+
   Future<void> fetchSettings() async {
     final uid = _currentUid;
     if (uid.isEmpty) return;
@@ -91,10 +97,14 @@ class GeneralSettingsProvider with ChangeNotifier {
 
       // 3. Fetch global feature flags
       try {
-        final sysRes = await _supabase.from('system_settings').select('key, value').inFilter('key', ['enable_voice_posts']);
+        final sysRes = await _supabase.from('system_settings').select('key, value').inFilter('key', ['enable_voice_posts', 'enable_tiered_badges', 'enable_algorithmic_priority']);
         for (var row in sysRes) {
           if (row['key'] == 'enable_voice_posts') {
             _isVoicePostEnabled = row['value'] == 'true';
+          } else if (row['key'] == 'enable_tiered_badges') {
+            _isTieredBadgesEnabled = row['value'] == 'true';
+          } else if (row['key'] == 'enable_algorithmic_priority') {
+            _isAlgorithmicPriorityEnabled = row['value'] == 'true';
           }
         }
       } catch (e) {

@@ -11,11 +11,14 @@ import '../../models/profile.dart';
 import '../../services/database_service.dart';
 import '../../services/general_settings_provider.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/chat_themes.dart';
 import '../profile/profile_screen.dart';
 
 import 'widgets/message_list.dart';
 import 'widgets/chat_composer.dart';
 import 'widgets/full_screen_media_viewer.dart';
+import 'media_preview_screen.dart';
+import '../../widgets/theme_picker_sheet.dart';
 
 
 // â”€â”€â”€ ChatScreen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -47,6 +50,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Map<String, dynamic>? _replyingToMessage;
   bool _showEmojiPanel = false;
   int _pickerTabIndex = 0;
+  String? _currentThemeId;
 
   StreamSubscription<Map<String, dynamic>>? _typingSub;
   bool _otherIsTyping = false;
@@ -57,6 +61,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _realtimeOtherUser = widget.otherUser;
     final dbService = Provider.of<DatabaseService>(context, listen: false);
+    dbService.currentActiveChatUserId = widget.otherUser.id;
     _messagesStream = dbService.getMessagesStream(widget.otherUser.id);
 
     // Mark read once on enter, not on every rebuild
@@ -120,16 +125,77 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _showThemePicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ThemePickerSheet(
+        currentThemeId: _currentThemeId ?? 'default_blue',
+        onThemeSelected: (themeId) {
+          _sendThemeChangeMessage(themeId);
+        },
+        onCustomWallpaperSelected: (image) {
+          _uploadAndSetCustomWallpaper(image);
+        },
+      ),
+    );
+  }
+
+  void _sendThemeChangeMessage(String themeId) {
+    final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempMsg = {
+      'id': tempId,
+      'text': themeId,
+      'isMe': true,
+      'time': _formatToDhaka12Hr(DateTime.now()),
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'media_type': 'theme_change',
+      'is_read': false,
+      'is_sending': true,
+    };
+
+    setState(() => _pendingMessages.add(tempMsg));
+    _scrollToBottom();
+
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    dbService.sendMessage(widget.otherUser.id, themeId, mediaType: 'theme_change').then((_) {
+      if (mounted) {
+        setState(() {
+          final idx = _pendingMessages.indexWhere((m) => m['id'] == tempId);
+          if (idx != -1) _pendingMessages[idx]['is_sending'] = false;
+        });
+      }
+    });
+  }
+
+  void _uploadAndSetCustomWallpaper(XFile image) async {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Uploading wallpaper...')));
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final bytes = await image.readAsBytes();
+    final url = await dbService.uploadChatMedia(bytes, extension: 'jpg', contentType: 'image/jpeg');
+    if (url != null) {
+      _sendThemeChangeMessage('custom:$url');
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload wallpaper')));
+      }
+    }
+  }
+
+
   @override
   void dispose() {
     _scrollController.dispose();
     _statusUpdateTimer?.cancel();
     _typingSub?.cancel();
     _typingTimer?.cancel();
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    dbService.currentActiveChatUserId = null;
     super.dispose();
   }
 
-  // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Helpers ──────────────────────────────────────────────────────────────────────────────────
   void _scrollToBottom({bool animated = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -214,13 +280,26 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
       final picker = ImagePicker();
-      final List<XFile> images = await picker.pickMultiImage(imageQuality: 70);
+      final List<XFile> images = await picker.pickMultiImage(
+        imageQuality: 100, // Full quality for preview/crop
+      );
       if (images.isEmpty) return;
+      if (!mounted) return;
 
-      for (final image in images) {
-        final bytes = await image.readAsBytes();
+      // Navigate to preview and edit screen
+      final List<Uint8List>? processedBytesList = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MediaPreviewScreen(initialImages: images),
+        ),
+      );
+
+      if (processedBytesList == null || processedBytesList.isEmpty) return;
+
+      for (int i = 0; i < processedBytesList.length; i++) {
+        final bytes = processedBytesList[i];
         final parentMsg = _replyingToMessage;
-        final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}_${image.name.hashCode}';
+        final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}_$i';
 
         final tempMsg = {
           'id': tempId,
@@ -302,7 +381,190 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // ─────────────────── Send camera message ──────────────────────────────
+  Future<void> _sendCameraMessage() async {
+    try {
+      final dbService = Provider.of<DatabaseService>(context, listen: false);
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 100, // Full quality for preview/crop
+      );
+      if (image == null) return;
+      if (!mounted) return;
+
+      // Navigate to preview and edit screen
+      final List<Uint8List>? processedBytesList = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MediaPreviewScreen(initialImages: [image]),
+        ),
+      );
+
+      if (processedBytesList == null || processedBytesList.isEmpty) return;
+
+      final bytes = processedBytesList.first;
+      final parentMsg = _replyingToMessage;
+      final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+
+      final tempMsg = {
+        'id': tempId,
+        'text': '',
+        'isMe': true,
+        'time': _formatToDhaka12Hr(DateTime.now()),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'is_read': false,
+        'is_sending': true,
+        'local_media_bytes': bytes,
+        'media_type': 'image',
+        if (parentMsg != null) ...{
+          'reply_to_id': parentMsg['id'],
+          'reply_to_text': parentMsg['text'],
+          'reply_to_sender':
+              parentMsg['isMe'] == true ? 'You' : _realtimeOtherUser.fullName,
+        }
+      };
+
+      if (mounted) {
+        setState(() {
+          _pendingMessages.add(tempMsg);
+          _replyingToMessage = null;
+          _showEmojiPanel = false;
+        });
+        _scrollToBottom();
+      }
+
+      dbService.uploadChatMedia(bytes).then((mediaUrl) async {
+        if (mediaUrl != null) {
+          if (mounted) {
+            setState(() {
+              final idx = _pendingMessages.indexWhere((m) => m['id'] == tempId);
+              if (idx != -1) _pendingMessages[idx]['media_url'] = mediaUrl;
+            });
+          }
+          String contentToSave = '';
+          if (parentMsg != null) {
+            contentToSave = jsonEncode({
+              'reply_to_id': parentMsg['id'],
+              'reply_to_text': parentMsg['text'] ?? '',
+              'reply_to_sender': parentMsg['isMe'] == true
+                  ? 'You'
+                  : _realtimeOtherUser.fullName,
+              'text': '',
+            });
+          }
+          await dbService.sendMessage(_realtimeOtherUser.id, contentToSave,
+              mediaUrl: mediaUrl, mediaType: 'image');
+        } else {
+          throw Exception('Media upload returned null');
+        }
+      }).then((_) {
+        if (mounted) {
+          setState(() {
+            final idx = _pendingMessages.indexWhere((m) => m['id'] == tempId);
+            if (idx != -1) _pendingMessages[idx]['is_sending'] = false;
+          });
+        }
+      }).catchError((err) {
+        debugPrint('Error sending camera media: $err');
+        if (mounted) {
+          setState(() => _pendingMessages.removeWhere((m) => m['id'] == tempId));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to send image.', style: GoogleFonts.inter()),
+            backgroundColor: Colors.redAccent,
+          ));
+        }
+      });
+    } catch (e) {
+      debugPrint('Error picking from camera: $e');
+    }
+  }
+
   // â”€â”€â”€ Send GIF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  Future<void> _sendAudioMessage(Uint8List bytes) async {
+    try {
+      final dbService = Provider.of<DatabaseService>(context, listen: false);
+      final parentMsg = _replyingToMessage;
+      final String tempId = 'temp_audio_${DateTime.now().millisecondsSinceEpoch}';
+
+      final tempMsg = {
+        'id': tempId,
+        'text': '',
+        'isMe': true,
+        'time': _formatToDhaka12Hr(DateTime.now()),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'is_read': false,
+        'is_sending': true,
+        'local_media_bytes': bytes,
+        'media_type': 'audio',
+        if (parentMsg != null) ...{
+          'reply_to_id': parentMsg['id'],
+          'reply_to_text': parentMsg['text'],
+          'reply_to_sender':
+              parentMsg['isMe'] == true ? 'You' : _realtimeOtherUser.fullName,
+        }
+      };
+
+      if (mounted) {
+        setState(() {
+          _pendingMessages.add(tempMsg);
+          _replyingToMessage = null; 
+          _showEmojiPanel = false;
+        });
+        _scrollToBottom();
+      }
+
+      dbService.uploadChatMedia(bytes, extension: 'm4a', contentType: 'audio/m4a').then((mediaUrl) async {
+        if (mediaUrl != null) {
+          if (mounted) {
+            setState(() {
+              final idx =
+                  _pendingMessages.indexWhere((m) => m['id'] == tempId);
+              if (idx != -1) _pendingMessages[idx]['media_url'] = mediaUrl;
+            });
+          }
+          String contentToSave = '';
+          if (parentMsg != null) {
+            contentToSave = jsonEncode({
+              'reply_to_id': parentMsg['id'],
+              'reply_to_text': parentMsg['text'] ?? '',
+              'reply_to_sender': parentMsg['isMe'] == true
+                  ? 'You'
+                  : _realtimeOtherUser.fullName,
+              'text': '',
+            });
+          }
+          await dbService.sendMessage(_realtimeOtherUser.id, contentToSave,
+              mediaUrl: mediaUrl, mediaType: 'audio');
+        } else {
+          throw Exception('Media upload returned null');
+        }
+      }).then((_) {
+        if (mounted) {
+          setState(() {
+            final idx =
+                _pendingMessages.indexWhere((m) => m['id'] == tempId);
+            if (idx != -1) _pendingMessages[idx]['is_sending'] = false;
+          });
+        }
+      }).catchError((error) {
+        debugPrint('Error sending audio message: $error');
+        if (mounted) {
+          setState(() {
+            _pendingMessages.removeWhere((m) => m['id'] == tempId);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Failed to send audio message.'),
+            backgroundColor: Colors.redAccent,
+          ));
+        }
+      });
+    } catch (e) {
+      debugPrint('Error in _sendAudioMessage: $e');
+    }
+  }
+
   void _sendGifMessage(String gifUrl) {
     final parentMsg = _replyingToMessage;
     final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
@@ -850,6 +1112,17 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(height: 8),
                   ListTile(
+                    leading: const Icon(Icons.palette_outlined, color: Colors.blueAccent),
+                    title: Text('Change Theme', style: GoogleFonts.inter(color: Colors.blueAccent)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showThemePicker();
+                    },
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    tileColor: Colors.blueAccent.withValues(alpha: 0.05),
+                  ),
+                  const SizedBox(height: 8),
+                  ListTile(
                     leading: const Icon(Icons.block_rounded,
                         color: Colors.redAccent),
                     title: Text('Block User',
@@ -949,6 +1222,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final settings =
         Provider.of<GeneralSettingsProvider>(context, listen: true);
     final myActiveStatusEnabled = settings.isActiveStatusEnabled;
+
+    final activeTheme = getChatThemeById(_currentThemeId);
 
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWide = screenWidth > 600;
@@ -1078,7 +1353,6 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
         actions: [
-
           IconButton(
             icon: Icon(Icons.info_outlined,
                 color: context.textPrimary, size: 20),
@@ -1087,17 +1361,43 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
+      body: Container(
+        decoration: BoxDecoration(
+          image: _currentThemeId != null && _currentThemeId!.startsWith('custom:')
+            ? DecorationImage(
+                image: CachedNetworkImageProvider(_currentThemeId!.substring(7)),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withValues(alpha: context.isDarkMode ? 0.5 : 0.1),
+                  BlendMode.darken,
+                ),
+              )
+            : null,
+        ),
+        child: Column(
+          children: [
           // â”€â”€ Message list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Expanded(
             child: MessageList(
               stream: _messagesStream,
+              activeTheme: activeTheme,
               pendingMessages: _pendingMessages,
               deletedIds: _deletedIds,
               scrollController: _scrollController,
               onAllMessagesUpdated: (msgs) {
                 _allMessages = msgs;
+                String? newThemeId;
+                for (final msg in msgs) {
+                  if (msg['media_type'] == 'theme_change') {
+                    newThemeId = msg['text'];
+                    break;
+                  }
+                }
+                if (newThemeId != _currentThemeId) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _currentThemeId = newThemeId);
+                  });
+                }
               },
               onScrollToBottom: () => _scrollToBottom(animated: false),
               onMessageAction: _showMessageActionMenu,
@@ -1114,8 +1414,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   realtimeOtherUser: _realtimeOtherUser,
                   showEmojiPanel: _showEmojiPanel,
                   pickerTabIndex: _pickerTabIndex,
+                  activeTheme: activeTheme,
                   onSend: (text, parent) => _sendMessage(text, parent),
                   onPickMedia: _sendMediaMessage,
+                  onPickCamera: _sendCameraMessage,
                   onClearReply: () =>
                       setState(() => _replyingToMessage = null),
                   onToggleEmojiPanel: (show, tabIdx) => setState(() {
@@ -1123,8 +1425,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     _pickerTabIndex = tabIdx;
                   }),
                   onGifSelected: (gifUrl) => _sendGifMessage(gifUrl),
+                  onSendAudio: (bytes) => _sendAudioMessage(bytes),
                 ),
         ],
+      ),
       ),
     );
 

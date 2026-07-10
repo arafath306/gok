@@ -8,6 +8,7 @@ import '../models/thread_post.dart';
 import '../models/notification.dart';
 
 import '../core/injection.dart';
+import 'general_settings_provider.dart';
 import '../features/feed/domain/usecases/get_feed_use_case.dart';
 import '../features/feed/domain/usecases/create_thread_use_case.dart';
 import '../features/feed/domain/usecases/toggle_like_use_case.dart';
@@ -53,6 +54,7 @@ part 'parts/algorithmicfeed_ext.dart';
 part 'parts/verification_ext.dart';
 
 class DatabaseService with ChangeNotifier {
+  String? currentActiveChatUserId;
   void updateState() => notifyListeners();
   final _supabase = Supabase.instance.client;
 
@@ -470,7 +472,8 @@ class DatabaseService with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     
-    // Load offline cached feed first
+    // Load offline cached profile and feed first
+    await _loadCachedProfile();
     await _loadCachedAIFeed();
     
     await fetchBlockedMutedLists();

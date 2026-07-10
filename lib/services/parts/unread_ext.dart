@@ -59,20 +59,31 @@ extension UnreadExtension on DatabaseService {
         body = 'Sent you a message';
       }
     } else {
-      body = rawContent.isNotEmpty ? rawContent : '📷 Photo';
+      if (rawContent.startsWith('{') && rawContent.contains('"text"')) {
+        try {
+          final Map<String, dynamic> parsed = jsonDecode(rawContent);
+          body = parsed['text'] as String? ?? rawContent;
+        } catch (_) {
+          body = rawContent.isNotEmpty ? rawContent : '📷 Photo';
+        }
+      } else {
+        body = rawContent.isNotEmpty ? rawContent : '📷 Photo';
+      }
     }
 
-    // Play chime sound
-    sl<PlaySoundUseCase>().call(SoundType.chime);
-
-    // Typed push notification — goes to Messages channel with grouping
-    await sl<ShowNotificationUseCase>().call(
-      type: NotificationType.message,
-      id: msg['id'].hashCode,
-      senderName: senderName,
-      message: body,
-      payload: 'message:${msg['sender_id']}',
-    );
+    if (currentActiveChatUserId != msg['sender_id']) {
+      // Play chime sound
+      sl<PlaySoundUseCase>().call(SoundType.chime);
+  
+      // Typed push notification — goes to Messages channel with grouping
+      await sl<ShowNotificationUseCase>().call(
+        type: NotificationType.message,
+        id: msg['id'].hashCode,
+        senderName: senderName,
+        message: body,
+        payload: 'message:${msg['sender_id']}',
+      );
+    }
 
     _incomingNotificationStreamController.add({
       'title': senderName,

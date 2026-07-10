@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
@@ -225,8 +229,85 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _selectedGender;
   String? _birthdateString;
 
+  String? _avatarUrl;
+  String? _coverUrl;
   bool _isSaving = false;
+  bool _isUploadingPhoto = false;
   String? _errorMsg;
+
+  Future<void> _pickAndUploadImage(DatabaseService db, bool isAvatar) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      if (image == null) return;
+
+      CroppedFile? croppedFile = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        aspectRatio: isAvatar ? const CropAspectRatio(ratioX: 1, ratioY: 1) : const CropAspectRatio(ratioX: 16, ratioY: 9),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: isAvatar ? 'Crop Profile Photo' : 'Crop Cover Photo',
+            toolbarColor: Colors.black,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(
+            title: isAvatar ? 'Crop Profile Photo' : 'Crop Cover Photo',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+        ],
+      );
+
+      if (croppedFile == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+      final bytes = await croppedFile.readAsBytes();
+      final success = await db.updateProfileImage(bytes, isAvatar);
+      
+      if (!mounted) return;
+      
+      if (success) {
+        db.fetchMyProfile();
+        if (isAvatar) {
+          _avatarUrl = db.myProfile?.avatarUrl;
+        } else {
+          _coverUrl = db.myProfile?.coverUrl;
+        }
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isAvatar ? 'Profile photo updated successfully.' : 'Cover photo updated successfully.',
+              style: GoogleFonts.inter(),
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to upload image. Please try again.',
+              style: GoogleFonts.inter(),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
+    }
+  }
 
   final List<Map<String, String>> _genders = [
     {"label": "Male", "value": "Male"},
@@ -450,6 +531,111 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Consumer<DatabaseService>(
+            builder: (context, db, _) {
+              final coverUrl = _coverUrl ?? widget.profile['cover_url'];
+              final avatarUrl = _avatarUrl ?? widget.profile['avatar_url'];
+
+              return Column(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      GestureDetector(
+                        onTap: _isUploadingPhoto ? null : () => _pickAndUploadImage(db, false),
+                        child: Container(
+                          height: 140,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: coverUrl != null && coverUrl.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: coverUrl,
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(
+                                  color: Colors.blue[50],
+                                  child: Center(
+                                    child: Icon(Icons.add_a_photo_outlined, color: Colors.blue[300]),
+                                  ),
+                                ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: -30,
+                        left: 16,
+                        child: GestureDetector(
+                          onTap: _isUploadingPhoto ? null : () => _pickAndUploadImage(db, true),
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  border: Border.all(color: context.scaffoldBg, width: 3),
+                                ),
+                                child: ClipOval(
+                                  child: avatarUrl != null && avatarUrl.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: avatarUrl,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Icon(Icons.person, size: 40, color: Colors.grey[400]),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0085FF),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: context.scaffoldBg, width: 2),
+                                  ),
+                                  child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.edit, size: 12, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text('Edit Cover', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+                  if (_isUploadingPhoto)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 16.0),
+                      child: LinearProgressIndicator(),
+                    ),
+                ],
+              );
+            },
+          ),
+          
           if (_errorMsg != null)
             Container(
               padding: const EdgeInsets.all(12),

@@ -50,8 +50,25 @@ extension AlgorithmicFeedExtension on DatabaseService {
           }
         }
         
-        // Sort posts back into the ranked order returned by get_personalized_feed
-        posts.sort((a, b) => threadIds.indexOf(a.id).compareTo(threadIds.indexOf(b.id)));
+        final generalSettings = sl<GeneralSettingsProvider>();
+        if (generalSettings.isAlgorithmicPriorityEnabled) {
+          // Priority: Gold > Gray > Blue (Verified) > Unverified
+          int getPriority(ThreadPost p) {
+            if (p.author.badgeType == 'gold') return 3;
+            if (p.author.badgeType == 'gray') return 2;
+            if (p.author.isVerified) return 1;
+            return 0;
+          }
+          posts.sort((a, b) {
+            int pA = getPriority(a);
+            int pB = getPriority(b);
+            if (pA != pB) return pB.compareTo(pA); // higher priority first
+            return threadIds.indexOf(a.id).compareTo(threadIds.indexOf(b.id));
+          });
+        } else {
+          // Sort posts back into the ranked order returned by get_personalized_feed
+          posts.sort((a, b) => threadIds.indexOf(a.id).compareTo(threadIds.indexOf(b.id)));
+        }
         fetchedPosts.addAll(posts);
       }
 

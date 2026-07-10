@@ -30,6 +30,9 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
   String _activeCategory = "Smileys";
   double _panelHeight = 280.0;
   
+  final ScrollController _emojiScrollController = ScrollController();
+  final ScrollController _gifScrollController = ScrollController();
+  
   // Category tabs for emoji picker
   final List<Map<String, dynamic>> _emojiCategories = [
     {"label": "Smileys", "icon": "😀"},
@@ -204,6 +207,8 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
     _tabController.dispose();
     _gifSearchController.dispose();
     _gifSearchFocus.dispose();
+    _emojiScrollController.dispose();
+    _gifScrollController.dispose();
     super.dispose();
   }
 
@@ -278,51 +283,55 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
       ),
       child: Column(
         children: [
-          // Drag handle bar
+          // Drag handle and Tab bar header
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onVerticalDragUpdate: (details) {
               setState(() {
                 _panelHeight = (_panelHeight - details.delta.dy).clamp(
                   250.0,
-                  MediaQuery.of(context).size.height * 0.75,
+                  MediaQuery.of(context).size.height * 0.5,
                 );
               });
             },
-            child: Container(
-              width: double.infinity,
-              color: Colors.transparent,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.border,
-                    borderRadius: BorderRadius.circular(2),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: context.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-          // Tab bar header
-          Container(
-            height: 38,
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: context.border, width: 0.6)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TabBar(
-                    controller: _tabController,
-                    indicatorColor: Theme.of(context).primaryColor,
-                    labelColor: Theme.of(context).primaryColor,
-                    unselectedLabelColor: context.textSecondary,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-                    tabs: const [
-                      Tab(text: "Emoji"),
-                      Tab(text: "GIF"),
+                // Tab bar header
+                Container(
+                  height: 38,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: context.border, width: 0.6)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TabBar(
+                          controller: _tabController,
+                          indicatorColor: Theme.of(context).primaryColor,
+                          labelColor: Theme.of(context).primaryColor,
+                          unselectedLabelColor: context.textSecondary,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+                          tabs: const [
+                            Tab(text: "Emoji"),
+                            Tab(text: "GIF"),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -332,12 +341,32 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
           
           // Tab body
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildEmojiPickerTab(),
-                _buildGifPickerTab(),
-              ],
+            child: Listener(
+              onPointerMove: (event) {
+                final double maxHeight = MediaQuery.of(context).size.height * 0.5;
+                const double minHeight = 250.0;
+                final dy = event.delta.dy;
+                
+                final activeScrollController = _tabController.index == 0 ? _emojiScrollController : _gifScrollController;
+                final isAtTop = activeScrollController.hasClients ? activeScrollController.offset <= 0 : true;
+
+                if (dy < 0 && _panelHeight < maxHeight) {
+                  setState(() {
+                    _panelHeight = (_panelHeight - dy).clamp(minHeight, maxHeight);
+                  });
+                } else if (dy > 0 && isAtTop && _panelHeight > minHeight) {
+                  setState(() {
+                    _panelHeight = (_panelHeight - dy).clamp(minHeight, maxHeight);
+                  });
+                }
+              },
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildEmojiPickerTab(),
+                  _buildGifPickerTab(),
+                ],
+              ),
             ),
           ),
         ],
@@ -402,8 +431,11 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
         // Grid of emojis
         Expanded(
           child: GridView.builder(
+            controller: _emojiScrollController,
             padding: const EdgeInsets.all(8),
-            physics: const BouncingScrollPhysics(),
+            physics: _panelHeight >= MediaQuery.of(context).size.height * 0.49 
+                ? const BouncingScrollPhysics() 
+                : const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 8,
               crossAxisSpacing: 6,
@@ -545,8 +577,11 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
                       ),
                     )
                   : GridView.builder(
+                      controller: _gifScrollController,
                       padding: const EdgeInsets.all(8),
-                      physics: const BouncingScrollPhysics(),
+                      physics: _panelHeight >= MediaQuery.of(context).size.height * 0.49 
+                          ? const BouncingScrollPhysics() 
+                          : const NeverScrollableScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: 8,

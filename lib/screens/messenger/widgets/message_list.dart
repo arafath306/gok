@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../utils/app_theme.dart';
+import '../../../utils/chat_themes.dart';
 import 'message_bubble.dart';
 
 
 class MessageList extends StatefulWidget {
   final Stream<List<Map<String, dynamic>>> stream;
+  final ChatTheme activeTheme;
   final List<Map<String, dynamic>> pendingMessages;
   final Set<String> deletedIds;
   final ScrollController scrollController;
@@ -16,6 +18,7 @@ class MessageList extends StatefulWidget {
   final void Function(String) onOpenMedia;
 
   const MessageList({super.key, required this.stream,
+    required this.activeTheme,
     required this.pendingMessages,
     required this.deletedIds,
     required this.scrollController,
@@ -40,7 +43,7 @@ class MessageListState extends State<MessageList> {
             !snapshot.hasData) {
           return Center(
               child: CircularProgressIndicator(
-                  color: context.primaryAccent));
+                  color: widget.activeTheme.primaryColor));
         }
 
         final messages = snapshot.data ?? [];
@@ -111,6 +114,7 @@ class MessageListState extends State<MessageList> {
               child: MessageBubble(
                 key: ValueKey(msg['id']),
                 msg: msg,
+                activeTheme: widget.activeTheme,
                 onTap: () => widget.onMessageAction(msg),
                 onReply: () => widget.onReply(msg),
                 onOpenMedia: widget.onOpenMedia,

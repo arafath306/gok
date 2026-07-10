@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../services/general_settings_provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';
+import 'two_factor_setup_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -13,13 +15,29 @@ class SecuritySettingsScreen extends StatefulWidget {
 }
 
 class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
+  bool _is2faEnabled = false;
+  sb.Factor? _enrolledFactor;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<GeneralSettingsProvider>(context, listen: false).fetchActiveSessions();
+      _load2faStatus();
     });
   }
+
+  Future<void> _load2faStatus() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final factor = await authService.getEnrolledFactor();
+    if (mounted) {
+      setState(() {
+        _enrolledFactor = factor;
+        _is2faEnabled = factor != null;
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -56,22 +74,43 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               _buildSwitchTile(
                 context: context,
                 title: 'Two-Factor Authentication (2FA)',
-                subtitle: 'Secure your account by requiring a code during login. (Coming Soon)',
-                value: false,
-                onChanged: (val) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Two-Factor Authentication (2FA) is coming soon!',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
+                subtitle: _is2faEnabled ? '2FA is currently enabled for this account.' : 'Secure your account by requiring a code during login.',
+                value: _is2faEnabled,
+                onChanged: (val) async {
+                  if (val) {
+                    final success = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TwoFactorSetupScreen()),
+                    );
+                    if (success == true) {
+                      _load2faStatus();
+                    }
+                  } else {
+                    if (_enrolledFactor != null) {
+                      // Prompt for confirmation
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: context.cardBg,
+                          title: Text('Disable 2FA?', style: GoogleFonts.inter(color: context.textPrimary, fontWeight: FontWeight.bold)),
+                          content: Text('Are you sure you want to disable Two-Factor Authentication? Your account will be less secure.', style: GoogleFonts.inter(color: context.textSecondary)),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true), 
+                              child: const Text('Disable', style: TextStyle(color: Colors.redAccent)),
+                            ),
+                          ],
                         ),
-                      ),
-                      backgroundColor: Colors.orange[800],
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                      );
+                      if (confirm == true) {
+                        if (!mounted) return;
+                        final authService = Provider.of<AuthService>(context, listen: false);
+                        await authService.unenrollMfa(_enrolledFactor!.id);
+                        _load2faStatus();
+                      }
+                    }
+                  }
                 },
               ),
               _buildActionTile(
@@ -363,7 +402,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                           // Try to verify old password by logging in
                           final oldPassCorrect = await authService.handleLogin(email, oldPass);
                           if (!ctx.mounted) return;
-                          if (!oldPassCorrect) {
+                          if (oldPassCorrect != LoginResult.success) {
                             setModalState(() => isLoading = false);
                             _showToast(ctx, authService.errorMessage ?? 'Incorrect old password.');
                             return;

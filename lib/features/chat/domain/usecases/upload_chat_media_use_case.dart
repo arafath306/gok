@@ -7,7 +7,7 @@ class UploadChatMediaUseCase {
 
   UploadChatMediaUseCase(this.repository);
 
-  Future<Either<Failure, String?>> call(Uint8List bytes) {
-    return repository.uploadChatMedia(bytes);
+  Future<Either<Failure, String?>> call(Uint8List bytes, {String extension = 'jpg', String contentType = 'image/jpeg'}) {
+    return repository.uploadChatMedia(bytes, extension: extension, contentType: contentType);
   }
 }
