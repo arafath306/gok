@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'widgets/auth_glass_card.dart';
+import 'widgets/auth_text_field.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
@@ -8,6 +11,7 @@ import 'two_factor_verification_screen.dart';
 import '../../utils/app_theme.dart';
 import 'forgot_password_screen.dart';
 import 'email_verification_pending_screen.dart';
+import 'widgets/auth_background_painter.dart';
 
 class AuthScreen extends StatefulWidget {
   final bool initialIsSignUp;
@@ -270,107 +274,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   // ── Glass card: adapts to light/dark ─────────────────────────────────────
-  Widget _buildGlassCard({required Widget child}) {
-    final isDark = context.isDarkMode;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: isDark
-            ? LinearGradient(
-                colors: [
-                  context.authAccent1.withValues(alpha: 0.55),
-                  context.authAccent2.withValues(alpha: 0.25),
-                  context.authAccent1.withValues(alpha: 0.35),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : LinearGradient(
-                colors: [
-                  context.authPrimary.withValues(alpha: 0.18),
-                  context.authSecondary.withValues(alpha: 0.08),
-                  context.authPrimary.withValues(alpha: 0.14),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Container(
-        margin: const EdgeInsets.all(1.2),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: context.customCardBg,
-          borderRadius: BorderRadius.circular(23),
-        ),
-        child: child,
-      ),
-    );
-  }
 
-  // ── Text field: light or dark styling ─────────────────────────────────────
-  Widget _buildTextField({
-    required String hint,
-    required TextEditingController controller,
-    required IconData prefixIcon,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    TextInputType keyboardType = TextInputType.text,
-    VoidCallback? onTap,
-    bool readOnly = false,
-    void Function(String)? onChanged,
-  }) {
-    final isDark = context.isDarkMode;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        onTap: onTap,
-        readOnly: readOnly,
-        onChanged: onChanged,
-        style: GoogleFonts.inter(
-          color: context.textPrimary,
-          fontSize: 15,
-        ),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: GoogleFonts.inter(
-            color: context.textMuted,
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(
-            prefixIcon,
-            color: context.textMuted,
-            size: 20,
-          ),
-          suffixIcon: suffixIcon,
-          filled: true,
-          fillColor: isDark
-              ? const Color(0xFF070B13).withValues(alpha: 0.6)
-              : const Color(0xFFF8FAFC),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: context.border,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: context.border,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: context.authPrimary, width: 1.5),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   // ── Gradient action button ─────────────────────────────────────────────────
   Widget _buildGradientButton({
@@ -624,12 +529,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTextField(
+        AuthTextField(
           hint: "Full Name",
           controller: _fullNameController,
           prefixIcon: Icons.person_outline,
         ),
-        _buildTextField(
+        AuthTextField(
           hint: "Username",
           controller: _usernameController,
           prefixIcon: Icons.alternate_email,
@@ -673,7 +578,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   GoogleFonts.inter(color: Colors.green[600], fontSize: 12),
             ),
           ),
-        _buildTextField(
+        AuthTextField(
           hint: "Email",
           controller: _emailController,
           prefixIcon: Icons.mail_outline,
@@ -717,7 +622,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTextField(
+        AuthTextField(
           hint: "Password",
           controller: _signUpPasswordController,
           prefixIcon: Icons.lock_outline,
@@ -736,7 +641,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 setState(() => _obscureSignUpPassword = !_obscureSignUpPassword),
           ),
         ),
-        _buildTextField(
+        AuthTextField(
           hint: "Confirm Password",
           controller: _confirmPasswordController,
           prefixIcon: Icons.lock_outline,
@@ -755,7 +660,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 () => _obscureConfirmPassword = !_obscureConfirmPassword),
           ),
         ),
-        _buildTextField(
+        AuthTextField(
           hint: "Date of Birth",
           controller: _dobController,
           prefixIcon: Icons.calendar_today_outlined,
@@ -1089,7 +994,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               animation: _cloudController,
               builder: (context, child) {
                 return CustomPaint(
-                  painter: _AtmosphericBackgroundPainter(
+                  painter: AtmosphericBackgroundPainter(
                     cloudOffset: _cloudController.value,
                     isDark: isDark,
                   ),
@@ -1328,7 +1233,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                _buildGlassCard(
+                                AuthGlassCard(
                                   child: _isSignUp
                                       ? (_signUpStep == 1
                                           ? _buildStep1()
@@ -1357,14 +1262,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                                   color: subtitleColor),
                                             ),
                                             const SizedBox(height: 16),
-                                            _buildTextField(
+                                            AuthTextField(
                                               hint: "Email or Username",
                                               controller:
                                                   _emailPhoneController,
                                               prefixIcon:
                                                   Icons.mail_outline_rounded,
                                             ),
-                                            _buildTextField(
+                                            AuthTextField(
                                               hint: "Password",
                                               controller: _passwordController,
                                               prefixIcon:
@@ -1507,113 +1412,3 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 // ─────────────────────────────────────────────────────────────────────────────
 /// Atmospheric background painter — adapts colors for light/dark mode
 // ─────────────────────────────────────────────────────────────────────────────
-class _AtmosphericBackgroundPainter extends CustomPainter {
-  final double cloudOffset;
-  final bool isDark;
-
-  _AtmosphericBackgroundPainter({
-    required this.cloudOffset,
-    required this.isDark,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final drift = math.sin(cloudOffset * 2 * math.pi);
-    final drift2 = math.cos(cloudOffset * 2 * math.pi);
-
-    // Light mode: soft blue/indigo tones; dark: purple nebula
-    final c1 = isDark ? const Color(0xFF3D1F8C) : const Color(0xFF5B7FFF);
-    final c2 = isDark ? const Color(0xFF1E0F5E) : const Color(0xFF7B5FFF);
-    final c3 = isDark ? const Color(0xFF5B21B6) : const Color(0xFF5B7FFF);
-    final c4 = isDark ? const Color(0xFF1E3A8A) : const Color(0xFF3B82F6);
-    final c5 = isDark ? const Color(0xFF7C3AED) : const Color(0xFF5B7FFF);
-
-    final baseAlpha = isDark ? 0.42 : 0.08;
-
-    // Center glow
-    final glowAlpha = baseAlpha + 0.08 * drift;
-    final centerGlow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          c1.withValues(alpha: glowAlpha.clamp(0.0, 1.0)),
-          c2.withValues(alpha: (glowAlpha * 0.5).clamp(0.0, 1.0)),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.5, 1.0],
-      ).createShader(Rect.fromCircle(
-        center: Offset(size.width / 2, size.height * 0.1),
-        radius: size.width * 0.9,
-      ));
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height * 0.1),
-      size.width * 0.9,
-      centerGlow,
-    );
-
-    // Left cloud
-    final leftX = size.width * 0.08 + 28.0 * drift;
-    final leftY = size.height * 0.32 + 14.0 * drift2;
-    final leftCloud = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          c3.withValues(
-              alpha: (isDark ? 0.20 : 0.07 + 0.03 * drift).clamp(0.0, 1.0)),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(leftX, leftY),
-        radius: size.width * 0.48,
-      ));
-    canvas.drawCircle(Offset(leftX, leftY), size.width * 0.48, leftCloud);
-
-    // Right cloud
-    final rightX = size.width * 0.92 - 22.0 * drift;
-    final rightY = size.height * 0.22 - 12.0 * drift2;
-    final rightCloud = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          c4.withValues(
-              alpha: (isDark ? 0.17 : 0.06 + 0.02 * drift2).clamp(0.0, 1.0)),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(rightX, rightY),
-        radius: size.width * 0.42,
-      ));
-    canvas.drawCircle(Offset(rightX, rightY), size.width * 0.42, rightCloud);
-
-    // Bottom accent cloud
-    final accentX = size.width * 0.22 + 18.0 * drift2;
-    final accentY = size.height * 0.72 + 8.0 * drift;
-    final accentCloud = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          c5.withValues(
-              alpha: (isDark ? 0.11 : 0.05 + 0.03 * drift.abs())
-                  .clamp(0.0, 1.0)),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(accentX, accentY),
-        radius: size.width * 0.32,
-      ));
-    canvas.drawCircle(Offset(accentX, accentY), size.width * 0.32, accentCloud);
-
-    // Bottom fade
-    final fadeColors = isDark
-        ? [Colors.transparent, const Color(0x99080A18), const Color(0xFF080A18)]
-        : [Colors.transparent, const Color(0x22EEF4FB), const Color(0xFFE8F0F8)];
-    final fadeOut = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: fadeColors,
-        stops: const [0.42, 0.75, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), fadeOut);
-  }
-
-  @override
-  bool shouldRepaint(_AtmosphericBackgroundPainter old) =>
-      old.cloudOffset != cloudOffset || old.isDark != isDark;
-}
