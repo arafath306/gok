@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
@@ -9,6 +11,7 @@ import 'chat_settings_screen.dart';
 import 'member_search_sheet.dart';
 
 import '../../services/general_settings_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MessengerHomeScreen extends StatefulWidget {
   const MessengerHomeScreen({super.key});
@@ -18,24 +21,86 @@ class MessengerHomeScreen extends StatefulWidget {
 }
 
 class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
+  static final Map<String, List<Map<String, dynamic>>> _globalChatsCache = {};
+  
   List<Map<String, dynamic>> _chats = [];
   bool _isLoading = true;
+  StreamSubscription<Map<String, dynamic>>? _notifSub;
 
   @override
   void initState() {
     super.initState();
-    _loadChats();
+    final myId = Supabase.instance.client.auth.currentUser?.id;
+    if (myId != null && _globalChatsCache.containsKey(myId)) {
+      _chats = _globalChatsCache[myId]!;
+      _isLoading = false;
+      _loadChats(silent: true);
+    } else {
+      _loadChats();
+    }
+    
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    _notifSub = dbService.incomingNotificationStream.listen((event) {
+      if (event['type'] == 'message') {
+        if (event['profile'] != null) {
+          final senderId = event['sender_id'];
+          final profile = event['profile'] as Profile;
+          final body = event['body'] as String;
+          final createdAtRaw = event['created_at'];
+          final createdAt = createdAtRaw != null 
+              ? (DateTime.tryParse(createdAtRaw.toString()) ?? DateTime.now()) 
+              : DateTime.now();
+
+          setState(() {
+            final existingIndex = _chats.indexWhere((chat) => (chat['profile'] as Profile).id == senderId);
+            
+            final bool isCurrentlyInChat = dbService.currentActiveChatUserId == senderId;
+            
+            if (existingIndex >= 0) {
+              final chat = _chats.removeAt(existingIndex);
+              chat['last_message'] = body;
+              chat['last_message_time'] = createdAt;
+              if (!isCurrentlyInChat) {
+                chat['unread_count'] = (chat['unread_count'] as int? ?? 0) + 1;
+              } else {
+                chat['unread_count'] = 0;
+              }
+              _chats.insert(0, chat);
+            } else {
+              _chats.insert(0, {
+                'profile': profile,
+                'last_message': body,
+                'last_message_time': createdAt,
+                'unread_count': isCurrentlyInChat ? 0 : 1,
+                'latest_message_id': '',
+              });
+            }
+          });
+        }
+        _loadChats(silent: true);
+      }
+    });
   }
 
-  Future<void> _loadChats() async {
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadChats({bool silent = false}) async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    if (!silent) setState(() => _isLoading = true);
     final dbService = Provider.of<DatabaseService>(context, listen: false);
     final chats = await dbService.fetchActiveChats();
+    final myId = Supabase.instance.client.auth.currentUser?.id;
+    if (myId != null) {
+      _globalChatsCache[myId] = chats;
+    }
     if (mounted) {
       setState(() {
         _chats = chats;
-        _isLoading = false;
+        if (!silent) _isLoading = false;
       });
     }
   }
@@ -177,7 +242,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                               radius: 24,
                               backgroundColor: context.border,
                               backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
-                                  ? NetworkImage(profile.avatarUrl!)
+                                  ? CachedNetworkImageProvider(profile.avatarUrl!)
                                   : null,
                               child: (profile.avatarUrl == null || profile.avatarUrl!.isEmpty)
                                   ? Icon(Icons.person, size: 22, color: context.textMuted)

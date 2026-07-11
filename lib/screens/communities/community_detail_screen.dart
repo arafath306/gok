@@ -15,6 +15,7 @@ import '../../widgets/custom_thread_card.dart';
 import '../../widgets/thread_shimmer.dart';
 import '../create_thread_screen.dart';
 import 'community_thread_search_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CommunityDetailScreen extends StatefulWidget {
   final Community community;
@@ -153,7 +154,7 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                     : null,
                 image: _community.bannerUrl != null
                     ? DecorationImage(
-                        image: NetworkImage(_community.bannerUrl!),
+                        image: CachedNetworkImageProvider(_community.bannerUrl!),
                         fit: BoxFit.cover,
                       )
                     : null,
@@ -246,7 +247,7 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                   color: const Color(0xFF1E824C).withValues(alpha: 0.15),
                   image: _community.avatarUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(_community.avatarUrl!),
+                          image: CachedNetworkImageProvider(_community.avatarUrl!),
                           fit: BoxFit.cover,
                         )
                       : null,
@@ -1042,7 +1043,7 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                                 backgroundColor: context.border,
                                 backgroundImage: newAvatar != null 
                                     ? FileImage(newAvatar!) 
-                                    : (_community.avatarUrl != null ? NetworkImage(_community.avatarUrl!) : null) as ImageProvider?,
+                                    : (_community.avatarUrl != null ? CachedNetworkImageProvider(_community.avatarUrl!) : null) as ImageProvider?,
                                 child: (newAvatar == null && _community.avatarUrl == null)
                                     ? const Icon(Icons.camera_alt, size: 28)
                                     : null,
@@ -1072,7 +1073,7 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                                   image: newBanner != null
                                       ? DecorationImage(image: FileImage(newBanner!), fit: BoxFit.cover)
                                       : (_community.bannerUrl != null
-                                          ? DecorationImage(image: NetworkImage(_community.bannerUrl!), fit: BoxFit.cover)
+                                          ? DecorationImage(image: CachedNetworkImageProvider(_community.bannerUrl!), fit: BoxFit.cover)
                                           : null),
                                 ),
                                 child: (newBanner == null && _community.bannerUrl == null)
@@ -1470,7 +1471,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
 
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: profile.avatarUrl != null ? NetworkImage(profile.avatarUrl) : null,
+                          backgroundImage: profile.avatarUrl != null ? CachedNetworkImageProvider(profile.avatarUrl) : null,
                           backgroundColor: context.greenAccent.withValues(alpha: 0.1),
                           child: profile.avatarUrl == null 
                             ? Text(profile.fullName.substring(0, 1).toUpperCase(), style: TextStyle(color: context.greenAccent))

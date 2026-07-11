@@ -8,12 +8,14 @@ class ThemePickerSheet extends StatelessWidget {
   final String currentThemeId;
   final Function(String themeId) onThemeSelected;
   final Function(XFile image) onCustomWallpaperSelected;
+  final VoidCallback onRemoveWallpaper;
 
   const ThemePickerSheet({
     super.key,
     required this.currentThemeId,
     required this.onThemeSelected,
     required this.onCustomWallpaperSelected,
+    required this.onRemoveWallpaper,
   });
 
   Future<void> _pickCustomImage(BuildContext context) async {
@@ -137,34 +139,64 @@ class ThemePickerSheet extends StatelessWidget {
           const Divider(),
           const SizedBox(height: 10),
 
-          // Custom Wallpaper Button
-          ListTile(
-            onTap: () => _pickCustomImage(context),
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: context.primaryAccent.withOpacity(0.1),
-                shape: BoxShape.circle,
+            // Custom Wallpaper Button
+            ListTile(
+              onTap: () => _pickCustomImage(context),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: context.primaryAccent.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.photo_library_outlined, color: context.primaryAccent),
               ),
-              child: Icon(Icons.photo_library_outlined, color: context.primaryAccent),
+              title: Text(
+                'Custom Wallpaper',
+                style: GoogleFonts.inter(
+                  color: context.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                'Choose from your gallery',
+                style: GoogleFonts.inter(
+                  color: context.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              trailing: Icon(Icons.chevron_right, color: context.textMuted),
             ),
-            title: Text(
-              'Custom Wallpaper',
-              style: GoogleFonts.inter(
-                color: context.textPrimary,
-                fontWeight: FontWeight.w600,
+            
+            // Remove Wallpaper Button
+            ListTile(
+              onTap: () {
+                Navigator.pop(context);
+                onRemoveWallpaper();
+              },
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.hide_image_outlined, color: Colors.red),
+              ),
+              title: Text(
+                'Remove Wallpaper',
+                style: GoogleFonts.inter(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                'Reset to theme background',
+                style: GoogleFonts.inter(
+                  color: context.textSecondary,
+                  fontSize: 12,
+                ),
               ),
             ),
-            subtitle: Text(
-              'Choose from your gallery',
-              style: GoogleFonts.inter(
-                color: context.textSecondary,
-                fontSize: 12,
-              ),
-            ),
-            trailing: Icon(Icons.chevron_right, color: context.textMuted),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
         ],
       ),
     );

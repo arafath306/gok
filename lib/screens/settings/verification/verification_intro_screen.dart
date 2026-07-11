@@ -9,6 +9,7 @@ import '../../../utils/app_theme.dart';
 import '../../../widgets/verification/pigeon_primary_button.dart';
 import 'personal_details_screen.dart';
 import 'pending_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class VerificationIntroScreen extends StatefulWidget {
   const VerificationIntroScreen({super.key});
@@ -510,7 +511,7 @@ class _PulsingAvatarHeaderState extends State<_PulsingAvatarHeader> with SingleT
                     radius: 38,
                     backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.grey[200],
                     backgroundImage: widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty
-                        ? NetworkImage(widget.avatarUrl!)
+                        ? CachedNetworkImageProvider(widget.avatarUrl!)
                         : null,
                     child: (widget.avatarUrl == null || widget.avatarUrl!.isEmpty)
                         ? Icon(Icons.person, size: 36, color: isDark ? Colors.white30 : Colors.black26)

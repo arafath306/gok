@@ -12,6 +12,7 @@ import 'profile/profile_screen.dart';
 import 'thread_detail_screen.dart';
 import '../models/notification.dart';
 import '../models/thread_post.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 // ─── Grouped notification model ───────────────────────────────────────────────
 
@@ -542,7 +543,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       radius: radius,
       backgroundColor: context.border,
       backgroundImage:
-          url != null && url.isNotEmpty ? NetworkImage(url) : null,
+          url != null && url.isNotEmpty ? CachedNetworkImageProvider(url) : null,
       child: url == null || url.isEmpty
           ? Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',

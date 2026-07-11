@@ -53,19 +53,51 @@ class AuthService with ChangeNotifier {
 
   bool get isUserSignedIn => _currentUser != null;
   String get currentUid => _currentUser?.id ?? '';
+  bool get isEmailVerified => _currentUser?.emailConfirmedAt != null;
 
-  Future<LoginResult> handleLogin(String email, String password) async {
+  Future<LoginResult> handleLogin(String emailOrUsername, String password) async {
     _isLoading = true;
     _errorMessage = null;
     _requires2FA = false;
     notifyListeners();
 
-    final result = await _loginUseCase(email, password);
+    String emailToUse = emailOrUsername.trim();
+    if (!emailToUse.contains('@')) {
+      // It's a username!
+      try {
+        final profileRes = await _supabaseClient
+            .from('profiles')
+            .select('email')
+            .eq('username', emailToUse.toLowerCase())
+            .maybeSingle();
+        if (profileRes != null && profileRes['email'] != null) {
+          emailToUse = profileRes['email'] as String;
+        } else {
+          _isLoading = false;
+          _errorMessage = "Username not found. Please try again or sign up.";
+          notifyListeners();
+          return LoginResult.failure;
+        }
+      } catch (e) {
+        debugPrint("Username mapping error: $e");
+        _isLoading = false;
+        _errorMessage = "Unable to resolve username. Please use your email.";
+        notifyListeners();
+        return LoginResult.failure;
+      }
+    }
+
+    final result = await _loginUseCase(emailToUse, password);
     
     return result.fold(
       (failure) {
         _isLoading = false;
-        _errorMessage = failure.message;
+        String mappedMsg = failure.message;
+        if (mappedMsg.toLowerCase().contains("invalid login credentials") || 
+            mappedMsg.toLowerCase().contains("invalid_credentials")) {
+          mappedMsg = "Invalid email/username or password. Please try again.";
+        }
+        _errorMessage = mappedMsg;
         notifyListeners();
         return LoginResult.failure;
       },
@@ -284,6 +316,27 @@ class AuthService with ChangeNotifier {
   void clearErrors() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  Future<bool> resendVerificationEmail(String email) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _supabaseClient.auth.resend(
+        type: sb.OtpType.signup,
+        email: email.trim(),
+        emailRedirectTo: 'io.supabase.dak://login-callback',
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
+      notifyListeners();
+      return false;
+    }
   }
 
   @override

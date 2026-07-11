@@ -16,6 +16,7 @@ import 'services/push_notification_service.dart';
 import 'screens/auth/onboarding_screen.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/auth/splash_screen.dart';
+import 'screens/auth/email_verification_pending_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/app_theme.dart';
 import 'core/injection.dart';
@@ -127,8 +128,11 @@ class _AuthGateState extends State<AuthGate> {
     final authService = Provider.of<AuthService>(context);
     final dbService = Provider.of<DatabaseService>(context, listen: false);
 
-    // If user is logged in, show MainScreen
+    // If user is logged in, show MainScreen or Verification pending screen
     if (authService.isUserSignedIn) {
+      if (!authService.isEmailVerified) {
+        return const EmailVerificationPendingScreen();
+      }
       return const MainScreen();
     }
 

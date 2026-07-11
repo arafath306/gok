@@ -233,16 +233,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _coverUrl;
   bool _isSaving = false;
   bool _isUploadingPhoto = false;
+  bool _isPickingImage = false;
   String? _errorMsg;
 
   Future<void> _pickAndUploadImage(DatabaseService db, bool isAvatar) async {
+    if (_isPickingImage || _isUploadingPhoto) return;
+    setState(() {
+      _isPickingImage = true;
+    });
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
       );
-      if (image == null) return;
+      if (image == null) {
+        setState(() {
+          _isPickingImage = false;
+        });
+        return;
+      }
 
       CroppedFile? croppedFile = await ImageCropper().cropImage(
         sourcePath: image.path,
@@ -263,7 +273,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
       );
 
-      if (croppedFile == null) return;
+      if (croppedFile == null) {
+        setState(() {
+          _isPickingImage = false;
+        });
+        return;
+      }
 
       setState(() => _isUploadingPhoto = true);
       final bytes = await croppedFile.readAsBytes();
@@ -304,7 +319,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
     } finally {
       if (mounted) {
-        setState(() => _isUploadingPhoto = false);
+        setState(() {
+          _isUploadingPhoto = false;
+          _isPickingImage = false;
+        });
       }
     }
   }
@@ -538,92 +556,100 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               return Column(
                 children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      GestureDetector(
-                        onTap: _isUploadingPhoto ? null : () => _pickAndUploadImage(db, false),
-                        child: Container(
+                  SizedBox(
+                    height: 175,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
                           height: 140,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: coverUrl != null && coverUrl.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: coverUrl,
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  color: Colors.blue[50],
-                                  child: Center(
-                                    child: Icon(Icons.add_a_photo_outlined, color: Colors.blue[300]),
-                                  ),
-                                ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: -30,
-                        left: 16,
-                        child: GestureDetector(
-                          onTap: _isUploadingPhoto ? null : () => _pickAndUploadImage(db, true),
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                  border: Border.all(color: context.scaffoldBg, width: 3),
-                                ),
-                                child: ClipOval(
-                                  child: avatarUrl != null && avatarUrl.isNotEmpty
-                                      ? CachedNetworkImage(
-                                          imageUrl: avatarUrl,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : Icon(Icons.person, size: 40, color: Colors.grey[400]),
-                                ),
+                          child: GestureDetector(
+                            onTap: _isUploadingPhoto ? null : () => _pickAndUploadImage(db, false),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
+                              clipBehavior: Clip.antiAlias,
+                              child: coverUrl != null && coverUrl.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: coverUrl,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Container(
+                                      color: Colors.blue[50],
+                                      child: Center(
+                                        child: Icon(Icons.add_a_photo_outlined, color: Colors.blue[300]),
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 5,
+                          left: 16,
+                          child: GestureDetector(
+                            onTap: _isUploadingPhoto ? null : () => _pickAndUploadImage(db, true),
+                            behavior: HitTestBehavior.translucent,
+                            child: Stack(
+                              children: [
+                                Container(
+                                  width: 80,
+                                  height: 80,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0085FF),
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: context.scaffoldBg, width: 2),
+                                    color: Colors.white,
+                                    border: Border.all(color: context.scaffoldBg, width: 3),
                                   ),
-                                  child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                                  child: ClipOval(
+                                    child: avatarUrl != null && avatarUrl.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl: avatarUrl,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Icon(Icons.person, size: 40, color: Colors.grey[400]),
+                                  ),
                                 ),
-                              ),
-                            ],
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0085FF),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: context.scaffoldBg, width: 2),
+                                    ),
+                                    child: const Icon(Icons.edit, size: 14, color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.edit, size: 12, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text('Edit Cover', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                            ],
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.edit, size: 12, color: Colors.white),
+                                SizedBox(width: 4),
+                                Text('Edit Cover', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 40),
                   if (_isUploadingPhoto)

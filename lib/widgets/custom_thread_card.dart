@@ -274,15 +274,18 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
   Widget _buildLeftColumn(BuildContext context, DatabaseService dbService, ThreadPost post) {
     return Column(
       children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: Colors.grey[800],
-          backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
-              ? CachedNetworkImageProvider(post.author.avatarUrl!)
-              : null,
-          child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
-              ? const Icon(Icons.person, size: 20, color: Colors.white54)
-              : null,
+        Padding(
+          padding: const EdgeInsets.only(top: 4.5),
+          child: CircleAvatar(
+            radius: 20,
+            backgroundColor: Colors.grey[800],
+            backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
+                ? CachedNetworkImageProvider(post.author.avatarUrl!)
+                : null,
+            child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
+                ? const Icon(Icons.person, size: 20, color: Colors.white54)
+                : null,
+          ),
         ),
         const SizedBox(height: 8),
         Expanded(
@@ -321,40 +324,45 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                     ),
                   );
                 },
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: post.author.fullName,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        post.author.fullName,
                         style: GoogleFonts.hindSiliguri(
                           fontWeight: FontWeight.bold,
                           fontSize: 15.5,
                           color: context.textPrimary,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isVerified)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, right: 2),
+                        child: VerificationBadge(
+                          isVerified: post.author.isVerified,
+                          badgeType: post.author.badgeType,
+                          size: 14,
                         ),
                       ),
-                      if (isVerified)
-                        WidgetSpan(
-                          alignment: PlaceholderAlignment.middle,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: VerificationBadge(
-                              isVerified: post.author.isVerified,
-                              badgeType: post.author.badgeType,
-                              size: 14,
-                            ),
-                          ),
-                        ),
-                      TextSpan(
-                        text: ' @${post.author.username}',
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '@${post.author.username}',
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           color: context.textMuted,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -495,7 +503,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 image: Provider.of<GeneralSettingsProvider>(context).lowDataMode 
                     ? null
                     : const DecorationImage(
-                        image: NetworkImage("https://images.unsplash.com/photo-1492691527719-9d1e07e534b4"),
+                        image: CachedNetworkImageProvider("https://images.unsplash.com/photo-1492691527719-9d1e07e534b4"),
                         fit: BoxFit.cover,
                         opacity: 0.6,
                       ),

@@ -19,9 +19,9 @@ class ChatTheme {
 const List<ChatTheme> availableChatThemes = [
   // Solid Colors
   ChatTheme(
-    id: 'default_blue',
-    name: 'Default Blue',
-    primaryColor: Color(0xFF0084FF),
+    id: 'default',
+    name: 'App Default',
+    primaryColor: Color(0xFF7C4DFF), // Brand Color (Purple)
   ),
   ChatTheme(
     id: 'coral',

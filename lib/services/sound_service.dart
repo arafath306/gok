@@ -2,7 +2,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
 class SoundService {
-  static final AudioPlayer _player = AudioPlayer();
+  static final AudioPlayer _player = AudioPlayer()..setAudioContext(AudioContextConfig(
+    respectSilence: true, // respects iOS silent switch
+  ).build());
 
   static Future<void> playPop() async {
     try {

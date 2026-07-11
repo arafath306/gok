@@ -108,7 +108,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes, {String extension = 'jpg', String contentType = 'image/jpeg'}) async {
-    final path = 'posts/$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.$extension';
+    final path = '$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.$extension';
     await supabaseClient.storage.from('avatars').uploadBinary(
       path,
       bytes,

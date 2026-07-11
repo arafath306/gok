@@ -91,10 +91,28 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     final defaultUsername = username ?? email.split('@')[0];
 
+    // Pre-check for duplicate email in profiles
+    try {
+      final existing = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('email', email.trim())
+          .maybeSingle();
+      if (existing != null) {
+        throw Exception("The email address is already in use by another account.");
+      }
+    } catch (e) {
+      if (e.toString().contains("already in use")) {
+        rethrow;
+      }
+      debugPrint("Pre-check email query error: $e");
+    }
+
     // 1. Sign up with Supabase GoTrue Auth
     final response = await supabaseClient.auth.signUp(
       email: email.trim(),
       password: password,
+      emailRedirectTo: 'io.supabase.dak://login-callback',
       data: {
         'username': defaultUsername,
         'full_name': fullName,

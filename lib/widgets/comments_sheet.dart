@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import '../utils/app_theme.dart';
 
 import 'comment_attachment_picker_panel.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CommentsSheet extends StatefulWidget {
   final ThreadPost post;
@@ -377,25 +378,28 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // Commenter Avatar
-                                  GestureDetector(
-                                    onTap: () {
-                                      final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
-                                        ),
-                                      );
-                                    },
-                                    child: CircleAvatar(
-                                      radius: 18,
-                                      backgroundColor: Colors.grey[800],
-                                      backgroundImage: (author.avatarUrl != null && author.avatarUrl!.isNotEmpty)
-                                          ? NetworkImage(author.avatarUrl!)
-                                          : null,
-                                      child: (author.avatarUrl == null || author.avatarUrl!.isEmpty)
-                                          ? const Icon(Icons.person, size: 18, color: Colors.white54)
-                                          : null,
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4.5),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
+                                          ),
+                                        );
+                                      },
+                                      child: CircleAvatar(
+                                        radius: 18,
+                                        backgroundColor: Colors.grey[800],
+                                        backgroundImage: (author.avatarUrl != null && author.avatarUrl!.isNotEmpty)
+                                            ? CachedNetworkImageProvider(author.avatarUrl!)
+                                            : null,
+                                        child: (author.avatarUrl == null || author.avatarUrl!.isEmpty)
+                                            ? const Icon(Icons.person, size: 18, color: Colors.white54)
+                                            : null,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -419,47 +423,53 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                      ),
                                                    );
                                                  },
-                                                 child: Text.rich(
-                                                   TextSpan(
-                                                     children: [
-                                                       TextSpan(
-                                                         text: author.fullName,
+                                                 child: Row(
+                                                   crossAxisAlignment: CrossAxisAlignment.baseline,
+                                                   textBaseline: TextBaseline.alphabetic,
+                                                   children: [
+                                                     Flexible(
+                                                       child: Text(
+                                                         author.fullName,
                                                          style: GoogleFonts.hindSiliguri(
                                                            fontWeight: FontWeight.w700,
                                                            fontSize: 15.5,
                                                            color: context.textPrimary,
+                                                           height: 1.2,
+                                                         ),
+                                                         maxLines: 1,
+                                                         overflow: TextOverflow.ellipsis,
+                                                       ),
+                                                     ),
+                                                     if (author.isVerified)
+                                                       const Padding(
+                                                         padding: EdgeInsets.only(left: 4, right: 2),
+                                                         child: Icon(
+                                                           Icons.verified,
+                                                           color: Colors.blue,
+                                                           size: 15,
                                                          ),
                                                        ),
-                                                       if (author.isVerified)
-                                                         const WidgetSpan(
-                                                           alignment: PlaceholderAlignment.middle,
-                                                           child: Padding(
-                                                             padding: EdgeInsets.only(left: 4),
-                                                             child: Icon(
-                                                               Icons.verified,
-                                                               color: Colors.blue,
-                                                               size: 15,
-                                                             ),
-                                                           ),
+                                                     const SizedBox(width: 4),
+                                                     Flexible(
+                                                       child: Text(
+                                                         '@${author.username}',
+                                                         style: GoogleFonts.inter(
+                                                           fontSize: 13.5,
+                                                           color: context.textSecondary,
                                                          ),
-                                                       TextSpan(
-                                                         text: ' @${author.username}',
+                                                         maxLines: 1,
+                                                         overflow: TextOverflow.ellipsis,
+                                                       ),
+                                                     ),
+                                                     if (comment['created_at'] != null && comment['created_at'].toString().isNotEmpty)
+                                                       Text(
+                                                         ' · ${comment['created_at']}',
                                                          style: GoogleFonts.inter(
                                                            fontSize: 13.5,
                                                            color: context.textSecondary,
                                                          ),
                                                        ),
-                                                       TextSpan(
-                                                         text: ' · ${comment['created_at']}',
-                                                         style: GoogleFonts.inter(
-                                                           fontSize: 13.5,
-                                                           color: context.textSecondary,
-                                                         ),
-                                                       ),
-                                                     ],
-                                                   ),
-                                                   maxLines: 1,
-                                                   overflow: TextOverflow.ellipsis,
+                                                   ],
                                                  ),
                                                ),
                                              ),
@@ -828,7 +838,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                           radius: 16,
                           backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
                           backgroundImage: (myProf?.avatarUrl != null && myProf!.avatarUrl!.isNotEmpty)
-                              ? NetworkImage(myProf.avatarUrl!)
+                              ? CachedNetworkImageProvider(myProf.avatarUrl!)
                               : null,
                           child: (myProf?.avatarUrl == null || myProf!.avatarUrl!.isEmpty)
                               ? const Icon(Icons.person, size: 16, color: Colors.white54)

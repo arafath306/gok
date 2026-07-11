@@ -26,6 +26,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 import '../widgets/comment_attachment_picker_panel.dart';
 import '../widgets/voice_post_player.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
   final ThreadPost post;
@@ -481,7 +482,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
               CircleAvatar(
                 radius: 10,
                 backgroundImage: origPost.author.avatarUrl != null && origPost.author.avatarUrl!.isNotEmpty
-                    ? NetworkImage(origPost.author.avatarUrl!)
+                    ? CachedNetworkImageProvider(origPost.author.avatarUrl!)
                     : null,
                 child: origPost.author.avatarUrl == null || origPost.author.avatarUrl!.isEmpty
                     ? const Icon(Icons.person, size: 10)
@@ -568,7 +569,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
               radius: 18,
               backgroundColor: Colors.grey[800],
               backgroundImage: (author.avatarUrl != null && author.avatarUrl!.isNotEmpty)
-                  ? NetworkImage(author.avatarUrl!)
+                  ? CachedNetworkImageProvider(author.avatarUrl!)
                   : null,
               child: (author.avatarUrl == null || author.avatarUrl!.isEmpty)
                   ? const Icon(Icons.person, size: 18, color: Colors.white54)
@@ -581,6 +582,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: GestureDetector(
@@ -593,48 +595,53 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                             ),
                           );
                         },
-                        child: Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: author.fullName,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                author.fullName,
                                 style: GoogleFonts.hindSiliguri(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15.5,
                                   color: context.textPrimary,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              if (author.isVerified)
-                                const WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(left: 4),
-                                    child: Icon(
-                                      Icons.verified,
-                                      color: Colors.blue,
-                                      size: 15,
-                                    ),
-                                  ),
+                            ),
+                            if (author.isVerified)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                  size: 15,
                                 ),
-                              TextSpan(
-                                text: ' @${author.username}',
+                              ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                '@${author.username}',
                                 style: GoogleFonts.inter(
                                   fontSize: 13.5,
                                   color: context.textSecondary,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              TextSpan(
-                                text: ' · ${_formatTime(comment['created_at_raw'] ?? comment['created_at'] ?? '')}',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13.5,
-                                  color: context.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '· ${_formatTime(comment['created_at_raw'] ?? comment['created_at'] ?? '')}',
+                      style: GoogleFonts.inter(
+                        fontSize: 13.5,
+                        color: context.textSecondary,
                       ),
                     ),
                     if (isPostAuthor) ...[
@@ -642,7 +649,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                          color: Theme.of(context).primaryColor.withAlpha(25),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -677,13 +684,13 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      comment['image_url'] as String,
+                    child: CachedNetworkImage(
+                      imageUrl: comment['image_url'] as String,
                       height: 180,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const SizedBox.shrink(),
+                      placeholder: (context, url) => Container(color: Colors.grey[800]),
+                      errorWidget: (context, url, error) => const SizedBox.shrink(),
                     ),
                   ),
                 ],
@@ -918,7 +925,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                 radius: 14,
                 backgroundColor: Colors.grey[800],
                 backgroundImage: activePost.author.avatarUrl != null && activePost.author.avatarUrl!.isNotEmpty
-                    ? NetworkImage(activePost.author.avatarUrl!)
+                    ? CachedNetworkImageProvider(activePost.author.avatarUrl!)
                     : null,
                 child: activePost.author.avatarUrl == null || activePost.author.avatarUrl!.isEmpty
                     ? const Icon(Icons.person, size: 14)
@@ -982,7 +989,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           radius: 24,
                           backgroundColor: Colors.grey[800],
                           backgroundImage: (activePost.author.avatarUrl != null && activePost.author.avatarUrl!.isNotEmpty)
-                              ? NetworkImage(activePost.author.avatarUrl!)
+                              ? CachedNetworkImageProvider(activePost.author.avatarUrl!)
                               : null,
                           child: (activePost.author.avatarUrl == null || activePost.author.avatarUrl!.isEmpty)
                               ? const Icon(Icons.person, size: 24, color: Colors.white54)
@@ -1442,7 +1449,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                         radius: 16,
                         backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
                         backgroundImage: (dbService.myProfile?.avatarUrl != null && dbService.myProfile!.avatarUrl!.isNotEmpty)
-                            ? NetworkImage(dbService.myProfile!.avatarUrl!)
+                            ? CachedNetworkImageProvider(dbService.myProfile!.avatarUrl!)
                             : null,
                         child: (dbService.myProfile?.avatarUrl == null || dbService.myProfile!.avatarUrl!.isEmpty)
                             ? const Icon(Icons.person, size: 16, color: Colors.white54)

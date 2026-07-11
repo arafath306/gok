@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/general_settings_provider.dart';
 import '../../utils/app_theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class BlockedAccountsScreen extends StatefulWidget {
   const BlockedAccountsScreen({super.key});
@@ -165,7 +166,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                         CircleAvatar(
                                           radius: 20,
                                           backgroundImage: user['avatar']!.isNotEmpty
-                                              ? NetworkImage(user['avatar']!)
+                                              ? CachedNetworkImageProvider(user['avatar']!)
                                               : null,
                                           backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
                                           child: user['avatar']!.isEmpty
@@ -304,7 +305,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                             CircleAvatar(
                                               radius: 20,
                                               backgroundImage: user['avatar']!.isNotEmpty
-                                                  ? NetworkImage(user['avatar']!)
+                                                  ? CachedNetworkImageProvider(user['avatar']!)
                                                   : null,
                                               backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
                                               child: user['avatar']!.isEmpty

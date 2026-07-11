@@ -9,6 +9,7 @@ import '../utils/app_theme.dart';
 import 'profile/profile_screen.dart';
 import 'topic/topic_threads_screen.dart';
 import '../widgets/custom_thread_card.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SearchExploreScreen extends StatefulWidget {
   const SearchExploreScreen({super.key});
@@ -145,7 +146,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                   ? const Color(0xFF1B3B2B)
                   : const Color(0xFFE8F5E9),
               backgroundImage: user.avatarUrl != null
-                  ? NetworkImage(user.avatarUrl!)
+                  ? CachedNetworkImageProvider(user.avatarUrl!)
                   : null,
               child: user.avatarUrl == null
                   ? Text(

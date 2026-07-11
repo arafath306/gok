@@ -53,11 +53,20 @@ BEGIN
 
   -- If they have a token, trigger the HTTP request
   IF receiver_token IS NOT NULL THEN
-    payload := jsonb_build_object(
-      'fcm_token', receiver_token,
-      'title', push_title,
-      'body', push_body
-    );
+    IF TG_TABLE_NAME = 'messages' THEN
+      payload := jsonb_build_object(
+        'fcm_token', receiver_token,
+        'title', push_title,
+        'body', push_body,
+        'tag', NEW.sender_id
+      );
+    ELSE
+      payload := jsonb_build_object(
+        'fcm_token', receiver_token,
+        'title', push_title,
+        'body', push_body
+      );
+    END IF;
 
     -- IMPORTANT: Replace 'lznxtbnqwaryqkyxfwgy' with your actual project ref if different
     PERFORM net.http_post(

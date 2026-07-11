@@ -78,11 +78,14 @@ extension UnreadExtension on DatabaseService {
       // Typed push notification — goes to Messages channel with grouping
       await sl<ShowNotificationUseCase>().call(
         type: NotificationType.message,
-        id: msg['id'].hashCode,
+        id: msg['sender_id'].hashCode,
         senderName: senderName,
         message: body,
         payload: 'message:${msg['sender_id']}',
       );
+    } else {
+      // User is already inside this chat, mark the incoming message as read immediately
+      markMessagesAsRead(msg['sender_id']);
     }
 
     _incomingNotificationStreamController.add({
@@ -90,6 +93,8 @@ extension UnreadExtension on DatabaseService {
       'body': body,
       'type': 'message',
       'sender_id': msg['sender_id'],
+      'profile': senderProfile,
+      'created_at': msg['created_at'],
     });
   }
 

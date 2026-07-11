@@ -12,11 +12,12 @@ import '../../services/database_service.dart';
 import '../../services/general_settings_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/chat_themes.dart';
-import '../profile/profile_screen.dart';
 
 import 'widgets/message_list.dart';
 import 'widgets/chat_composer.dart';
+import 'widgets/blocked_banner.dart';
 import 'widgets/full_screen_media_viewer.dart';
+import 'widgets/messenger_profile_sheet.dart';
 import 'media_preview_screen.dart';
 import '../../widgets/theme_picker_sheet.dart';
 
@@ -43,6 +44,10 @@ class _ChatScreenState extends State<ChatScreen> {
   // Optimistically deleted IDs â€“ hide them immediately before stream updates
   final Set<String> _deletedIds = {};
 
+  // Static caches to prevent UI flashing while messages stream loads
+  static final Map<String, String> _themeCache = {};
+  static final Map<String, String> _wallpaperCache = {};
+
   Timer? _statusUpdateTimer;
   bool _isMuted = false;
 
@@ -51,6 +56,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _showEmojiPanel = false;
   int _pickerTabIndex = 0;
   String? _currentThemeId;
+  String? _customWallpaperUrl;
 
   StreamSubscription<Map<String, dynamic>>? _typingSub;
   bool _otherIsTyping = false;
@@ -59,6 +65,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _currentThemeId = _themeCache[widget.otherUser.id];
+    _customWallpaperUrl = _wallpaperCache[widget.otherUser.id];
+    
     _realtimeOtherUser = widget.otherUser;
     final dbService = Provider.of<DatabaseService>(context, listen: false);
     dbService.currentActiveChatUserId = widget.otherUser.id;
@@ -131,12 +140,15 @@ class _ChatScreenState extends State<ChatScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ThemePickerSheet(
-        currentThemeId: _currentThemeId ?? 'default_blue',
+        currentThemeId: _currentThemeId ?? 'default',
         onThemeSelected: (themeId) {
           _sendThemeChangeMessage(themeId);
         },
         onCustomWallpaperSelected: (image) {
           _uploadAndSetCustomWallpaper(image);
+        },
+        onRemoveWallpaper: () {
+          _removeCustomWallpaper();
         },
       ),
     );
@@ -169,18 +181,50 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _sendWallpaperChangeMessage(String url) {
+    final String tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempMsg = {
+      'id': tempId,
+      'text': '',
+      'media_url': url,
+      'isMe': true,
+      'time': _formatToDhaka12Hr(DateTime.now()),
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'media_type': 'wallpaper_change',
+      'is_read': false,
+      'is_sending': true,
+    };
+
+    setState(() => _pendingMessages.add(tempMsg));
+    _scrollToBottom();
+
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    dbService.sendMessage(widget.otherUser.id, '', mediaUrl: url, mediaType: 'wallpaper_change').then((_) {
+      if (mounted) {
+        setState(() {
+          final idx = _pendingMessages.indexWhere((m) => m['id'] == tempId);
+          if (idx != -1) _pendingMessages[idx]['is_sending'] = false;
+        });
+      }
+    });
+  }
+
   void _uploadAndSetCustomWallpaper(XFile image) async {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Uploading wallpaper...')));
     final dbService = Provider.of<DatabaseService>(context, listen: false);
     final bytes = await image.readAsBytes();
     final url = await dbService.uploadChatMedia(bytes, extension: 'jpg', contentType: 'image/jpeg');
     if (url != null) {
-      _sendThemeChangeMessage('custom:$url');
+      _sendWallpaperChangeMessage(url);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload wallpaper')));
       }
     }
+  }
+
+  void _removeCustomWallpaper() {
+    _sendWallpaperChangeMessage('none');
   }
 
 
@@ -938,268 +982,35 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // â”€â”€â”€ Messenger info bottom sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ——————————————————————————————————————————————————————————————————————————
   void _showMessengerProfile() {
+    final sharedMedia = _allMessages
+        .where((m) =>
+            m['media_url'] != null && (m['media_url'] as String).isNotEmpty)
+        .toList();
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: context.cardBg,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) {
-        final sharedMedia = _allMessages
-            .where((m) =>
-                m['media_url'] != null &&
-                (m['media_url'] as String).isNotEmpty)
-            .toList();
-
-        return DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (_, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                        color: context.border,
-                        borderRadius: BorderRadius.circular(2)),
-                  ),
-                  const SizedBox(height: 24),
-                  CircleAvatar(
-                    radius: 48,
-                    backgroundColor: context.border,
-                    backgroundImage: widget.otherUser.avatarUrl != null &&
-                            widget.otherUser.avatarUrl!.isNotEmpty
-                        ? NetworkImage(widget.otherUser.avatarUrl!)
-                        : null,
-                    child: (widget.otherUser.avatarUrl == null ||
-                            widget.otherUser.avatarUrl!.isEmpty)
-                        ? Icon(Icons.person_rounded,
-                            size: 48, color: context.textMuted)
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        widget.otherUser.fullName,
-                        style: GoogleFonts.inter(
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                            color: context.textPrimary),
-                      ),
-                      if (widget.otherUser.isVerified) ...{
-                        const SizedBox(width: 6),
-                        const Icon(Icons.verified,
-                            color: Colors.blue, size: 18),
-                      },
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text('@${widget.otherUser.username}',
-                      style: GoogleFonts.inter(
-                          fontSize: 13.5, color: context.textMuted)),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('${widget.otherUser.followingCount}',
-                          style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: context.textPrimary)),
-                      const SizedBox(width: 4),
-                      Text('Following',
-                          style: GoogleFonts.inter(
-                              fontSize: 13.5, color: context.textMuted)),
-                      const SizedBox(width: 12),
-                      Container(
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                              color: context.textMuted,
-                              shape: BoxShape.circle)),
-                      const SizedBox(width: 12),
-                      Text('${widget.otherUser.followersCount}',
-                          style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: context.textPrimary)),
-                      const SizedBox(width: 4),
-                      Text('Followers',
-                          style: GoogleFonts.inter(
-                              fontSize: 13.5, color: context.textMuted)),
-                    ],
-                  ),
-                  if (widget.otherUser.bio != null &&
-                      widget.otherUser.bio!.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      widget.otherUser.bio!,
-                      style: GoogleFonts.inter(
-                          fontSize: 13.5,
-                          color: context.textSecondary,
-                          height: 1.4),
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ProfileScreen(
-                                    userId: widget.otherUser.id),
-                              ),
-                            );
-                          },
-                          icon: Icon(Icons.person_outline,
-                              color: context.primaryAccent, size: 16),
-                          label: Text('Profile',
-                              style: GoogleFonts.inter(
-                                  color: context.primaryAccent,
-                                  fontSize: 13)),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: context.primaryAccent),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: StatefulBuilder(
-                          builder: (_, setMuteState) => OutlinedButton.icon(
-                            onPressed: () {
-                              _toggleMute(!_isMuted);
-                              setMuteState(() {});
-                            },
-                            icon: Icon(
-                                _isMuted
-                                    ? Icons.notifications_off_outlined
-                                    : Icons.notifications_outlined,
-                                color: context.primaryAccent,
-                                size: 16),
-                            label: Text(_isMuted ? 'Unmute' : 'Mute',
-                                style: GoogleFonts.inter(
-                                    color: context.primaryAccent,
-                                    fontSize: 13)),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: context.primaryAccent),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20)),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ListTile(
-                    leading: const Icon(Icons.palette_outlined, color: Colors.blueAccent),
-                    title: Text('Change Theme', style: GoogleFonts.inter(color: Colors.blueAccent)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _showThemePicker();
-                    },
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    tileColor: Colors.blueAccent.withValues(alpha: 0.05),
-                  ),
-                  const SizedBox(height: 8),
-                  ListTile(
-                    leading: const Icon(Icons.block_rounded,
-                        color: Colors.redAccent),
-                    title: Text('Block User',
-                        style: GoogleFonts.inter(color: Colors.redAccent)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _confirmBlockUser();
-                    },
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    tileColor: Colors.redAccent.withValues(alpha: 0.05),
-                  ),
-                  const SizedBox(height: 8),
-                  ListTile(
-                    leading: const Icon(Icons.delete_outline,
-                        color: Colors.redAccent),
-                    title: Text('Delete Conversation',
-                        style: GoogleFonts.inter(color: Colors.redAccent)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _confirmDeleteConversation();
-                    },
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    tileColor: Colors.redAccent.withValues(alpha: 0.05),
-                  ),
-                  if (sharedMedia.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Shared Media',
-                          style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: context.textPrimary)),
-                    ),
-                    const SizedBox(height: 12),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 4,
-                              mainAxisSpacing: 4),
-                      itemCount:
-                          sharedMedia.length > 9 ? 9 : sharedMedia.length,
-                      itemBuilder: (context, i) {
-                        final m = sharedMedia[i];
-                        final url = m['media_url'] as String;
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.pop(ctx);
-                            _openFullScreenMedia(url);
-                          },
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: CachedNetworkImage(
-                                imageUrl: url,
-                                fit: BoxFit.cover,
-                                errorWidget: (context, error, stackTrace) => Container(
-                                    color: context.border,
-                                    child: Icon(Icons.broken_image,
-                                        color: context.textMuted))),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                  SizedBox(
-                      height: MediaQuery.of(context).padding.bottom + 8),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (ctx) => MessengerProfileSheet(
+        otherUser: widget.otherUser,
+        isMuted: _isMuted,
+        sharedMedia: sharedMedia,
+        onToggleMute: _toggleMute,
+        onChangeTheme: () {
+          _showThemePicker();
+        },
+        onBlockUser: () {
+          _confirmBlockUser();
+        },
+        onDeleteConversation: () {
+          _confirmDeleteConversation();
+        },
+        onMediaTapped: (mediaUrl) {
+          _openFullScreenMedia(mediaUrl);
+        },
+      ),
     );
   }
 
@@ -1224,6 +1035,27 @@ class _ChatScreenState extends State<ChatScreen> {
     final myActiveStatusEnabled = settings.isActiveStatusEnabled;
 
     final activeTheme = getChatThemeById(_currentThemeId);
+
+    Color? bgColor = context.scaffoldBg;
+    Gradient? bgGradient;
+
+    if (_currentThemeId != null && _currentThemeId != 'default') {
+      if (!_currentThemeId!.startsWith('custom:')) {
+        if (activeTheme.gradientColors != null) {
+          bgGradient = LinearGradient(
+            colors: activeTheme.gradientColors!
+                .map((c) => c.withValues(alpha: context.isDarkMode ? 0.15 : 0.08))
+                .toList(),
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+          bgColor = null;
+        } else {
+          bgColor = activeTheme.primaryColor
+              .withValues(alpha: context.isDarkMode ? 0.1 : 0.05);
+        }
+      }
+    }
 
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWide = screenWidth > 600;
@@ -1286,7 +1118,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       backgroundImage:
                           _realtimeOtherUser.avatarUrl != null &&
                                   _realtimeOtherUser.avatarUrl!.isNotEmpty
-                              ? NetworkImage(_realtimeOtherUser.avatarUrl!)
+                              ? CachedNetworkImageProvider(_realtimeOtherUser.avatarUrl!)
                               : null,
                     ),
                     if (showGreenDot)
@@ -1363,16 +1195,27 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          image: _currentThemeId != null && _currentThemeId!.startsWith('custom:')
+          color: bgColor,
+          gradient: bgGradient,
+          image: _customWallpaperUrl != null
             ? DecorationImage(
-                image: CachedNetworkImageProvider(_currentThemeId!.substring(7)),
+                image: CachedNetworkImageProvider(_customWallpaperUrl!),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withValues(alpha: context.isDarkMode ? 0.5 : 0.1),
                   BlendMode.darken,
                 ),
               )
-            : null,
+            : (_currentThemeId != null && _currentThemeId!.startsWith('custom:') 
+              ? DecorationImage(
+                  image: CachedNetworkImageProvider(_currentThemeId!.substring(7)),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withValues(alpha: context.isDarkMode ? 0.5 : 0.1),
+                    BlendMode.darken,
+                  ),
+                )
+              : null),
         ),
         child: Column(
           children: [
@@ -1387,15 +1230,49 @@ class _ChatScreenState extends State<ChatScreen> {
               onAllMessagesUpdated: (msgs) {
                 _allMessages = msgs;
                 String? newThemeId;
-                for (final msg in msgs) {
+                String? newWallpaperUrl;
+                
+                for (final msg in msgs.reversed) {
                   if (msg['media_type'] == 'theme_change') {
-                    newThemeId = msg['text'];
-                    break;
+                    final text = msg['text']?.toString() ?? '';
+                    if (newThemeId == null && !text.startsWith('custom:')) {
+                      newThemeId = text;
+                    }
+                    if (newWallpaperUrl == null && text.startsWith('custom:')) {
+                      newWallpaperUrl = text.substring(7);
+                    }
+                  } else if (msg['media_type'] == 'wallpaper_change') {
+                    if (newWallpaperUrl == null) {
+                      final url = msg['media_url']?.toString() ?? '';
+                      if (url == 'none') {
+                        newWallpaperUrl = ''; // Indicates removed
+                      } else {
+                        newWallpaperUrl = url;
+                      }
+                    }
                   }
+                  
+                  if (newThemeId != null && newWallpaperUrl != null) break;
                 }
-                if (newThemeId != _currentThemeId) {
+                
+                if (newWallpaperUrl == '') newWallpaperUrl = null;
+                
+                if (newThemeId != _currentThemeId || newWallpaperUrl != _customWallpaperUrl) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) setState(() => _currentThemeId = newThemeId);
+                    if (mounted) {
+                      setState(() {
+                        if (newThemeId != null) {
+                          _currentThemeId = newThemeId;
+                          _themeCache[widget.otherUser.id] = newThemeId;
+                        }
+                        _customWallpaperUrl = newWallpaperUrl;
+                        if (newWallpaperUrl != null) {
+                          _wallpaperCache[widget.otherUser.id] = newWallpaperUrl;
+                        } else {
+                          _wallpaperCache.remove(widget.otherUser.id);
+                        }
+                      });
+                    }
                   });
                 }
               },
@@ -1408,7 +1285,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
           // â”€â”€ Composer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           isBlocked
-              ? _buildBlockedBanner(context, blockedByMe, db)
+              ? BlockedBanner(
+                  otherUser: widget.otherUser,
+                  blockedByMe: blockedByMe,
+                  db: db,
+                )
               : ChatComposer(
                   replyingToMessage: _replyingToMessage,
                   realtimeOtherUser: _realtimeOtherUser,
@@ -1463,75 +1344,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildBlockedBanner(
-      BuildContext context, bool blockedByMe, DatabaseService db) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-          24, 20, 24, MediaQuery.of(context).padding.bottom + 20),
-      decoration: BoxDecoration(
-        color: context.cardBg,
-        border: Border(top: BorderSide(color: context.border, width: 0.8)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.block_rounded, color: Colors.redAccent, size: 32),
-          const SizedBox(height: 12),
-          Text(
-            blockedByMe
-                ? 'You blocked this account'
-                : 'This conversation is unavailable',
-            style: GoogleFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: context.textPrimary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            blockedByMe
-                ? 'You cannot message this account. Unblock to send a message.'
-                : 'You cannot message this account because they blocked you.',
-            style:
-                GoogleFonts.inter(fontSize: 13, color: context.textMuted),
-            textAlign: TextAlign.center,
-          ),
-          if (blockedByMe) ...[
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                final settingsProvider =
-                    Provider.of<GeneralSettingsProvider>(context,
-                        listen: false);
-                await settingsProvider.unblockAccount(widget.otherUser.id);
-                await db.fetchBlockedMutedLists();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                        '@${widget.otherUser.username} has been unblocked.'),
-                    backgroundColor: Colors.green,
-                  ));
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.primaryAccent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              ),
-              child: Text('Unblock User',
-                  style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold, fontSize: 14)),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+
 }
 
 // â”€â”€â”€ Isolated Message List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

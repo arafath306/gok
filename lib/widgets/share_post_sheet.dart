@@ -8,6 +8,7 @@ import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../utils/app_theme.dart';
 import '../screens/messenger/member_search_sheet.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SharePostSheet extends StatefulWidget {
   final ThreadPost post;
@@ -156,7 +157,7 @@ class _SharePostSheetState extends State<SharePostSheet> {
                                   CircleAvatar(
                                     radius: 22,
                                     backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
-                                        ? NetworkImage(profile.avatarUrl!)
+                                        ? CachedNetworkImageProvider(profile.avatarUrl!)
                                         : null,
                                     child: profile.avatarUrl == null || profile.avatarUrl!.isEmpty
                                         ? const Icon(Icons.person)

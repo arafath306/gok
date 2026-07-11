@@ -23,14 +23,53 @@ class AuthRepositoryImpl implements IAuthRepository {
     });
   }
 
+  String _mapExceptionToMessage(Object e) {
+    if (e is sb.AuthException) {
+      final code = e.code;
+      final message = e.message;
+      
+      if (code == 'email_address_invalid' || 
+          message.contains('invalid email') || 
+          message.contains('is invalid')) {
+        return 'Please enter a valid email address.';
+      }
+      if (code == 'email_not_confirmed' || 
+          message.contains('Email not confirmed')) {
+        return 'Your email address has not been verified. Please check your inbox and verify your email before logging in.';
+      }
+      if (code == 'invalid_credentials' || 
+          message.contains('Invalid login credentials')) {
+        return 'Invalid email or password. Please try again.';
+      }
+      if (code == 'weak_password' || 
+          message.contains('Password should be')) {
+        return 'Password must be at least 6 characters long.';
+      }
+      if (message.contains('already registered') || 
+          message.contains('already in use') || 
+          message.contains('already exists')) {
+        return 'An account with this email address already exists.';
+      }
+      return message;
+    }
+    
+    final str = e.toString();
+    if (str.contains('email_address_invalid') || str.contains('is invalid')) {
+      return 'Please enter a valid email address.';
+    }
+    if (str.contains('email_not_confirmed')) {
+      return 'Your email address has not been verified. Please check your inbox and verify your email before logging in.';
+    }
+    return str.replaceAll(RegExp(r'\[.*?\]'), '').trim();
+  }
+
   @override
   Future<Either<Failure, UserEntity>> login(String email, String password) async {
     try {
       final sbUser = await remoteDataSource.login(email, password);
       return Right(_mapToEntity(sbUser));
     } catch (e) {
-      final cleanMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
-      return Left(ServerFailure(cleanMessage));
+      return Left(ServerFailure(_mapExceptionToMessage(e)));
     }
   }
 
@@ -64,8 +103,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       );
       return Right(result);
     } catch (e) {
-      final cleanMessage = e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim();
-      return Left(ServerFailure(cleanMessage));
+      return Left(ServerFailure(_mapExceptionToMessage(e)));
     }
   }
 
@@ -75,7 +113,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       await remoteDataSource.signOut();
       return const Right(null);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(_mapExceptionToMessage(e)));
     }
   }
 

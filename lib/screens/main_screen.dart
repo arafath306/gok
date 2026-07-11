@@ -21,6 +21,7 @@ import 'settings/beta_center_screen.dart';
 import 'saved_posts_screen.dart';
 import 'communities/community_home_screen.dart';
 import '../utils/app_theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -83,6 +84,13 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
 
       _notificationSubscription = dbService.incomingNotificationStream.listen((event) {
         if (mounted) {
+          if (event['type'] == 'message') {
+            final currentActiveChatId = dbService.currentActiveChatUserId;
+            final senderId = event['sender_id'];
+            if (currentActiveChatId != null && currentActiveChatId == senderId) {
+              return; // Do not show banner, because we are inside this exact chat!
+            }
+          }
           _showInAppNotificationBanner(event);
           dbService.fetchMyProfile();
         }
@@ -107,64 +115,110 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
         top: MediaQuery.of(context).padding.top + 10,
         left: 16,
         right: 16,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: context.cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: context.border, width: 0.8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: const Color(0xFF1E824C).withValues(alpha: 0.1),
-                  child: Icon(
-                    event['type'] == 'message' ? Icons.forum_rounded : Icons.notifications,
-                    color: const Color(0xFF1E824C),
-                    size: 20,
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutBack,
+          tween: Tween<double>(begin: -100.0, end: 0.0),
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, value),
+              child: Opacity(
+                opacity: (1 - (value / -100)).clamp(0.0, 1.0),
+                child: child,
+              ),
+            );
+          },
+          child: Material(
+            color: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: context.cardBg.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: context.border.withValues(alpha: 0.4), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                  child: Row(
                     children: [
-                      Text(
-                        event['title'] as String,
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14.5,
-                          color: context.textPrimary,
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              context.primaryAccent,
+                              context.primaryAccent.withValues(alpha: 0.7)
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: context.primaryAccent.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
+                        ),
+                        child: Icon(
+                          event['type'] == 'message' ? Icons.forum_rounded : Icons.notifications_rounded,
+                          color: Colors.white,
+                          size: 20,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        event['body'] as String,
-                        style: GoogleFonts.hindSiliguri(
-                          fontSize: 13,
-                          color: context.textSecondary,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              event['title'] as String,
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: context.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              event['body'] as String,
+                              style: GoogleFonts.hindSiliguri(
+                                fontSize: 14,
+                                color: context.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
+                      GestureDetector(
+                        onTap: () => overlayEntry.remove(),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: context.scaffoldBg.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.close_rounded, size: 16, color: context.textSecondary),
+                        ),
+                      )
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.close, size: 16, color: context.textMuted),
-                  onPressed: () => overlayEntry.remove(),
-                )
-              ],
+              ),
             ),
           ),
         ),
@@ -302,7 +356,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
               radius: 32,
               backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[200],
               backgroundImage: myProfile?.avatarUrl != null && myProfile!.avatarUrl!.isNotEmpty
-                  ? NetworkImage(myProfile.avatarUrl!)
+                  ? CachedNetworkImageProvider(myProfile.avatarUrl!)
                   : null,
             ),
           ),

@@ -55,7 +55,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, body, fcm_token } = await req.json();
+    const { title, body, fcm_token, tag } = await req.json();
 
     if (!fcm_token) {
       throw new Error("Missing fcm_token in request payload");
@@ -80,9 +80,13 @@ serve(async (req) => {
         },
         android: {
           priority: 'high',
-          notification: { sound: 'default' }
+          notification: { 
+            sound: 'default',
+            ...(tag && { tag })
+          }
         },
         apns: {
+          ...(tag && { headers: { "apns-collapse-id": tag } }),
           payload: { aps: { sound: 'default' } }
         }
       }

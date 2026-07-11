@@ -5,6 +5,7 @@ import '../../models/profile.dart';
 import '../../services/database_service.dart';
 import '../../utils/app_theme.dart';
 import 'chat_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MemberSearchSheet extends StatefulWidget {
   const MemberSearchSheet({super.key});
@@ -145,7 +146,7 @@ class _MemberSearchSheetState extends State<MemberSearchSheet> {
                               radius: 22,
                               backgroundColor: context.border,
                               backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                                  ? NetworkImage(user.avatarUrl!)
+                                  ? CachedNetworkImageProvider(user.avatarUrl!)
                                   : null,
                             ),
                             title: Row(

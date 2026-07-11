@@ -19,6 +19,7 @@ import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import '../services/general_settings_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CreateThreadScreen extends StatefulWidget {
   final ThreadPost? quotePost;
@@ -685,7 +686,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     CircleAvatar(
                       radius: 23,
                       backgroundColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                      backgroundImage: NetworkImage(
+                      backgroundImage: CachedNetworkImageProvider(
                         _isAnonymous 
                           ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150" // Cool anonymous avatar placeholder
                           : (prof?.avatarUrl ?? ""),
@@ -916,7 +917,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                   CircleAvatar(
                                     radius: 12,
                                     backgroundImage: widget.quotePost!.author.avatarUrl != null && widget.quotePost!.author.avatarUrl!.isNotEmpty
-                                        ? NetworkImage(widget.quotePost!.author.avatarUrl!)
+                                        ? CachedNetworkImageProvider(widget.quotePost!.author.avatarUrl!)
                                         : null,
                                     child: widget.quotePost!.author.avatarUrl == null || widget.quotePost!.author.avatarUrl!.isEmpty
                                         ? const Icon(Icons.person, size: 12)

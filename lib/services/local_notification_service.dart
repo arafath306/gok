@@ -127,7 +127,8 @@ class LocalNotificationService {
     required String message,
     String? payload,
   }) async {
-    final line = '$senderName: $message';
+    final String displayMessage = "Sent you a message";
+    final line = '$senderName: $displayMessage';
     _inboxLines[_groupMessages]!.add(line);
 
     final details = NotificationDetails(
@@ -140,8 +141,9 @@ class LocalNotificationService {
         ticker: 'New message',
         groupKey: _groupMessages,
         setAsGroupSummary: false,
+        onlyAlertOnce: true,
         styleInformation: BigTextStyleInformation(
-          message,
+          displayMessage,
           contentTitle: senderName,
           summaryText:
               '${_inboxLines[_groupMessages]!.length} new messages',
@@ -149,7 +151,7 @@ class LocalNotificationService {
       ),
     );
     await _show(
-        id: id, title: senderName, body: message, details: details, payload: payload);
+        id: id, title: senderName, body: displayMessage, details: details, payload: payload);
     await _showSummary(
       summaryId: _summaryMessages,
       channelId: _channelMessages,

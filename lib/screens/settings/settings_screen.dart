@@ -11,6 +11,7 @@ import '../profile/edit_profile_screen.dart';
 import 'notification_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 import 'security_settings_screen.dart';
+import 'change_email_screen.dart';
 import '../saved_posts_screen.dart';
 import 'blocked_accounts_screen.dart';
 import 'muted_accounts_screen.dart';
@@ -22,6 +23,7 @@ import '../../state/verification_controller.dart';
 import '../../models/verification_request.dart';
 import '../../state/monetization_controller.dart';
 import '../profile/subscription_dashboard_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback? onSwitchToProfile;
@@ -94,7 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     radius: 28,
                     backgroundColor: context.isDarkMode ? Colors.grey[900] : Colors.grey[100],
                     backgroundImage: myProfile?.avatarUrl != null && myProfile!.avatarUrl!.isNotEmpty
-                        ? NetworkImage(myProfile.avatarUrl!)
+                        ? CachedNetworkImageProvider(myProfile.avatarUrl!)
                         : null,
                     child: (myProfile?.avatarUrl == null || myProfile!.avatarUrl!.isEmpty)
                         ? Icon(Icons.person, color: context.textPrimary)
@@ -162,6 +164,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => EditProfileScreen(profile: profileMap)),
+                );
+              },
+            ),
+            _SettingsTileItem(
+              icon: Icons.email_outlined,
+              title: 'Change Email',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChangeEmailScreen()),
                 );
               },
             ),

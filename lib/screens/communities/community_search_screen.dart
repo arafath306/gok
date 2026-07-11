@@ -7,6 +7,7 @@ import '../../services/community_service.dart';
 import '../../utils/app_theme.dart';
 import '../../models/community.dart';
 import 'community_detail_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CommunitySearchScreen extends StatefulWidget {
   const CommunitySearchScreen({super.key});
@@ -105,7 +106,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
           color: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
           borderRadius: BorderRadius.circular(size * 0.3),
           image: DecorationImage(
-            image: NetworkImage(community.avatarUrl!),
+            image: CachedNetworkImageProvider(community.avatarUrl!),
             fit: BoxFit.cover,
           ),
         ),

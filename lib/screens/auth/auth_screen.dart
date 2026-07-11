@@ -7,6 +7,7 @@ import '../../services/auth_service.dart';
 import 'two_factor_verification_screen.dart';
 import '../../utils/app_theme.dart';
 import 'forgot_password_screen.dart';
+import 'email_verification_pending_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   final bool initialIsSignUp;
@@ -131,15 +132,30 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ),
         ),
       );
+    } else {
+      // If the error specifically mentions email not verified, auto-navigate
+      if (authService.errorMessage != null && 
+          authService.errorMessage!.contains('not been verified')) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationPendingScreen(
+              email: identifier.contains('@') ? identifier : null,
+              password: password,
+            ),
+          ),
+        );
+      }
     }
   }
 
   void _submitSignup() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final password = _signUpPasswordController.text;
+    final email = _emailController.text.trim();
 
     final success = await authService.handleSignup(
-      email: _emailController.text.trim(),
+      email: email,
       password: password,
       fullName: _fullNameController.text.trim(),
       phone: '',
@@ -153,7 +169,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
 
     if (success && mounted) {
-      setState(() => _signUpStep = 4);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EmailVerificationPendingScreen(
+            email: email,
+            password: password,
+          ),
+        ),
+      );
     }
   }
 
@@ -183,7 +207,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     if (!reg.hasMatch(username)) {
       setState(() {
         _usernameAvailable = false;
-        _usernameError = "At least 3 characters. Letters, numbers or _ only.";
+        _usernameError = "Username must be 3-20 characters. Letters, numbers or _ only.";
       });
       return;
     }
@@ -413,26 +437,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildGoogleG() {
-    return ShaderMask(
-      shaderCallback: (bounds) {
-        return const LinearGradient(
-          colors: [
-            Color(0xFF4285F4),
-            Color(0xFFEA4335),
-            Color(0xFFFBBC05),
-            Color(0xFF34A853)
-          ],
-          stops: [0.0, 0.33, 0.66, 1.0],
-        ).createShader(bounds);
-      },
-      child: Text(
-        "G",
-        style: GoogleFonts.inter(
-          fontWeight: FontWeight.w900,
-          fontSize: 22,
-          color: Colors.white,
-        ),
-      ),
+    return Image.asset(
+      'assets/google_logo.png',
+      width: 22,
+      height: 22,
+      fit: BoxFit.contain,
     );
   }
 
@@ -461,8 +470,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildGoogleG(),
-                  const SizedBox(width: 8),
+                  Image.asset('assets/google_logo.png', width: 24, height: 24),
+                  const SizedBox(width: 12),
                   Text(
                     "Google",
                     style: GoogleFonts.inter(
@@ -768,8 +777,40 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               _showSnackBar("Passwords do not match");
               return;
             }
-            if (_dobController.text.trim().isEmpty) {
+            final dobText = _dobController.text.trim();
+            if (dobText.isEmpty) {
               _showSnackBar("Please enter your date of birth");
+              return;
+            }
+            try {
+              final parts = dobText.split('/');
+              if (parts.length == 3) {
+                final day = int.parse(parts[0]);
+                final month = int.parse(parts[1]);
+                final year = int.parse(parts[2]);
+                final dob = DateTime(year, month, day);
+                final today = DateTime.now();
+                
+                if (dob.isAfter(today)) {
+                  _showSnackBar("Date of birth cannot be in the future");
+                  return;
+                }
+                
+                int age = today.year - dob.year;
+                if (today.month < dob.month || (today.month == dob.month && today.day < dob.day)) {
+                  age--;
+                }
+                
+                if (age < 13) {
+                  _showSnackBar("You must be at least 13 years old to sign up");
+                  return;
+                }
+              } else {
+                _showSnackBar("Invalid date of birth format");
+                return;
+              }
+            } catch (_) {
+              _showSnackBar("Invalid date of birth");
               return;
             }
             setState(() => _signUpStep = 3);
@@ -904,24 +945,28 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
             size: 20),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                  color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
-                  fontSize: 11),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: GoogleFonts.inter(
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                    color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                    fontSize: 11),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );

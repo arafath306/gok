@@ -42,6 +42,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
     {"icon": "🌎", "label": "Places & Travel"},
     {"icon": "✨", "label": "Pop Culture"},
     {"icon": "✏️", "label": "Q&As & Stories"},
+    {"icon": "💻", "label": "Technology / Science / Coding"},
   ];
 
   // Step 2: Privacy

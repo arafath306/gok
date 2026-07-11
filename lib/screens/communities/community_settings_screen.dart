@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../services/community_service.dart';
 import '../../utils/app_theme.dart';
 import '../../models/community.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CommunitySettingsScreen extends StatefulWidget {
   final Community community;
@@ -188,7 +189,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
                   image: _bannerFile != null
                       ? DecorationImage(image: FileImage(_bannerFile!), fit: BoxFit.cover)
                       : (widget.community.bannerUrl != null 
-                          ? DecorationImage(image: NetworkImage(widget.community.bannerUrl!), fit: BoxFit.cover) 
+                          ? DecorationImage(image: CachedNetworkImageProvider(widget.community.bannerUrl!), fit: BoxFit.cover) 
                           : null),
                 ),
                 child: _bannerFile == null && widget.community.bannerUrl == null
@@ -218,7 +219,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
                     image: _avatarFile != null
                         ? DecorationImage(image: FileImage(_avatarFile!), fit: BoxFit.cover)
                         : (widget.community.avatarUrl != null 
-                            ? DecorationImage(image: NetworkImage(widget.community.avatarUrl!), fit: BoxFit.cover) 
+                            ? DecorationImage(image: CachedNetworkImageProvider(widget.community.avatarUrl!), fit: BoxFit.cover) 
                             : null),
                   ),
                   child: _avatarFile == null && widget.community.avatarUrl == null

@@ -10,6 +10,7 @@ import '../widgets/share_comment_sheet.dart';
 import '../utils/app_theme.dart';
 import 'comment_detail_screen.dart';
 import 'profile/profile_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SavedPostsScreen extends StatefulWidget {
   const SavedPostsScreen({super.key});
@@ -398,7 +399,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                         radius: 18,
                         backgroundColor: Colors.grey[800],
                         backgroundImage: (author.avatarUrl != null && author.avatarUrl!.isNotEmpty)
-                            ? NetworkImage(author.avatarUrl!)
+                            ? CachedNetworkImageProvider(author.avatarUrl!)
                             : null,
                         child: (author.avatarUrl == null || author.avatarUrl!.isEmpty)
                             ? const Icon(Icons.person, size: 18, color: Colors.white54)

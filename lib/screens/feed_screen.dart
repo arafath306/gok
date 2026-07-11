@@ -12,6 +12,7 @@ import '../widgets/dak_logo.dart';
 import '../widgets/custom_menu_button.dart';
 import 'communities/community_home_screen.dart';
 import 'main_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 class FeedScreen extends StatefulWidget {
   final VoidCallback onNavigateToChaStation;
   final VoidCallback onNavigateToCreate;
@@ -389,7 +390,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
                   : Colors.grey[200],
               backgroundImage:
                   (prof?.avatarUrl != null && prof!.avatarUrl!.isNotEmpty)
-                      ? NetworkImage(prof.avatarUrl!)
+                      ? CachedNetworkImageProvider(prof.avatarUrl!)
                       : null,
               child: (prof?.avatarUrl == null || prof!.avatarUrl!.isEmpty)
                   ? Icon(Icons.person,

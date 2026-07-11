@@ -6,6 +6,7 @@ import '../../services/database_service.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/routes.dart';
 import 'profile_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 enum FollowListType { followers, following }
 
@@ -323,7 +324,7 @@ class _FollowersFollowingScreenState extends State<FollowersFollowingScreen> {
       radius: radius,
       backgroundColor: const Color(0xFF0085FF),
       backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-          ? NetworkImage(user.avatarUrl!)
+          ? CachedNetworkImageProvider(user.avatarUrl!)
           : null,
       child: user.avatarUrl == null || user.avatarUrl!.isEmpty
           ? Icon(Icons.person_rounded, color: Colors.white, size: radius * 1.1)

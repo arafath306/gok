@@ -12,6 +12,7 @@ import '../widgets/share_comment_sheet.dart';
 import '../widgets/comments_sheet.dart';
 
 import '../widgets/comment_attachment_picker_panel.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CommentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> comment;
@@ -282,7 +283,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                               radius: 20,
                               backgroundColor: Colors.grey[800],
                               backgroundImage: (author.avatarUrl != null && author.avatarUrl!.isNotEmpty)
-                                  ? NetworkImage(author.avatarUrl!)
+                                  ? CachedNetworkImageProvider(author.avatarUrl!)
                                   : null,
                               child: (author.avatarUrl == null || author.avatarUrl!.isEmpty)
                                   ? const Icon(Icons.person, size: 20, color: Colors.white54)
@@ -584,7 +585,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                       radius: 18,
                                       backgroundColor: Colors.grey[800],
                                       backgroundImage: (rAuthor.avatarUrl != null && rAuthor.avatarUrl!.isNotEmpty)
-                                          ? NetworkImage(rAuthor.avatarUrl!)
+                                          ? CachedNetworkImageProvider(rAuthor.avatarUrl!)
                                           : null,
                                       child: (rAuthor.avatarUrl == null || rAuthor.avatarUrl!.isEmpty)
                                           ? const Icon(Icons.person, size: 18, color: Colors.white54)
@@ -976,7 +977,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                           radius: 16,
                           backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
                           backgroundImage: (myProf?.avatarUrl != null && myProf!.avatarUrl!.isNotEmpty)
-                              ? NetworkImage(myProf.avatarUrl!)
+                              ? CachedNetworkImageProvider(myProf.avatarUrl!)
                               : null,
                           child: (myProf?.avatarUrl == null || myProf!.avatarUrl!.isEmpty)
                               ? const Icon(Icons.person, size: 16, color: Colors.white54)
