@@ -496,7 +496,7 @@ class _PulsingAvatarHeaderState extends State<_PulsingAvatarHeader> with SingleT
                     height: 90,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark ? const Color(0xFF10132A) : Colors.white,
+                      color: context.customCardBg,
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF0095F6).withValues(alpha: 0.1),
@@ -551,7 +551,7 @@ class _PulsingAvatarHeaderState extends State<_PulsingAvatarHeader> with SingleT
             style: GoogleFonts.inter(
               fontSize: 24,
               fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
+              color: context.textPrimary,
               letterSpacing: -0.6,
             ),
           ),
@@ -564,7 +564,7 @@ class _PulsingAvatarHeaderState extends State<_PulsingAvatarHeader> with SingleT
               style: GoogleFonts.inter(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                color: context.textSecondary,
                 height: 1.45,
               ),
             ),
@@ -613,7 +613,7 @@ class _PremiumPlanInfoCard extends StatelessWidget {
 
     final Color textColor = planId == 'lifetime' 
         ? Colors.white 
-        : (isDark ? Colors.white : const Color(0xFF0F172A));
+        : (context.textPrimary);
         
     final Color subColor = planId == 'lifetime' 
         ? Colors.white70 

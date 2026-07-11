@@ -185,7 +185,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     final isDark = context.isDarkMode;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+        backgroundColor: context.buttonBg,
         content: Text(
           message,
           style: GoogleFonts.inter(color: Colors.white),
@@ -244,17 +244,17 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: isDark
-                ? const ColorScheme.dark(
-                    primary: Color(0xFF5B7FFF),
+                ? ColorScheme.dark(
+                    primary: context.authPrimary,
                     onPrimary: Colors.white,
-                    surface: Color(0xFF090E17),
+                    surface: context.scaffoldBg,
                     onSurface: Colors.white,
                   )
-                : const ColorScheme.light(
-                    primary: Color(0xFF5B7FFF),
+                : ColorScheme.light(
+                    primary: context.authPrimary,
                     onPrimary: Colors.white,
                     surface: Colors.white,
-                    onSurface: Color(0xFF0F172A),
+                    onSurface: context.textPrimary,
                   ),
           ),
           child: child!,
@@ -277,18 +277,18 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         gradient: isDark
             ? LinearGradient(
                 colors: [
-                  const Color(0xFF7C3AED).withValues(alpha: 0.55),
-                  const Color(0xFF4F46E5).withValues(alpha: 0.25),
-                  const Color(0xFF7C3AED).withValues(alpha: 0.35),
+                  context.authAccent1.withValues(alpha: 0.55),
+                  context.authAccent2.withValues(alpha: 0.25),
+                  context.authAccent1.withValues(alpha: 0.35),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : LinearGradient(
                 colors: [
-                  const Color(0xFF5B7FFF).withValues(alpha: 0.18),
-                  const Color(0xFF7B5FFF).withValues(alpha: 0.08),
-                  const Color(0xFF5B7FFF).withValues(alpha: 0.14),
+                  context.authPrimary.withValues(alpha: 0.18),
+                  context.authSecondary.withValues(alpha: 0.08),
+                  context.authPrimary.withValues(alpha: 0.14),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -299,7 +299,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         margin: const EdgeInsets.all(1.2),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF10132A) : Colors.white,
+          color: context.customCardBg,
           borderRadius: BorderRadius.circular(23),
         ),
         child: child,
@@ -330,18 +330,18 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         readOnly: readOnly,
         onChanged: onChanged,
         style: GoogleFonts.inter(
-          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          color: context.textPrimary,
           fontSize: 15,
         ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.inter(
-            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+            color: context.textMuted,
             fontSize: 14,
           ),
           prefixIcon: Icon(
             prefixIcon,
-            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+            color: context.textMuted,
             size: 20,
           ),
           suffixIcon: suffixIcon,
@@ -354,18 +354,18 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              color: context.border,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              color: context.border,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF5B7FFF), width: 1.5),
+            borderSide: BorderSide(color: context.authPrimary, width: 1.5),
           ),
         ),
       ),
@@ -383,15 +383,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       width: double.infinity,
       height: 50,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5B7FFF), Color(0xFF7B5FFF)],
+        gradient: LinearGradient(
+          colors: [context.authPrimary, context.authSecondary],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF5B7FFF).withValues(alpha: 0.30),
+            color: context.authPrimary.withValues(alpha: 0.30),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -448,11 +448,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   Widget _buildSocialButtons() {
     final isDark = context.isDarkMode;
     final borderColor =
-        isDark ? const Color(0xFF2D3050) : const Color(0xFFE2E8F0);
+        context.border;
     final bgColor =
-        isDark ? const Color(0xFF0D1021) : const Color(0xFFF8FAFC);
+        context.scaffoldBg;
     final textColor =
-        isDark ? Colors.white : const Color(0xFF0F172A);
+        context.textPrimary;
 
     return Row(
       children: [
@@ -554,10 +554,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             height: dotSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF5B7FFF),
+              color: context.authPrimary,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF5B7FFF).withValues(alpha: opacity * 0.8),
+                  color: context.authPrimary.withValues(alpha: opacity * 0.8),
                   blurRadius: 5,
                   spreadRadius: 1.5,
                 ),
@@ -591,7 +591,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+              color: context.textMuted,
             ),
           ),
         ],
@@ -603,8 +603,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     bool isCompleted = _signUpStep > step;
     bool isActive = _signUpStep == step;
     
-    Color bgColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-    if (isCompleted || isActive) bgColor = const Color(0xFF5B7FFF);
+    Color bgColor = context.border;
+    if (isCompleted || isActive) bgColor = context.authPrimary;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -613,7 +613,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         color: bgColor,
         borderRadius: BorderRadius.circular(3),
         boxShadow: isActive ? [
-           BoxShadow(color: const Color(0xFF5B7FFF).withValues(alpha: 0.4), blurRadius: 6, offset: const Offset(0, 2))
+           BoxShadow(color: context.authPrimary.withValues(alpha: 0.4), blurRadius: 6, offset: const Offset(0, 2))
         ] : [],
       ),
     );
@@ -634,13 +634,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           controller: _usernameController,
           prefixIcon: Icons.alternate_email,
           suffixIcon: _isScanningUsername
-              ? const Padding(
-                  padding: EdgeInsets.all(12.0),
+              ? Padding(
+                  padding: const EdgeInsets.all(12.0),
                   child: SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Color(0xFF5B7FFF)),
+                        strokeWidth: 2, color: context.authPrimary),
                   ),
                 )
               : _usernameAvailable == null
@@ -868,14 +868,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             TextSpan(
               text: "By creating an account, you agree to our\n",
               style: GoogleFonts.inter(
-                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  color: context.textSecondary,
                   fontSize: 11,
                   height: 1.4),
               children: [
                 TextSpan(
                   text: "Terms of Service",
                   style: GoogleFonts.inter(
-                    color: const Color(0xFF5B7FFF),
+                    color: context.authPrimary,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -883,7 +883,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 TextSpan(
                   text: "Privacy Policy",
                   style: GoogleFonts.inter(
-                    color: const Color(0xFF5B7FFF),
+                    color: context.authPrimary,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -913,7 +913,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         Text(
           "Already have an account? ",
           style: GoogleFonts.inter(
-              color: isDark ? Colors.white54 : const Color(0xFF64748B),
+              color: context.textSecondary,
               fontSize: 13),
         ),
         GestureDetector(
@@ -927,7 +927,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           child: Text(
             "Login",
             style: GoogleFonts.inter(
-              color: const Color(0xFF5B7FFF),
+              color: context.authPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
@@ -942,7 +942,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     return Row(
       children: [
         Icon(icon,
-            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+            color: context.textMuted,
             size: 20),
         const SizedBox(width: 12),
         Expanded(
@@ -952,14 +952,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               Text(
                 label,
                 style: GoogleFonts.inter(
-                    color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                    color: context.textMuted,
                     fontSize: 11),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
                 style: GoogleFonts.inter(
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    color: context.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500),
                 maxLines: 1,
@@ -1008,7 +1008,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+              color: context.textSecondary,
               height: 1.4,
             ),
           ),
@@ -1042,18 +1042,18 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // Theme-aware colors
-    final bgColor = isDark ? const Color(0xFF080A18) : const Color(0xFFF4F8FD);
-    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final subtitleColor = isDark ? Colors.white60 : const Color(0xFF64748B);
-    final accentColor = const Color(0xFF5B7FFF);
-    final backBtnBg = isDark ? const Color(0xFF10132A) : Colors.white;
-    final backBtnBorder = isDark ? const Color(0xFF2D3050) : const Color(0xFFE2E8F0);
-    final backBtnIconColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final bgColor = context.scaffoldBg;
+    final titleColor = context.textPrimary;
+    final subtitleColor = context.textSecondary;
+    final accentColor = context.authPrimary;
+    final backBtnBg = context.customCardBg;
+    final backBtnBorder = context.border;
+    final backBtnIconColor = context.textPrimary;
     final dividerColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
         : const Color(0xFFE2E8F0);
-    final orTextColor = isDark ? Colors.white38 : const Color(0xFF94A3B8);
-    final registerLinkColor = isDark ? Colors.white54 : const Color(0xFF64748B);
+    final orTextColor = context.textMuted;
+    final registerLinkColor = context.textSecondary;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -1146,8 +1146,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                                   shape: BoxShape.circle,
                                                   gradient: RadialGradient(
                                                     colors: [
-                                                      const Color(0xFF5B7FFF).withValues(alpha: isDark ? 0.32 : 0.16),
-                                                      const Color(0xFF7B5FFF).withValues(alpha: isDark ? 0.14 : 0.06),
+                                                      context.authPrimary.withValues(alpha: isDark ? 0.32 : 0.16),
+                                                      context.authSecondary.withValues(alpha: isDark ? 0.14 : 0.06),
                                                       Colors.transparent,
                                                     ],
                                                     stops: const [0.0, 0.5, 1.0],
@@ -1164,7 +1164,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                                 decoration: BoxDecoration(
                                                   shape: BoxShape.circle,
                                                   border: Border.all(
-                                                    color: const Color(0xFF5B7FFF).withValues(alpha: isDark ? 0.2 : 0.12),
+                                                    color: context.authPrimary.withValues(alpha: isDark ? 0.2 : 0.12),
                                                     width: 1.2,
                                                   ),
                                                 ),

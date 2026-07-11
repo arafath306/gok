@@ -187,7 +187,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
                                   MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).primaryColor,
+                                  backgroundColor: context.primaryAccent,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),

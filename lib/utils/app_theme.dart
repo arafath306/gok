@@ -115,4 +115,13 @@ extension AppThemeExtension on BuildContext {
   Color get textMuted      => isDarkMode ? Colors.white38 : const Color(0xFF94A3B8);
   Color get primaryAccent  => const Color(0xFF1E824C); // Brand green
   Color get greenAccent    => const Color(0xFF1E824C);
+
+  // Added for Auth Screens
+  Color get authPrimary    => const Color(0xFF5B7FFF);
+  Color get authSecondary  => const Color(0xFF7B5FFF);
+  Color get authAccent1    => const Color(0xFF7C3AED);
+  Color get authAccent2    => const Color(0xFF4F46E5);
+  Color get buttonBg       => isDarkMode ? const Color(0xFF1E293B) : const Color(0xFF0F172A);
+  Color get customCardBg   => isDarkMode ? const Color(0xFF10132A) : Colors.white;
+  Color get mutedBg        => isDarkMode ? const Color(0xFF070B13).withValues(alpha: 0.6) : const Color(0xFFF8FAFC);
 }

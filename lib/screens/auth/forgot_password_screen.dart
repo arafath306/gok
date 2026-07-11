@@ -137,7 +137,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     final isDark = context.isDarkMode;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+        backgroundColor: context.buttonBg,
         content: Text(
           message,
           style: GoogleFonts.inter(color: Colors.white),
@@ -153,18 +153,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         gradient: isDark
             ? LinearGradient(
                 colors: [
-                  const Color(0xFF7C3AED).withValues(alpha: 0.55),
-                  const Color(0xFF4F46E5).withValues(alpha: 0.25),
-                  const Color(0xFF7C3AED).withValues(alpha: 0.35),
+                  context.authAccent1.withValues(alpha: 0.55),
+                  context.authAccent2.withValues(alpha: 0.25),
+                  context.authAccent1.withValues(alpha: 0.35),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : LinearGradient(
                 colors: [
-                  const Color(0xFF5B7FFF).withValues(alpha: 0.18),
-                  const Color(0xFF7B5FFF).withValues(alpha: 0.08),
-                  const Color(0xFF5B7FFF).withValues(alpha: 0.14),
+                  context.authPrimary.withValues(alpha: 0.18),
+                  context.authSecondary.withValues(alpha: 0.08),
+                  context.authPrimary.withValues(alpha: 0.14),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -175,7 +175,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         margin: const EdgeInsets.all(1.2),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF10132A) : Colors.white,
+          color: context.customCardBg,
           borderRadius: BorderRadius.circular(23),
         ),
         child: child,
@@ -203,18 +203,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         onTap: onTap,
         readOnly: readOnly,
         style: GoogleFonts.inter(
-          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          color: context.textPrimary,
           fontSize: 15,
         ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.inter(
-            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+            color: context.textMuted,
             fontSize: 14,
           ),
           prefixIcon: Icon(
             prefixIcon,
-            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+            color: context.textMuted,
             size: 20,
           ),
           suffixIcon: suffixIcon,
@@ -226,18 +226,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              color: context.border,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              color: context.border,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF5B7FFF), width: 1.5),
+            borderSide: BorderSide(color: context.authPrimary, width: 1.5),
           ),
         ),
       ),
@@ -338,10 +338,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
             height: dotSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF5B7FFF),
+              color: context.authPrimary,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF5B7FFF).withValues(alpha: opacity * 0.8),
+                  color: context.authPrimary.withValues(alpha: opacity * 0.8),
                   blurRadius: 5,
                   spreadRadius: 1.5,
                 ),
@@ -373,7 +373,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white54 : const Color(0xFF64748B),
+            color: context.textSecondary,
           ),
         ),
       ],
@@ -391,13 +391,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isCompleted || isActive
-            ? const Color(0xFF5B7FFF)
+            ? context.authPrimary
             : isDark
                 ? const Color(0xFF1E293B)
                 : const Color(0xFFE2E8F0),
         border: isActive
             ? Border.all(
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                color: context.textPrimary,
                 width: 1.5)
             : Border.all(color: Colors.transparent),
       ),
@@ -426,7 +426,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       width: 40,
       height: 2,
       color: isPassed
-          ? const Color(0xFF5B7FFF)
+          ? context.authPrimary
           : isDark
               ? const Color(0xFF1E293B)
               : const Color(0xFFE2E8F0),
@@ -469,7 +469,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           "We sent a 6-digit recovery code to ${_emailController.text}. Please check your email inbox or spam.",
           style: GoogleFonts.inter(
             fontSize: 12,
-            color: isDark ? Colors.white70 : const Color(0xFF64748B),
+            color: context.textSecondary,
             height: 1.4,
           ),
         ),
@@ -497,7 +497,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
               child: Text(
                 "< Edit Email",
                 style: GoogleFonts.inter(
-                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  color: context.textSecondary,
                   fontSize: 13,
                 ),
               ),
@@ -508,7 +508,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
               child: Text(
                 "Resend Code",
                 style: GoogleFonts.inter(
-                  color: isDark ? const Color(0xFF9B79FF) : const Color(0xFF5B7FFF),
+                  color: isDark ? const Color(0xFF9B79FF) : context.authPrimary,
                   fontSize: 13,
                 ),
               ),
@@ -534,7 +534,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           suffixIcon: IconButton(
             icon: Icon(
               _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+              color: context.textMuted,
               size: 20,
             ),
             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -548,7 +548,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           suffixIcon: IconButton(
             icon: Icon(
               _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+              color: context.textMuted,
               size: 20,
             ),
             onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
@@ -599,7 +599,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+              color: context.textSecondary,
               height: 1.4,
             ),
           ),
@@ -623,7 +623,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         Text(
           "Remembered password? ",
           style: GoogleFonts.inter(
-            color: isDark ? Colors.white54 : const Color(0xFF64748B),
+            color: context.textSecondary,
             fontSize: 13,
           ),
         ),
@@ -634,7 +634,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           child: Text(
             "Login",
             style: GoogleFonts.inter(
-              color: isDark ? const Color(0xFF9B79FF) : const Color(0xFF5B7FFF),
+              color: isDark ? const Color(0xFF9B79FF) : context.authPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
@@ -652,12 +652,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // Theme-aware colors
-    final bgColor = isDark ? const Color(0xFF080A18) : const Color(0xFFF4F8FD);
-    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final subtitleColor = isDark ? Colors.white60 : const Color(0xFF64748B);
-    final backBtnBg = isDark ? const Color(0xFF10132A) : Colors.white;
-    final backBtnBorder = isDark ? const Color(0xFF2D3050) : const Color(0xFFE2E8F0);
-    final backBtnIconColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final bgColor = context.scaffoldBg;
+    final titleColor = context.textPrimary;
+    final subtitleColor = context.textSecondary;
+    final backBtnBg = context.customCardBg;
+    final backBtnBorder = context.border;
+    final backBtnIconColor = context.textPrimary;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -776,8 +776,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                                             shape: BoxShape.circle,
                                             gradient: RadialGradient(
                                               colors: [
-                                                const Color(0xFF5B7FFF).withValues(alpha: isDark ? 0.32 : 0.16),
-                                                const Color(0xFF7B5FFF).withValues(alpha: isDark ? 0.14 : 0.06),
+                                                context.authPrimary.withValues(alpha: isDark ? 0.32 : 0.16),
+                                                context.authSecondary.withValues(alpha: isDark ? 0.14 : 0.06),
                                                 Colors.transparent,
                                               ],
                                               stops: const [0.0, 0.5, 1.0],
@@ -793,7 +793,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color: const Color(0xFF5B7FFF).withValues(alpha: isDark ? 0.2 : 0.12),
+                                              color: context.authPrimary.withValues(alpha: isDark ? 0.2 : 0.12),
                                               width: 1.2,
                                             ),
                                           ),
@@ -844,7 +844,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                           style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFF8B5CF6) : const Color(0xFF5B7FFF),
+                            color: isDark ? const Color(0xFF8B5CF6) : context.authPrimary,
                           ),
                           textAlign: TextAlign.center,
                         ),
