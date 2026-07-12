@@ -24,7 +24,12 @@ import 'core/config/app_config.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 
+import 'package:flutter/foundation.dart';
+
 void main() async {
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
