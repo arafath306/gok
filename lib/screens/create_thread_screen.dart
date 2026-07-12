@@ -7,6 +7,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../utils/app_theme.dart';
+import '../widgets/create_thread/create_thread_header.dart';
+import '../widgets/create_thread/create_thread_toolbar.dart';
+import '../widgets/create_thread/poll_creator.dart';
+import '../widgets/create_thread/voice_recorder_ui.dart';
+
 import '../models/thread_post.dart';
 import '../models/draft_post.dart';
 import '../services/draft_service.dart';
@@ -609,66 +614,23 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     // Body content tree
     Widget bodyContent = Column(
       children: [
-        // Custom Header Bar (Clean & Identical across views)
-        Container(
-          padding: const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 8),
-          color: context.cardBg,
-          child: Row(
-            children: [
-              IconButton(
-                icon: Icon(Icons.close, color: context.textPrimary),
-                onPressed: _handleClose,
-              ),
-              if (_draftCount > 0 && widget.editPost == null && widget.quotePost == null)
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(context, NoTransitionPageRoute(child: const DraftsScreen())).then((_) => _loadDraftCount());
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    foregroundColor: const Color(0xFF1E824C),
-                  ),
-                  child: Text("Drafts ($_draftCount)", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                ),
-              const Spacer(),
-              if ((_contentController.text.trim().isNotEmpty || _selectedImagesBytesList.isNotEmpty || _selectedMusic != null) && widget.editPost == null && widget.quotePost == null)
-                TextButton(
-                  onPressed: () async {
-                    await _saveCurrentDraft();
-                    if (context.mounted) Navigator.pop(context);
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    foregroundColor: context.textPrimary,
-                  ),
-                  child: Text("Draft", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                ),
-              ElevatedButton(
-                onPressed: isEnabled ? _submit : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E824C),
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey.withValues(alpha: 0.2),
-                  disabledForegroundColor: Colors.grey.withValues(alpha: 0.5),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: _isUploadingImage
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : Text(
-                        widget.editPost != null ? "Save" : "Release",
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13.5),
-                      ),
-              )
-            ],
-          ),
+        // Custom Header Bar
+        CreateThreadHeader(
+          onClose: _handleClose,
+          draftCount: _draftCount,
+          isEditMode: widget.editPost != null,
+          isQuoteMode: widget.quotePost != null,
+          onDraftsPressed: () {
+            Navigator.push(context, NoTransitionPageRoute(child: const DraftsScreen())).then((_) => _loadDraftCount());
+          },
+          showSaveDraftButton: (_contentController.text.trim().isNotEmpty || _selectedImagesBytesList.isNotEmpty || _selectedMusic != null),
+          onSaveDraftPressed: () async {
+            await _saveCurrentDraft();
+            if (context.mounted) Navigator.pop(context);
+          },
+          isSubmitEnabled: isEnabled,
+          onSubmitPressed: _submit,
+          isUploadingImage: _isUploadingImage,
         ),
 
         // Scrollable composer fields
@@ -1231,10 +1193,52 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                       ],
 
                       // Poll Creator Interface
-                      if (_showPollInput) _buildPollCreator(),
+                      if (_showPollInput)
+                        PollCreator(
+                          controllers: _pollControllers,
+                          selectedDuration: _pollDuration,
+                          durations: _durations,
+                          onClose: () {
+                            setState(() {
+                              _showPollInput = false;
+                              for (var controller in _pollControllers) {
+                                controller.clear();
+                              }
+                            });
+                          },
+                          onAddOption: () {
+                            setState(() {
+                              _pollControllers.add(TextEditingController());
+                            });
+                          },
+                          onRemoveOption: (index) {
+                            setState(() {
+                              final controller = _pollControllers.removeAt(index);
+                              controller.dispose();
+                            });
+                          },
+                          onDurationChanged: (val) {
+                            setState(() {
+                              _pollDuration = val;
+                            });
+                          },
+                        ),
 
                       // Voice Recording Interface
-                      if (_showVoiceRecorder) _buildVoiceRecorder(),
+                      if (_showVoiceRecorder)
+                        VoiceRecorderUI(
+                          isRecording: _isRecording,
+                          recordingSeconds: _recordingSeconds,
+                          onToggleRecording: _toggleRecording,
+                          onClose: () {
+                            _recordingTimer?.cancel();
+                            setState(() {
+                              _showVoiceRecorder = false;
+                              _isRecording = false;
+                              _recordingSeconds = 0;
+                            });
+                          },
+                        ),
                     ],
                   ),
                 ),
@@ -1245,7 +1249,56 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
 
         // Unified Horizontal Bottom Toolbar
         SafeArea(
-          child: _buildUnifiedToolbar(),
+          child: CreateThreadToolbar(
+            charCount: _charCount,
+            isActiveImage: _selectedImagesBytesList.isNotEmpty || _imageUrlController.text.isNotEmpty || _showImageInput,
+            isActiveMusic: _selectedMusic != null,
+            isActivePoll: _showPollInput,
+            isActiveVoice: _showVoiceRecorder,
+            isActiveSubscriber: _isSubscriberOnly,
+            canMonetize: context.select<DatabaseService, bool>((db) => db.myProfile?.canMonetize == true),
+            onImageTap: _pickImages,
+            onCameraTap: _pickCameraImage,
+            onMusicTap: () async {
+              if (_selectedImagesBytesList.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      "Please add a photo first to attach music.",
+                      style: GoogleFonts.inter(color: Colors.white),
+                    ),
+                    backgroundColor: Colors.redAccent,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
+                return;
+              }
+              
+              final selected = await showModalBottomSheet<MusicTrack>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const MusicSearchSheet(),
+              );
+              if (selected != null) {
+                setState(() {
+                  _selectedMusic = selected;
+                });
+              }
+            },
+            onPollTap: () => setState(() => _showPollInput = !_showPollInput),
+            onVoiceTap: () {
+              final settings = context.read<GeneralSettingsProvider>();
+              if (settings.isVoicePostEnabled) {
+                setState(() => _showVoiceRecorder = !_showVoiceRecorder);
+              } else {
+                _showComingSoonDialog("Voice messaging (Pending Admin Approval)");
+              }
+            },
+            onSubscriberTap: () => setState(() => _isSubscriberOnly = !_isSubscriberOnly),
+            onComingSoonTap: _showComingSoonDialog,
+          ),
         ),
       ],
     );
@@ -1285,443 +1338,4 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     );
   }
 
-  Widget _buildUnifiedToolbar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.cardBg,
-        border: Border(
-          top: BorderSide(color: context.border, width: 0.8),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Attachment Tool Icons (Horizontal List)
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  _buildToolbarIcon(
-                    icon: Icons.image_outlined,
-                    tooltip: "Add Image",
-                    color: Theme.of(context).primaryColor,
-                    isActive: _selectedImagesBytesList.isNotEmpty || _imageUrlController.text.isNotEmpty || _showImageInput,
-                    onTap: _pickImages,
-                  ),
-                  _buildToolbarIcon(
-                    icon: Icons.camera_alt_outlined,
-                    tooltip: "Camera Capture",
-                    color: Colors.deepOrange,
-                    isActive: false,
-                    onTap: _pickCameraImage,
-                  ),
-                  _buildToolbarIcon(
-                    icon: Icons.music_note_rounded,
-                    tooltip: "Add Music",
-                    color: Colors.redAccent,
-                    isActive: _selectedMusic != null,
-                    onTap: () async {
-                      if (_selectedImagesBytesList.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "Please add a photo first to attach music.",
-                              style: GoogleFonts.inter(color: Colors.white),
-                            ),
-                            backgroundColor: Colors.redAccent,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        );
-                        return;
-                      }
-                      
-                      final selected = await showModalBottomSheet<MusicTrack>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => const MusicSearchSheet(),
-                      );
-                      if (selected != null) {
-                        setState(() {
-                          _selectedMusic = selected;
-                        });
-                      }
-                    },
-                  ),
-                  _buildToolbarIcon(
-                    icon: Icons.play_circle_outline,
-                    tooltip: "Video URL",
-                    color: Colors.purple,
-                    isActive: false,
-                    onTap: () => _showComingSoonDialog("Video upload/embed"),
-                  ),
-                  _buildToolbarIcon(
-                    icon: Icons.bar_chart_outlined,
-                    tooltip: "Create Poll",
-                    color: Colors.orange,
-                    isActive: _showPollInput,
-                    onTap: () => setState(() => _showPollInput = !_showPollInput),
-                  ),
-                  _buildToolbarIcon(
-                    icon: Icons.mic_outlined,
-                    tooltip: "Voice Message",
-                    color: Colors.teal,
-                    isActive: _showVoiceRecorder,
-                    onTap: () {
-                      final settings = context.read<GeneralSettingsProvider>();
-                      if (settings.isVoicePostEnabled) {
-                        setState(() => _showVoiceRecorder = !_showVoiceRecorder);
-                      } else {
-                        _showComingSoonDialog("Voice messaging (Pending Admin Approval)");
-                      }
-                    },
-                  ),
-                  _buildToolbarIcon(
-                    icon: Icons.location_on_outlined,
-                    tooltip: "Add Location",
-                    color: Colors.blue,
-                    isActive: false,
-                    onTap: () => _showComingSoonDialog("Location pinning"),
-                  ),
-                  _buildToolbarIcon(
-                    icon: Icons.security_outlined,
-                    tooltip: "Anonymous Post",
-                    color: Colors.indigo,
-                    isActive: false,
-                    onTap: () => _showComingSoonDialog("Anonymous posting"),
-                  ),
-                  if (context.select<DatabaseService, bool>((db) => db.myProfile?.canMonetize == true))
-                    _buildToolbarIcon(
-                      icon: Icons.monetization_on_outlined,
-                      tooltip: "Subscribers Only",
-                      color: Colors.amber,
-                      isActive: _isSubscriberOnly,
-                      onTap: () => setState(() => _isSubscriberOnly = !_isSubscriberOnly),
-                    ),
-                  _buildToolbarIcon(
-                    icon: Icons.auto_awesome_outlined,
-                    tooltip: "AI Writer",
-                    color: Colors.pink,
-                    isActive: false,
-                    onTap: () => _showComingSoonDialog("AI writer assistant"),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // Character limit progress bar
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "$_charCount/500",
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: _charCount > 500 ? Colors.red : context.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  value: (_charCount / 500).clamp(0.0, 1.0),
-                  backgroundColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                  color: _charCount > 500 
-                      ? Colors.red 
-                      : _charCount > 400 
-                          ? Colors.orange 
-                          : Theme.of(context).primaryColor,
-                  strokeWidth: 2.2,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToolbarIcon({
-    required IconData icon,
-    required String tooltip,
-    required Color color,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      textStyle: GoogleFonts.inter(color: Colors.white, fontSize: 11),
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.only(right: 6),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isActive ? color.withValues(alpha: 0.12) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isActive ? color.withValues(alpha: 0.3) : Colors.transparent,
-              width: 1,
-            ),
-          ),
-          child: Icon(
-            icon,
-            color: isActive ? color : context.textSecondary,
-            size: 20,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPollCreator() {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.isDarkMode ? const Color(0xFF201608) : const Color(0xFFFFFDF5),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withValues(alpha: context.isDarkMode ? 0.05 : 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.analytics_outlined, color: Colors.orange, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Create Interactive Poll",
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange[800],
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showPollInput = false;
-                    for (var controller in _pollControllers) {
-                      controller.clear();
-                    }
-                  });
-                },
-                child: Icon(Icons.close_rounded, size: 20, color: context.textSecondary),
-              )
-            ],
-          ),
-          const SizedBox(height: 14),
-          ...List.generate(_pollControllers.length, (index) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _pollControllers[index],
-                      maxLength: 25,
-                      buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                      decoration: InputDecoration(
-                        hintText: "Option ${index + 1}",
-                        hintStyle: GoogleFonts.inter(fontSize: 13, color: context.textMuted),
-                        filled: true,
-                        fillColor: context.isDarkMode ? const Color(0xFF1E2030) : Colors.white,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: context.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.orange, width: 1.5),
-                        ),
-                        counterText: "",
-                      ),
-                      style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary),
-                    ),
-                  ),
-                  if (_pollControllers.length > 2) ...[
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          final controller = _pollControllers.removeAt(index);
-                          controller.dispose();
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.08),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                      ),
-                    ),
-                  ]
-                ],
-              ),
-            );
-          }),
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 12,
-            children: [
-              if (_pollControllers.length < 4)
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _pollControllers.add(TextEditingController());
-                    });
-                  },
-                  icon: const Icon(Icons.add_rounded, size: 16, color: Colors.orange),
-                  label: Text(
-                    "Add Option",
-                    style: GoogleFonts.inter(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(50, 30),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                )
-              else
-                const SizedBox.shrink(),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Duration: ",
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: context.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: context.isDarkMode ? const Color(0xFF1E2030) : Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: context.border, width: 0.8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<Duration>(
-                        value: _pollDuration,
-                        dropdownColor: context.cardBg,
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Colors.orange),
-                        style: GoogleFonts.inter(
-                          fontSize: 12.5,
-                          color: context.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onChanged: (Duration? val) {
-                          if (val != null) {
-                            setState(() {
-                              _pollDuration = val;
-                            });
-                          }
-                        },
-                        items: _durations.map((d) {
-                          return DropdownMenuItem<Duration>(
-                            value: d["duration"] as Duration,
-                            child: Text(d["label"] as String),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVoiceRecorder() {
-    final minutes = (_recordingSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_recordingSeconds % 60).toString().padLeft(2, '0');
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: context.isDarkMode ? const Color(0xFF062D1C) : const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            _isRecording ? Icons.mic : Icons.mic_none,
-            color: Colors.teal,
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _isRecording ? "Recording... ($minutes:$seconds)" : "Voice recorder ready",
-            style: GoogleFonts.inter(
-              color: Colors.teal,
-              fontSize: 12.5,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: _toggleRecording,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: _isRecording ? Colors.red : Colors.teal,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _isRecording ? "Stop" : "Start",
-                style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () {
-              _recordingTimer?.cancel();
-              setState(() {
-                _showVoiceRecorder = false;
-                _isRecording = false;
-                _recordingSeconds = 0;
-              });
-            },
-            child: Icon(Icons.close, size: 18, color: context.textSecondary),
-          )
-        ],
-      ),
-    );
-  }
 }
