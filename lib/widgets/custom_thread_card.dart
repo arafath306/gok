@@ -274,18 +274,15 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
   Widget _buildLeftColumn(BuildContext context, DatabaseService dbService, ThreadPost post) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 4.5),
-          child: CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.grey[800],
-            backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
-                ? CachedNetworkImageProvider(post.author.avatarUrl!)
-                : null,
-            child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
-                ? const Icon(Icons.person, size: 20, color: Colors.white54)
-                : null,
-          ),
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: Colors.grey[800],
+          backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
+              ? CachedNetworkImageProvider(post.author.avatarUrl!)
+              : null,
+          child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
+              ? const Icon(Icons.person, size: 20, color: Colors.white54)
+              : null,
         ),
         const SizedBox(height: 8),
         Expanded(
@@ -324,45 +321,39 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                     ),
                   );
                 },
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        post.author.fullName,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${post.author.fullName} ',
                         style: GoogleFonts.hindSiliguri(
                           fontWeight: FontWeight.bold,
                           fontSize: 15.5,
                           color: context.textPrimary,
-                          height: 1.2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isVerified)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4, right: 2),
-                        child: VerificationBadge(
-                          isVerified: post.author.isVerified,
-                          badgeType: post.author.badgeType,
-                          size: 14,
                         ),
                       ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        '@${post.author.username}',
+                      if (isVerified)
+                        WidgetSpan(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 2, right: 4),
+                            child: VerificationBadge(
+                              isVerified: post.author.isVerified,
+                              badgeType: post.author.badgeType,
+                              size: 14,
+                            ),
+                          ),
+                        ),
+                      TextSpan(
+                        text: '@${post.author.username}',
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           color: context.textMuted,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),

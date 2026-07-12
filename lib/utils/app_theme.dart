@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand Colors
-  static const Color primary = Color(0xFF7C4DFF); // #7C4DFF
-  static const Color primaryLight = Color(0xFFEDE7F6); // violet tint
+  static const Color primary = Color(0xFF1E824C); // Brand green
+  static const Color primaryLight = Color(0xFFE8F5E9); // Light green tint
   static const Color secondary = Color(0xFFFF6B4A); // #FF6B4A
 
   // Dark Background Colors
@@ -117,10 +117,23 @@ extension AppThemeExtension on BuildContext {
   Color get greenAccent    => const Color(0xFF1E824C);
 
   // Added for Auth Screens
-  Color get authPrimary    => const Color(0xFF5B7FFF);
-  Color get authSecondary  => const Color(0xFF7B5FFF);
-  Color get authAccent1    => const Color(0xFF7C3AED);
-  Color get authAccent2    => const Color(0xFF4F46E5);
+  Color get authPrimary    => const Color(0xFF1E824C);
+  Color get authSecondary  => const Color(0xFF28A745);
+  Color get authAccent1    => const Color(0xFF155d27);
+  Color get authAccent2    => const Color(0xFF2ecc71);
+  
+  // Specific Auth Screen Background Gradients
+  Color get authBgDark1    => const Color(0xFF0D0F24);
+  Color get authBgDark2    => const Color(0xFF080A18);
+  Color get authBgDark3    => const Color(0xFF060810);
+  Color get authBgDark4    => const Color(0xFF0F172A);
+  
+  Color get authBgLight1   => const Color(0xFFF4F8FD);
+  Color get authBgLight2   => const Color(0xFFEEF4FB);
+  Color get authBgLight3   => const Color(0xFFE8F0F8);
+  
+  Color get authPendingAccent => const Color(0xFF5B7FFF);
+  
   Color get buttonBg       => isDarkMode ? const Color(0xFF1E293B) : const Color(0xFF0F172A);
   Color get customCardBg   => isDarkMode ? const Color(0xFF10132A) : Colors.white;
   Color get mutedBg        => isDarkMode ? const Color(0xFF070B13).withValues(alpha: 0.6) : const Color(0xFFF8FAFC);

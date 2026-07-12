@@ -156,7 +156,7 @@ class _ThreadImageCarouselState extends State<ThreadImageCarousel> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _currentIndex == index
-                            ? const Color(0xFF7C4DFF)
+                            ? Theme.of(context).primaryColor
                             : Colors.white60,
                       ),
                     ),

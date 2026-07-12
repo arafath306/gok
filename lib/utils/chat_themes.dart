@@ -21,7 +21,7 @@ const List<ChatTheme> availableChatThemes = [
   ChatTheme(
     id: 'default',
     name: 'App Default',
-    primaryColor: Color(0xFF7C4DFF), // Brand Color (Purple)
+    primaryColor: Color(0xFF1E824C), // Brand Color (Green)
   ),
   ChatTheme(
     id: 'coral',

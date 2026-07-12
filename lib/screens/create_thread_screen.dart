@@ -974,10 +974,10 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const SizedBox(
+                              SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF7C4DFF)),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).primaryColor),
                               ),
                               const SizedBox(width: 12),
                               Text(

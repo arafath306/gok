@@ -60,9 +60,9 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
                     height: double.infinity,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
-                      return const Center(
+                      return Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF7C4DFF),
+                          color: Theme.of(context).primaryColor,
                         ),
                       );
                     },

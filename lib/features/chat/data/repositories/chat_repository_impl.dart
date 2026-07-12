@@ -390,30 +390,11 @@ class ChatRepositoryImpl implements IChatRepository {
   }
 
   String _getRelativeTime(DateTime dt) {
-    // Convert to Dhaka Time (GMT+6)
-    final dhakaTime = dt.toUtc().add(const Duration(hours: 6));
-    final nowDhaka = DateTime.now().toUtc().add(const Duration(hours: 6));
-
-    final hour24 = dhakaTime.hour;
-    final minute = dhakaTime.minute.toString().padLeft(2, '0');
-    final period = hour24 >= 12 ? 'PM' : 'AM';
-    int hour12 = hour24 % 12;
-    if (hour12 == 0) hour12 = 12;
-    final timeStr = '$hour12:$minute $period';
-
-    final isToday =
-        dhakaTime.year == nowDhaka.year &&
-        dhakaTime.month == nowDhaka.month &&
-        dhakaTime.day == nowDhaka.day;
-
-    if (isToday) {
-      return timeStr;
-    } else {
-      final day = dhakaTime.day.toString().padLeft(2, '0');
-      final month = dhakaTime.month.toString().padLeft(2, '0');
-      final year = dhakaTime.year;
-      return '$day/$month/$year, $timeStr';
-    }
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    return '${diff.inDays}d';
   }
 
   @override

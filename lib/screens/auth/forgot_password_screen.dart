@@ -134,7 +134,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   }
 
   void _showSnackBar(String message) {
-    final isDark = context.isDarkMode;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: context.buttonBg,
@@ -220,8 +219,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           suffixIcon: suffixIcon,
           filled: true,
           fillColor: isDark
-              ? const Color(0xFF070B13).withValues(alpha: 0.6)
-              : const Color(0xFFF8FAFC),
+              ? context.mutedBg
+              : context.mutedBg,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -254,15 +253,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       width: double.infinity,
       height: 46,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF6B3A), Color(0xFFFF3A5C)],
+        gradient: LinearGradient(
+          colors: [context.authPrimary, context.authSecondary],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(23),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF5E36).withValues(alpha: 0.35),
+            color: context.authPrimary.withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -354,7 +353,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   }
 
   Widget _buildStepIndicator() {
-    final isDark = context.isDarkMode;
     return Column(
       children: [
         Row(
@@ -393,8 +391,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         color: isCompleted || isActive
             ? context.authPrimary
             : isDark
-                ? const Color(0xFF1E293B)
-                : const Color(0xFFE2E8F0),
+                ? context.border
+                : context.border,
         border: isActive
             ? Border.all(
                 color: context.textPrimary,
@@ -411,7 +409,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                     ? Colors.white
                     : isDark
                         ? Colors.white38
-                        : const Color(0xFF94A3B8),
+                        : context.textMuted,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -428,8 +426,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       color: isPassed
           ? context.authPrimary
           : isDark
-              ? const Color(0xFF1E293B)
-              : const Color(0xFFE2E8F0),
+              ? context.border
+              : context.border,
     );
   }
 
@@ -460,7 +458,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
 
   Widget _buildStep2() {
     final authService = Provider.of<AuthService>(context);
-    final isDark = context.isDarkMode;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,7 +505,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
               child: Text(
                 "Resend Code",
                 style: GoogleFonts.inter(
-                  color: isDark ? const Color(0xFF9B79FF) : context.authPrimary,
+                  color: context.authPrimary,
                   fontSize: 13,
                 ),
               ),
@@ -521,7 +518,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
 
   Widget _buildStep3() {
     final authService = Provider.of<AuthService>(context);
-    final isDark = context.isDarkMode;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,7 +612,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   }
 
   Widget _buildBackToLoginLink() {
-    final isDark = context.isDarkMode;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -634,7 +629,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           child: Text(
             "Login",
             style: GoogleFonts.inter(
-              color: isDark ? const Color(0xFF9B79FF) : context.authPrimary,
+              color: context.authPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
@@ -671,15 +666,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: isDark
-                      ? const [
-                          Color(0xFF0D0F24),
-                          Color(0xFF080A18),
-                          Color(0xFF060810),
+                      ? [
+                          context.authBgDark1,
+                          context.authBgDark2,
+                          context.authBgDark3,
                         ]
-                      : const [
-                          Color(0xFFF4F8FD),
-                          Color(0xFFEEF4FB),
-                          Color(0xFFE8F0F8),
+                      : [
+                          context.authBgLight1,
+                          context.authBgLight2,
+                          context.authBgLight3,
                         ],
                   stops: const [0.0, 0.5, 1.0],
                 ),
@@ -700,6 +695,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                   painter: _AtmosphericBackgroundPainter(
                     cloudOffset: _cloudController.value,
                     isDark: isDark,
+                    context: context,
                   ),
                 );
               },
@@ -844,7 +840,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                           style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFF8B5CF6) : context.authPrimary,
+                            color: context.authPrimary,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -919,17 +915,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
 class _AtmosphericBackgroundPainter extends CustomPainter {
   final double cloudOffset;
   final bool isDark;
-  _AtmosphericBackgroundPainter({required this.cloudOffset, required this.isDark});
+  final BuildContext context;
+  _AtmosphericBackgroundPainter({required this.cloudOffset, required this.isDark, required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {
     final drift = math.sin(cloudOffset * 2 * math.pi);
     final drift2 = math.cos(cloudOffset * 2 * math.pi);
 
-    final c1 = isDark ? const Color(0xFF3D1F8C) : const Color(0xFF5B7FFF);
-    final c2 = isDark ? const Color(0xFF1E0F5E) : const Color(0xFF7B5FFF);
-    final c3 = isDark ? const Color(0xFF5B21B6) : const Color(0xFF5B7FFF);
-    final c4 = isDark ? const Color(0xFF1E3A8A) : const Color(0xFF3B82F6);
+    final c1 = context.authPrimary;
+    final c2 = context.authSecondary;
+    final c3 = context.authAccent1;
+    final c4 = context.authAccent2;
 
     final baseAlpha = isDark ? 0.42 : 0.08;
 
@@ -978,8 +975,8 @@ class _AtmosphericBackgroundPainter extends CustomPainter {
     canvas.drawCircle(Offset(rightX, rightY), size.width * 0.42, rightCloud);
 
     final fadeColors = isDark
-        ? [Colors.transparent, const Color(0x99080A18), const Color(0xFF080A18)]
-        : [Colors.transparent, const Color(0x22EEF4FB), const Color(0xFFE8F0F8)];
+        ? [Colors.transparent, context.authBgDark2.withValues(alpha: 0.6), context.authBgDark2]
+        : [Colors.transparent, context.authBgLight2.withValues(alpha: 0.1), context.authBgLight3];
     final fadeOut = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,

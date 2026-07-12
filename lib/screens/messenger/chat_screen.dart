@@ -325,7 +325,9 @@ class _ChatScreenState extends State<ChatScreen> {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
       final picker = ImagePicker();
       final List<XFile> images = await picker.pickMultiImage(
-        imageQuality: 100, // Full quality for preview/crop
+        imageQuality: 70, // Reduced quality to prevent OOM
+        maxWidth: 1920,
+        maxHeight: 1920,
       );
       if (images.isEmpty) return;
       if (!mounted) return;
@@ -432,7 +434,9 @@ class _ChatScreenState extends State<ChatScreen> {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 100, // Full quality for preview/crop
+        imageQuality: 70, // Reduced quality to prevent OOM
+        maxWidth: 1920,
+        maxHeight: 1920,
       );
       if (image == null) return;
       if (!mounted) return;

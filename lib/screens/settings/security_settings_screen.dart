@@ -104,7 +104,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         ),
                       );
                       if (confirm == true) {
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         final authService = Provider.of<AuthService>(context, listen: false);
                         await authService.unenrollMfa(_enrolledFactor!.id);
                         _load2faStatus();

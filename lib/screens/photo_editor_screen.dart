@@ -213,10 +213,10 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 6),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF7C4DFF) : Colors.white10,
+          color: isSelected ? Theme.of(context).primaryColor : Colors.white10,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF7C4DFF) : Colors.white24,
+            color: isSelected ? Theme.of(context).primaryColor : Colors.white24,
             width: 1,
           ),
         ),
@@ -279,9 +279,9 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
           ],
         ),
         body: _loading
-            ? const Center(
+            ? Center(
                 child: CircularProgressIndicator(
-                  color: Color(0xFF7C4DFF),
+                  color: Theme.of(context).primaryColor,
                 ),
               )
             : Stack(
@@ -453,9 +453,9 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                   if (_isCropping)
                     Container(
                       color: Colors.black54,
-                      child: const Center(
+                      child: Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF7C4DFF),
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                     ),

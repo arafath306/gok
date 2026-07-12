@@ -26,6 +26,7 @@ class ThemePickerSheet extends StatelessWidget {
         imageQuality: 80,
       );
       if (image != null) {
+        if (!context.mounted) return;
         Navigator.pop(context);
         onCustomWallpaperSelected(image);
       }
@@ -106,7 +107,7 @@ class ThemePickerSheet extends StatelessWidget {
                               : Border.all(color: Colors.transparent, width: 3),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             )
@@ -145,7 +146,7 @@ class ThemePickerSheet extends StatelessWidget {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: context.primaryAccent.withOpacity(0.1),
+                  color: context.primaryAccent.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.photo_library_outlined, color: context.primaryAccent),
@@ -176,7 +177,7 @@ class ThemePickerSheet extends StatelessWidget {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.hide_image_outlined, color: Colors.red),

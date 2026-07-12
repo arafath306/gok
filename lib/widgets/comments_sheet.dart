@@ -424,49 +424,54 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                                    );
                                                  },
                                                  child: Row(
-                                                   crossAxisAlignment: CrossAxisAlignment.baseline,
-                                                   textBaseline: TextBaseline.alphabetic,
+                                                   crossAxisAlignment: CrossAxisAlignment.center,
                                                    children: [
-                                                     Flexible(
-                                                       child: Text(
-                                                         author.fullName,
-                                                         style: GoogleFonts.hindSiliguri(
-                                                           fontWeight: FontWeight.w700,
-                                                           fontSize: 15.5,
-                                                           color: context.textPrimary,
-                                                           height: 1.2,
-                                                         ),
-                                                         maxLines: 1,
-                                                         overflow: TextOverflow.ellipsis,
-                                                       ),
-                                                     ),
-                                                     if (author.isVerified)
-                                                       const Padding(
-                                                         padding: EdgeInsets.only(left: 4, right: 2),
-                                                         child: Icon(
-                                                           Icons.verified,
-                                                           color: Colors.blue,
-                                                           size: 15,
-                                                         ),
-                                                       ),
-                                                     const SizedBox(width: 4),
-                                                     Flexible(
-                                                       child: Text(
-                                                         '@${author.username}',
-                                                         style: GoogleFonts.inter(
-                                                           fontSize: 13.5,
-                                                           color: context.textSecondary,
+                                                     Expanded(
+                                                       child: Text.rich(
+                                                         TextSpan(
+                                                           children: [
+                                                             TextSpan(
+                                                               text: '${author.fullName} ',
+                                                               style: GoogleFonts.hindSiliguri(
+                                                                 fontWeight: FontWeight.w700,
+                                                                 fontSize: 15.5,
+                                                                 color: context.textPrimary,
+                                                               ),
+                                                             ),
+                                                             if (author.isVerified)
+                                                               const WidgetSpan(
+                                                                 alignment: PlaceholderAlignment.middle,
+                                                                 child: Padding(
+                                                                   padding: EdgeInsets.only(right: 4, bottom: 2),
+                                                                   child: Icon(
+                                                                     Icons.verified,
+                                                                     color: Colors.blue,
+                                                                     size: 15,
+                                                                   ),
+                                                                 ),
+                                                               ),
+                                                             TextSpan(
+                                                               text: '@${author.username}',
+                                                               style: GoogleFonts.inter(
+                                                                 fontSize: 13.5,
+                                                                 color: context.textSecondary,
+                                                               ),
+                                                             ),
+                                                           ],
                                                          ),
                                                          maxLines: 1,
                                                          overflow: TextOverflow.ellipsis,
                                                        ),
                                                      ),
                                                      if (comment['created_at'] != null && comment['created_at'].toString().isNotEmpty)
-                                                       Text(
-                                                         ' · ${comment['created_at']}',
-                                                         style: GoogleFonts.inter(
-                                                           fontSize: 13.5,
-                                                           color: context.textSecondary,
+                                                       Padding(
+                                                         padding: const EdgeInsets.only(left: 4),
+                                                         child: Text(
+                                                           '· ${comment['created_at']}',
+                                                           style: GoogleFonts.inter(
+                                                             fontSize: 13.5,
+                                                             color: context.textSecondary,
+                                                           ),
                                                          ),
                                                        ),
                                                    ],
@@ -1372,8 +1377,8 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
       color: Colors.transparent,
       child: InkWell(
         onTap: item.onTap,
-        splashColor: const Color(0xFF7C4DFF).withValues(alpha: 0.08),
-        highlightColor: const Color(0xFF7C4DFF).withValues(alpha: 0.04),
+        splashColor: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+        highlightColor: Theme.of(context).primaryColor.withValues(alpha: 0.04),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Row(

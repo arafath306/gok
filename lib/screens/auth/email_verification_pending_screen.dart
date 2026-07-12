@@ -79,10 +79,10 @@ class _EmailVerificationPendingScreenState extends State<EmailVerificationPendin
     final isDark = context.isDarkMode;
     final email = authService.currentUser?.email ?? 'your email';
 
-    final bgColor = isDark ? const Color(0xFF080A18) : const Color(0xFFF4F8FD);
+    final bgColor = isDark ? context.authBgDark2 : context.authBgLight1;
     final cardBg = isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(5);
     final cardBorder = isDark ? Colors.white.withAlpha(20) : Colors.black.withAlpha(12);
-    final accentColor = const Color(0xFF5B7FFF);
+    final accentColor = context.authPendingAccent;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -90,8 +90,8 @@ class _EmailVerificationPendingScreenState extends State<EmailVerificationPendin
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isDark 
-              ? [const Color(0xFF080A18), const Color(0xFF0F172A)] 
-              : [const Color(0xFFF4F8FD), Colors.white],
+              ? [context.authBgDark2, context.authBgDark4] 
+              : [context.authBgLight1, Colors.white],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
