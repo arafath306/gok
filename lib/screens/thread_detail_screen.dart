@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import '../services/general_settings_provider.dart';
@@ -9,20 +8,18 @@ import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../widgets/comments_sheet.dart';
-import '../widgets/share_comment_sheet.dart';
-import 'comment_detail_screen.dart';
 import '../utils/routes.dart';
 import '../utils/app_theme.dart';
+import '../widgets/thread_detail/nested_original_post.dart';
+import '../widgets/thread_detail/thread_detail_music_player.dart';
+import '../widgets/comment_item.dart';
+
 import 'profile/profile_screen.dart';
 import 'package:flutter/services.dart';
 import '../widgets/share_post_sheet.dart';
 import 'create_thread_screen.dart';
 import '../services/sound_service.dart';
-import '../widgets/thread_image_carousel.dart';
 import '../widgets/poll_widget.dart';
-import '../state/music_playback_controller.dart';
-import '../models/music_track.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 
 import '../widgets/comment_attachment_picker_panel.dart';
 import '../widgets/voice_post_player.dart';
@@ -381,145 +378,8 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     return '$count';
   }
 
-  Widget _buildSmallPlayButton(BuildContext context, MusicTrack track, String postId) {
-    return Consumer<MusicPlaybackController>(
-      builder: (context, controller, child) {
-        final isCurrent = controller.currentTrackId == track.trackId;
-        final isPlaying = isCurrent && controller.isPlaying;
 
-        return Positioned(
-          right: 8,
-          bottom: 8,
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              controller.play(track.trackId, track.previewUrl);
-            },
-            child: ClipOval(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.18),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.45),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Icon(
-                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
-  Widget _buildMusicImageStack({
-    required BuildContext context,
-    required List<String> imageUrls,
-    required double height,
-    required MusicTrack? musicTrack,
-    required String postId,
-  }) {
-    if (musicTrack == null) {
-      return Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          ThreadImageCarousel(imageUrls: imageUrls, height: height),
-        ],
-      );
-    }
-
-    return VisibilityDetector(
-      key: Key('detail_music_$postId'),
-      onVisibilityChanged: (info) {
-        final controller = Provider.of<MusicPlaybackController>(
-          context,
-          listen: false,
-        );
-        controller.onPostVisibilityChanged(
-          postId,
-          musicTrack,
-          info.visibleFraction,
-        );
-      },
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          ThreadImageCarousel(imageUrls: imageUrls, height: height),
-          _buildSmallPlayButton(context, musicTrack, postId),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNestedOriginalPost(BuildContext context, DatabaseService dbService, ThreadPost origPost) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          NoTransitionPageRoute(
-            child: ThreadDetailScreen(post: origPost),
-          ),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Divider(height: 16, thickness: 0.5, color: context.border),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 10,
-                backgroundImage: origPost.author.avatarUrl != null && origPost.author.avatarUrl!.isNotEmpty
-                    ? CachedNetworkImageProvider(origPost.author.avatarUrl!)
-                    : null,
-                child: origPost.author.avatarUrl == null || origPost.author.avatarUrl!.isEmpty
-                    ? const Icon(Icons.person, size: 10)
-                    : null,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                origPost.author.fullName,
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12, color: context.textPrimary),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                "@${origPost.author.username}",
-                style: TextStyle(fontSize: 10, color: context.textSecondary),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            origPost.content,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(fontSize: 13, color: context.textPrimary),
-          ),
-          if (origPost.imageUrls != null && origPost.imageUrls!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            _buildMusicImageStack(
-              context: context,
-              imageUrls: origPost.imageUrls!,
-              height: 120,
-              musicTrack: origPost.musicTrack,
-              postId: origPost.id,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 
   Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onTap}) {
     return GestureDetector(
@@ -545,311 +405,6 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     );
   }
 
-  Widget _buildCommentItem(Map<String, dynamic> comment, DatabaseService dbService) {
-    final Profile author = comment['author'] as Profile;
-    final isPostAuthor = author.id == widget.post.userId;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () {
-              final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
-                ),
-              );
-            },
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.grey[800],
-              backgroundImage: (author.avatarUrl != null && author.avatarUrl!.isNotEmpty)
-                  ? CachedNetworkImageProvider(author.avatarUrl!)
-                  : null,
-              child: (author.avatarUrl == null || author.avatarUrl!.isEmpty)
-                  ? const Icon(Icons.person, size: 18, color: Colors.white54)
-                  : null,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
-                            ),
-                          );
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                author.fullName,
-                                style: GoogleFonts.hindSiliguri(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15.5,
-                                  color: context.textPrimary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (author.isVerified)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 4),
-                                child: Icon(
-                                  Icons.verified,
-                                  color: Colors.blue,
-                                  size: 15,
-                                ),
-                              ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                '@${author.username}',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13.5,
-                                  color: context.textSecondary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '· ${_formatTime(comment['created_at_raw'] ?? comment['created_at'] ?? '')}',
-                      style: GoogleFonts.inter(
-                        fontSize: 13.5,
-                        color: context.textSecondary,
-                      ),
-                    ),
-                    if (isPostAuthor) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withAlpha(25),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          "Author",
-                          style: GoogleFonts.inter(
-                            color: Theme.of(context).primaryColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: Icon(Icons.more_horiz, size: 18, color: context.textSecondary),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => _showQuickActions(context, comment, dbService),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  comment['content'] as String? ?? '',
-                  style: GoogleFonts.hindSiliguri(
-                    fontSize: 15.5,
-                    color: context.textPrimary,
-                    height: 1.45,
-                  ),
-                ),
-                if (comment['image_url'] != null && (comment['image_url'] as String).isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: CachedNetworkImage(
-                      imageUrl: comment['image_url'] as String,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: Colors.grey[800]),
-                      errorWidget: (context, url, error) => const SizedBox.shrink(),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    // Likes action
-                    GestureDetector(
-                      onTap: () {
-                        final bool currentVal = comment['is_liked_by_me'] as bool? ?? false;
-                        final bool newVal = !currentVal;
-                        final int currentLikes = comment['likes_count'] as int? ?? 0;
-                        
-                        setState(() {
-                          comment['is_liked_by_me'] = newVal;
-                          comment['likes_count'] = newVal 
-                              ? currentLikes + 1 
-                              : (currentLikes > 0 ? currentLikes - 1 : 0);
-                        });
-                        dbService.toggleCommentLike(comment['id'] as String, newVal);
-                      },
-                      child: Row(
-                        children: [
-                          Icon(
-                            (comment['is_liked_by_me'] as bool? ?? false)
-                                ? CupertinoIcons.heart_fill
-                                : CupertinoIcons.heart,
-                            size: 15,
-                            color: (comment['is_liked_by_me'] as bool? ?? false)
-                                ? Colors.red
-                                : context.textPrimary.withValues(alpha: 0.75),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            "${comment['likes_count'] ?? 0}",
-                            style: GoogleFonts.inter(
-                              fontSize: 13, 
-                              fontWeight: FontWeight.w500,
-                              color: context.textPrimary.withValues(alpha: 0.75),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-
-                    // Comments/Replies metric (opens CommentDetailScreen)
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CommentDetailScreen(
-                              comment: comment,
-                              threadId: widget.post.id,
-                            ),
-                          ),
-                        ).then((_) => _loadComments(silent: true)); // Reload on back to get reply counts
-                      },
-                      child: Row(
-                        children: [
-                          Icon(CupertinoIcons.chat_bubble, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
-                          const SizedBox(width: 6),
-                          Text(
-                            "${comment['replies_count'] ?? 0}",
-                            style: GoogleFonts.inter(
-                              fontSize: 13, 
-                              fontWeight: FontWeight.w500,
-                              color: context.textPrimary.withValues(alpha: 0.75),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-
-                    // Save/Bookmark comment
-                    GestureDetector(
-                      onTap: () async {
-                        final bool currentSaved = comment['is_saved_by_me'] as bool? ?? false;
-                        final bool newSaved = !currentSaved;
-                        final int currentSaves = comment['saves_count'] as int? ?? 0;
-
-                        setState(() {
-                          comment['is_saved_by_me'] = newSaved;
-                          comment['saves_count'] = newSaved 
-                              ? currentSaves + 1 
-                              : (currentSaves > 0 ? currentSaves - 1 : 0);
-                        });
-                        await dbService.toggleSaveComment(comment['id'] as String);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(newSaved ? "Comment saved to bookmarks" : "Comment removed from bookmarks"),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        }
-                      },
-                      child: Row(
-                        children: [
-                          Icon(
-                            (comment['is_saved_by_me'] as bool? ?? false)
-                                ? CupertinoIcons.bookmark_fill
-                                : CupertinoIcons.bookmark,
-                            size: 15,
-                            color: (comment['is_saved_by_me'] as bool? ?? false)
-                                ? Theme.of(context).primaryColor
-                                : context.textPrimary.withValues(alpha: 0.75),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            "${comment['saves_count'] ?? 0}",
-                            style: GoogleFonts.inter(
-                              fontSize: 13, 
-                              fontWeight: FontWeight.w500,
-                              color: context.textPrimary.withValues(alpha: 0.75),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-
-                    // Share Comment
-                    GestureDetector(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (sheetCtx) => ShareCommentSheet(comment: comment),
-                        ).then((_) {
-                          _loadComments(silent: true);
-                        });
-                      },
-                      child: Row(
-                        children: [
-                          Icon(CupertinoIcons.arrowshape_turn_up_right, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
-                          const SizedBox(width: 6),
-                          Text(
-                            "${comment['shares_count'] ?? 0}",
-                            style: GoogleFonts.inter(
-                              fontSize: 13, 
-                              fontWeight: FontWeight.w500,
-                              color: context.textPrimary.withValues(alpha: 0.75),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _sharePost(BuildContext context) {
     showModalBottomSheet(
@@ -1103,11 +658,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           ),
                         ),
                         if (activePost.isRepost && activePost.repostedPost != null)
-                          _buildNestedOriginalPost(context, dbService, activePost.repostedPost!),
+                          NestedOriginalPost(origPost: activePost.repostedPost!, dbService: dbService),
                         if (activePost.imageUrls != null && activePost.imageUrls!.isNotEmpty) ...[
                           const SizedBox(height: 12),
-                          _buildMusicImageStack(
-                            context: context,
+                          MusicImageStack(
                             imageUrls: activePost.imageUrls!,
                             height: 220,
                             musicTrack: activePost.musicTrack,
@@ -1326,7 +880,27 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
                       itemBuilder: (context, index) {
                         final comment = topLevelComments[index];
-                        return _buildCommentItem(comment, dbService);
+                        final author = comment['author'] as Profile;
+                        return CommentItem(
+                          comment: comment,
+                          effectiveThreadId: widget.post.id,
+                          dbService: dbService,
+                          post: widget.post,
+                          isPostAuthor: author.id == widget.post.userId,
+                          index: index,
+                          isLast: index == (topLevelComments.length - 1),
+                          onReloadComments: () => _loadComments(silent: true),
+                          onCommentDeleted: (cid) {
+                            setState(() {
+                              _comments.removeWhere((c) => c['id'] == cid);
+                            });
+                          },
+                          onCommentHidden: (cid) {
+                            setState(() {
+                              _comments.removeWhere((c) => c['id'] == cid);
+                            });
+                          },
+                        );
                       },
                     ),
                 ],
