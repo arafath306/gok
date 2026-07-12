@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/app_theme.dart';
@@ -598,25 +599,22 @@ class _CommentAttachmentPickerPanelState extends State<CommentAttachmentPickerPa
                             children: [
                               GestureDetector(
                                 onTap: () => widget.onGifSelected(url),
-                                child: Image.network(
-                                  url,
+                                child: CachedNetworkImage(
+                                  imageUrl: url,
                                   fit: BoxFit.cover,
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Container(
-                                      color: context.isDarkMode ? Colors.black12 : Colors.grey[100],
-                                      alignment: Alignment.center,
-                                      child: SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 1.5,
-                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
-                                        ),
+                                  placeholder: (context, url) => Container(
+                                    color: context.isDarkMode ? Colors.black12 : Colors.grey[100],
+                                    alignment: Alignment.center,
+                                    child: SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 1.5,
+                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
                                       ),
-                                    );
-                                  },
-                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
                                     color: context.isDarkMode ? Colors.black12 : Colors.grey[100],
                                     child: Icon(Icons.broken_image_outlined, color: context.textSecondary, size: 16),
                                   ),

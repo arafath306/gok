@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -76,11 +76,11 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    final savedPosts = dbService.savedPosts
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final savedPosts = context.select<DatabaseService, List<ThreadPost>>((db) => db.savedPosts)
         .where((p) => !dbService.isPostDeleted(p.id))
         .toList();
-    final savedComments = dbService.savedComments;
+    final savedComments = context.select<DatabaseService, List<Map<String, dynamic>>>((db) => db.savedComments);
 
     return DefaultTabController(
       length: 2,
@@ -286,9 +286,11 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
           }
 
           final post = savedPosts[index - 1];
-          return FadeTransition(
-            opacity: _fadeAnim,
-            child: CustomThreadCard(post: post),
+          return RepaintBoundary(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: CustomThreadCard(post: post),
+            ),
           );
         },
       ),
@@ -342,9 +344,11 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
           }
 
           final comment = savedComments[index - 1];
-          return FadeTransition(
-            opacity: _fadeAnim,
-            child: _buildSavedCommentCard(context, dbService, comment),
+          return RepaintBoundary(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: _buildSavedCommentCard(context, dbService, comment),
+            ),
           );
         },
       ),
@@ -464,11 +468,11 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                   const SizedBox(height: 10),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      comment['image_url'] as String,
+                    child: CachedNetworkImage(
+                      imageUrl: comment['image_url'] as String,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                      errorWidget: (context, url, error) => const SizedBox.shrink(),
                     ),
                   ),
                 ],

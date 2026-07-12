@@ -120,7 +120,6 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
   }
 
   Widget _buildUserRow(Profile user, DatabaseService dbService) {
-    final isFollowing = dbService.isFollowingUser(user.id);
     final currentUid = dbService.myProfile?.id;
 
     return Padding(
@@ -212,35 +211,40 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
             ),
 
             // Right: Follow Button
-            OutlinedButton(
-              onPressed: () {
-                dbService.toggleFollowUser(user.id);
+            Selector<DatabaseService, bool>(
+              selector: (_, db) => db.isFollowingUser(user.id),
+              builder: (context, isFollowing, _) {
+                return OutlinedButton(
+                  onPressed: () {
+                    dbService.toggleFollowUser(user.id);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: isFollowing
+                          ? (context.isDarkMode
+                                ? const Color(0xFF1E293B)
+                                : Colors.grey.shade300)
+                          : context.border,
+                      width: 1,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    minimumSize: const Size(0, 32),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    backgroundColor: Colors.transparent,
+                  ),
+                  child: Text(
+                    isFollowing ? "Following" : "Follow",
+                    style: GoogleFonts.hindSiliguri(
+                      color: isFollowing ? context.textMuted : context.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                );
               },
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: isFollowing
-                      ? (context.isDarkMode
-                            ? const Color(0xFF1E293B)
-                            : Colors.grey.shade300)
-                      : context.border,
-                  width: 1,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                minimumSize: const Size(0, 32),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                backgroundColor: Colors.transparent,
-              ),
-              child: Text(
-                isFollowing ? "Following" : "Follow",
-                style: GoogleFonts.hindSiliguri(
-                  color: isFollowing ? context.textMuted : context.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
             ),
           ],
         ),
@@ -651,7 +655,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
     final isSearching = _searchController.text.trim().isNotEmpty;
 
     return Scaffold(
@@ -839,9 +843,11 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
                               separatorBuilder: (context, index) =>
                                   Divider(height: 1, color: context.border),
                               itemBuilder: (context, index) {
-                                return _buildUserRow(
-                                  _searchResults[index],
-                                  dbService,
+                                return RepaintBoundary(
+                                  child: _buildUserRow(
+                                    _searchResults[index],
+                                    dbService,
+                                  ),
                                 );
                               },
                             );

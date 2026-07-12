@@ -245,10 +245,10 @@ class MessengerProfileSheet extends StatelessWidget {
                       onTap: () => onMediaTapped(mediaUrl),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          mediaUrl,
+                        child: CachedNetworkImage(
+                          imageUrl: mediaUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
+                          errorWidget: (context, url, error) => Container(
                               color: context.border,
                               child: const Icon(Icons.error)),
                         ),

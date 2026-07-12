@@ -19,13 +19,13 @@ import 'poll_widget.dart';
 import 'comments_sheet.dart';
 import '../screens/profile/profile_screen.dart';
 import 'share_post_sheet.dart';
-import '../services/sound_service.dart';
 import 'thread_image_carousel.dart';
 import '../state/music_playback_controller.dart';
 import '../models/music_track.dart';
 import '../state/monetization_controller.dart';
 
 import 'voice_post_player.dart';
+import 'thread_card_components/thread_actions.dart';
 part 'thread_card_components/quick_actions_sheet.dart';
 part 'thread_card_components/post_media_and_actions.dart';
 
@@ -222,52 +222,53 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    // Resolve live post from cache so mutations (like, comment, edit, delete)
-    // are reflected immediately without a full feed refresh.
-    final post = dbService.getLatestPost(widget.post);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    return Selector<DatabaseService, ThreadPost>(
+      selector: (_, db) => db.getLatestPost(widget.post),
+      builder: (context, post, child) {
+        // If this post was deleted, render nothing.
+        if (dbService.isPostDeleted(post.id)) return const SizedBox.shrink();
 
-    // If this post was deleted, render nothing.
-    if (dbService.isPostDeleted(post.id)) return const SizedBox.shrink();
+        final isVerified = post.author.isVerified;
 
-    final isVerified = post.author.isVerified;
-
-    return RepaintBoundary(
-      child: InkWell(
-        hoverColor: Colors.transparent,
-        onTap: () {
-          final targetPost = (post.isRepost && (post.quoteText == null || post.quoteText!.isEmpty)) 
-              ? post.repostedPost! 
-              : post;
-          Navigator.push(
-            context,
-            NoTransitionPageRoute(
-              child: ThreadDetailScreen(post: targetPost),
-            ),
-          );
-        },
-        onLongPress: () => _showQuickActions(context, dbService, post),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 6.0),
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLeftColumn(context, dbService, post),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildRightColumn(context, dbService, post, isVerified),
-                    ),
-                  ],
+        return RepaintBoundary(
+          child: InkWell(
+            hoverColor: Colors.transparent,
+            onTap: () {
+              final targetPost = (post.isRepost && (post.quoteText == null || post.quoteText!.isEmpty)) 
+                  ? post.repostedPost! 
+                  : post;
+              Navigator.push(
+                context,
+                NoTransitionPageRoute(
+                  child: ThreadDetailScreen(post: targetPost),
                 ),
-              ),
+              );
+            },
+            onLongPress: () => _showQuickActions(context, dbService, post),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 6.0),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLeftColumn(context, dbService, post),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildRightColumn(context, dbService, post, isVerified),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Divider(height: 1, thickness: 0.5, color: context.border),
+              ],
             ),
-            Divider(height: 1, thickness: 0.5, color: context.border),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -530,76 +531,13 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
         ],
         PollWidget(post: post, dbService: dbService),
         const SizedBox(height: 8),
-        (() {
-          final targetPost = post.isRepost && post.repostedPost != null ? post.repostedPost! : post;
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildActionItem(
-                context: context,
-                icon: targetPost.isLikedByMe ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                color: targetPost.isLikedByMe ? Colors.red : context.textPrimary,
-                isActive: targetPost.isLikedByMe,
-                count: targetPost.likesCount,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  if (!targetPost.isLikedByMe) {
-                    SoundService.playLike();
-                  }
-                  dbService.toggleLike(targetPost.id, !targetPost.isLikedByMe);
-                },
-              ),
-              _buildActionItem(
-                context: context,
-                icon: CupertinoIcons.chat_bubble,
-                color: context.textPrimary,
-                isActive: false,
-                count: targetPost.repliesCount,
-                onTap: () => _showCommentsBottomSheet(context, post),
-              ),
-              _buildActionItem(
-                context: context,
-                icon: CupertinoIcons.arrow_2_circlepath,
-                color: dbService.isReposted(targetPost.id) ? const Color(0xFF1E824C) : context.textPrimary,
-                isActive: dbService.isReposted(targetPost.id),
-                count: targetPost.repostsCount,
-                onTap: () => _showRepostOptions(context, dbService, post),
-              ),
-              _buildActionItem(
-                context: context,
-                icon: dbService.isSaved(targetPost.id) ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
-                color: dbService.isSaved(targetPost.id) ? const Color(0xFF1E824C) : context.textPrimary,
-                isActive: dbService.isSaved(targetPost.id),
-                count: targetPost.savesCount,
-                onTap: () {
-                  final wasSaved = dbService.isSaved(targetPost.id);
-                  dbService.toggleSaveThread(targetPost.id);
-                  ScaffoldMessenger.of(context).clearSnackBars();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        wasSaved ? "Removed from bookmarks" : "Post saved to bookmarks",
-                        style: GoogleFonts.inter(),
-                      ),
-                      duration: const Duration(seconds: 2),
-                      backgroundColor: wasSaved ? Colors.grey[700] : const Color(0xFF1E824C),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  );
-                },
-              ),
-              _buildActionItem(
-                context: context,
-                icon: CupertinoIcons.arrowshape_turn_up_right,
-                color: context.textPrimary,
-                isActive: false,
-                count: targetPost.sharesCount,
-                onTap: () => _sharePost(context),
-              ),
-            ],
-          );
-        })(),
+        ThreadActions(
+          post: post,
+          dbService: dbService,
+          onShowComments: () => _showCommentsBottomSheet(context, post),
+          onShowRepostOptions: () => _showRepostOptions(context, dbService, post),
+          onShare: () => _sharePost(context),
+        ),
         const SizedBox(height: 8),
       ], // end of else ...[
       ], // end of Column children

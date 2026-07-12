@@ -1,35 +1,5 @@
 part of '../custom_thread_card.dart';
 
-  Widget _buildActionItem({
-    required BuildContext context,
-    required IconData icon,
-    required Color color,
-    required bool isActive,
-    required int count,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          if (count > 0) ...[
-            const SizedBox(width: 2),
-            Text(
-              '$count',
-              style: GoogleFonts.inter(fontSize: 12, color: context.textPrimary.withValues(alpha: 0.75)),
-            ),
-          ]
-        ],
-      ),
-    );
-  }
-
 
   Widget _buildMusicImageStack({
     required BuildContext context,

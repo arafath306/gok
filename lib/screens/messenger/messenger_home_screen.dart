@@ -9,6 +9,7 @@ import '../../utils/app_theme.dart';
 import 'chat_screen.dart';
 import 'chat_settings_screen.dart';
 import 'member_search_sheet.dart';
+import '../../widgets/chat_shimmer.dart';
 
 import '../../services/general_settings_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -156,7 +157,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
         color: context.primaryAccent,
         onRefresh: _handleRefresh,
         child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: context.primaryAccent))
+            ? const ChatShimmer()
             : _chats.isEmpty
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),

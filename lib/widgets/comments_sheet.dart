@@ -1,19 +1,16 @@
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
 import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../services/general_settings_provider.dart';
-import '../screens/profile/profile_screen.dart';
-import '../screens/comment_detail_screen.dart';
-import 'share_comment_sheet.dart';
 import 'package:flutter/services.dart';
 import '../utils/app_theme.dart';
 
 import 'comment_attachment_picker_panel.dart';
+import 'comment_item.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class CommentsSheet extends StatefulWidget {
@@ -196,45 +193,11 @@ class _CommentsSheetState extends State<CommentsSheet> {
     }
   }
 
-  void _showQuickActions(BuildContext context, Map<String, dynamic> comment, DatabaseService dbService) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      transitionAnimationController: AnimationController(
-        vsync: Navigator.of(context),
-        duration: const Duration(milliseconds: 350),
-      ),
-      builder: (sheetContext) => CommentQuickActionsSheet(
-        comment: comment,
-        dbService: dbService,
-        parentContext: context,
-        onCommentHidden: (id) {
-          setState(() {
-            _comments.removeWhere((c) => c['id'] == id || c['parent_id'] == id);
-          });
-        },
-        onCommentDeleted: (id) {
-          setState(() {
-            _comments.removeWhere((c) => c['id'] == id || c['parent_id'] == id);
-          });
-        },
-        onCommentEdited: (id, newContent) {
-          setState(() {
-            final idx = _comments.indexWhere((c) => c['id'] == id);
-            if (idx != -1) {
-              _comments[idx]['content'] = newContent;
-            }
-          });
-        },
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    final myProf = dbService.myProfile;
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final myProf = context.select((DatabaseService db) => db.myProfile);
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -369,330 +332,33 @@ class _CommentsSheetState extends State<CommentsSheet> {
                             itemCount: sortedComments.length,
                             itemBuilder: (context, index) {
                               final comment = sortedComments[index];
-                            final Profile author = comment['author'] as Profile;
-                            final isPostAuthor = author.id == widget.post.userId;
+                              final Profile author = comment['author'] as Profile;
+                              final isPostAuthor = author.id == widget.post.userId;
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 4),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Commenter Avatar
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 4.5),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
-                                          ),
-                                        );
-                                      },
-                                      child: CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: Colors.grey[800],
-                                        backgroundImage: (author.avatarUrl != null && author.avatarUrl!.isNotEmpty)
-                                            ? CachedNetworkImageProvider(author.avatarUrl!)
-                                            : null,
-                                        child: (author.avatarUrl == null || author.avatarUrl!.isEmpty)
-                                            ? const Icon(Icons.person, size: 18, color: Colors.white54)
-                                            : null,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-
-                                  // Comment details
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // Author Header Info Row
-                                         Row(
-                                           children: [
-                                             Expanded(
-                                               child: GestureDetector(
-                                                 onTap: () {
-                                                   final isOwn = author.id == (dbService.myProfile?.id ?? dbService.currentUid);
-                                                   Navigator.push(
-                                                     context,
-                                                     MaterialPageRoute(
-                                                       builder: (_) => ProfileScreen(userId: isOwn ? null : author.id),
-                                                     ),
-                                                   );
-                                                 },
-                                                 child: Row(
-                                                   crossAxisAlignment: CrossAxisAlignment.center,
-                                                   children: [
-                                                     Expanded(
-                                                       child: Text.rich(
-                                                         TextSpan(
-                                                           children: [
-                                                             TextSpan(
-                                                               text: '${author.fullName} ',
-                                                               style: GoogleFonts.hindSiliguri(
-                                                                 fontWeight: FontWeight.w700,
-                                                                 fontSize: 15.5,
-                                                                 color: context.textPrimary,
-                                                               ),
-                                                             ),
-                                                             if (author.isVerified)
-                                                               const WidgetSpan(
-                                                                 alignment: PlaceholderAlignment.middle,
-                                                                 child: Padding(
-                                                                   padding: EdgeInsets.only(right: 4, bottom: 2),
-                                                                   child: Icon(
-                                                                     Icons.verified,
-                                                                     color: Colors.blue,
-                                                                     size: 15,
-                                                                   ),
-                                                                 ),
-                                                               ),
-                                                             TextSpan(
-                                                               text: '@${author.username}',
-                                                               style: GoogleFonts.inter(
-                                                                 fontSize: 13.5,
-                                                                 color: context.textSecondary,
-                                                               ),
-                                                             ),
-                                                           ],
-                                                         ),
-                                                         maxLines: 1,
-                                                         overflow: TextOverflow.ellipsis,
-                                                       ),
-                                                     ),
-                                                     if (comment['created_at'] != null && comment['created_at'].toString().isNotEmpty)
-                                                       Padding(
-                                                         padding: const EdgeInsets.only(left: 4),
-                                                         child: Text(
-                                                           '· ${comment['created_at']}',
-                                                           style: GoogleFonts.inter(
-                                                             fontSize: 13.5,
-                                                             color: context.textSecondary,
-                                                           ),
-                                                         ),
-                                                       ),
-                                                   ],
-                                                 ),
-                                               ),
-                                             ),
-                                             if (isPostAuthor) ...[
-                                               const SizedBox(width: 6),
-                                               Container(
-                                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                 decoration: BoxDecoration(
-                                                   color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                                                   borderRadius: BorderRadius.circular(4),
-                                                 ),
-                                                 child: Text(
-                                                   "Author",
-                                                   style: GoogleFonts.inter(
-                                                     color: Theme.of(context).primaryColor,
-                                                     fontSize: 10,
-                                                     fontWeight: FontWeight.bold,
-                                                   ),
-                                                 ),
-                                               ),
-                                             ],
-                                             const SizedBox(width: 8),
-                                             IconButton(
-                                               icon: Icon(Icons.more_horiz, size: 18, color: context.textSecondary),
-                                               padding: EdgeInsets.zero,
-                                               constraints: const BoxConstraints(),
-                                               onPressed: () => _showQuickActions(context, comment, dbService),
-                                             ),
-                                           ],
-                                         ),
-                                        const SizedBox(height: 4),
-
-                                        // Content Text
-                                        Text(
-                                          comment['content'] as String,
-                                          style: GoogleFonts.hindSiliguri(
-                                            fontSize: 15.5,
-                                            color: context.textPrimary,
-                                            height: 1.45,
-                                          ),
-                                        ),
-                                        if (comment['image_url'] != null && (comment['image_url'] as String).isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(12),
-                                            child: Image.network(
-                                              comment['image_url'] as String,
-                                              height: 180,
-                                              width: double.infinity,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) =>
-                                                  const SizedBox.shrink(),
-                                            ),
-                                          ),
-                                        ],
-                                        const SizedBox(height: 2),
-
-                                        // Action Row
-                                        Row(
-                                          children: [
-                                            // Likes metric
-                                            GestureDetector(
-                                              onTap: () {
-                                                final bool currentVal = comment['is_liked_by_me'] as bool? ?? false;
-                                                final bool newVal = !currentVal;
-                                                final int currentLikes = comment['likes_count'] as int? ?? 0;
-                                                
-                                                setState(() {
-                                                  comment['is_liked_by_me'] = newVal;
-                                                  comment['likes_count'] = newVal 
-                                                      ? currentLikes + 1 
-                                                      : (currentLikes > 0 ? currentLikes - 1 : 0);
-                                                });
-                                                dbService.toggleCommentLike(comment['id'] as String, newVal);
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    (comment['is_liked_by_me'] as bool? ?? false)
-                                                        ? CupertinoIcons.heart_fill
-                                                        : CupertinoIcons.heart,
-                                                    size: 15,
-                                                    color: (comment['is_liked_by_me'] as bool? ?? false)
-                                                        ? Colors.red
-                                                        : context.textPrimary.withValues(alpha: 0.75),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    "${comment['likes_count'] ?? 0}",
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 13, 
-                                                      fontWeight: FontWeight.w500,
-                                                      color: context.textPrimary.withValues(alpha: 0.75),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 24),
-
-                                            // Comments/Replies metric (opens CommentDetailScreen)
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => CommentDetailScreen(
-                                                      comment: comment,
-                                                      threadId: _effectiveThreadId,
-                                                    ),
-                                                  ),
-                                                ).then((_) => _loadComments()); // Reload on back to get reply counts
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(CupertinoIcons.chat_bubble, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    "${comment['replies_count'] ?? 0}",
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 13, 
-                                                      fontWeight: FontWeight.w500,
-                                                      color: context.textPrimary.withValues(alpha: 0.75),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 24),
-
-                                            // Save/Bookmark comment
-                                            GestureDetector(
-                                              onTap: () {
-                                                final bool currentSaved = comment['is_saved_by_me'] as bool? ?? false;
-                                                final bool newSaved = !currentSaved;
-                                                final int currentSaves = comment['saves_count'] as int? ?? 0;
-
-                                                setState(() {
-                                                  comment['is_saved_by_me'] = newSaved;
-                                                  comment['saves_count'] = newSaved 
-                                                      ? currentSaves + 1 
-                                                      : (currentSaves > 0 ? currentSaves - 1 : 0);
-                                                });
-                                                dbService.toggleSaveComment(comment['id'] as String);
-                                                ScaffoldMessenger.of(context).clearSnackBars();
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(newSaved ? "Comment saved to bookmarks" : "Comment removed from bookmarks"),
-                                                    duration: const Duration(seconds: 1),
-                                                  ),
-                                                );
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    (comment['is_saved_by_me'] as bool? ?? false)
-                                                        ? CupertinoIcons.bookmark_fill
-                                                        : CupertinoIcons.bookmark,
-                                                    size: 15,
-                                                    color: (comment['is_saved_by_me'] as bool? ?? false)
-                                                        ? Theme.of(context).primaryColor
-                                                        : context.textPrimary.withValues(alpha: 0.75),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    "${comment['saves_count'] ?? 0}",
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 13, 
-                                                      fontWeight: FontWeight.w500,
-                                                      color: context.textPrimary.withValues(alpha: 0.75),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 24),
-
-                                            // Share Comment
-                                            GestureDetector(
-                                              onTap: () {
-                                                showModalBottomSheet(
-                                                  context: context,
-                                                  isScrollControlled: true,
-                                                  backgroundColor: Colors.transparent,
-                                                  builder: (sheetCtx) => ShareCommentSheet(comment: comment),
-                                                ).then((_) {
-                                                  _loadComments();
-                                                });
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(CupertinoIcons.arrowshape_turn_up_right, size: 15, color: context.textPrimary.withValues(alpha: 0.75)),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    "${comment['shares_count'] ?? 0}",
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 13, 
-                                                      fontWeight: FontWeight.w500,
-                                                      color: context.textPrimary.withValues(alpha: 0.75),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-
-                                        if (index < _comments.length - 1) ...[
-                                          const SizedBox(height: 12),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
+                              return CommentItem(
+                                comment: comment,
+                                effectiveThreadId: _effectiveThreadId,
+                                dbService: dbService,
+                                post: widget.post,
+                                isPostAuthor: isPostAuthor,
+                                index: index,
+                                isLast: index == sortedComments.length - 1,
+                                onReloadComments: _loadComments,
+                                onCommentDeleted: (deletedId) {
+                                  setState(() {
+                                    _comments.removeWhere((c) => c['id'] == deletedId);
+                                    _sortComments();
+                                  });
+                                },
+                                onCommentHidden: (hiddenId) {
+                                  setState(() {
+                                    _comments.removeWhere((c) => c['id'] == hiddenId);
+                                    _sortComments();
+                                  });
+                                },
+                              );
+                            },
+                          );
                       })(),
             ),
 
@@ -801,8 +467,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                _selectedGifUrl!,
+                              child: CachedNetworkImage(
+                                imageUrl: _selectedGifUrl!,
                                 height: 90,
                                 width: 90,
                                 fit: BoxFit.cover,

@@ -98,8 +98,7 @@ class _VerificationDashboardScreenState extends State<VerificationDashboardScree
 
   @override
   Widget build(BuildContext context) {
-    final db = Provider.of<DatabaseService>(context);
-    final profile = db.myProfile;
+    final profile = context.select((DatabaseService db) => db.myProfile);
     
     if (profile == null) return const Scaffold();
 

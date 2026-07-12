@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FullScreenMediaViewer extends StatefulWidget {
@@ -53,15 +54,15 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
                   minScale: 1.0,
                   maxScale: 4.0,
                   clipBehavior: Clip.none,
-                  child: Image.network(
-                    widget.imageUrls[index],
+                  child: CachedNetworkImage(
+                    imageUrl: widget.imageUrls[index],
                     fit: BoxFit.contain,
                     width: double.infinity,
                     height: double.infinity,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
+                    progressIndicatorBuilder: (context, url, downloadProgress) {
                       return Center(
                         child: CircularProgressIndicator(
+                          value: downloadProgress.progress,
                           color: Theme.of(context).primaryColor,
                         ),
                       );

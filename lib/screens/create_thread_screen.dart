@@ -600,8 +600,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    final prof = dbService.myProfile;
+    final prof = context.select((DatabaseService db) => db.myProfile);
     final isEnabled = (_contentController.text.trim().isNotEmpty || _recordedAudioPath != null) && _charCount <= 500 && !_isUploadingImage;
     
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -946,8 +945,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                 const SizedBox(height: 8),
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12.0),
-                                  child: Image.network(
-                                    widget.quotePost!.imageUrls!.first,
+                                  child: CachedNetworkImage(
+                                    imageUrl: widget.quotePost!.imageUrls!.first,
                                     height: 120,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
@@ -1394,7 +1393,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     isActive: false,
                     onTap: () => _showComingSoonDialog("Anonymous posting"),
                   ),
-                  if (Provider.of<DatabaseService>(context).myProfile?.canMonetize == true)
+                  if (context.select<DatabaseService, bool>((db) => db.myProfile?.canMonetize == true))
                     _buildToolbarIcon(
                       icon: Icons.monetization_on_outlined,
                       tooltip: "Subscribers Only",

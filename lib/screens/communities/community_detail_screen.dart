@@ -1430,7 +1430,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
     final currentUid = Supabase.instance.client.auth.currentUser?.id;
 
     return Scaffold(
@@ -1466,7 +1466,6 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
                       final memberMap = _members[index];
                       final profile = memberMap['profile'];
                       final role = memberMap['role'];
-                      final isFollowing = dbService.isFollowingUser(profile.id);
                       final isMe = profile.id == currentUid;
 
                       return ListTile(
@@ -1527,26 +1526,31 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (!isMe) ...[
-                              TextButton(
-                                onPressed: () async {
-                                  await dbService.toggleFollowUser(profile.id);
+                              Selector<DatabaseService, bool>(
+                                selector: (_, db) => db.isFollowingUser(profile.id),
+                                builder: (context, isFollowing, _) {
+                                  return TextButton(
+                                    onPressed: () async {
+                                      await dbService.toggleFollowUser(profile.id);
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      backgroundColor: isFollowing ? Colors.transparent : context.greenAccent.withValues(alpha: 0.1),
+                                      side: isFollowing ? BorderSide(color: context.border) : null,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    child: Text(
+                                      isFollowing ? "Following" : "Follow",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: isFollowing ? context.textSecondary : context.greenAccent,
+                                      ),
+                                    ),
+                                  );
                                 },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  backgroundColor: isFollowing ? Colors.transparent : context.greenAccent.withValues(alpha: 0.1),
-                                  side: isFollowing ? BorderSide(color: context.border) : null,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                child: Text(
-                                  isFollowing ? "Following" : "Follow",
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: isFollowing ? context.textSecondary : context.greenAccent,
-                                  ),
-                                ),
                               ),
                             ],
                             if (widget.community.myRole == 'owner' && role != 'owner') ...[

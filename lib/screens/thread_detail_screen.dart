@@ -862,8 +862,8 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    final activePost = dbService.getLatestPost(widget.post);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final activePost = context.select<DatabaseService, ThreadPost>((db) => db.getLatestPost(widget.post));
 
     final settings = Provider.of<GeneralSettingsProvider>(context);
     final isPriorityEnabled = settings.isAlgorithmicPriorityEnabled;
@@ -1406,8 +1406,8 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              _selectedGifUrl!,
+                            child: CachedNetworkImage(
+                              imageUrl: _selectedGifUrl!,
                               height: 90,
                               width: 90,
                               fit: BoxFit.cover,

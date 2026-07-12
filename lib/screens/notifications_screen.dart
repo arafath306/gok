@@ -416,7 +416,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         itemCount: list.length,
         separatorBuilder: (context, index) =>
             Divider(height: 1, color: context.border),
-        itemBuilder: (context, index) => _buildItem(list[index]),
+        itemBuilder: (context, index) => RepaintBoundary(child: _buildItem(list[index])),
       ),
     );
   }

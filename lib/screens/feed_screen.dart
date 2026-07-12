@@ -12,6 +12,8 @@ import '../widgets/dak_logo.dart';
 import '../widgets/custom_menu_button.dart';
 import 'communities/community_home_screen.dart';
 import 'main_screen.dart';
+import '../models/profile.dart';
+import '../models/thread_post.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 class FeedScreen extends StatefulWidget {
   final VoidCallback onNavigateToChaStation;
@@ -139,8 +141,11 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
   // ── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    final prof = dbService.myProfile;
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final prof = context.select<DatabaseService, Profile?>((db) => db.myProfile);
+    final showShimmer = context.select<DatabaseService, bool>((db) => db.isLoading && db.personalizedFeed.isEmpty && db.feed.isEmpty);
+    final personalizedFeed = context.select<DatabaseService, List<ThreadPost>>((db) => db.personalizedFeed);
+    final followingFeed = context.select<DatabaseService, List<ThreadPost>>((db) => db.feed.where((p) => db.isFollowingUser(p.userId)).toList());
     final topPadding = MediaQuery.of(context).padding.top;
     final bool isDesktop = MediaQuery.of(context).size.width > 800;
 
@@ -211,27 +216,26 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
 
           // ── Feed content ─────────────────────────────────────────────
           Expanded(
-            child: (dbService.isLoading && dbService.personalizedFeed.isEmpty && dbService.feed.isEmpty)
+            child: showShimmer
                 ? const ThreadShimmer()
-                // IndexedStack keeps BOTH lists alive so each tab
-                // independently remembers its scroll position.
-                : IndexedStack(
-                    index: _tabController.index,
+                : TabBarView(
+                    controller: _tabController,
                     children: [
-                      _buildFeedList(
-                        tabIndex: 0,
-                        posts: dbService.personalizedFeed,
-                        dbService: dbService,
-                        prof: prof,
+                      KeepAliveWrapper(
+                        child: _buildFeedList(
+                          tabIndex: 0,
+                          posts: personalizedFeed,
+                          dbService: dbService,
+                          prof: prof,
+                        ),
                       ),
-                      _buildFeedList(
-                        tabIndex: 1,
-                        posts: dbService.feed
-                            .where(
-                                (p) => dbService.isFollowingUser(p.userId))
-                            .toList(),
-                        dbService: dbService,
-                        prof: prof,
+                      KeepAliveWrapper(
+                        child: _buildFeedList(
+                          tabIndex: 1,
+                          posts: followingFeed,
+                          dbService: dbService,
+                          prof: prof,
+                        ),
                       ),
                     ],
                   ),
@@ -614,5 +618,24 @@ class _TrendingTopicPillState extends State<TrendingTopicPill> {
         ),
       ),
     );
+  }
+}
+
+class KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+  const KeepAliveWrapper({super.key, required this.child});
+
+  @override
+  State<KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<KeepAliveWrapper> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

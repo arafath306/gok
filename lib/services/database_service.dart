@@ -472,22 +472,32 @@ class DatabaseService with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     
-    // Load offline cached profile and feed first
-    await _loadCachedProfile();
-    await _loadCachedAIFeed();
+    // Load offline cached profile and feed first in parallel
+    await Future.wait([
+      _loadCachedProfile(),
+      _loadCachedAIFeed(),
+    ]);
     
-    await fetchBlockedMutedLists();
-    fetchMyProfile();
-    fetchFollowingList();
-    fetchFeed(silent: true);
-    fetchAIFeed(silent: true);
-    fetchNotifications();
-    fetchUnreadCounts();
-    fetchSavedThreadIds();
-    fetchSavedCommentIds();
-    fetchSavedPosts();
-    fetchSavedComments();
-    fetchRepostedThreadIds();
+    // Fetch critical lists and profile in parallel
+    await Future.wait([
+      fetchBlockedMutedLists(),
+      fetchMyProfile(),
+      fetchFollowingList(),
+    ]);
+
+    // Fetch feed, notifications, unreads, and other metadata concurrently in the background
+    Future.wait([
+      fetchFeed(silent: true),
+      fetchAIFeed(silent: true),
+      fetchNotifications(),
+      fetchUnreadCounts(),
+      fetchSavedThreadIds(),
+      fetchSavedCommentIds(),
+      fetchSavedPosts(),
+      fetchSavedComments(),
+      fetchRepostedThreadIds(),
+    ]);
+
     subscribeToRealtime();
 
     // Periodically update active status

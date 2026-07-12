@@ -30,14 +30,17 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
+
+    final verificationPlans = context.select<DatabaseService, List<Map<String, dynamic>>>((db) => db.verificationPlans);
+    final myAvatarUrl = context.select<DatabaseService, String?>((db) => db.myProfile?.avatarUrl);
+    
     final controller = context.watch<VerificationController>();
     final status = controller.request.status;
     final selectedPlanId = controller.request.selectedPlanId;
 
     // Plans list with dynamic values from DB if available, otherwise fallbacks
-    final plans = dbService.verificationPlans.isNotEmpty
-        ? dbService.verificationPlans
+    final plans = verificationPlans.isNotEmpty
+        ? verificationPlans
         : [
             {'id': 'weekly', 'name': 'Weekly', 'price': 59.0, 'discount_price': null, 'interval_unit': 'week'},
             {'id': 'monthly', 'name': 'Monthly', 'price': 199.0, 'discount_price': null, 'interval_unit': 'month'},
@@ -91,7 +94,7 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Pulsating Radar Avatar Header (Biometric Scanner Feel)
-              _PulsingAvatarHeader(avatarUrl: dbService.myProfile?.avatarUrl),
+              _PulsingAvatarHeader(avatarUrl: myAvatarUrl),
               const SizedBox(height: 28),
 
               // 2. Section: Plan Custom Selection Tabs

@@ -84,13 +84,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
+
+    final verificationPlans = context.select<DatabaseService, List<Map<String, dynamic>>>((db) => db.verificationPlans);
+    
     final controller = context.watch<VerificationController>();
     final isSubmitting = controller.isSubmitting;
     final selectedPlanId = controller.request.selectedPlanId;
     final isDark = context.isDarkMode;
 
-    final plan = dbService.verificationPlans.firstWhere(
+    final plan = verificationPlans.firstWhere(
       (p) => p['id'] == selectedPlanId,
       orElse: () => {
         'id': 'monthly',

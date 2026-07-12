@@ -44,8 +44,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    final myProfile = dbService.myProfile;
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final myProfile = context.select((DatabaseService db) => db.myProfile);
     final monetization = Provider.of<MonetizationController>(context);
 
     return Scaffold(

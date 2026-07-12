@@ -226,8 +226,8 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = Provider.of<DatabaseService>(context);
-    final myProf = dbService.myProfile;
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final myProf = context.select<DatabaseService, Profile?>((db) => db.myProfile);
     final Profile author = _fatherComment['author'] as Profile;
 
     return Scaffold(
@@ -370,12 +370,12 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                   const SizedBox(height: 8),
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      _fatherComment['image_url'] as String,
+                                    child: CachedNetworkImage(
+                                      imageUrl: _fatherComment['image_url'] as String,
                                       height: 180,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                                      errorWidget: (context, url, error) => const SizedBox.shrink(),
                                     ),
                                   ),
                                 ],
@@ -566,8 +566,9 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                           itemBuilder: (context, index) {
                             final reply = _replies[index];
                             final Profile rAuthor = reply['author'] as Profile;
-                            return Container(
-                              margin: EdgeInsets.zero,
+                            return RepaintBoundary(
+                              child: Container(
+                                margin: EdgeInsets.zero,
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -672,12 +673,12 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                           const SizedBox(height: 8),
                                           ClipRRect(
                                             borderRadius: BorderRadius.circular(12),
-                                            child: Image.network(
-                                              reply['image_url'] as String,
+                                            child: CachedNetworkImage(
+                                              imageUrl: reply['image_url'] as String,
                                               height: 180,
                                               width: double.infinity,
                                               fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                                              errorWidget: (context, url, error) => const SizedBox.shrink(),
                                             ),
                                           ),
                                         ],
@@ -832,7 +833,7 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                                   ),
                                 ],
                               ),
-                            );
+                            ));
                           },
                         ),
                     ],
@@ -935,8 +936,8 @@ class _CommentDetailScreenState extends State<CommentDetailScreen> {
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                _selectedGifUrl!,
+                              child: CachedNetworkImage(
+                                imageUrl: _selectedGifUrl!,
                                 height: 90,
                                 width: 90,
                                 fit: BoxFit.cover,
