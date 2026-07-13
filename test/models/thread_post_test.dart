@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dak/models/thread_post.dart';
-import 'package:dak/models/profile.dart';
 
 void main() {
   group('ThreadPost Model Tests', () {

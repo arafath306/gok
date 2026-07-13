@@ -112,40 +112,6 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     }
   }
 
-  void _showQuickActions(BuildContext context, Map<String, dynamic> comment, DatabaseService dbService) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      transitionAnimationController: AnimationController(
-        vsync: Navigator.of(context),
-        duration: const Duration(milliseconds: 350),
-      ),
-      builder: (sheetContext) => CommentQuickActionsSheet(
-        comment: comment,
-        dbService: dbService,
-        parentContext: context,
-        onCommentHidden: (id) {
-          setState(() {
-            _comments.removeWhere((c) => c['id'] == id || c['parent_id'] == id);
-          });
-        },
-        onCommentDeleted: (id) {
-          setState(() {
-            _comments.removeWhere((c) => c['id'] == id || c['parent_id'] == id);
-          });
-        },
-        onCommentEdited: (id, newContent) {
-          setState(() {
-            final idx = _comments.indexWhere((c) => c['id'] == id);
-            if (idx != -1) {
-              _comments[idx]['content'] = newContent;
-            }
-          });
-        },
-      ),
-    );
-  }
 
   void _showPostQuickActions(BuildContext context, DatabaseService dbService, ThreadPost post) {
     final isAuthor = post.userId == dbService.currentUid;

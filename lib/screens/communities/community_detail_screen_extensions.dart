@@ -1,3 +1,4 @@
+// ignore_for_file: library_private_types_in_public_api
 part of 'community_detail_screen.dart';
 
 extension CommunityDetailScreenExtensions on _CommunityDetailScreenState {
