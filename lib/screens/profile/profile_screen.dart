@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/profile_shimmer.dart';
 import '../full_screen_media_viewer.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -138,21 +139,11 @@ class _ProfileScreenState extends State<ProfileScreen>
 
         // While loading own profile for first time
         if (_isOwnProfile && db.myProfile == null) {
-          return Scaffold(
-            backgroundColor: context.scaffoldBg,
-            body: const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0085FF)),
-            ),
-          );
+          return const ProfileShimmer();
         }
 
         if (!_isOwnProfile && _isLoading) {
-          return Scaffold(
-            backgroundColor: context.scaffoldBg,
-            body: const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0085FF)),
-            ),
-          );
+          return const ProfileShimmer();
         }
 
         final bool isBlocked = !_isOwnProfile && widget.userId != null && db.isBlocked(widget.userId!);
@@ -283,6 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       backgroundColor: Colors.black38,
                       radius: 18,
                       child: IconButton(
+                        tooltip: 'Settings',
                         icon: const Icon(Icons.settings_rounded, color: Colors.white, size: 18),
                         onPressed: () {
                            Navigator.push(
@@ -304,6 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       backgroundColor: Colors.black38,
                       radius: 18,
                       child: IconButton(
+                        tooltip: 'More options',
                         icon: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: 18),
                         onPressed: _showMoreOptions,
                         padding: EdgeInsets.zero,
@@ -314,6 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       backgroundColor: Colors.black38,
                       radius: 18,
                       child: IconButton(
+                        tooltip: 'More options',
                         icon: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: 18),
                         onPressed: _showMoreOptions,
                         padding: EdgeInsets.zero,

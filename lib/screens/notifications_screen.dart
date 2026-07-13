@@ -343,6 +343,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           },
         ),
         IconButton(
+          tooltip: 'Notification settings',
           icon: Icon(Icons.settings_outlined, color: context.textPrimary),
           onPressed: () => Navigator.push(
             context,

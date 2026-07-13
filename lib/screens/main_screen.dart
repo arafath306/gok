@@ -767,13 +767,25 @@ WhatsApp: +8801313961899''',
     final bool isSelected = _currentIndex == tabIndex;
     final Color accentColor = context.greenAccent;
 
+    final String label = const {
+      0: 'Home Tab',
+      1: 'Search and Explore Tab',
+      2: 'Messages Tab',
+      3: 'Notifications Tab',
+      4: 'Profile Tab',
+    }[tabIndex] ?? 'Tab';
+
     return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setTab(tabIndex);
-        },
-        behavior: HitTestBehavior.opaque,
-        child: Column(
+      child: Semantics(
+        label: label,
+        button: true,
+        selected: isSelected,
+        child: GestureDetector(
+          onTap: () {
+            setTab(tabIndex);
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Stack(
@@ -841,6 +853,7 @@ WhatsApp: +8801313961899''',
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -1174,6 +1187,7 @@ WhatsApp: +8801313961899''',
                 ]).animate(_fabAnimationController),
                 child: FloatingActionButton(
                   heroTag: 'main_fab',
+                  tooltip: 'Create post',
                   backgroundColor: const Color(0xFF1E824C),
                   shape: const CircleBorder(),
                   elevation: 3,

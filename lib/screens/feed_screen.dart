@@ -185,6 +185,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
 
                             // Community icon
                             IconButton(
+                              tooltip: 'Communities',
                               icon: Icon(CupertinoIcons.person_3_fill,
                                   color: context.textPrimary, size: 24),
                               onPressed: () => Navigator.push(
