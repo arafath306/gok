@@ -58,13 +58,15 @@ BEGIN
         'fcm_token', receiver_token,
         'title', push_title,
         'body', push_body,
-        'tag', NEW.sender_id
+        'tag', NEW.sender_id,
+        'channel_id', 'pigeon_messages'
       );
     ELSE
       payload := jsonb_build_object(
         'fcm_token', receiver_token,
         'title', push_title,
-        'body', push_body
+        'body', push_body,
+        'channel_id', 'pigeon_activity'
       );
     END IF;
 

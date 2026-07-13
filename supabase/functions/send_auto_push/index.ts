@@ -55,7 +55,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, body, fcm_token, tag } = await req.json();
+    const { title, body, fcm_token, tag, channel_id } = await req.json();
 
     if (!fcm_token) {
       throw new Error("Missing fcm_token in request payload");
@@ -82,6 +82,7 @@ serve(async (req) => {
           priority: 'high',
           notification: { 
             sound: 'default',
+            ...(channel_id && { channel_id }),
             ...(tag && { tag })
           }
         },

@@ -238,8 +238,8 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> with Automati
                             context,
                             MaterialPageRoute(builder: (_) => ChatScreen(otherUser: profile)),
                           );
-                          // Refresh inbox after returning from chat
-                          _loadChats();
+                          // Refresh inbox silently after returning from chat
+                          _loadChats(silent: _chats.isNotEmpty);
                         },
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         leading: Stack(
@@ -347,7 +347,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> with Automati
               MaterialPageRoute(builder: (_) => const MemberSearchSheet()),
             );
             // Refresh chat list after new chat is started
-            _loadChats();
+            _loadChats(silent: _chats.isNotEmpty);
           },
           backgroundColor: const Color(0xFF1E824C),
           shape: const CircleBorder(),
