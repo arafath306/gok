@@ -22,58 +22,70 @@ import 'utils/app_theme.dart';
 import 'core/injection.dart';
 import 'core/config/app_config.dart';
 import 'core/security/pinned_http_client.dart';
+import 'dart:async';
+import 'widgets/custom_error_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:flutter/foundation.dart';
 
-void main() async {
-  if (kReleaseMode) {
-    debugPrint = (String? message, {int? wrapWidth}) {};
-  }
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  runZonedGuarded(() async {
+    if (kReleaseMode) {
+      debugPrint = (String? message, {int? wrapWidth}) {};
+    }
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint("Firebase initialization failed: $e");
-  }
+    // Set custom error widget builder for UI rendering crashes
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return CustomErrorScreen(details: details);
+    };
 
-  // Initialize Supabase
-  await Supabase.initialize(
-    url: AppConfig.supabaseUrl,
-    publishableKey: AppConfig.supabaseAnonKey,
-    httpClient: PinnedHttpClient(),
-  );
+    // Initialize Firebase
+    try {
+      await Firebase.initializeApp();
+    } catch (e) {
+      debugPrint("Firebase initialization failed: $e");
+    }
 
-  // Initialize dependency injection
-  await initInjection();
+    // Initialize Supabase
+    await Supabase.initialize(
+      url: AppConfig.supabaseUrl,
+      publishableKey: AppConfig.supabaseAnonKey,
+      httpClient: PinnedHttpClient(),
+    );
 
-  // Initialize notifications
-  try {
-    await LocalNotificationService.initialize();
-    await PushNotificationService().initialize();
-  } catch (e) {
-    debugPrint("Notification initialization failed: $e");
-  }
+    // Initialize dependency injection
+    await initInjection();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => DatabaseService()),
-        ChangeNotifierProvider(create: (_) => NotificationSettingsProvider()),
-        ChangeNotifierProvider(create: (_) => ChatSettingsProvider()),
-        ChangeNotifierProvider(create: (_) => GeneralSettingsProvider()),
-        ChangeNotifierProvider(create: (_) => VerificationController()),
-        ChangeNotifierProvider(create: (_) => MonetizationController()),
-        ChangeNotifierProvider(create: (_) => MusicPlaybackController()),
-        ChangeNotifierProvider(create: (_) => CommunityService()),
-      ],
-      child: const PigeonApp(),
-    ),
-  );
+    // Initialize notifications
+    try {
+      await LocalNotificationService.initialize();
+      await PushNotificationService().initialize();
+    } catch (e) {
+      debugPrint("Notification initialization failed: $e");
+    }
+
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AuthService()),
+          ChangeNotifierProvider(create: (_) => DatabaseService()),
+          ChangeNotifierProvider(create: (_) => NotificationSettingsProvider()),
+          ChangeNotifierProvider(create: (_) => ChatSettingsProvider()),
+          ChangeNotifierProvider(create: (_) => GeneralSettingsProvider()),
+          ChangeNotifierProvider(create: (_) => VerificationController()),
+          ChangeNotifierProvider(create: (_) => MonetizationController()),
+          ChangeNotifierProvider(create: (_) => MusicPlaybackController()),
+          ChangeNotifierProvider(create: (_) => CommunityService()),
+        ],
+        child: const PigeonApp(),
+      ),
+    );
+  }, (error, stackTrace) {
+    debugPrint("Uncaught global error: $error");
+    debugPrint(stackTrace.toString());
+  });
 }
 
 
