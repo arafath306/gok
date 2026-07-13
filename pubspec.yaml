@@ -34,6 +34,8 @@ dependencies:
   flutter_image_compress: ^2.4.0
   sqflite: ^2.4.3
   path: ^1.9.1
+  crypto: ^3.0.7
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

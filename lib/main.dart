@@ -21,6 +21,7 @@ import 'screens/main_screen.dart';
 import 'utils/app_theme.dart';
 import 'core/injection.dart';
 import 'core/config/app_config.dart';
+import 'core/security/pinned_http_client.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 
@@ -43,6 +44,7 @@ void main() async {
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     publishableKey: AppConfig.supabaseAnonKey,
+    httpClient: PinnedHttpClient(),
   );
 
   // Initialize dependency injection
