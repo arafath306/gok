@@ -57,7 +57,7 @@ part 'parts/verification_ext.dart';
 class DatabaseService with ChangeNotifier {
   String? currentActiveChatUserId;
   void updateState() => notifyListeners();
-  final _supabase = Supabase.instance.client;
+  final _supabase = sl<SupabaseClient>();
 
   ThreadPost _entityToModel(ThreadPostEntity entity) {
     return ThreadPost(

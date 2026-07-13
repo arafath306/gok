@@ -12,7 +12,7 @@ import '../features/auth/domain/usecases/sign_out_use_case.dart';
 enum LoginResult { success, requires2FA, failure }
 
 class AuthService with ChangeNotifier {
-  final sb.SupabaseClient _supabaseClient = sb.Supabase.instance.client;
+  final sb.SupabaseClient _supabaseClient = sl<sb.SupabaseClient>();
 
   sb.User? _currentUser;
   sb.User? get currentUser => _currentUser;
