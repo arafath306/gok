@@ -401,7 +401,7 @@ class _SignupFormState extends State<SignupForm> {
                 _showSnackBar("Invalid date of birth format");
                 return;
               }
-            } catch (_) {
+            } catch (e) {
               _showSnackBar("Invalid date of birth");
               return;
             }

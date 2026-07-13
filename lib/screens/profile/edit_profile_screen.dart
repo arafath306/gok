@@ -430,7 +430,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             int.parse(parts[0]),
           );
         }
-      } catch (_) {}
+      } catch (e) {
+      // ignore: avoid_print
+      print("Error in screens/profile/edit_profile_screen.dart: $e");
+    }
     }
 
     final DateTime? picked = await showDatePicker(

@@ -205,7 +205,10 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late final TabController _tabController;
   bool _clearingInbox = false;
 
@@ -273,7 +276,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     try {
       final data = await db.fetchSingleThread(threadId);
       return data;
-    } catch (_) {
+    } catch (e) {
       return null;
     }
   }
@@ -281,6 +284,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: context.scaffoldBg,
       appBar: _buildAppBar(),

@@ -116,7 +116,6 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _loadSplash() async {
-    await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() {
         _isLoading = false;

@@ -63,7 +63,7 @@ extension UnreadExtension on DatabaseService {
         try {
           final Map<String, dynamic> parsed = jsonDecode(rawContent);
           body = parsed['text'] as String? ?? rawContent;
-        } catch (_) {
+        } catch (e) {
           body = rawContent.isNotEmpty ? rawContent : '📷 Photo';
         }
       } else {

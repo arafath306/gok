@@ -21,7 +21,10 @@ class MessengerHomeScreen extends StatefulWidget {
   State<MessengerHomeScreen> createState() => _MessengerHomeScreenState();
 }
 
-class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
+class _MessengerHomeScreenState extends State<MessengerHomeScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   static final Map<String, List<Map<String, dynamic>>> _globalChatsCache = {};
   
   List<Map<String, dynamic>> _chats = [];
@@ -112,6 +115,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final mySettings = Provider.of<GeneralSettingsProvider>(context, listen: false);
     final bool myActiveStatusEnabled = mySettings.isActiveStatusEnabled;
 

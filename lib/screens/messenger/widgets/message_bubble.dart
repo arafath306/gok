@@ -69,7 +69,10 @@ class MessageBubble extends StatelessWidget {
         int hour12 = hour24 % 12;
         if (hour12 == 0) hour12 = 12;
         timeStr = '$hour12:$minute $period';
-      } catch (_) {}
+      } catch (e) {
+      // ignore: avoid_print
+      print("Error in screens/messenger/widgets/message_bubble.dart: $e");
+    }
     }
 
     Widget buildTimeRow({required bool overlayMode}) {

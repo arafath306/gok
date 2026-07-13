@@ -20,7 +20,10 @@ class CommunityHomeScreen extends StatefulWidget {
 }
 
 class _CommunityHomeScreenState extends State<CommunityHomeScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late TabController _tabController;
   List<String> _pinnedIds = [];
 
@@ -560,6 +563,7 @@ class _CommunityHomeScreenState extends State<CommunityHomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: context.scaffoldBg,
       appBar: AppBar(

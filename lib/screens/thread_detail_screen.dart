@@ -246,7 +246,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       if (diff.inMinutes < 60) return '${diff.inMinutes}m';
       if (diff.inHours < 24) return '${diff.inHours}h';
       return '${diff.inDays}d';
-    } catch (_) {
+    } catch (e) {
       return isoString;
     }
   }

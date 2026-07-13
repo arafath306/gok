@@ -127,7 +127,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
       } else {
         setState(() => _isCapturing = false);
       }
-    } catch (_) {
+    } catch (e) {
       setState(() => _isCapturing = false);
     }
   }

@@ -112,7 +112,10 @@ class ChatRepositoryImpl implements IChatRepository {
             final Map<String, dynamic> jsonReply =
                 jsonDecode(content) as Map<String, dynamic>;
             content = jsonReply['text'] as String? ?? '';
-          } catch (_) {}
+          } catch (e) {
+      // ignore: avoid_print
+      print("Error in features/chat/data/repositories/chat_repository_impl.dart: $e");
+    }
         }
 
         final String mediaUrl = json['media_url'] as String? ?? '';
@@ -174,7 +177,10 @@ class ChatRepositoryImpl implements IChatRepository {
           replyToText = jsonReply['reply_to_text'] as String?;
           replyToSender = jsonReply['reply_to_sender'] as String?;
           text = jsonReply['text'] as String? ?? '';
-        } catch (_) {}
+        } catch (e) {
+      // ignore: avoid_print
+      print("Error in features/chat/data/repositories/chat_repository_impl.dart: $e");
+    }
       }
 
       return MessageEntity(

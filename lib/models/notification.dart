@@ -33,7 +33,10 @@ class AppNotification {
     if (json['created_at'] != null) {
       try {
         parsedTime = DateTime.parse(json['created_at'] as String);
-      } catch (_) {}
+      } catch (e) {
+      // ignore: avoid_print
+      print("Error in models/notification.dart: $e");
+    }
     }
 
     return AppNotification(

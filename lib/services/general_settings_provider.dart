@@ -289,7 +289,7 @@ class GeneralSettingsProvider with ChangeNotifier {
       } else {
         return 'Last active ${diff.inDays}d ago';
       }
-    } catch (_) {
+    } catch (e) {
       return 'Last active recently';
     }
   }

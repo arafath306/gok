@@ -46,7 +46,10 @@ class MusicPlaybackController with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _autoplayMusic = prefs.getBool('autoplay_music') ?? true;
       notifyListeners();
-    } catch (_) {}
+    } catch (e) {
+      // ignore: avoid_print
+      print("Error in state/music_playback_controller.dart: $e");
+    }
   }
 
   Future<void> setAutoplayMusic(bool value) async {
@@ -59,7 +62,10 @@ class MusicPlaybackController with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('autoplay_music', value);
-    } catch (_) {}
+    } catch (e) {
+      // ignore: avoid_print
+      print("Error in state/music_playback_controller.dart: $e");
+    }
   }
 
   /// Called by VisibilityDetector when a post's visibility changes.

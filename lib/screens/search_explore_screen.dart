@@ -18,7 +18,10 @@ class SearchExploreScreen extends StatefulWidget {
   State<SearchExploreScreen> createState() => _SearchExploreScreenState();
 }
 
-class _SearchExploreScreenState extends State<SearchExploreScreen> {
+class _SearchExploreScreenState extends State<SearchExploreScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final List<String> _recentSearches = [];
   List<Profile> _searchResults = [];
   List<ThreadPost> _searchPostResults = [];
@@ -655,6 +658,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final dbService = Provider.of<DatabaseService>(context, listen: false);
     final isSearching = _searchController.text.trim().isNotEmpty;
 
