@@ -7,9 +7,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../utils/app_theme.dart';
+import '../widgets/create_thread/compose_header.dart';
 import '../widgets/create_thread/create_thread_header.dart';
 import '../widgets/create_thread/create_thread_toolbar.dart';
+import '../widgets/create_thread/media_preview_section.dart';
 import '../widgets/create_thread/poll_creator.dart';
+import '../widgets/create_thread/url_input_section.dart';
 import '../widgets/create_thread/voice_recorder_ui.dart';
 
 import '../models/thread_post.dart';
@@ -454,43 +457,54 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
       }
     }
 
-    final bool success;
-    if (widget.quotePost != null) {
-      success = await db.repostThread(
-        widget.quotePost!.id,
-        quoteText: finalContent,
-      );
-    } else {
-      success = await db.createThread(
-        finalContent,
-        imageUrls: uploadedUrls,
-        videoUrl: videoUrl.isNotEmpty ? videoUrl : null,
-        audioUrl: audioPublicUrl,
-        audience: _privacy,
-        pollOptions: pollOptions,
-        pollDuration: pollDuration,
-        communityId: widget.communityId,
-        isSubscriberOnly: _isSubscriberOnly,
-      );
-    }
-
-    if (mounted) {
-      setState(() => _isUploadingImage = false);
-      if (success) {
-        if (widget.draftPost != null) {
-          await _draftService.deleteDrafts([widget.draftPost!.id]);
-        }
-        if (mounted) {
-          Navigator.pop(context);
-        }
+    bool success = false;
+    try {
+      if (widget.quotePost != null) {
+        success = await db.repostThread(
+          widget.quotePost!.id,
+          quoteText: finalContent,
+        );
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Failed to publish post", style: GoogleFonts.inter()),
-            ),
-          );
+        success = await db.createThread(
+          finalContent,
+          imageUrls: uploadedUrls,
+          videoUrl: videoUrl.isNotEmpty ? videoUrl : null,
+          audioUrl: audioPublicUrl,
+          audience: _privacy,
+          pollOptions: pollOptions,
+          pollDuration: pollDuration,
+          communityId: widget.communityId,
+          isSubscriberOnly: _isSubscriberOnly,
+        );
+      }
+
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+        if (success) {
+          if (widget.draftPost != null) {
+            await _draftService.deleteDrafts([widget.draftPost!.id]);
+          }
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Failed to publish post", style: GoogleFonts.inter()),
+              ),
+            );
+          }
         }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll("Exception: ", ""), style: GoogleFonts.inter()),
+          ),
+        );
       }
     }
   }
@@ -607,23 +621,26 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   Widget build(BuildContext context) {
     final prof = context.select((DatabaseService db) => db.myProfile);
     final isEnabled = (_contentController.text.trim().isNotEmpty || _recordedAudioPath != null) && _charCount <= 500 && !_isUploadingImage;
-    
+
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWide = screenWidth > 600;
 
     // Body content tree
     Widget bodyContent = Column(
       children: [
-        // Custom Header Bar
+        // ── Custom Header Bar ──────────────────────────────────────
         CreateThreadHeader(
           onClose: _handleClose,
           draftCount: _draftCount,
           isEditMode: widget.editPost != null,
           isQuoteMode: widget.quotePost != null,
           onDraftsPressed: () {
-            Navigator.push(context, NoTransitionPageRoute(child: const DraftsScreen())).then((_) => _loadDraftCount());
+            Navigator.push(context, NoTransitionPageRoute(child: const DraftsScreen()))
+                .then((_) => _loadDraftCount());
           },
-          showSaveDraftButton: (_contentController.text.trim().isNotEmpty || _selectedImagesBytesList.isNotEmpty || _selectedMusic != null),
+          showSaveDraftButton: (_contentController.text.trim().isNotEmpty ||
+              _selectedImagesBytesList.isNotEmpty ||
+              _selectedMusic != null),
           onSaveDraftPressed: () async {
             await _saveCurrentDraft();
             if (context.mounted) Navigator.pop(context);
@@ -633,7 +650,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           isUploadingImage: _isUploadingImage,
         ),
 
-        // Scrollable composer fields
+        // ── Scrollable composer area ───────────────────────────────
         Expanded(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -641,16 +658,18 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left Side: Profile photo and thread connection line (Threads style)
+                // Left Side: Profile photo + thread connector line (Threads style)
                 Column(
                   children: [
                     CircleAvatar(
                       radius: 23,
-                      backgroundColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
+                      backgroundColor: context.isDarkMode
+                          ? const Color(0xFF1E2030)
+                          : const Color(0xFFF3F4F6),
                       backgroundImage: CachedNetworkImageProvider(
-                        _isAnonymous 
-                          ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150" // Cool anonymous avatar placeholder
-                          : (prof?.avatarUrl ?? ""),
+                        _isAnonymous
+                            ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150" // anonymous avatar placeholder
+                            : (prof?.avatarUrl ?? ""),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -675,434 +694,59 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                 ),
                 const SizedBox(width: 16),
 
-                // Right Side: Display name, privacy picker, location picker & textarea
+                // Right Side: All composer content
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            _isAnonymous ? "Anonymous User" : (prof?.fullName ?? "User"),
-                            style: GoogleFonts.inter(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: context.textPrimary,
-                            ),
-                          ),
-                          if (_isAnonymous) ...[
-                            const SizedBox(width: 4),
-                            const Icon(Icons.security, color: Colors.indigo, size: 14),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      
-                      // Meta Row: Privacy chip + inline dropdown
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Top row: chip + location
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: [
-                              GestureDetector(
-                                onTap: () => setState(() => _privacyOpen = !_privacyOpen),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: context.border, width: 0.8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _privacy == "Public"
-                                            ? Icons.public
-                                            : _privacy == "Friends"
-                                                ? Icons.people_alt
-                                                : Icons.lock_outline,
-                                        size: 11,
-                                        color: context.textSecondary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _privacy,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w500,
-                                          color: context.textSecondary,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 2),
-                                      AnimatedRotation(
-                                        turns: _privacyOpen ? 0.5 : 0,
-                                        duration: const Duration(milliseconds: 150),
-                                        child: Icon(Icons.keyboard_arrow_down_rounded, size: 12, color: context.textMuted),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              if (_selectedLocation != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: context.isDarkMode ? const Color(0xFF1A2333) : const Color(0xFFEFF6FF),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.blue.withValues(alpha: 0.2), width: 0.8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.location_on, size: 11, color: Colors.blue),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _selectedLocation!,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.blue[700],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      GestureDetector(
-                                        onTap: () => setState(() => _selectedLocation = null),
-                                        child: const Icon(Icons.close, size: 11, color: Colors.blue),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                          // Inline animated dropdown
-                          AnimatedSize(
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOut,
-                            child: _privacyOpen
-                                ? Container(
-                                    margin: const EdgeInsets.only(top: 4),
-                                    decoration: BoxDecoration(
-                                      color: context.cardBg,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: context.border, width: 0.8),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.08),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        {"label": "Public", "icon": Icons.public},
-                                        {"label": "Friends", "icon": Icons.people_alt},
-                                        {"label": "Only Me", "icon": Icons.lock_outline},
-                                      ].map((opt) {
-                                        final label = opt["label"] as String;
-                                        final icon = opt["icon"] as IconData;
-                                        final isSel = _privacy == label;
-                                        return InkWell(
-                                          onTap: () => setState(() {
-                                            _privacy = label;
-                                            _privacyOpen = false;
-                                          }),
-                                          borderRadius: BorderRadius.circular(10),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                                            child: Row(
-                                              children: [
-                                                Icon(icon, size: 14, color: isSel ? Theme.of(context).primaryColor : context.textSecondary),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  label,
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 12.5,
-                                                    fontWeight: isSel ? FontWeight.w600 : FontWeight.w400,
-                                                    color: isSel ? Theme.of(context).primaryColor : context.textPrimary,
-                                                  ),
-                                                ),
-                                                if (isSel) ...[
-                                                  const Spacer(),
-                                                  Icon(Icons.check_rounded, size: 13, color: Theme.of(context).primaryColor),
-                                                ],
-                                              ],
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      
-                      // Main TextField input
-                      TextField(
-                        controller: _contentController,
-                        maxLines: null,
-                        minLines: 4,
-                        style: GoogleFonts.inter(
-                          fontSize: 15.5,
-                          color: context.textPrimary,
-                          height: 1.45,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Send your thoughts...",
-                          hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14.5),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
+                      // Name + privacy chip + text field + quote post
+                      ComposeHeader(
+                        isAnonymous: _isAnonymous,
+                        profile: prof,
+                        privacy: _privacy,
+                        privacyOpen: _privacyOpen,
+                        selectedLocation: _selectedLocation,
+                        contentController: _contentController,
+                        quotePost: widget.quotePost,
+                        onPrivacyToggle: () =>
+                            setState(() => _privacyOpen = !_privacyOpen),
+                        onPrivacyChanged: (label) => setState(() {
+                          _privacy = label;
+                          _privacyOpen = false;
+                        }),
+                        onLocationRemove: () =>
+                            setState(() => _selectedLocation = null),
                       ),
 
-                      // If it's a quote post, show the quoted post
-                      if (widget.quotePost != null) ...[
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            border: Border(top: BorderSide(color: context.border, width: 0.8)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 12,
-                                    backgroundImage: widget.quotePost!.author.avatarUrl != null && widget.quotePost!.author.avatarUrl!.isNotEmpty
-                                        ? CachedNetworkImageProvider(widget.quotePost!.author.avatarUrl!)
-                                        : null,
-                                    child: widget.quotePost!.author.avatarUrl == null || widget.quotePost!.author.avatarUrl!.isEmpty
-                                        ? const Icon(Icons.person, size: 12)
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    widget.quotePost!.author.fullName,
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: context.textPrimary),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "@${widget.quotePost!.author.username}",
-                                    style: TextStyle(fontSize: 11, color: context.textSecondary),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                widget.quotePost!.content,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(fontSize: 13.5, color: context.textPrimary),
-                              ),
-                              if (widget.quotePost!.imageUrls != null && widget.quotePost!.imageUrls!.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  child: CachedNetworkImage(
-                                    imageUrl: widget.quotePost!.imageUrls!.first,
-                                    height: 120,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
+                      // Image/media preview strip
+                      MediaPreviewSection(
+                        selectedImagesBytesList: _selectedImagesBytesList,
+                        isLoadingExistingMedia: _isLoadingExistingMedia,
+                        selectedMusic: _selectedMusic,
+                        onPickMoreImages: _pickImages,
+                        onRemoveImage: (index) {
+                          setState(() {
+                            _selectedImagesBytesList.removeAt(index);
+                            _originalImagesBytesList.removeAt(index);
+                            if (_selectedImagesBytesList.isEmpty) {
+                              _selectedMusic = null;
+                            }
+                          });
+                        },
+                        onEditImage: _openPhotoEditorAtIndex,
+                        onRemoveMusic: () =>
+                            setState(() => _selectedMusic = null),
+                      ),
 
-                      // Multiple Images Selection preview horizontal scroll list
-                      if (_isLoadingExistingMedia) ...[
-                        const SizedBox(height: 16),
-                        Container(
-                          height: 160,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: context.border, width: 0.8),
-                          ),
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).primaryColor),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                "Loading attached media...",
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  color: context.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else if (_selectedImagesBytesList.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Stack(
-                          alignment: Alignment.bottomCenter,
-                          children: [
-                            SizedBox(
-                              height: 160,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                physics: const BouncingScrollPhysics(),
-                                itemCount: _selectedImagesBytesList.length + 1,
-                                itemBuilder: (context, index) {
-                                  if (index == _selectedImagesBytesList.length) {
-                                    // Add more card
-                                    return GestureDetector(
-                                      onTap: _pickImages,
-                                      child: Container(
-                                        width: 120,
-                                        margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4),
-                                        decoration: BoxDecoration(
-                                          color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: context.border, width: 0.8),
-                                        ),
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.add_photo_alternate_outlined, color: context.primaryAccent, size: 28),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              "Add More",
-                                              style: GoogleFonts.inter(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: context.textSecondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  }
-
-                                  final bytes = _selectedImagesBytesList[index];
-                                  return Container(
-                                    width: 140,
-                                    margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4),
-                                    child: Stack(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: Image.memory(
-                                            bytes,
-                                            width: 140,
-                                            height: 160,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: 6,
-                                          right: 6,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                _selectedImagesBytesList.removeAt(index);
-                                                _originalImagesBytesList.removeAt(index);
-                                                if (_selectedImagesBytesList.isEmpty) {
-                                                  _selectedMusic = null;
-                                                }
-                                              });
-                                            },
-                                            child: const CircleAvatar(
-                                              radius: 11,
-                                              backgroundColor: Colors.black54,
-                                              child: Icon(Icons.close, color: Colors.white, size: 12),
-                                            ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          bottom: 6,
-                                          left: 6,
-                                          child: GestureDetector(
-                                            onTap: () => _openPhotoEditorAtIndex(index),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black54,
-                                                shape: BoxShape.circle,
-                                                border: Border.all(color: Colors.white24, width: 0.8),
-                                              ),
-                                              child: const Icon(
-                                                Icons.edit_rounded,
-                                                color: Colors.white,
-                                                size: 13,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            if (_selectedMusic != null)
-                              Positioned(
-                                left: 8,
-                                right: 20,
-                                bottom: 12,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.75),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.white30, width: 0.8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.music_note, color: Colors.white, size: 14),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          "${_selectedMusic!.trackName} - ${_selectedMusic!.artistName}",
-                                          style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedMusic = null;
-                                          });
-                                        },
-                                        child: const Icon(Icons.close, color: Colors.white70, size: 14),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                      
-                      // Voice Recorder UI
+                      // Voice Recorder inline recording controls
                       if (_showVoiceRecorder) ...[
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
+                            color: context.isDarkMode
+                                ? const Color(0xFF1E2030)
+                                : const Color(0xFFF3F4F6),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: context.border),
                           ),
@@ -1111,14 +755,22 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                               GestureDetector(
                                 onTap: _recordedAudioPath != null
                                     ? _toggleAudioPreview
-                                    : (_isRecording ? _stopRecording : _startRecording),
+                                    : (_isRecording
+                                        ? _stopRecording
+                                        : _startRecording),
                                 child: CircleAvatar(
                                   radius: 20,
-                                  backgroundColor: _isRecording ? Colors.redAccent : const Color(0xFF1E824C),
+                                  backgroundColor: _isRecording
+                                      ? Colors.redAccent
+                                      : const Color(0xFF1E824C),
                                   child: Icon(
                                     _recordedAudioPath != null
-                                        ? (_isPlayingAudio ? Icons.pause : Icons.play_arrow)
-                                        : (_isRecording ? Icons.stop : Icons.mic),
+                                        ? (_isPlayingAudio
+                                            ? Icons.pause
+                                            : Icons.play_arrow)
+                                        : (_isRecording
+                                            ? Icons.stop
+                                            : Icons.mic),
                                     color: Colors.white,
                                     size: 20,
                                   ),
@@ -1134,63 +786,31 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                                           : "Tap microphone to record"),
                                   style: GoogleFonts.inter(
                                     color: context.textPrimary,
-                                    fontWeight: _isRecording || _recordedAudioPath != null ? FontWeight.bold : FontWeight.normal,
+                                    fontWeight:
+                                        _isRecording || _recordedAudioPath != null
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
                                   ),
                                 ),
                               ),
                               if (_recordedAudioPath != null)
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                  icon: const Icon(Icons.delete_outline,
+                                      color: Colors.redAccent),
                                   onPressed: _deleteRecording,
                                 ),
                             ],
                           ),
                         ),
                       ],
-                      
-                      // Custom Image URL Input
-                      if (_showImageInput) ...[
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _imageUrlController,
-                          decoration: InputDecoration(
-                            labelText: "Image URL",
-                            labelStyle: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
-                            prefixIcon: Icon(Icons.image_outlined, size: 18, color: context.textSecondary),
-                            isDense: true,
-                            filled: true,
-                            fillColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                            contentPadding: const EdgeInsets.all(12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: context.border),
-                            ),
-                          ),
-                          style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
-                        ),
-                      ],
 
-                      // Custom Video URL Input
-                      if (_showVideoInput) ...[
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _videoUrlController,
-                          decoration: InputDecoration(
-                            labelText: "Video URL",
-                            labelStyle: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
-                            prefixIcon: Icon(Icons.video_collection_outlined, size: 18, color: context.textSecondary),
-                            isDense: true,
-                            filled: true,
-                            fillColor: context.isDarkMode ? const Color(0xFF1E2030) : const Color(0xFFF3F4F6),
-                            contentPadding: const EdgeInsets.all(12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: context.border),
-                            ),
-                          ),
-                          style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
-                        ),
-                      ],
+                      // Optional Image URL / Video URL inputs
+                      UrlInputSection(
+                        imageUrlController: _imageUrlController,
+                        videoUrlController: _videoUrlController,
+                        showImageInput: _showImageInput,
+                        showVideoInput: _showVideoInput,
+                      ),
 
                       // Poll Creator Interface
                       if (_showPollInput)
@@ -1213,7 +833,8 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                           },
                           onRemoveOption: (index) {
                             setState(() {
-                              final controller = _pollControllers.removeAt(index);
+                              final controller =
+                                  _pollControllers.removeAt(index);
                               controller.dispose();
                             });
                           },
@@ -1224,7 +845,7 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                           },
                         ),
 
-                      // Voice Recording Interface
+                      // Voice Recording Interface (VoiceRecorderUI widget)
                       if (_showVoiceRecorder)
                         VoiceRecorderUI(
                           isRecording: _isRecording,
@@ -1247,16 +868,19 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
           ),
         ),
 
-        // Unified Horizontal Bottom Toolbar
+        // ── Bottom Toolbar ─────────────────────────────────────────
         SafeArea(
           child: CreateThreadToolbar(
             charCount: _charCount,
-            isActiveImage: _selectedImagesBytesList.isNotEmpty || _imageUrlController.text.isNotEmpty || _showImageInput,
+            isActiveImage: _selectedImagesBytesList.isNotEmpty ||
+                _imageUrlController.text.isNotEmpty ||
+                _showImageInput,
             isActiveMusic: _selectedMusic != null,
             isActivePoll: _showPollInput,
             isActiveVoice: _showVoiceRecorder,
             isActiveSubscriber: _isSubscriberOnly,
-            canMonetize: context.select<DatabaseService, bool>((db) => db.myProfile?.canMonetize == true),
+            canMonetize: context.select<DatabaseService, bool>(
+                (db) => db.myProfile?.canMonetize == true),
             onImageTap: _pickImages,
             onCameraTap: _pickCameraImage,
             onMusicTap: () async {
@@ -1269,12 +893,12 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                     ),
                     backgroundColor: Colors.redAccent,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 );
                 return;
               }
-              
               final selected = await showModalBottomSheet<MusicTrack>(
                 context: context,
                 isScrollControlled: true,
@@ -1296,14 +920,15 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
                 _showComingSoonDialog("Voice messaging (Pending Admin Approval)");
               }
             },
-            onSubscriberTap: () => setState(() => _isSubscriberOnly = !_isSubscriberOnly),
+            onSubscriberTap: () =>
+                setState(() => _isSubscriberOnly = !_isSubscriberOnly),
             onComingSoonTap: _showComingSoonDialog,
           ),
         ),
       ],
     );
 
-    // Responsive wrap centered container on wide screens
+    // Responsive wrap: centred card on wide screens
     if (isWide) {
       bodyContent = Center(
         child: Container(

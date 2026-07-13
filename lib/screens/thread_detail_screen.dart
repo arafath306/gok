@@ -1,28 +1,18 @@
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import '../services/general_settings_provider.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
-import '../models/profile.dart';
 import '../services/database_service.dart';
 import '../widgets/comments_sheet.dart';
-import '../utils/routes.dart';
 import '../utils/app_theme.dart';
-import '../widgets/thread_detail/nested_original_post.dart';
-import '../widgets/thread_detail/thread_detail_music_player.dart';
-import '../widgets/comment_item.dart';
-
-import 'profile/profile_screen.dart';
+import '../widgets/thread_detail/thread_detail_header.dart';
+import '../widgets/thread_detail/thread_detail_body.dart';
+import '../widgets/thread_detail/thread_detail_comments_list.dart';
 import 'package:flutter/services.dart';
 import '../widgets/share_post_sheet.dart';
-import 'create_thread_screen.dart';
-import '../services/sound_service.dart';
-import '../widgets/poll_widget.dart';
-
 import '../widgets/comment_attachment_picker_panel.dart';
-import '../widgets/voice_post_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
@@ -347,29 +337,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
 
 
 
-  Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: context.textPrimary.withValues(alpha: 0.75), size: 18),
-          if (label.isNotEmpty && label != '0') ...[
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: context.textPrimary.withValues(alpha: 0.75),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+
 
 
   void _sharePost(BuildContext context) {
@@ -501,374 +469,55 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // User Details Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.grey[800],
-                          backgroundImage: (activePost.author.avatarUrl != null && activePost.author.avatarUrl!.isNotEmpty)
-                              ? CachedNetworkImageProvider(activePost.author.avatarUrl!)
-                              : null,
-                          child: (activePost.author.avatarUrl == null || activePost.author.avatarUrl!.isEmpty)
-                              ? const Icon(Icons.person, size: 24, color: Colors.white54)
-                              : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          NoTransitionPageRoute(
-                                            child: ProfileScreen(userId: activePost.userId),
-                                          ),
-                                        );
-                                      },
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              activePost.author.fullName,
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
-                                              style: GoogleFonts.hindSiliguri(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 17,
-                                                color: context.textPrimary,
-                                              ),
-                                            ),
-                                          ),
-                                          if (activePost.author.isVerified) ...[
-                                            const SizedBox(width: 4),
-                                            const Icon(
-                                              Icons.verified,
-                                              color: Colors.blue,
-                                              size: 14,
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  if (activePost.userId != dbService.currentUid) ...[
-                                    const SizedBox(width: 8),
-                                    _buildFollowButton(context, dbService, activePost.userId),
-                                  ],
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    "· ${_formatTime(activePost.createdAt)}",
-                                    style: TextStyle(
-                                      color: context.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    "@${activePost.author.username}",
-                                    style: TextStyle(
-                                      color: context.textSecondary,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(Icons.remove_red_eye_outlined, size: 13, color: context.textSecondary),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "${_formatCount(activePost.viewsCount)} views",
-                                    style: TextStyle(
-                                      color: context.textSecondary,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => _showPostQuickActions(context, dbService, activePost),
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Icon(Icons.more_horiz, color: context.textSecondary),
-                          ),
-                        ),
-                      ],
-                    ),
+                  ThreadDetailHeader(
+                    activePost: activePost,
+                    dbService: dbService,
+                    onMoreTap: () => _showPostQuickActions(context, dbService, activePost),
+                    formatTime: _formatTime,
+                    formatCount: _formatCount,
                   ),
 
-                  // Post content
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          activePost.content,
-                          style: GoogleFonts.hindSiliguri(
-                            fontSize: 17.5,
-                            color: context.textPrimary,
-                            height: 1.45,
-                          ),
-                        ),
-                        if (activePost.isRepost && activePost.repostedPost != null)
-                          NestedOriginalPost(origPost: activePost.repostedPost!, dbService: dbService),
-                        if (activePost.imageUrls != null && activePost.imageUrls!.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          MusicImageStack(
-                            imageUrls: activePost.imageUrls!,
-                            height: 220,
-                            musicTrack: activePost.musicTrack,
-                            postId: activePost.id,
-                          ),
-                        ],
-                        if (activePost.audioUrl != null && activePost.audioUrl!.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          VoicePostPlayer(audioUrl: activePost.audioUrl!),
-                        ],
-                        PollWidget(post: activePost, dbService: dbService),
-                        Divider(height: 24, color: context.border),
-
-                        // Action buttons with inline counts and Save post
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            // Like Button (React)
-                            GestureDetector(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                if (!activePost.isLikedByMe) {
-                                  SoundService.playLike();
-                                }
-                                dbService.toggleLike(activePost.id, !activePost.isLikedByMe);
-                              },
-                              child: Row(
-                                children: [
-                                  AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 300),
-                                    transitionBuilder: (child, animation) =>
-                                        ScaleTransition(scale: animation, child: child),
-                                    child: activePost.isLikedByMe
-                                        ? const Icon(
-                                            CupertinoIcons.heart_fill,
-                                            key: ValueKey<int>(1),
-                                            color: Colors.red,
-                                            size: 18,
-                                          )
-                                        : Icon(
-                                            CupertinoIcons.heart,
-                                            key: const ValueKey<int>(0),
-                                            color: context.textPrimary.withValues(alpha: 0.75),
-                                            size: 18,
-                                          ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _formatCount(activePost.likesCount),
-                                    style: TextStyle(
-                                      color: activePost.isLikedByMe ? Colors.red : context.textPrimary.withValues(alpha: 0.75),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Comment Button
-                            _buildActionButton(
-                              icon: CupertinoIcons.chat_bubble,
-                              label: _formatCount(_comments.length),
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (sheetContext) => CommentsSheet(post: activePost),
-                                ).then((_) => _loadComments(silent: true));
-                              },
-                            ),
-                            // Repost Button
-                            GestureDetector(
-                              onTap: () {
-                                _showRepostOptions(context, dbService, activePost);
-                              },
-                              behavior: HitTestBehavior.opaque,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    CupertinoIcons.arrow_2_circlepath, 
-                                    color: dbService.isReposted(activePost.id) 
-                                        ? Theme.of(context).primaryColor 
-                                        : context.textPrimary.withValues(alpha: 0.75), 
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _formatCount(activePost.repostsCount),
-                                    style: TextStyle(
-                                      color: dbService.isReposted(activePost.id) 
-                                          ? Theme.of(context).primaryColor 
-                                          : context.textPrimary.withValues(alpha: 0.75),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Save Button (Bookmark)
-                            GestureDetector(
-                              onTap: () {
-                                final wasSaved = dbService.isSaved(activePost.id);
-                                dbService.toggleSaveThread(activePost.id);
-                                ScaffoldMessenger.of(context).clearSnackBars();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      wasSaved ? "Removed from bookmarks" : "Post saved to bookmarks",
-                                      style: GoogleFonts.inter(),
-                                    ),
-                                    duration: const Duration(seconds: 2),
-                                    backgroundColor: wasSaved ? Colors.grey[700] : Theme.of(context).primaryColor,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                );
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    dbService.isSaved(activePost.id) ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
-                                    color: dbService.isSaved(activePost.id) ? Theme.of(context).primaryColor : context.textPrimary.withValues(alpha: 0.75),
-                                    size: 18,
-                                  ),
-                                  if (activePost.savesCount > 0) ...[
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      _formatCount(activePost.savesCount),
-                                      style: TextStyle(
-                                        color: dbService.isSaved(activePost.id) ? Theme.of(context).primaryColor : context.textPrimary.withValues(alpha: 0.75),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            // Share Button
-                            _buildActionButton(
-                              icon: CupertinoIcons.arrowshape_turn_up_right,
-                              label: _formatCount(activePost.sharesCount),
-                              onTap: () {
-                                _sharePost(context);
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  // Post content & Action buttons
+                  ThreadDetailBody(
+                    activePost: activePost,
+                    dbService: dbService,
+                    commentsCount: _comments.length,
+                    onCommentTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (sheetContext) => CommentsSheet(post: activePost),
+                      ).then((_) => _loadComments(silent: true));
+                    },
+                    onShareTap: () => _sharePost(context),
+                    formatCount: _formatCount,
                   ),
 
-                  // Comments section header with filter dropdown
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                    color: context.isDarkMode ? const Color(0xFF0A0B10) : Colors.grey[50],
-                    child: Row(
-                      children: [
-                        DropdownButton<String>(
-                          value: _sortBy,
-                          underline: const SizedBox(),
-                          dropdownColor: context.cardBg,
-                          icon: Icon(Icons.keyboard_arrow_down, size: 18, color: context.textPrimary),
-                          style: GoogleFonts.inter(
-                            color: context.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          items: ["Most relevant", "Newest", "Oldest"].map((val) {
-                            return DropdownMenuItem<String>(
-                              value: val,
-                              child: Text(
-                                val,
-                                style: GoogleFonts.inter(color: context.textPrimary),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _sortBy = val;
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
+                  // Comments section
+                  ThreadDetailCommentsList(
+                    post: widget.post,
+                    topLevelComments: topLevelComments,
+                    isLoadingComments: _isLoadingComments,
+                    sortBy: _sortBy,
+                    onSortChanged: (val) {
+                      setState(() {
+                        _sortBy = val;
+                      });
+                    },
+                    onReloadComments: () => _loadComments(silent: true),
+                    onCommentDeleted: (cid) {
+                      setState(() {
+                        _comments.removeWhere((c) => c['id'] == cid);
+                      });
+                    },
+                    onCommentHidden: (cid) {
+                      setState(() {
+                        _comments.removeWhere((c) => c['id'] == cid);
+                      });
+                    },
+                    dbService: dbService,
                   ),
-
-                  // Comments List (Supports nesting for replies)
-                  if (_isLoadingComments)
-                    Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor)),
-                    )
-                  else if (topLevelComments.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Center(
-                        child: Text(
-                          "No comments found.",
-                          style: GoogleFonts.inter(color: context.textSecondary),
-                        ),
-                      ),
-                    )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: topLevelComments.length,
-                      separatorBuilder: (context, index) => Divider(height: 1, color: context.border),
-                      itemBuilder: (context, index) {
-                        final comment = topLevelComments[index];
-                        final author = comment['author'] as Profile;
-                        return CommentItem(
-                          comment: comment,
-                          effectiveThreadId: widget.post.id,
-                          dbService: dbService,
-                          post: widget.post,
-                          isPostAuthor: author.id == widget.post.userId,
-                          index: index,
-                          isLast: index == (topLevelComments.length - 1),
-                          onReloadComments: () => _loadComments(silent: true),
-                          onCommentDeleted: (cid) {
-                            setState(() {
-                              _comments.removeWhere((c) => c['id'] == cid);
-                            });
-                          },
-                          onCommentHidden: (cid) {
-                            setState(() {
-                              _comments.removeWhere((c) => c['id'] == cid);
-                            });
-                          },
-                        );
-                      },
-                    ),
                 ],
               ),
             ),
@@ -1136,104 +785,6 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFollowButton(BuildContext context, DatabaseService dbService, String targetUserId) {
-    final isFollowing = dbService.isFollowingUser(targetUserId);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: () => dbService.toggleFollowUser(targetUserId),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-        decoration: BoxDecoration(
-          color: isFollowing 
-              ? Colors.transparent 
-              : (isDark ? Colors.white : Colors.black),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: isFollowing 
-                ? (isDark ? Colors.white24 : Colors.black12) 
-                : Colors.transparent,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          isFollowing ? 'Following' : 'Follow',
-          style: GoogleFonts.inter(
-            fontSize: 11.5,
-            fontWeight: FontWeight.bold,
-            color: isFollowing 
-                ? context.textPrimary 
-                : (isDark ? Colors.black : Colors.white),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showRepostOptions(BuildContext context, DatabaseService dbService, ThreadPost post) {
-    final targetPostId = post.isRepost && post.repostedPost != null ? post.repostedPost!.id : post.id;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Container(
-        decoration: BoxDecoration(
-          color: context.cardBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: Icon(CupertinoIcons.arrow_2_circlepath, color: context.textPrimary),
-                title: Text('Repost', style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold, color: context.textPrimary)),
-                subtitle: Text('Instantly share this post to your feed', style: TextStyle(color: context.textSecondary, fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  dbService.repostThread(targetPostId).then((success) {
-                    if (success && context.mounted) {
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Post status updated")),
-                      );
-                    }
-                  });
-                },
-              ),
-              Divider(height: 1, color: context.border),
-              ListTile(
-                leading: Icon(Icons.edit_note, color: context.textPrimary),
-                title: Text('Quote Post', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
-                subtitle: Text('Share this post and add your own comment', style: TextStyle(color: context.textSecondary, fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  final targetPost = post.isRepost && post.repostedPost != null ? post.repostedPost! : post;
-                  Navigator.push(
-                    context,
-                    NoTransitionPageRoute(
-                      child: CreateThreadScreen(quotePost: targetPost),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        ),
       ),
     );
   }

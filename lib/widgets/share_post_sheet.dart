@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -138,14 +138,25 @@ class _SharePostSheetState extends State<SharePostSheet> {
                             onTap: () async {
                               Navigator.pop(context);
                               db.incrementShareCount(widget.post.id);
-                              await db.sendMessage(profile.id, "Shared a post: $postLink");
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text("Sent to ${profile.fullName}"),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
+                              try {
+                                await db.sendMessage(profile.id, "Shared a post: $postLink");
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Sent to ${profile.fullName}"),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(e.toString().replaceAll("Exception: ", "")),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
                               }
                             },
                             child: Container(

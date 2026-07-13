@@ -5,6 +5,7 @@ import '../../services/general_settings_provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';
 import 'two_factor_setup_screen.dart';
+import 'change_email_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 class SecuritySettingsScreen extends StatefulWidget {
@@ -118,6 +119,17 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 title: 'Change Password',
                 subtitle: 'Update your login credentials regularly.',
                 onTap: () => _showChangePasswordSheet(context),
+              ),
+              _buildActionTile(
+                context,
+                title: 'Change Email',
+                subtitle: 'Update your registered email address.',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ChangeEmailScreen()),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               _buildSectionHeader(context, 'Active Sessions'),

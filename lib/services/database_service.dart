@@ -59,6 +59,12 @@ class DatabaseService with ChangeNotifier {
   void updateState() => notifyListeners();
   final _supabase = sl<SupabaseClient>();
 
+  // Cooldown / Rate Limiting fields
+  DateTime? _lastPostTime;
+  DateTime? _lastCommentTime;
+  String? _lastCommentContent;
+  static const Duration _cooldownDuration = Duration(seconds: 3);
+
   ThreadPost _entityToModel(ThreadPostEntity entity) {
     return ThreadPost(
       id: entity.id,

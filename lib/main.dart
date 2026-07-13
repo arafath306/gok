@@ -13,12 +13,9 @@ import 'state/monetization_controller.dart';
 import 'state/music_playback_controller.dart';
 import 'services/local_notification_service.dart';
 import 'services/push_notification_service.dart';
-import 'screens/auth/onboarding_screen.dart';
-import 'screens/auth/auth_screen.dart';
-import 'screens/auth/splash_screen.dart';
-import 'screens/auth/email_verification_pending_screen.dart';
-import 'screens/main_screen.dart';
 import 'utils/app_theme.dart';
+import 'utils/app_router.dart';
+import 'package:go_router/go_router.dart';
 import 'core/injection.dart';
 import 'core/config/app_config.dart';
 import 'core/security/pinned_http_client.dart';
@@ -104,93 +101,34 @@ void main() {
 }
 
 
-class PigeonApp extends StatelessWidget {
+class PigeonApp extends StatefulWidget {
   const PigeonApp({super.key});
+
+  @override
+  State<PigeonApp> createState() => _PigeonAppState();
+}
+
+class _PigeonAppState extends State<PigeonApp> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = AppRouter.router(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<GeneralSettingsProvider>(context);
 
-    return MaterialApp(
+    return MaterialApp.router(
       scrollBehavior: MyCustomScrollBehavior(),
       title: 'Pigeon',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: settingsProvider.themeMode,
-      builder: (context, child) {
-        return child ?? const SizedBox.shrink();
-      },
-      home: const AuthGate(),
-    );
-  }
-}
-
-class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
-
-  @override
-  State<AuthGate> createState() => _AuthGateState();
-}
-
-class _AuthGateState extends State<AuthGate> {
-  bool _isLoading = true;
-  bool _showOnboarding = true;
-  bool _startSignUp = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSplash();
-  }
-
-  Future<void> _loadSplash() async {
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const SplashScreen();
-    }
-
-    final authService = Provider.of<AuthService>(context);
-    final dbService = Provider.of<DatabaseService>(context, listen: false);
-
-    // If user is logged in, show MainScreen or Verification pending screen
-    if (authService.isUserSignedIn) {
-      if (!authService.isEmailVerified) {
-        return const EmailVerificationPendingScreen();
-      }
-      return const MainScreen();
-    }
-
-    // User signed out — clear DatabaseService cache
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) dbService.clearUser();
-    });
-
-    // Otherwise show Onboarding, followed by Auth Screen
-    if (_showOnboarding) {
-      return OnboardingScreen(
-        onFinish: (startSignUp) {
-          setState(() {
-            _showOnboarding = false;
-            _startSignUp = startSignUp;
-          });
-        },
-      );
-    }
-
-    return AuthScreen(
-      initialIsSignUp: _startSignUp,
-      onLoginSuccess: () {
-        // Upon successful auth, AuthService will trigger state change, causing AuthGate rebuild.
-      },
+      routerConfig: _router,
     );
   }
 }

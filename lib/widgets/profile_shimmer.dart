@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/app_theme.dart';
+import '../utils/app_theme.dart';
 
 /// Shimmer placeholder for the Profile screen while data is loading.
 /// Mirrors the real profile header + tab section skeleton.

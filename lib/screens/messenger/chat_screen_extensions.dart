@@ -56,8 +56,11 @@ extension ChatScreenExtensions on _ChatScreenState {
       if (mounted) {
         setState(() =>
             _pendingMessages.removeWhere((m) => m['id'] == tempId));
+        final errorMsg = err.toString().contains("Exception:")
+            ? err.toString().replaceAll("Exception: ", "")
+            : 'Failed to send message';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to send message', style: GoogleFonts.inter()),
+          content: Text(errorMsg, style: GoogleFonts.inter()),
         ));
       }
     });
@@ -156,8 +159,11 @@ extension ChatScreenExtensions on _ChatScreenState {
           if (mounted) {
             setState(() =>
                 _pendingMessages.removeWhere((m) => m['id'] == tempId));
+            final errorMsg = err.toString().contains("Exception:")
+                ? err.toString().replaceAll("Exception: ", "")
+                : 'Failed to send image.';
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Failed to send image.', style: GoogleFonts.inter()),
+              content: Text(errorMsg, style: GoogleFonts.inter()),
               backgroundColor: Colors.redAccent,
             ));
           }
@@ -345,8 +351,11 @@ extension ChatScreenExtensions on _ChatScreenState {
           setState(() {
             _pendingMessages.removeWhere((m) => m['id'] == tempId);
           });
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Failed to send audio message.'),
+          final errorMsg = error.toString().contains("Exception:")
+              ? error.toString().replaceAll("Exception: ", "")
+              : 'Failed to send audio message.';
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(errorMsg),
             backgroundColor: Colors.redAccent,
           ));
         }
@@ -413,6 +422,13 @@ extension ChatScreenExtensions on _ChatScreenState {
       if (mounted) {
         setState(() =>
             _pendingMessages.removeWhere((m) => m['id'] == tempId));
+        final errorMsg = err.toString().contains("Exception:")
+            ? err.toString().replaceAll("Exception: ", "")
+            : 'Failed to send GIF.';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(errorMsg, style: GoogleFonts.inter()),
+          backgroundColor: Colors.redAccent,
+        ));
       }
     });
   }

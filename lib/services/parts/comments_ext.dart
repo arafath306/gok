@@ -26,6 +26,23 @@ extension CommentsExtension on DatabaseService {
   }
 
   Future<bool> addComment(String threadId, String content, {String? parentId, String? imageUrl}) async {
+    final now = DateTime.now();
+    if (_lastCommentTime != null) {
+      final difference = now.difference(_lastCommentTime!);
+      if (difference < DatabaseService._cooldownDuration) {
+        throw Exception("Please wait ${(DatabaseService._cooldownDuration - difference).inSeconds + 1}s before commenting again.");
+      }
+    }
+
+    final trimmedContent = content.trim();
+    if (trimmedContent.isNotEmpty && _lastCommentContent == trimmedContent) {
+      throw Exception("Duplicate comments are not allowed.");
+    }
+
+    _lastCommentTime = now;
+    if (trimmedContent.isNotEmpty) {
+      _lastCommentContent = trimmedContent;
+    }
     final result = await sl<AddCommentUseCase>()(threadId, content, parentId: parentId, imageUrl: imageUrl);
     return result.fold(
       (failure) {

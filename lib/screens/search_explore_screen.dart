@@ -829,7 +829,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> with Automati
                     _loadTopics();
                     await Future.delayed(const Duration(milliseconds: 600));
                   },
-                  child: _isLoading
+                  child: (_isLoading || (_isTopicsLoading && _trendingTopics.isEmpty && !isSearching))
                       ? const SearchShimmer()
                       : isSearching
                       ? (() {

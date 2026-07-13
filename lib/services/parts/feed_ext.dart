@@ -53,6 +53,14 @@ extension FeedExtension on DatabaseService {
     String? communityId,
     bool isSubscriberOnly = false,
   }) async {
+    final now = DateTime.now();
+    if (_lastPostTime != null) {
+      final difference = now.difference(_lastPostTime!);
+      if (difference < DatabaseService._cooldownDuration) {
+        throw Exception("Please wait ${(DatabaseService._cooldownDuration - difference).inSeconds + 1}s before posting again.");
+      }
+    }
+    _lastPostTime = now;
     DateTime? pollExpiresAt;
     if (pollDuration != null) {
       pollExpiresAt = DateTime.now().add(pollDuration);

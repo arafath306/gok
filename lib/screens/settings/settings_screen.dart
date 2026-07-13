@@ -11,7 +11,6 @@ import '../profile/edit_profile_screen.dart';
 import 'notification_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 import 'security_settings_screen.dart';
-import 'change_email_screen.dart';
 import '../saved_posts_screen.dart';
 import 'blocked_accounts_screen.dart';
 import 'muted_accounts_screen.dart';
@@ -164,16 +163,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => EditProfileScreen(profile: profileMap)),
-                );
-              },
-            ),
-            _SettingsTileItem(
-              icon: Icons.email_outlined,
-              title: 'Change Email',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ChangeEmailScreen()),
                 );
               },
             ),

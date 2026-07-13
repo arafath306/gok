@@ -6,6 +6,15 @@ extension RepostsExtension on DatabaseService {
   Future<bool> repostThread(String threadId, {String? quoteText}) async {
     if (_currentUid.isEmpty) return false;
 
+    final now = DateTime.now();
+    if (_lastPostTime != null) {
+      final difference = now.difference(_lastPostTime!);
+      if (difference < DatabaseService._cooldownDuration) {
+        throw Exception("Please wait ${(DatabaseService._cooldownDuration - difference).inSeconds + 1}s before posting again.");
+      }
+    }
+    _lastPostTime = now;
+
     final wasReposted = _repostedThreadIds.contains(threadId);
 
     // Optimistic toggle for simple reposts (quoteText == null)
