@@ -208,9 +208,11 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _posts.length,
       itemBuilder: (context, index) {
-        return CustomThreadCard(
-          post: _posts[index],
-          isCommunityModerator: _community.myRole == 'owner' || _community.myRole == 'moderator',
+        return RepaintBoundary(
+          child: CustomThreadCard(
+            post: _posts[index],
+            isCommunityModerator: _community.myRole == 'owner' || _community.myRole == 'moderator',
+          ),
         );
       },
     );

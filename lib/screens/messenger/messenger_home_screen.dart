@@ -230,7 +230,8 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> with Automati
                           DateTime.now().difference(profile.lastSeen!).inMinutes <= 5;
                       final bool showGreenDot = myActiveStatusEnabled && otherIsActive;
 
-                      return ListTile(
+                      return RepaintBoundary(
+                        child: ListTile(
                         tileColor: Colors.transparent,
                         onTap: () async {
                           await Navigator.push(
@@ -333,7 +334,7 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> with Automati
                             ],
                           ),
                         ),
-                      );
+                      ),);
                     },
                   ),
       ),

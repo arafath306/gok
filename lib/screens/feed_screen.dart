@@ -352,9 +352,11 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin {
           // ③ Post card
           final postIndex = index - 1;
           if (postIndex < posts.length) {
-            return CustomThreadCard(
-              key: ValueKey(posts[postIndex].id),
-              post: posts[postIndex],
+            return RepaintBoundary(
+              child: CustomThreadCard(
+                key: ValueKey(posts[postIndex].id),
+                post: posts[postIndex],
+              ),
             );
           }
 
