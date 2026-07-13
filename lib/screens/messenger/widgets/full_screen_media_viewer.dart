@@ -12,7 +12,7 @@ class FullScreenMediaViewer extends StatelessWidget {
       content: Text('Downloading image...', style: GoogleFonts.inter()),
       backgroundColor: Theme.of(context).colorScheme.primary,
     ));
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // TODO: Implement actual download logic (e.g. using gallery_saver or image_gallery_saver)
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Image downloaded to gallery successfully!'),

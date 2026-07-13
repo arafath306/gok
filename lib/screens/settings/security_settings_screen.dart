@@ -425,7 +425,6 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                           }
                         } else {
                           // Mock success (e.g. bypassed login or testing)
-                          await Future.delayed(const Duration(seconds: 1));
                           if (!ctx.mounted) return;
                           setModalState(() => isLoading = false);
                           Navigator.pop(ctx);

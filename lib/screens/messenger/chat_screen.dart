@@ -280,7 +280,7 @@ class _ChatScreenState extends State<ChatScreen> {
       content: Text('Downloading image...', style: GoogleFonts.inter()),
       backgroundColor: context.primaryAccent,
     ));
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // TODO: Implement actual download logic (e.g. using gallery_saver or image_gallery_saver)
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Image downloaded to gallery successfully!'),
