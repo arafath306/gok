@@ -9,7 +9,7 @@ import '../utils/app_theme.dart';
 import 'profile/profile_screen.dart';
 import 'topic/topic_threads_screen.dart';
 import '../widgets/custom_thread_card.dart';
-import '../widgets/thread_shimmer.dart';
+import '../widgets/search_shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class SearchExploreScreen extends StatefulWidget {
@@ -830,7 +830,7 @@ class _SearchExploreScreenState extends State<SearchExploreScreen> with Automati
                     await Future.delayed(const Duration(milliseconds: 600));
                   },
                   child: _isLoading
-                      ? const ThreadShimmer()
+                      ? const SearchShimmer()
                       : isSearching
                       ? (() {
                           if (_searchTabIndex == 0) {
