@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'dart:ui';
+import 'dart:io';
 import 'feed_screen.dart';
 import 'search_explore_screen.dart';
 import 'notifications_screen.dart';
@@ -43,6 +44,8 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
   StreamSubscription? _notificationSubscription;
   bool _showBars = true;
   Timer? _scrollStopTimer;
+  bool _isOffline = false;
+  Timer? _connectivityTimer;
 
   void _startScrollStopTimer() {
     _scrollStopTimer?.cancel();
@@ -67,6 +70,11 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+
+    _checkConnectivity();
+    _connectivityTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _checkConnectivity();
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
@@ -102,9 +110,72 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
   void dispose() {
     _notificationSubscription?.cancel();
     _scrollStopTimer?.cancel();
+    _connectivityTimer?.cancel();
     _pageController.dispose();
     _fabAnimationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      final hasConnection = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      if (mounted && _isOffline != !hasConnection) {
+        setState(() {
+          _isOffline = !hasConnection;
+        });
+      }
+    } on SocketException catch (_) {
+      if (mounted && !_isOffline) {
+        setState(() {
+          _isOffline = true;
+        });
+      }
+    }
+  }
+
+  Widget _buildOfflineBanner() {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      top: _isOffline ? 0 : -50,
+      left: 0,
+      right: 0,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.redAccent.withValues(alpha: 0.95),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.cloud_off_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "You are offline. Showing cached content.",
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showInAppNotificationBanner(Map<String, dynamic> event) {
@@ -1122,40 +1193,45 @@ WhatsApp: +8801313961899''',
       return Scaffold(
         key: scaffoldKey,
         backgroundColor: context.scaffoldBg,
-        body: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        body: Stack(
           children: [
-            // Left Sidebar
-            Container(
-              width: 280,
-              decoration: BoxDecoration(
-                border: Border(right: BorderSide(color: context.border, width: 0.5)),
-              ),
-              child: Consumer<DatabaseService>(
-                builder: (context, dbService, _) {
-                  return _buildNavigationSidebar(context, dbService, isDesktop: true);
-                },
-              ),
-            ),
-            
-            // Center Feed
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: mainBody,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Left Sidebar
+                Container(
+                  width: 280,
+                  decoration: BoxDecoration(
+                    border: Border(right: BorderSide(color: context.border, width: 0.5)),
+                  ),
+                  child: Consumer<DatabaseService>(
+                    builder: (context, dbService, _) {
+                      return _buildNavigationSidebar(context, dbService, isDesktop: true);
+                    },
+                  ),
                 ),
-              ),
-            ),
+                
+                // Center Feed
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 600),
+                      child: mainBody,
+                    ),
+                  ),
+                ),
 
-            // Right Sidebar
-            Container(
-              width: 320,
-              decoration: BoxDecoration(
-                border: Border(left: BorderSide(color: context.border, width: 0.5)),
-              ),
-              child: _buildRightSidebar(context),
+                // Right Sidebar
+                Container(
+                  width: 320,
+                  decoration: BoxDecoration(
+                    border: Border(left: BorderSide(color: context.border, width: 0.5)),
+                  ),
+                  child: _buildRightSidebar(context),
+                ),
+              ],
             ),
+            _buildOfflineBanner(),
           ],
         ),
       );
@@ -1173,7 +1249,12 @@ WhatsApp: +8801313961899''',
           },
         ),
       ),
-      body: mainBody,
+      body: Stack(
+        children: [
+          mainBody,
+          _buildOfflineBanner(),
+        ],
+      ),
       floatingActionButton: (_currentIndex == 0 || _currentIndex == 4)
           ? AnimatedScale(
               scale: _showBars ? 1.0 : 0.0,
