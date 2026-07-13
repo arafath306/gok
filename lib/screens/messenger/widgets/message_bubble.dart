@@ -134,6 +134,7 @@ class MessageBubble extends StatelessWidget {
               width: double.infinity,
               height: 240,
               fit: BoxFit.cover,
+              placeholder: (context, url) => const _ImageShimmerPlaceholder(),
               errorWidget: (context, url, error) =>
                   const Icon(Icons.broken_image, size: 50),
             );
@@ -333,6 +334,56 @@ class MessageBubble extends StatelessWidget {
               ),
               child: bubbleContent,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageShimmerPlaceholder extends StatefulWidget {
+  const _ImageShimmerPlaceholder();
+
+  @override
+  State<_ImageShimmerPlaceholder> createState() => _ImageShimmerPlaceholderState();
+}
+
+class _ImageShimmerPlaceholderState extends State<_ImageShimmerPlaceholder> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 0.35, end: 0.85).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
+    final baseColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    return AnimatedBuilder(
+      animation: _opacity,
+      builder: (context, _) => Opacity(
+        opacity: _opacity.value,
+        child: Container(
+          width: double.infinity,
+          height: 240,
+          color: baseColor,
+          child: const Center(
+            child: Icon(Icons.image_outlined, color: Colors.white38, size: 36),
           ),
         ),
       ),
