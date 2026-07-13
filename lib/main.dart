@@ -26,6 +26,7 @@ import 'dart:async';
 import 'widgets/custom_error_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -44,6 +45,17 @@ void main() {
     // Initialize Firebase
     try {
       await Firebase.initializeApp();
+      
+      // Pass all uncaught framework errors to Crashlytics
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      };
+
+      // Pass all uncaught asynchronous errors to Crashlytics
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        return true;
+      };
     } catch (e) {
       debugPrint("Firebase initialization failed: $e");
     }
@@ -85,6 +97,9 @@ void main() {
   }, (error, stackTrace) {
     debugPrint("Uncaught global error: $error");
     debugPrint(stackTrace.toString());
+    try {
+      FirebaseCrashlytics.instance.recordError(error, stackTrace, fatal: true);
+    } catch (_) {}
   });
 }
 

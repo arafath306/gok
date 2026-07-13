@@ -29,7 +29,20 @@ extension MessagingExtension on DatabaseService {
     final result = await sl<SendMessageUseCase>()(receiverId, content, mediaUrl: mediaUrl, mediaType: mediaType);
     result.fold(
       (failure) => debugPrint("Send message error: ${failure.message}"),
-      (_) => fetchUnreadCounts(),
+      (_) {
+        try {
+          FirebaseAnalytics.instance.logEvent(
+            name: 'message_sent',
+            parameters: {
+              'has_media': (mediaUrl != null).toString(),
+              'media_type': mediaType ?? 'none',
+            },
+          );
+        } catch (e) {
+          debugPrint('Error logging analytics event: $e');
+        }
+        fetchUnreadCounts();
+      },
     );
   }
 

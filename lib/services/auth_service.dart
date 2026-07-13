@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 import '../core/injection.dart';
 import '../core/security/e2ee_service.dart';
@@ -117,6 +118,12 @@ class AuthService with ChangeNotifier {
         _currentUser = _supabaseClient.auth.currentUser;
         _isLoading = false;
         notifyListeners();
+        // Log analytics login
+        try {
+          FirebaseAnalytics.instance.logLogin(loginMethod: 'email_or_username');
+        } catch (e) {
+          debugPrint('Error logging analytics login: $e');
+        }
         return LoginResult.success;
       },
     );
@@ -216,6 +223,12 @@ class AuthService with ChangeNotifier {
       (success) {
         _isLoading = false;
         notifyListeners();
+        // Log analytics signup
+        try {
+          FirebaseAnalytics.instance.logSignUp(signUpMethod: 'email');
+        } catch (e) {
+          debugPrint('Error logging analytics signup: $e');
+        }
         return true;
       },
     );

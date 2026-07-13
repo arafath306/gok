@@ -74,6 +74,18 @@ extension FeedExtension on DatabaseService {
         return false;
       },
       (success) async {
+        try {
+          FirebaseAnalytics.instance.logEvent(
+            name: 'post_create',
+            parameters: {
+              'has_images': (imageUrls?.isNotEmpty ?? false).toString(),
+              'has_video': (videoUrl != null).toString(),
+              'is_subscriber_only': isSubscriberOnly.toString(),
+            },
+          );
+        } catch (e) {
+          debugPrint('Error logging analytics event: $e');
+        }
         await fetchFeed(silent: true);
         await fetchAIFeed(silent: true);
         await fetchMyThreads();
