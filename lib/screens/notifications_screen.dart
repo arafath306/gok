@@ -198,7 +198,8 @@ String _postGroupContent(String type, int extra) {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+  final bool isActive;
+  const NotificationsScreen({super.key, this.isActive = false});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -217,8 +218,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Provider.of<DatabaseService>(context, listen: false)
-          .fetchNotifications();
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      await db.fetchNotifications();
+      if (widget.isActive) {
+        await db.markAllNotificationsRead();
+      }
       // Clear OS inbox when user opens the screen
       if (!_clearingInbox) {
         _clearingInbox = true;
@@ -290,6 +294,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       appBar: _buildAppBar(),
       body: Consumer<DatabaseService>(
         builder: (context, dbService, _) {
+          if (widget.isActive && dbService.unreadNotificationsCount > 0) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                dbService.markAllNotificationsRead();
+              }
+            });
+          }
           final all = dbService.notifications;
           final mentions = all.where((n) => n.type.toLowerCase() == 'mention').toList();
 

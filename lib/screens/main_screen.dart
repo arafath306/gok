@@ -380,7 +380,7 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
       ),
       const SearchExploreScreen(),
       const MessengerHomeScreen(),
-      const NotificationsScreen(),
+      NotificationsScreen(isActive: _currentIndex == 3),
       const ProfileScreen(),
     ];
 

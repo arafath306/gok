@@ -52,6 +52,9 @@ extension NotificationsExtension on DatabaseService {
       final idx = _notifications.indexWhere((n) => n.id == notificationId);
       if (idx != -1) {
         final old = _notifications[idx];
+        if (!old.read) {
+          _unreadNotificationsCount = (_unreadNotificationsCount - 1).clamp(0, 999999);
+        }
         _notifications[idx] = AppNotification(
           id: old.id,
           userId: old.userId,
@@ -87,6 +90,7 @@ extension NotificationsExtension on DatabaseService {
         createdAt: n.createdAt,
         read: true,
       )).toList();
+      _unreadNotificationsCount = 0;
       updateState();
     } catch (e) {
       debugPrint("Mark all notifications read error: $e");
