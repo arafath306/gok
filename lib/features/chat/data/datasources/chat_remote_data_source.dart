@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import 'package:firebase_storage/firebase_storage.dart';
 import '../../../../core/security/e2ee_service.dart';
 abstract class ChatRemoteDataSource {
   Future<List<dynamic>> fetchActiveChatsRaw(String currentUserId);
@@ -109,19 +108,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes, {String extension = 'jpg', String contentType = 'image/jpeg'}) async {
-    try {
-      final path = 'chat/$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.$extension';
-      final ref = FirebaseStorage.instance.ref().child(path);
-      final uploadTask = await ref.putData(
-        bytes,
-        SettableMetadata(contentType: contentType),
-      );
-      final publicUrl = await uploadTask.ref.getDownloadURL();
-      return publicUrl;
-    } catch (e) {
-      debugPrint("Upload chat media error: $e");
-      return null;
-    }
+    final path = '$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.$extension';
+    await supabaseClient.storage.from('avatars').uploadBinary(
+      path,
+      bytes,
+      fileOptions: sb.FileOptions(
+        contentType: contentType,
+        upsert: true,
+      ),
+    );
+    final publicUrl = supabaseClient.storage.from('avatars').getPublicUrl(path);
+    return publicUrl;
   }
 
   @override

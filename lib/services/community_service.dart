@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/community.dart';
@@ -289,23 +288,15 @@ class CommunityService extends ChangeNotifier {
       if (avatarFile != null) {
         final ext = avatarFile.path.split('.').last;
         final fileName = 'c_avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        final ref = FirebaseStorage.instance.ref().child('communities/$fileName');
-        final uploadTask = await ref.putFile(
-          avatarFile,
-          SettableMetadata(contentType: 'image/$ext'),
-        );
-        avatarUrl = await uploadTask.ref.getDownloadURL();
+        await _supabase.storage.from('avatars').upload(fileName, avatarFile);
+        avatarUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
       }
 
       if (bannerFile != null) {
         final ext = bannerFile.path.split('.').last;
         final fileName = 'c_banner_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        final ref = FirebaseStorage.instance.ref().child('communities/covers/$fileName');
-        final uploadTask = await ref.putFile(
-          bannerFile,
-          SettableMetadata(contentType: 'image/$ext'),
-        );
-        bannerUrl = await uploadTask.ref.getDownloadURL();
+        await _supabase.storage.from('avatars').upload('covers/$fileName', bannerFile);
+        bannerUrl = _supabase.storage.from('avatars').getPublicUrl('covers/$fileName');
       }
 
       final res = await _supabase.from('communities').insert({
@@ -406,23 +397,15 @@ class CommunityService extends ChangeNotifier {
       if (avatarFile != null) {
         final ext = avatarFile.path.split('.').last;
         final fileName = 'c_avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        final ref = FirebaseStorage.instance.ref().child('communities/$fileName');
-        final uploadTask = await ref.putFile(
-          avatarFile,
-          SettableMetadata(contentType: 'image/$ext'),
-        );
-        avatarUrl = await uploadTask.ref.getDownloadURL();
+        await _supabase.storage.from('avatars').upload(fileName, avatarFile);
+        avatarUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
       }
 
       if (bannerFile != null) {
         final ext = bannerFile.path.split('.').last;
         final fileName = 'c_banner_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        final ref = FirebaseStorage.instance.ref().child('communities/covers/$fileName');
-        final uploadTask = await ref.putFile(
-          bannerFile,
-          SettableMetadata(contentType: 'image/$ext'),
-        );
-        bannerUrl = await uploadTask.ref.getDownloadURL();
+        await _supabase.storage.from('avatars').upload('covers/$fileName', bannerFile);
+        bannerUrl = _supabase.storage.from('avatars').getPublicUrl('covers/$fileName');
       }
 
       final Map<String, dynamic> updates = {
@@ -449,12 +432,8 @@ class CommunityService extends ChangeNotifier {
     try {
       final ext = avatarFile.path.split('.').last;
       final fileName = 'c_avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      final ref = FirebaseStorage.instance.ref().child('communities/$fileName');
-      final uploadTask = await ref.putFile(
-        avatarFile,
-        SettableMetadata(contentType: 'image/$ext'),
-      );
-      final avatarUrl = await uploadTask.ref.getDownloadURL();
+      await _supabase.storage.from('avatars').upload(fileName, avatarFile);
+      final avatarUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
 
       await _supabase.from('communities').update({'avatar_url': avatarUrl}).eq('id', id);
       await fetchJoinedCommunities();
