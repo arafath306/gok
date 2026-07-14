@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/profile.dart';
 import '../models/thread_post.dart';
 import '../models/notification.dart';
