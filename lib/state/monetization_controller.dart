@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,11 +17,35 @@ class MonetizationController extends ChangeNotifier {
     return mySubscribedCreatorIds.contains(creatorId);
   }
   
-  Future<void> fetchGlobalStatus() async {
+  Future<void> fetchGlobalStatus({String? uid, String? badgeType}) async {
     try {
       final res = await _supabase.from('system_settings').select('value').eq('key', 'enable_monetization').maybeSingle();
       if (res != null) {
-        isEnabledGlobally = res['value'] == 'true';
+        final val = res['value'] as String?;
+        bool isEnabled = false;
+        
+        if (val != null) {
+          try {
+            final parsed = jsonDecode(val);
+            if (parsed is Map) {
+              final access = parsed['access'];
+              if (access == 'global') {
+                isEnabled = true;
+              } else if (access == 'verified' && badgeType != null && badgeType != 'none') {
+                isEnabled = true;
+              } else if (access == 'specific') {
+                final users = parsed['users'];
+                if (users is List && uid != null && users.contains(uid)) {
+                  isEnabled = true;
+                }
+              }
+            }
+          } catch (e) {
+            isEnabled = val == 'true'; // Fallback
+          }
+        }
+        
+        isEnabledGlobally = isEnabled;
         notifyListeners();
       }
     } catch (e) {

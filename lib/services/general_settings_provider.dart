@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -54,19 +55,21 @@ class GeneralSettingsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Fetch privacy settings from user profile
+      // 1. Fetch privacy settings and badge from user profile
       final profileRes = await _supabase
           .from('profiles')
-          .select('is_private, allow_mentions, filter_adult, autoplay_videos, is_active_status_enabled')
+          .select('is_private, allow_mentions, filter_adult, autoplay_videos, is_active_status_enabled, verified_badge')
           .eq('id', uid)
           .maybeSingle();
 
+      String? badgeType;
       if (profileRes != null) {
         _isPrivateAccount = profileRes['is_private'] as bool? ?? false;
         _allowMentionsFrom = profileRes['allow_mentions'] as String? ?? 'everyone';
         _filterAdultContent = profileRes['filter_adult'] as bool? ?? true;
         _autoplayVideos = profileRes['autoplay_videos'] as bool? ?? true;
         _isActiveStatusEnabled = profileRes['is_active_status_enabled'] as bool? ?? true;
+        badgeType = profileRes['verified_badge'] as String?;
       }
 
       // 2. Fetch blocked accounts
@@ -98,13 +101,37 @@ class GeneralSettingsProvider with ChangeNotifier {
       // 3. Fetch global feature flags
       try {
         final sysRes = await _supabase.from('system_settings').select('key, value').inFilter('key', ['enable_voice_posts', 'enable_tiered_badges', 'enable_algorithmic_priority']);
+        
+        bool evaluateAccess(String? val) {
+          if (val == null) return false;
+          try {
+            final parsed = jsonDecode(val);
+            if (parsed is Map) {
+              final access = parsed['access'];
+              if (access == 'global') return true;
+              if (access == 'verified' && badgeType != null && badgeType != 'none') return true;
+              if (access == 'specific') {
+                final users = parsed['users'];
+                if (users is List && users.contains(uid)) return true;
+              }
+              return false;
+            }
+          } catch (e) {
+            return val == 'true'; // Fallback to old format
+          }
+          return false;
+        }
+
         for (var row in sysRes) {
-          if (row['key'] == 'enable_voice_posts') {
-            _isVoicePostEnabled = row['value'] == 'true';
-          } else if (row['key'] == 'enable_tiered_badges') {
-            _isTieredBadgesEnabled = row['value'] == 'true';
-          } else if (row['key'] == 'enable_algorithmic_priority') {
-            _isAlgorithmicPriorityEnabled = row['value'] == 'true';
+          final key = row['key'] as String;
+          final isEnabled = evaluateAccess(row['value'] as String?);
+          
+          if (key == 'enable_voice_posts') {
+            _isVoicePostEnabled = isEnabled;
+          } else if (key == 'enable_tiered_badges') {
+            _isTieredBadgesEnabled = isEnabled;
+          } else if (key == 'enable_algorithmic_priority') {
+            _isAlgorithmicPriorityEnabled = isEnabled;
           }
         }
       } catch (e) {

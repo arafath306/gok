@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -49,8 +50,6 @@ class _VerificationDashboardScreenState extends State<VerificationDashboardScree
       }
 
       // 3. Fetch early access features from system_settings
-      // Assuming features granted to verified users are stored with key prefix 'early_access_'
-      // or similar in system_settings. We'll fetch all and filter by value 'true'.
       final sysRes = await Supabase.instance.client
           .from('system_settings')
           .select('key, value, description');
@@ -61,11 +60,24 @@ class _VerificationDashboardScreenState extends State<VerificationDashboardScree
         final val = row['value'] as String?;
         final desc = row['description'] as String?;
         
-        if (key.startsWith('early_access_') && val == 'true') {
-          // format key: early_access_voice_post -> Voice Post
-          String name = key.replaceAll('early_access_', '').replaceAll('_', ' ');
-          name = name.split(' ').map((str) => str.isNotEmpty ? '${str[0].toUpperCase()}${str.substring(1)}' : '').join(' ');
-          features.add(desc ?? name);
+        if (val != null) {
+          bool isEarlyAccess = false;
+          try {
+            final parsed = jsonDecode(val);
+            if (parsed is Map && parsed['access'] == 'verified') {
+              isEarlyAccess = true;
+            }
+          } catch (e) {
+            if (key.startsWith('early_access_') && val == 'true') {
+              isEarlyAccess = true;
+            }
+          }
+          
+          if (isEarlyAccess) {
+            String name = key.replaceAll('enable_', '').replaceAll('early_access_', '').replaceAll('_', ' ');
+            name = name.split(' ').map((str) => str.isNotEmpty ? '${str[0].toUpperCase()}${str.substring(1)}' : '').join(' ');
+            features.add(desc ?? name);
+          }
         }
       }
       
