@@ -28,6 +28,11 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import '../services/general_settings_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+part 'create_thread_drafts_extensions.dart';
+part 'create_thread_media_extensions.dart';
+part 'create_thread_voice_extensions.dart';
+part 'create_thread_publish_extensions.dart';
+
 
 class CreateThreadScreen extends StatefulWidget {
   final ThreadPost? quotePost;
@@ -121,73 +126,11 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     }
   }
 
-  Future<void> _loadDraftCount() async {
-    final count = await _draftService.getDraftCount();
-    if (mounted) setState(() => _draftCount = count);
-  }
 
-  Future<void> _loadDraftImages(List<String> paths) async {
-    final List<Uint8List> loadedBytes = [];
-    for (var path in paths) {
-      try {
-        final file = File(path);
-        if (await file.exists()) {
-          loadedBytes.add(await file.readAsBytes());
-        }
-      } catch (e) {
-        debugPrint("Error loading draft image: $e");
-      }
-    }
-    if (mounted) {
-      setState(() {
-        _selectedImagesBytesList.addAll(loadedBytes);
-        _originalImagesBytesList.addAll(loadedBytes);
-      });
-    }
-  }
 
-  Future<void> _loadExistingMedia() async {
-    final urls = widget.editPost!.imageUrls;
-    if (urls == null || urls.isEmpty) return;
 
-    setState(() {
-      _isLoadingExistingMedia = true;
-    });
 
-    try {
-      final List<Uint8List> downloadedBytes = [];
-      final HttpClient client = HttpClient();
 
-      for (final url in urls) {
-        try {
-          final Uri uri = Uri.parse(url);
-          final HttpClientRequest request = await client.getUrl(uri);
-          final HttpClientResponse response = await request.close();
-          if (response.statusCode == 200) {
-            final Uint8List bytes = await consolidateHttpClientResponseBytes(response);
-            downloadedBytes.add(bytes);
-          }
-        } catch (e) {
-          debugPrint("Failed to download image $url: $e");
-        }
-      }
-
-      if (mounted && downloadedBytes.isNotEmpty) {
-        setState(() {
-          _selectedImagesBytesList.addAll(downloadedBytes);
-          _originalImagesBytesList.addAll(downloadedBytes);
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading existing media: $e");
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingExistingMedia = false;
-        });
-      }
-    }
-  }
 
   void _onContentChanged() {
     setState(() {
@@ -196,59 +139,13 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
   }
 
   // --- Voice Recorder Methods ---
-  Future<void> _startRecording() async {
-    try {
-      if (await _audioRecorder.hasPermission()) {
-        final dir = await getTemporaryDirectory();
-        final path = '${dir.path}/voice_post_${DateTime.now().millisecondsSinceEpoch}.m4a';
-        
-        await _audioRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
-        setState(() {
-          _isRecording = true;
-          _recordingSeconds = 0;
-        });
-        _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-          setState(() {
-            _recordingSeconds++;
-          });
-        });
-      }
-    } catch (e) {
-      debugPrint("Error starting record: $e");
-    }
-  }
 
-  Future<void> _stopRecording() async {
-    try {
-      final path = await _audioRecorder.stop();
-      _recordingTimer?.cancel();
-      setState(() {
-        _isRecording = false;
-        _recordedAudioPath = path;
-      });
-    } catch (e) {
-      debugPrint("Error stopping record: $e");
-    }
-  }
 
-  void _deleteRecording() {
-    setState(() {
-      _recordedAudioPath = null;
-      _recordingSeconds = 0;
-      _showVoiceRecorder = false;
-    });
-  }
 
-  Future<void> _toggleAudioPreview() async {
-    if (_recordedAudioPath == null) return;
-    if (_isPlayingAudio) {
-      await _audioPlayer.pause();
-      setState(() => _isPlayingAudio = false);
-    } else {
-      await _audioPlayer.play(DeviceFileSource(_recordedAudioPath!));
-      setState(() => _isPlayingAudio = true);
-    }
-  }
+
+
+
+
 
   @override
   void dispose() {
@@ -265,357 +162,28 @@ class _CreateThreadScreenState extends State<CreateThreadScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImages() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final List<XFile> images = await picker.pickMultiImage(
-        imageQuality: 80,
-      );
-      if (images.isEmpty) return;
-
-      final List<Uint8List> bytesList = [];
-      for (var img in images) {
-        final bytes = await img.readAsBytes();
-        bytesList.add(bytes);
-      }
-
-      setState(() {
-        _selectedImagesBytesList.addAll(bytesList);
-        _originalImagesBytesList.addAll(bytesList);
-        _showImageInput = false; // Turn off generic URL input
-      });
-    } catch (e) {
-      debugPrint("Error picking images: $e");
-    }
-  }
-
-  Future<void> _pickCameraImage() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-      );
-      if (image == null) return;
-
-      final bytes = await image.readAsBytes();
-      setState(() {
-        _selectedImagesBytesList.add(bytes);
-        _originalImagesBytesList.add(bytes);
-        _showImageInput = false;
-      });
-    } catch (e) {
-      debugPrint("Error picking camera image: $e");
-    }
-  }
-
-  Future<void> _openPhotoEditorAtIndex(int index) async {
-    if (index < 0 || index >= _originalImagesBytesList.length) return;
-    final originalBytes = _originalImagesBytesList[index];
-    final croppedBytes = await Navigator.push<Uint8List>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PhotoEditorScreen(imageBytes: originalBytes),
-      ),
-    );
-    if (croppedBytes != null) {
-      setState(() {
-        _selectedImagesBytesList[index] = croppedBytes;
-      });
-    }
-  }
-
-  void _submit() async {
-    final text = _contentController.text.trim();
-    final imageUrl = _imageUrlController.text.trim();
-    final videoUrl = _videoUrlController.text.trim();
-
-    if (text.isEmpty && _recordedAudioPath == null && _selectedImagesBytesList.isEmpty && imageUrl.isEmpty && videoUrl.isEmpty && _selectedMusic == null) return;
-
-    setState(() => _isUploadingImage = true);
-    final db = Provider.of<DatabaseService>(context, listen: false);
-
-    // â”€â”€ Edit mode: just update the existing post content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    if (widget.editPost != null) {
-      List<String>? uploadedUrls;
-      if (_selectedImagesBytesList.isNotEmpty) {
-        uploadedUrls = [];
-        try {
-          for (final bytes in _selectedImagesBytesList) {
-            final imagePublicUrl = await db.uploadPostImage(bytes);
-            if (imagePublicUrl != null) {
-              uploadedUrls.add(imagePublicUrl);
-            }
-          }
-          if (uploadedUrls.isEmpty) {
-            uploadedUrls = null;
-          }
-        } catch (uploadError) {
-          debugPrint("Edit post images upload failed: $uploadError");
-        }
-      }
-
-      final success = await db.editPostContent(
-        widget.editPost!.id,
-        text,
-        imageUrls: uploadedUrls ?? [],
-      );
-
-      if (!mounted) return;
-      setState(() => _isUploadingImage = false);
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Text('Post updated successfully', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-            ]),
-            backgroundColor: const Color(0xFF1E824C),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        Navigator.pop(context, true); // return true = edited
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update post', style: GoogleFonts.inter())),
-        );
-      }
-      return;
-    }
-
-    // â”€â”€ Create / Quote mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    String finalContent = text;
-    if (_selectedLocation != null) {
-      finalContent += "\n\nðŸ“ $_selectedLocation";
-    }
-    if (_selectedMusic != null) {
-      finalContent += " ðŸŽµDakMusicðŸŽµ${_selectedMusic!.toJson()}";
-    }
-
-    List<String>? pollOptions;
-    Duration? pollDuration;
-    if (_showPollInput) {
-      final filledOptions = _pollControllers
-          .map((c) => c.text.trim())
-          .where((t) => t.isNotEmpty)
-          .toList();
-      if (filledOptions.length >= 2) {
-        pollOptions = filledOptions;
-        pollDuration = _pollDuration;
-      } else {
-        // Block submission and show error
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(children: [
-                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Text('Poll must have at least 2 options', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-              ]),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-          setState(() => _isUploadingImage = false);
-        }
-        return;
-      }
-    }
-
-    List<String>? uploadedUrls;
-    if (_selectedImagesBytesList.isNotEmpty) {
-      uploadedUrls = [];
-      try {
-        for (final bytes in _selectedImagesBytesList) {
-          final imagePublicUrl = await db.uploadPostImage(bytes);
-          if (imagePublicUrl != null) {
-            uploadedUrls.add(imagePublicUrl);
-          }
-        }
-        if (uploadedUrls.isEmpty) {
-          uploadedUrls = null;
-        }
-      } catch (uploadError) {
-        debugPrint("Post images upload failed: $uploadError");
-      }
-    } else if (imageUrl.isNotEmpty) {
-      uploadedUrls = [imageUrl];
-    }
-
-    String? audioPublicUrl;
-    if (_recordedAudioPath != null) {
-      try {
-        final bytes = await File(_recordedAudioPath!).readAsBytes();
-        audioPublicUrl = await db.uploadPostAudio(bytes, 'm4a');
-      } catch (e) {
-        debugPrint("Voice post upload failed: $e");
-      }
-    }
-
-    bool success = false;
-    try {
-      if (widget.quotePost != null) {
-        success = await db.repostThread(
-          widget.quotePost!.id,
-          quoteText: finalContent,
-        );
-      } else {
-        success = await db.createThread(
-          finalContent,
-          imageUrls: uploadedUrls,
-          videoUrl: videoUrl.isNotEmpty ? videoUrl : null,
-          audioUrl: audioPublicUrl,
-          audience: _privacy,
-          pollOptions: pollOptions,
-          pollDuration: pollDuration,
-          communityId: widget.communityId,
-          isSubscriberOnly: _isSubscriberOnly,
-        );
-      }
-
-      if (mounted) {
-        setState(() => _isUploadingImage = false);
-        if (success) {
-          if (widget.draftPost != null) {
-            await _draftService.deleteDrafts([widget.draftPost!.id]);
-          }
-          if (mounted) {
-            Navigator.pop(context);
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Failed to publish post", style: GoogleFonts.inter()),
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isUploadingImage = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll("Exception: ", ""), style: GoogleFonts.inter()),
-          ),
-        );
-      }
-    }
-  }
 
 
 
 
 
 
-  void _showComingSoonDialog(String featureName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.cardBg,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.info_outline, color: Color(0xFF1E824C)),
-            const SizedBox(width: 8),
-            Text(
-              "Coming Soon!",
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
-            ),
-          ],
-        ),
-        content: Text(
-          "$featureName feature is under development. Stay tuned for updates!",
-          style: GoogleFonts.inter(color: context.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Dismiss",
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
 
 
-  void _toggleRecording() {
-    if (_isRecording) {
-      _recordingTimer?.cancel();
-      setState(() {
-        _isRecording = false;
-      });
-    } else {
-      setState(() {
-        _isRecording = true;
-        _recordingSeconds = 0;
-      });
-      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        setState(() {
-          _recordingSeconds++;
-        });
-      });
-    }
-  }
 
-  Future<void> _handleClose() async {
-    final hasContent = _contentController.text.trim().isNotEmpty || _selectedImagesBytesList.isNotEmpty || _videoUrlController.text.isNotEmpty || _selectedMusic != null;
-    if (hasContent && widget.editPost == null && widget.quotePost == null) {
-      final action = await showDialog<String>(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: context.cardBg,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text("Unsaved Changes", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary)),
-          content: Text("Do you want to save this as a draft before closing?", style: GoogleFonts.inter(color: context.textSecondary)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, "delete"),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text("Delete Draft", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, "save"),
-              child: Text("Save Draft", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1E824C))),
-            ),
-          ],
-        ),
-      );
 
-      if (action == "save") {
-        await _saveCurrentDraft();
-      } else if (action != "delete") {
-        return; // user tapped outside
-      }
-    }
-    if (mounted) Navigator.pop(context);
-  }
 
-  Future<void> _saveCurrentDraft() async {
-    final id = widget.draftPost?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
-    final draft = DraftPost(
-      id: id,
-      content: _contentController.text.trim(),
-      audience: _privacy,
-      location: _selectedLocation,
-      videoUrl: _videoUrlController.text.trim().isNotEmpty ? _videoUrlController.text.trim() : null,
-      updatedAt: DateTime.now(),
-      musicTrack: _selectedMusic,
-    );
-    await _draftService.saveDraft(draft, _selectedImagesBytesList);
-  }
+
+
+
+
+
+
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
