@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import '../../../../utils/media_compressor.dart';
 
 abstract class ProfileRemoteDataSource {
   Future<bool> submitVerificationRequest(String currentUid, Map<String, dynamic> requestData);
@@ -42,10 +43,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
   @override
   Future<String?> uploadVerificationImage(String currentUid, Uint8List bytes, String filename) async {
+    final compressedBytes = await MediaCompressor.compressImageBytes(bytes);
     final path = 'verifications/$currentUid/$filename';
     await supabaseClient.storage.from('avatars').uploadBinary(
       path,
-      bytes,
+      compressedBytes,
       fileOptions: const sb.FileOptions(cacheControl: '3600', upsert: true),
     );
     final publicUrl = supabaseClient.storage.from('avatars').getPublicUrl(path);
@@ -82,12 +84,13 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
   @override
   Future<bool> updateProfileImage(String currentUid, Uint8List bytes, bool isAvatar) async {
+    final compressedBytes = await MediaCompressor.compressImageBytes(bytes);
     final subFolder = isAvatar ? 'avatars' : 'covers';
     final path = '$subFolder/$currentUid/img_${DateTime.now().millisecondsSinceEpoch}.jpg';
     
     await supabaseClient.storage.from('avatars').uploadBinary(
       path,
-      bytes,
+      compressedBytes,
       fileOptions: const sb.FileOptions(cacheControl: '3600', upsert: true),
     );
     final publicUrl = supabaseClient.storage.from('avatars').getPublicUrl(path);

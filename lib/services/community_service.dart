@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/media_compressor.dart';
 import '../models/community.dart';
 import '../models/community_rule.dart';
 import '../models/thread_post.dart';
@@ -286,16 +287,18 @@ class CommunityService extends ChangeNotifier {
 
       // Upload files if present
       if (avatarFile != null) {
-        final ext = avatarFile.path.split('.').last;
+        final compressed = await MediaCompressor.compressImageFile(avatarFile);
+        final ext = compressed.path.split('.').last;
         final fileName = 'c_avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        await _supabase.storage.from('avatars').upload(fileName, avatarFile);
+        await _supabase.storage.from('avatars').upload(fileName, compressed);
         avatarUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
       }
 
       if (bannerFile != null) {
-        final ext = bannerFile.path.split('.').last;
+        final compressed = await MediaCompressor.compressImageFile(bannerFile);
+        final ext = compressed.path.split('.').last;
         final fileName = 'c_banner_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        await _supabase.storage.from('avatars').upload('covers/$fileName', bannerFile);
+        await _supabase.storage.from('avatars').upload('covers/$fileName', compressed);
         bannerUrl = _supabase.storage.from('avatars').getPublicUrl('covers/$fileName');
       }
 
@@ -395,16 +398,18 @@ class CommunityService extends ChangeNotifier {
       String? bannerUrl;
 
       if (avatarFile != null) {
-        final ext = avatarFile.path.split('.').last;
+        final compressed = await MediaCompressor.compressImageFile(avatarFile);
+        final ext = compressed.path.split('.').last;
         final fileName = 'c_avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        await _supabase.storage.from('avatars').upload(fileName, avatarFile);
+        await _supabase.storage.from('avatars').upload(fileName, compressed);
         avatarUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
       }
 
       if (bannerFile != null) {
-        final ext = bannerFile.path.split('.').last;
+        final compressed = await MediaCompressor.compressImageFile(bannerFile);
+        final ext = compressed.path.split('.').last;
         final fileName = 'c_banner_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        await _supabase.storage.from('avatars').upload('covers/$fileName', bannerFile);
+        await _supabase.storage.from('avatars').upload('covers/$fileName', compressed);
         bannerUrl = _supabase.storage.from('avatars').getPublicUrl('covers/$fileName');
       }
 
@@ -430,9 +435,10 @@ class CommunityService extends ChangeNotifier {
   Future<bool> updateCommunityAvatar(String id, File avatarFile) async {
     if (_currentUid == null) return false;
     try {
-      final ext = avatarFile.path.split('.').last;
+      final compressed = await MediaCompressor.compressImageFile(avatarFile);
+      final ext = compressed.path.split('.').last;
       final fileName = 'c_avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      await _supabase.storage.from('avatars').upload(fileName, avatarFile);
+      await _supabase.storage.from('avatars').upload(fileName, compressed);
       final avatarUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
 
       await _supabase.from('communities').update({'avatar_url': avatarUrl}).eq('id', id);

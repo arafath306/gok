@@ -37,6 +37,7 @@ import '../features/profile/domain/usecases/update_verification_request_status_u
 import '../features/notifications/domain/usecases/show_notification_use_case.dart';
 import '../features/notifications/domain/usecases/play_sound_use_case.dart';
 import '../core/security/e2ee_service.dart';
+import '../utils/media_compressor.dart';
 
 part 'parts/profile_ext.dart';
 part 'parts/follow_ext.dart';

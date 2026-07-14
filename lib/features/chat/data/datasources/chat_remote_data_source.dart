@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../../../core/security/e2ee_service.dart';
+import '../../../../utils/media_compressor.dart';
 abstract class ChatRemoteDataSource {
   Future<List<dynamic>> fetchActiveChatsRaw(String currentUserId);
   Future<List<dynamic>> fetchMessagesRaw(String currentUserId, String otherUserId);
@@ -108,10 +109,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<String?> uploadChatMedia(String currentUserId, Uint8List bytes, {String extension = 'jpg', String contentType = 'image/jpeg'}) async {
+    Uint8List uploadBytes = bytes;
+    if (contentType.startsWith('image/')) {
+      uploadBytes = await MediaCompressor.compressImageBytes(bytes);
+    }
     final path = '$currentUserId/chat_${DateTime.now().millisecondsSinceEpoch}.$extension';
     await supabaseClient.storage.from('avatars').uploadBinary(
       path,
-      bytes,
+      uploadBytes,
       fileOptions: sb.FileOptions(
         contentType: contentType,
         upsert: true,

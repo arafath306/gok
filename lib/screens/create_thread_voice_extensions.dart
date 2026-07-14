@@ -10,7 +10,15 @@ extension CreateThreadVoiceExtensions on _CreateThreadScreenState {
         final dir = await getTemporaryDirectory();
         final path = '${dir.path}/voice_post_${DateTime.now().millisecondsSinceEpoch}.m4a';
         
-        await _audioRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+        await _audioRecorder.start(
+          const RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            sampleRate: 16000,
+            bitRate: 24000,
+            numChannels: 1,
+          ),
+          path: path,
+        );
         setState(() {
           _isRecording = true;
           _recordingSeconds = 0;

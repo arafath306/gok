@@ -126,7 +126,12 @@ class ChatComposerState extends State<ChatComposer> {
         final path = '${dir.path}/chat_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
         
         await _audioRecorder.start(
-          const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000),
+          const RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            sampleRate: 16000,
+            bitRate: 24000,
+            numChannels: 1,
+          ),
           path: path,
         );
         setState(() {

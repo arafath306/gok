@@ -49,8 +49,9 @@ extension StorageExtension on DatabaseService {
   Future<String?> uploadPostImage(Uint8List bytes) async {
     if (_currentUid.isEmpty) return null;
     try {
+      final compressedBytes = await MediaCompressor.compressImageBytes(bytes);
       final path = 'posts/$_currentUid/thread_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      return await _uploadToStorage('avatars', path, bytes);
+      return await _uploadToStorage('avatars', path, compressedBytes);
     } catch (e) {
       debugPrint("Upload post image error: $e");
       return null;
