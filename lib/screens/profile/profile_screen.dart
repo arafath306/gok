@@ -274,6 +274,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                       backgroundColor: Colors.black38,
                       radius: 18,
                       child: IconButton(
+                        tooltip: 'More options',
+                        icon: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: 18),
+                        onPressed: _showMoreOptions,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    CircleAvatar(
+                      backgroundColor: Colors.black38,
+                      radius: 18,
+                      child: IconButton(
                         tooltip: 'Settings',
                         icon: const Icon(Icons.settings_rounded, color: Colors.white, size: 18),
                         onPressed: () {
@@ -288,17 +299,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                              ),
                            );
                         },
-                        padding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    CircleAvatar(
-                      backgroundColor: Colors.black38,
-                      radius: 18,
-                      child: IconButton(
-                        tooltip: 'More options',
-                        icon: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: 18),
-                        onPressed: _showMoreOptions,
                         padding: EdgeInsets.zero,
                       ),
                     ),
