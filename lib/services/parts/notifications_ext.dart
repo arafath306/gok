@@ -45,6 +45,7 @@ extension NotificationsExtension on DatabaseService {
           content: old.content,
           createdAt: old.createdAt,
           read: true,
+          createdAtDateTime: old.createdAtDateTime,
         );
         updateState();
       }
@@ -70,6 +71,7 @@ extension NotificationsExtension on DatabaseService {
         content: n.content,
         createdAt: n.createdAt,
         read: true,
+        createdAtDateTime: n.createdAtDateTime,
       )).toList();
       _unreadNotificationsCount = 0;
       updateState();
