@@ -506,7 +506,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fieldBg = context.isDarkMode ? const Color(0xFF121422) : const Color(0xFFF5F5F5);
+    final fieldBg = context.isDarkMode ? const Color(0xFF0F111E) : Colors.white;
 
     return Scaffold(
       backgroundColor: context.scaffoldBg,
@@ -736,11 +736,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             decoration: InputDecoration(
               filled: true,
               fillColor: fieldBg,
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: context.isDarkMode ? const Color(0xFF24273F) : const Color(0xFFE5E7EB),
+                  width: 1.2,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xFF0085FF), width: 1.5),
+              ),
             ),
             initialValue: _selectedGender,
             hint: Text('Select Gender',
@@ -761,10 +768,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           GestureDetector(
             onTap: () => _selectBirthdate(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               decoration: BoxDecoration(
                 color: fieldBg,
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: context.isDarkMode ? const Color(0xFF24273F) : const Color(0xFFE5E7EB),
+                  width: 1.2,
+                ),
               ),
               child: Row(
                 children: [
@@ -792,12 +803,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _label(String text) => Text(
-        text,
-        style: GoogleFonts.inter(
-            fontSize: 13, fontWeight: FontWeight.bold, color: context.textSecondary),
-      );
-
   Widget _pickerTile({
     required Color fieldBg,
     required String? value,
@@ -806,13 +811,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required VoidCallback onTap,
     VoidCallback? onClear,
   }) {
+    final borderCol = context.isDarkMode ? const Color(0xFF24273F) : const Color(0xFFE5E7EB);
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: fieldBg,
           borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: borderCol, width: 1.2),
         ),
         child: Row(
           children: [
@@ -861,19 +868,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             prefixText: prefix,
             prefixStyle: GoogleFonts.inter(color: context.textSecondary),
             hintText: hint,
-            hintStyle: GoogleFonts.inter(color: context.textMuted),
+            hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 13.5),
             filled: true,
             fillColor: bg,
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: context.isDarkMode ? const Color(0xFF24273F) : const Color(0xFFE5E7EB),
+                width: 1.2,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF0085FF), width: 1.5),
+            ),
           ),
           style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
         ),
       ],
     );
   }
+
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(left: 2, bottom: 4),
+        child: Text(
+          text.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.1,
+            color: context.textSecondary.withAlpha(191),
+          ),
+        ),
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────
