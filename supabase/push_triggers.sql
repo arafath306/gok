@@ -73,7 +73,10 @@ BEGIN
     -- IMPORTANT: Replace 'lznxtbnqwaryqkyxfwgy' with your actual project ref if different
     PERFORM net.http_post(
       url := 'https://lznxtbnqwaryqkyxfwgy.supabase.co/functions/v1/send_auto_push',
-      headers := jsonb_build_object('Content-Type', 'application/json'),
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnh0Ym5xd2FyeXFreXhmd2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTk1MjIsImV4cCI6MjA5NjkzNTUyMn0.PGQqRFmGjE5GncIs5Eeqf5fvgxQtDMgvggNLzNEGOJk'
+      ),
       body := payload
     );
   END IF;

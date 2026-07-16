@@ -40,11 +40,22 @@ class GroupedNotification {
   String get displayTime => _relativeTime(sortTime);
 
   static String _relativeTime(DateTime t) {
-    final diff = DateTime.now().difference(t);
-    if (diff.inMinutes < 1) return 'Just now';
+    // Use UTC now to compare against the UTC-parsed server timestamp.
+    // Without this, a 6-hour timezone offset (e.g. BST +6) caused every
+    // notification to show "Just now" on first load.
+    final now = DateTime.now().toUtc();
+    final utcT = t.isUtc ? t : t.toUtc();
+    final diff = now.difference(utcT);
+
+    // Guard against future-dated timestamps (clock skew / DST edge cases)
+    if (diff.isNegative || diff.inSeconds < 60) return 'Just now';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    // For older notifications show the date
+    final day = utcT.toLocal().day.toString().padLeft(2, '0');
+    final month = utcT.toLocal().month.toString().padLeft(2, '0');
+    return '$day/$month';
   }
 }
 
