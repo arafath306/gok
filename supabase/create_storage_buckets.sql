@@ -39,27 +39,18 @@ using ( bucket_id = 'avatars' );
 -- Policy: Allow authenticated users to upload files
 create policy "Allow authenticated uploads to avatars"
 on storage.objects for insert
-with check (
-  bucket_id = 'avatars'
-  and auth.role() = 'authenticated'
-);
+to authenticated
+with check ( bucket_id = 'avatars' );
 
 -- Policy: Allow authenticated users to update (overwrite) their files
 create policy "Allow authenticated updates in avatars"
 on storage.objects for update
-using (
-  bucket_id = 'avatars'
-  and auth.role() = 'authenticated'
-)
-with check (
-  bucket_id = 'avatars'
-  and auth.role() = 'authenticated'
-);
+to authenticated
+using ( bucket_id = 'avatars' )
+with check ( bucket_id = 'avatars' );
 
 -- Policy: Allow authenticated users to delete their files
 create policy "Allow authenticated deletes from avatars"
 on storage.objects for delete
-using (
-  bucket_id = 'avatars'
-  and auth.role() = 'authenticated'
-);
+to authenticated
+using ( bucket_id = 'avatars' );

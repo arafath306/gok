@@ -14,26 +14,7 @@ extension NotificationsExtension on DatabaseService {
 
       final List<dynamic> data = response as List<dynamic>;
       _notifications = data.map((json) {
-        final actorMap = json['actor'] as Map<String, dynamic>?;
-        final actorProfile = actorMap != null 
-            ? Profile.fromJson(actorMap) 
-            : Profile(id: json['actor_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
-
-        // Parse creation time to display relative timing
-        final DateTime createdAtTime = DateTime.parse(json['created_at'] as String);
-        final String relativeTime = _getRelativeTime(createdAtTime);
-
-        return AppNotification(
-          id: json['id'] as String,
-          userId: json['user_id'] as String,
-          actor: actorProfile,
-          type: json['type'] as String,
-          threadId: json['thread_id'] as String?,
-          content: json['content'] as String,
-          createdAt: relativeTime,
-          read: json['is_read'] as bool? ?? false,
-          createdAtDateTime: createdAtTime,
-        );
+        return AppNotification.fromJson(json as Map<String, dynamic>);
       }).toList();
       updateState();
     } catch (e) {

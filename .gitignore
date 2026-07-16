@@ -24,5 +24,6 @@ debug.keystore
 flutter-plugins-dependencies
 # Secrets and local configurations
 lib/core/config/app_config.dart
+supabase/.env.local
 *.log
 scratch/
