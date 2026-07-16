@@ -32,14 +32,10 @@ class AppNotification {
     DateTime? parsedTime;
     if (json['created_at'] != null) {
       try {
-        // Always parse as UTC to avoid local-time vs UTC mismatch
-        // which caused all notifications to appear as "Just now"
-        final raw = DateTime.parse(json['created_at'] as String);
-        // If the parsed DateTime is not already UTC, treat it as UTC
-        parsedTime = raw.isUtc ? raw : DateTime.utc(
-          raw.year, raw.month, raw.day,
-          raw.hour, raw.minute, raw.second, raw.millisecond,
-        );
+        final rawStr = json['created_at'] as String;
+        final hasTimezone = rawStr.endsWith('Z') || rawStr.contains('+') || RegExp(r'-\d{2}:\d{2}$').hasMatch(rawStr);
+        final normalizedStr = hasTimezone ? rawStr : '${rawStr.replaceAll(' ', 'T')}Z';
+        parsedTime = DateTime.parse(normalizedStr).toUtc();
       } catch (e) {
         // ignore: avoid_print
         print("Error in models/notification.dart: $e");
