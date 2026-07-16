@@ -47,6 +47,8 @@ class GroupedNotification {
     final utcT = t.isUtc ? t : t.toUtc();
     final diff = now.difference(utcT);
 
+    debugPrint('Time debug: t=$t (utc: ${t.isUtc}), utcT=$utcT, now=$now, diff=$diff, diffInSecs=${diff.inSeconds}');
+
     // Guard against future-dated timestamps (clock skew / DST edge cases)
     if (diff.isNegative || diff.inSeconds < 60) return 'Just now';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
