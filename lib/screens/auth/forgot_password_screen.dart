@@ -194,7 +194,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   }) {
     final isDark = context.isDarkMode;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
         obscureText: obscureText,
@@ -203,40 +203,51 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         readOnly: readOnly,
         style: GoogleFonts.inter(
           color: context.textPrimary,
-          fontSize: 15,
+          fontSize: 14.5,
+          fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.inter(
             color: context.textMuted,
             fontSize: 14,
+            fontWeight: FontWeight.w400,
           ),
           prefixIcon: Icon(
             prefixIcon,
-            color: context.textMuted,
             size: 20,
           ),
+          prefixIconColor: WidgetStateColor.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return context.authPrimary;
+            }
+            return context.textMuted;
+          }),
           suffixIcon: suffixIcon,
           filled: true,
           fillColor: isDark
-              ? context.mutedBg
-              : context.mutedBg,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: context.border,
-            ),
-          ),
+              ? const Color(0xFF0F172A).withValues(alpha: 0.8)
+              : Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
-              color: context.border,
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              width: 1.2,
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: context.authPrimary, width: 1.5),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: context.authPrimary, width: 1.8),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 1.8),
           ),
         ),
       ),
@@ -643,7 +654,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final isDark = context.isDarkMode;
-    final screenHeight = MediaQuery.of(context).size.height;
     final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // Theme-aware colors
@@ -658,47 +668,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       backgroundColor: bgColor,
       body: Stack(
         children: [
-          // 1. Background gradient
+          // 1. Vector background image
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isDark
-                      ? [
-                          context.authBgDark1,
-                          context.authBgDark2,
-                          context.authBgDark3,
-                        ]
-                      : [
-                          context.authBgLight1,
-                          context.authBgLight2,
-                          context.authBgLight3,
-                        ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ),
-
-          // 2. Animated cloud background
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: screenHeight * 0.50,
-            child: AnimatedBuilder(
-              animation: _cloudController,
-              builder: (context, child) {
-                return CustomPaint(
-                  painter: _AtmosphericBackgroundPainter(
-                    cloudOffset: _cloudController.value,
-                    isDark: isDark,
-                    context: context,
-                  ),
-                );
-              },
+            child: Image.asset(
+              'assets/auth_bg.png',
+              fit: BoxFit.cover,
             ),
           ),
 
@@ -911,83 +885,3 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   }
 }
 
-// Re-use atmospheric painter class
-class _AtmosphericBackgroundPainter extends CustomPainter {
-  final double cloudOffset;
-  final bool isDark;
-  final BuildContext context;
-  _AtmosphericBackgroundPainter({required this.cloudOffset, required this.isDark, required this.context});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final drift = math.sin(cloudOffset * 2 * math.pi);
-    final drift2 = math.cos(cloudOffset * 2 * math.pi);
-
-    final c1 = context.authPrimary;
-    final c2 = context.authSecondary;
-    final c3 = context.authAccent1;
-    final c4 = context.authAccent2;
-
-    final baseAlpha = isDark ? 0.42 : 0.08;
-
-    // Center glow
-    final glowAlpha = baseAlpha + 0.08 * drift;
-    final centerGlow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          c1.withValues(alpha: glowAlpha.clamp(0.0, 1.0)),
-          c2.withValues(alpha: (glowAlpha * 0.5).clamp(0.0, 1.0)),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.5, 1.0],
-      ).createShader(Rect.fromCircle(
-        center: Offset(size.width / 2, size.height * 0.1),
-        radius: size.width * 0.9,
-      ));
-    canvas.drawCircle(Offset(size.width / 2, size.height * 0.1), size.width * 0.9, centerGlow);
-
-    final leftX = size.width * 0.08 + 28.0 * drift;
-    final leftY = size.height * 0.32 + 14.0 * drift2;
-    final leftCloud = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          c3.withValues(alpha: (isDark ? 0.20 : 0.07 + 0.03 * drift).clamp(0.0, 1.0)),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(leftX, leftY),
-        radius: size.width * 0.48,
-      ));
-    canvas.drawCircle(Offset(leftX, leftY), size.width * 0.48, leftCloud);
-
-    final rightX = size.width * 0.92 - 22.0 * drift;
-    final rightY = size.height * 0.22 - 12.0 * drift2;
-    final rightCloud = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          c4.withValues(alpha: (isDark ? 0.17 : 0.06 + 0.02 * drift2).clamp(0.0, 1.0)),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(rightX, rightY),
-        radius: size.width * 0.42,
-      ));
-    canvas.drawCircle(Offset(rightX, rightY), size.width * 0.42, rightCloud);
-
-    final fadeColors = isDark
-        ? [Colors.transparent, context.authBgDark2.withValues(alpha: 0.6), context.authBgDark2]
-        : [Colors.transparent, context.authBgLight2.withValues(alpha: 0.1), context.authBgLight3];
-    final fadeOut = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: fadeColors,
-        stops: const [0.42, 0.75, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), fadeOut);
-  }
-
-  @override
-  bool shouldRepaint(_AtmosphericBackgroundPainter old) =>
-      old.cloudOffset != cloudOffset || old.isDark != isDark;
-}

@@ -146,7 +146,10 @@ class _LoginFormState extends State<LoginForm> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const ForgotPasswordScreen(),
+                  builder: (context) => Theme(
+                    data: AppTheme.lightTheme,
+                    child: const ForgotPasswordScreen(),
+                  ),
                 ),
               );
             },
