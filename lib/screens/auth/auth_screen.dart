@@ -21,6 +21,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   late bool _isSignUp;
+  int _signUpStep = 1;
 
   late AnimationController _cloudController;
 
@@ -28,6 +29,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _isSignUp = widget.initialIsSignUp;
+    _signUpStep = 1;
 
     _cloudController = AnimationController(
       vsync: this,
@@ -82,27 +84,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                           if (!isKeyboardOpen) const SizedBox(height: 28),
                           if (!isKeyboardOpen) const SizedBox(height: 36),
 
-                          if (!_isSignUp) ...[
-                            Text(
-                              "Pigeon",
-                              style: GoogleFonts.poppins(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                color: titleColor,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Messages. Moments. Together.",
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                color: subtitleColor,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 28),
+                          _buildHeader(titleColor, subtitleColor),
                         ],
                       ),
                     ),
@@ -128,13 +110,22 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                       child: _isSignUp
                                           ? SignupForm(
                                               onSwitchToLogin: () {
-                                                setState(() => _isSignUp = false);
+                                                setState(() {
+                                                  _isSignUp = false;
+                                                  _signUpStep = 1;
+                                                });
+                                              },
+                                              onStepChanged: (step) {
+                                                setState(() => _signUpStep = step);
                                               },
                                             )
                                           : LoginForm(
                                               onLoginSuccess: widget.onLoginSuccess,
                                               onSwitchToSignUp: () {
-                                                setState(() => _isSignUp = true);
+                                                setState(() {
+                                                  _isSignUp = true;
+                                                  _signUpStep = 1;
+                                                });
                                               },
                                             ),
                                     ),
@@ -158,5 +149,102 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   },
 ),
 );
+  }
+
+  Widget _buildHeader(Color titleColor, Color subtitleColor) {
+    if (!_isSignUp) {
+      return Column(
+        children: [
+          Text(
+            "Pigeon",
+            style: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: titleColor,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Messages. Moments. Together.",
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: subtitleColor,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
+      );
+    }
+
+    String titlePart1 = "";
+    String titlePart2 = "";
+    String subtitle = "";
+
+    switch (_signUpStep) {
+      case 1:
+        titlePart1 = "Connect\n";
+        titlePart2 = "Beyond Borders";
+        subtitle = "Meet new people and share\nevery moment that matters.";
+        break;
+      case 2:
+        titlePart1 = "Your Privacy\n";
+        titlePart2 = "Comes First";
+        subtitle = "Secure your account with\nstrong protection.";
+        break;
+      case 3:
+      default:
+        titlePart1 = "Ready to\n";
+        titlePart2 = "Join Pigeon?";
+        subtitle = "One last step and you're\nall set to go.";
+        break;
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8.0, right: 100.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: titlePart1,
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: titleColor,
+                      height: 1.2,
+                    ),
+                  ),
+                  TextSpan(
+                    text: titlePart2,
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: context.authPrimary,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 12.5,
+                color: subtitleColor,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

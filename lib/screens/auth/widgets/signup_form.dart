@@ -11,10 +11,12 @@ import 'package:intl/intl.dart';
 
 class SignupForm extends StatefulWidget {
   final VoidCallback onSwitchToLogin;
+  final ValueChanged<int>? onStepChanged;
 
   const SignupForm({
     super.key,
     required this.onSwitchToLogin,
+    this.onStepChanged,
   });
 
   @override
@@ -303,6 +305,7 @@ class _SignupFormState extends State<SignupForm> {
               return;
             }
             setState(() => _signUpStep = 2);
+            widget.onStepChanged?.call(2);
           },
         ),
         const SizedBox(height: 16),
@@ -406,6 +409,7 @@ class _SignupFormState extends State<SignupForm> {
               return;
             }
             setState(() => _signUpStep = 3);
+            widget.onStepChanged?.call(3);
           },
         ),
         const SizedBox(height: 16),
