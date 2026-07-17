@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:math' as math;
 import '../../utils/app_theme.dart';
 import 'widgets/auth_glass_card.dart';
 import 'widgets/login_form.dart';
@@ -23,15 +22,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   late bool _isSignUp;
 
-  // ── Animation Controllers ──────────────────────────────────────────────────
   late AnimationController _cloudController;
-  late AnimationController _floatController;
-  late AnimationController _glowController;
-  late AnimationController _sparkleController;
-
-  late Animation<double> _floatAnimation;
-  late Animation<double> _glowAnimation;
-  // ──────────────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
@@ -42,82 +33,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat();
-
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    );
-    _floatAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
-      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
-    );
-
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
-    _glowAnimation = Tween<double>(begin: 0.88, end: 1.12).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-
-    _sparkleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat();
   }
 
   @override
   void dispose() {
     _cloudController.dispose();
-    _floatController.dispose();
-    _glowController.dispose();
-    _sparkleController.dispose();
     super.dispose();
-  }
-
-  List<Widget> _buildSparkles(double t) {
-    const positions = [
-      Offset(108, 6),
-      Offset(192, 40),
-      Offset(210, 105),
-      Offset(188, 172),
-      Offset(108, 208),
-      Offset(28, 172),
-      Offset(6, 105),
-      Offset(22, 40),
-    ];
-
-    return positions.asMap().entries.map((entry) {
-      final i = entry.key;
-      final pos = entry.value;
-      final scaledX = pos.dx * 125 / 215;
-      final scaledY = pos.dy * 125 / 215;
-      final phase = ((t + i / positions.length) % 1.0);
-      final opacity = math.sin(phase * math.pi).clamp(0.0, 1.0);
-      final dotSize = (i % 3 == 0) ? 2.5 : 1.5;
-
-      return Positioned(
-        left: scaledX,
-        top: scaledY,
-        child: Opacity(
-          opacity: opacity,
-          child: Container(
-            width: dotSize,
-            height: dotSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: context.authPrimary,
-              boxShadow: [
-                BoxShadow(
-                  color: context.authPrimary.withValues(alpha: opacity * 0.8),
-                  blurRadius: 5,
-                  spreadRadius: 1.5,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }).toList();
   }
 
   @override
@@ -136,11 +57,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             backgroundColor: bgColor,
             body: Stack(
               children: [
-                // 1. Vector background image
                 Positioned.fill(
-                  child: Image.asset(
-                    'assets/auth_bg.png',
-                    fit: BoxFit.cover,
+                  child: Opacity(
+                    opacity: 0.85,
+                    child: Image.asset(
+                      'assets/auth_bg.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
 
@@ -156,88 +79,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Column(
                         children: [
-                          // Wrap back button and logo in a Stack to save vertical space
-                          SizedBox(
-                            height: isKeyboardOpen ? 48 : 125,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                // HERO: animated logo + sparkles (centered)
-                                if (!isKeyboardOpen)
-                                  Align(
-                                    alignment: Alignment.center,
-                                    child: AnimatedBuilder(
-                                      animation: Listenable.merge([
-                                        _floatController,
-                                        _glowController,
-                                        _sparkleController,
-                                      ]),
-                                      builder: (context, child) {
-                                        return Transform.translate(
-                                          offset: Offset(0, _floatAnimation.value * 0.4),
-                                          child: SizedBox(
-                                            height: 125,
-                                            width: 125,
-                                            child: Stack(
-                                              clipBehavior: Clip.none,
-                                              alignment: Alignment.center,
-                                              children: [
-                                                // Glow ring
-                                                Transform.scale(
-                                                  scale: _glowAnimation.value,
-                                                  child: Container(
-                                                    width: 110,
-                                                    height: 110,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                          gradient: RadialGradient(
-                                                              colors: [
-                                                                context.authPrimary.withValues(alpha: 0.16),
-                                                                context.authSecondary.withValues(alpha: 0.06),
-                                                                Colors.transparent,
-                                                              ],
-                                                              stops: const [0.0, 0.5, 1.0],
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      // Ring stroke
-                                                      Transform.scale(
-                                                        scale: _glowAnimation.value * 0.97,
-                                                        child: Container(
-                                                          width: 104,
-                                                          height: 104,
-                                                          decoration: BoxDecoration(
-                                                            shape: BoxShape.circle,
-                                                            border: Border.all(
-                                                              color: context.authPrimary.withValues(alpha: 0.12),
-                                                              width: 1.2,
-                                                            ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                // App logo
-                                                ClipOval(
-                                                  child: Image.asset(
-                                                    'assets/logo_transparent.png',
-                                                    width: 90,
-                                                    height: 90,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                                // Sparkles
-                                                ..._buildSparkles(_sparkleController.value),
-                                              ],
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
+                          if (!isKeyboardOpen) const SizedBox(height: 28),
+                          if (!isKeyboardOpen) const SizedBox(height: 36),
 
                           if (!_isSignUp) ...[
                             Text(
@@ -259,7 +102,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                               ),
                             ),
                           ],
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 28),
                         ],
                       ),
                     ),

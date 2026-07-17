@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'dart:math' as math;
 import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';
 
@@ -23,49 +22,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  // ── Animation Controllers ──────────────────────────────────────────────────
-  late AnimationController _cloudController;   // drifting clouds
-  late AnimationController _floatController;   // pigeon bobbing
-  late AnimationController _glowController;    // glow ring pulse
-  late AnimationController _sparkleController; // star twinkle
-
-  late Animation<double> _floatAnimation;
-  late Animation<double> _glowAnimation;
-  // ──────────────────────────────────────────────────────────────────────────
-
   @override
   void initState() {
     super.initState();
-
-    // Drifting clouds (10s cycle)
-    _cloudController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
-
-    // Mascot float (3s, up-down)
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    );
-    _floatAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
-      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
-    );
-
-    // Glow ring pulse (2.2s)
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
-    _glowAnimation = Tween<double>(begin: 0.88, end: 1.12).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-
-    // Sparkle twinkling (1.8s)
-    _sparkleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat();
   }
 
   @override
@@ -74,10 +33,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     _codeController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _cloudController.dispose();
-    _floatController.dispose();
-    _glowController.dispose();
-    _sparkleController.dispose();
     super.dispose();
   }
 
@@ -227,14 +182,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           filled: true,
           fillColor: isDark
               ? const Color(0xFF0F172A).withValues(alpha: 0.8)
-              : Colors.white,
+              : Colors.white.withValues(alpha: 0.90),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              width: 1.2,
+              color: isDark
+                  ? const Color(0xFF334155).withValues(alpha: 0.7)
+                  : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+              width: 1.0,
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -317,51 +274,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     );
   }
 
-  List<Widget> _buildSparkles(double t) {
-    const positions = [
-      Offset(108, 6),
-      Offset(192, 40),
-      Offset(210, 105),
-      Offset(188, 172),
-      Offset(108, 208),
-      Offset(28, 172),
-      Offset(6, 105),
-      Offset(22, 40),
-    ];
-
-    return positions.asMap().entries.map((entry) {
-      final i = entry.key;
-      final pos = entry.value;
-      final scaledX = pos.dx * 85 / 215;
-      final scaledY = pos.dy * 85 / 215;
-      final phase = ((t + i / positions.length) % 1.0);
-      final opacity = math.sin(phase * math.pi).clamp(0.0, 1.0);
-      final dotSize = (i % 3 == 0) ? 2.5 : 1.5;
-
-      return Positioned(
-        left: scaledX,
-        top: scaledY,
-        child: Opacity(
-          opacity: opacity,
-          child: Container(
-            width: dotSize,
-            height: dotSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: context.authPrimary,
-              boxShadow: [
-                BoxShadow(
-                  color: context.authPrimary.withValues(alpha: opacity * 0.8),
-                  blurRadius: 5,
-                  spreadRadius: 1.5,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }).toList();
-  }
 
   Widget _buildStepIndicator() {
     return Column(
@@ -670,9 +582,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         children: [
           // 1. Vector background image
           Positioned.fill(
-            child: Image.asset(
-              'assets/auth_bg.png',
-              fit: BoxFit.cover,
+            child: Opacity(
+              opacity: 0.85,
+              child: Image.asset(
+                'assets/auth_bg.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
 
@@ -720,72 +635,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
 
                       // Mascot (hidden if keyboard is visible)
                       if (!isKeyboardOpen) ...[
-                        AnimatedBuilder(
-                          animation: Listenable.merge([
-                            _floatController,
-                            _glowController,
-                            _sparkleController,
-                          ]),
-                          builder: (context, child) {
-                            return Transform.translate(
-                              offset: Offset(0, _floatAnimation.value * 0.4),
-                              child: Center(
-                                child: SizedBox(
-                                  height: 85,
-                                  width: 85,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Transform.scale(
-                                        scale: _glowAnimation.value,
-                                        child: Container(
-                                          width: 76,
-                                          height: 76,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            gradient: RadialGradient(
-                                              colors: [
-                                                context.authPrimary.withValues(alpha: isDark ? 0.32 : 0.16),
-                                                context.authSecondary.withValues(alpha: isDark ? 0.14 : 0.06),
-                                                Colors.transparent,
-                                              ],
-                                              stops: const [0.0, 0.5, 1.0],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Transform.scale(
-                                        scale: _glowAnimation.value * 0.97,
-                                        child: Container(
-                                          width: 72,
-                                          height: 72,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: context.authPrimary.withValues(alpha: isDark ? 0.2 : 0.12),
-                                              width: 1.2,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      ClipOval(
-                                        child: Image.asset(
-                                          'assets/logo_transparent.png',
-                                          width: 62,
-                                          height: 62,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      ..._buildSparkles(_sparkleController.value),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 24),
                         Text(
                           "Pigeon",
                           style: GoogleFonts.poppins(
@@ -862,6 +712,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                     padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
                     child: Column(
                       children: [
+                        if (!isKeyboardOpen) const SizedBox(height: 16),
                         _buildGlassCard(
                           child: _step == 1
                               ? _buildStep1()

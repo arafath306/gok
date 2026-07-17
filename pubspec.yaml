@@ -60,8 +60,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/auth_bg.png
-    - assets/logo_transparent.png
-    - assets/onboarding_illus_4.png
+    - assets/onboarding_bg.png
+    - assets/onboarding_bg_3.png
     - assets/dak_icon.png
     - assets/google_logo.png
     - assets/sounds/pop.mp3

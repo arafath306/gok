@@ -1,154 +1,472 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../widgets/dak_logo.dart';
 
-class OnboardingScreen extends StatelessWidget {
+class OnboardingScreen extends StatefulWidget {
   final void Function(bool startSignUp) onFinish;
 
   const OnboardingScreen({super.key, required this.onFinish});
 
   @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  int _currentStep = 0; // 0 for intro screen, 1 for globe options screen
+
+  void _nextStep() {
+    setState(() {
+      _currentStep = 1;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: _currentStep == 1 ? Brightness.light : Brightness.dark,
     ));
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F8FD),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SafeArea(
-            child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 24),
+    return PopScope(
+      canPop: _currentStep == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_currentStep == 1) {
+          setState(() {
+            _currentStep = 0;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: _currentStep == 1 ? const Color(0xFF041C15) : Colors.white,
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (child, animation) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          child: _currentStep == 1 ? _buildSecondScreen() : _buildFirstScreen(),
+        ),
+      ),
+    );
+  }
 
-            // ── Logo: app logo clipped to circle (no white-edge issue) ────────
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0x501B3A6B),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+  // ── First Screen (Intro) ───────────────────────────────────────────────────
+  Widget _buildFirstScreen() {
+    return Stack(
+      key: const ValueKey('first_screen'),
+      children: [
+        // Vector background image
+        Positioned.fill(
+          child: Image.asset(
+            'assets/onboarding_bg.png',
+            fit: BoxFit.cover,
+          ),
+        ),
+
+        // Content Overlay
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 28),
+
+                  // App Logo
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0x241B3A6B),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: DakLogo(size: 80),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Titles
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          'Welcome to Pigeon',
+                          style: GoogleFonts.inter(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF0F172A),
+                            letterSpacing: -0.8,
+                            height: 1.15,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          'Your community, instantly connected',
+                          style: GoogleFonts.inter(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w400,
+                              color: const Color(0xFF64748B),
+                              height: 1.3),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const Spacer(),
+
+                  // Navigation Controls
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Dot indicators (2 dots for 2 main onboarding screen steps)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(2, (index) {
+                            final isActive = _currentStep == index;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 260),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: isActive ? 18 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                color: isActive
+                                    ? const Color(0xFF1E824C)
+                                    : const Color(0xFF1E824C).withValues(alpha: 0.24),
+                              ),
+                            );
+                          }),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Gradient Continue button
+                        _GradientButton(
+                          label: 'Continue >',
+                          onTap: _nextStep,
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        // Made by NGST
+                        Text(
+                          'Made by NGST',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF94A3B8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/logo_transparent.png',
-                  width: 84,
-                  height: 84,
-                  fit: BoxFit.cover,
-                ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Second Screen (Options Selection Card) ─────────────────────────────────
+  Widget _buildSecondScreen() {
+    return Stack(
+      key: const ValueKey('second_screen'),
+      children: [
+        // Dark green globe background image
+        Positioned.fill(
+          child: Opacity(
+            opacity: 0.85,
+            child: Image.asset(
+              'assets/onboarding_bg_3.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+
+        // Gradient overlay for better text contrast at top
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF041C15).withValues(alpha: 0.75),
+                  Colors.transparent,
+                  Colors.transparent,
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
+          ),
+        ),
 
-            const SizedBox(height: 18),
-
-            // ── Title ─────────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                'Welcome to Pigeon',
-                style: GoogleFonts.inter(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF0F172A),
-                  letterSpacing: -0.8,
-                  height: 1.15,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            // ── Subtitle ──────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                'Your community, instantly connected',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: const Color(0xFF64748B),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // ── Graphic: Expanded takes all available space ─────────────────
-            // BoxFit.cover fills full width (portrait image → width is larger
-            // scale factor than height → crops top/bottom background only)
-            Expanded(
-              child: Image.asset(
-                'assets/onboarding_illus_4.png',
-                width: double.infinity,
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ── Buttons — always anchored at bottom ───────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+        // Content
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SafeArea(
+              bottom: false, // Card spans to the bottom of screen
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Continue — gradient
-                  _GradientButton(
-                    label: 'Continue',
-                    onTap: () => onFinish(false),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Sign Up — white + border
-                  _OutlineButton(
-                    label: 'Sign Up',
-                    onTap: () => onFinish(true),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Log In — white + border
-                  _OutlineButton(
-                    label: 'Log In',
-                    onTap: () => onFinish(false),
-                  ),
-
-                  const SizedBox(height: 12),
-                  // Made by NGST — centered
-                  Text(
-                    'Made by NGST',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF94A3B8),
+                  // Circular Back Button
+                  Padding(
+                    padding: const EdgeInsets.only(left: 20, top: 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                        onPressed: () {
+                          setState(() {
+                            _currentStep = 0;
+                          });
+                        },
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
+
+                  // Header Texts
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Join millions\naround the world',
+                          style: GoogleFonts.inter(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            height: 1.25,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Green capsule divider
+                        Container(
+                          width: 48,
+                          height: 5.5,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2ECC71),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Text(
+                          'Connect, share and grow with\npeople who matter.',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white.withValues(alpha: 0.72),
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Bottom white card with options
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 24,
+                          offset: Offset(0, -6),
+                        ),
+                      ],
+                    ),
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      28,
+                      24,
+                      MediaQuery.of(context).padding.bottom + 16,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'What would you like to do?',
+                          style: GoogleFonts.inter(
+                            fontSize: 18.5,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF0F172A),
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Option 1: Create Account
+                        _buildOptionCard(
+                          title: 'Create Account',
+                          subtitle: 'Sign up and start your journey with Pigeon.',
+                          icon: Icons.person_add_rounded,
+                          iconGradient: const [Color(0xFF1E824C), Color(0xFF2ECC71)],
+                          titleColor: const Color(0xFF1E824C),
+                          bgColor: const Color(0xFF1E824C).withValues(alpha: 0.05),
+                          borderColor: const Color(0xFF1E824C).withValues(alpha: 0.12),
+                          onTap: () => widget.onFinish(true),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Option 2: Log In
+                        _buildOptionCard(
+                          title: 'Log In',
+                          subtitle: 'Already have an account? Log in to continue.',
+                          icon: Icons.person_rounded,
+                          iconGradient: const [Color(0xFF1A365D), Color(0xFF2B6CB0)],
+                          titleColor: const Color(0xFF1A365D),
+                          bgColor: const Color(0xFF1A365D).withValues(alpha: 0.05),
+                          borderColor: const Color(0xFF1A365D).withValues(alpha: 0.12),
+                          onTap: () => widget.onFinish(false),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Security Footer
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.verified_user_outlined,
+                              color: Color(0xFF1E824C),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Secure. Private. Yours.',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildOptionCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required List<Color> iconGradient,
+    required Color titleColor,
+    required Color bgColor,
+    required Color borderColor,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.2),
       ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: iconGradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: titleColor,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: titleColor,
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-// ── Gradient Button ───────────────────────────────────────────────────────────
 class _GradientButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -161,14 +479,14 @@ class _GradientButton extends StatelessWidget {
       height: 52,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF5B7FFF), Color(0xFF7B5FFF)],
+          colors: [Color(0xFF1E824C), Color(0xFF2ECC71)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF5B7FFF).withValues(alpha: 0.28),
+            color: const Color(0xFF1E824C).withValues(alpha: 0.24),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -178,52 +496,15 @@ class _GradientButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           child: Center(
             child: Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
                 letterSpacing: 0.2,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Outline Button ────────────────────────────────────────────────────────────
-class _OutlineButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  const _OutlineButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDDE4EF), width: 1.5),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Center(
-            child: Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF0F172A),
               ),
             ),
           ),
