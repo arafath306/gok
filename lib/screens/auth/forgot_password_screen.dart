@@ -47,8 +47,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
-    )..repeat(reverse: true);
-    _floatAnimation = Tween<double>(begin: -8.0, end: 8.0).animate(
+    );
+    _floatAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
       CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
 
