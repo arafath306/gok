@@ -93,7 +93,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
               expandedHeight: 175,
               pinned: true,
               floating: true,
-              backgroundColor: context.scaffoldBg,
+              backgroundColor: _isCollapsed ? context.scaffoldBg : Colors.transparent,
               surfaceTintColor: Colors.transparent,
               elevation: 0,
               leading: IconButton(
