@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/general_settings_provider.dart';
+import '../../services/database_service.dart';
 import '../../utils/app_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -199,15 +200,17 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                         isBlocked
                                             ? OutlinedButton(
                                                 onPressed: () async {
+                                                  final db = Provider.of<DatabaseService>(context, listen: false);
+                                                  final messenger = ScaffoldMessenger.of(context);
+                                                  final primaryAccent = context.primaryAccent;
                                                   await provider.unblockAccount(user['id']!);
-                                                  if (context.mounted) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text('Unblocked @${user['username']}'),
-                                                        backgroundColor: context.primaryAccent,
-                                                      ),
-                                                    );
-                                                  }
+                                                  await db.fetchBlockedMutedLists();
+                                                  messenger.showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('Unblocked @${user['username']}'),
+                                                      backgroundColor: primaryAccent,
+                                                    ),
+                                                  );
                                                 },
                                                 style: OutlinedButton.styleFrom(
                                                   side: BorderSide(color: context.border),
@@ -227,15 +230,17 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                             : ElevatedButton(
                                                 onPressed: () async {
                                                   try {
+                                                    final db = Provider.of<DatabaseService>(context, listen: false);
+                                                    final messenger = ScaffoldMessenger.of(context);
+                                                    final primaryAccent = context.primaryAccent;
                                                     await provider.blockUserById(user['id']!);
-                                                    if (context.mounted) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text('Blocked @${user['username']}'),
-                                                          backgroundColor: context.primaryAccent,
-                                                        ),
-                                                      );
-                                                    }
+                                                    await db.fetchBlockedMutedLists();
+                                                    messenger.showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('Blocked @${user['username']}'),
+                                                        backgroundColor: primaryAccent,
+                                                      ),
+                                                    );
                                                   } catch (e) {
                                                     if (context.mounted) {
                                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -337,15 +342,17 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                             ),
                                             OutlinedButton(
                                               onPressed: () async {
+                                                final db = Provider.of<DatabaseService>(context, listen: false);
+                                                final messenger = ScaffoldMessenger.of(context);
+                                                final primaryAccent = context.primaryAccent;
                                                 await provider.unblockAccount(user['id']!);
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('Unblocked @${user['username']}'),
-                                                      backgroundColor: context.primaryAccent,
-                                                    ),
-                                                  );
-                                                }
+                                                await db.fetchBlockedMutedLists();
+                                                messenger.showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('Unblocked @${user['username']}'),
+                                                    backgroundColor: primaryAccent,
+                                                  ),
+                                                );
                                               },
                                               style: OutlinedButton.styleFrom(
                                                 side: BorderSide(color: context.border),

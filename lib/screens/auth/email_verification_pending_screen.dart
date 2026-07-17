@@ -77,7 +77,7 @@ class _EmailVerificationPendingScreenState extends State<EmailVerificationPendin
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final isDark = context.isDarkMode;
-    final email = authService.currentUser?.email ?? 'your email';
+    final email = widget.email ?? authService.currentUser?.email ?? 'your email';
 
     final bgColor = isDark ? context.authBgDark2 : context.authBgLight1;
     final cardBg = isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(5);
@@ -86,20 +86,24 @@ class _EmailVerificationPendingScreenState extends State<EmailVerificationPendin
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark 
-              ? [context.authBgDark2, context.authBgDark4] 
-              : [context.authBgLight1, Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      body: Stack(
+        children: [
+          // Background image
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.70,
+              child: Image.asset(
+                'assets/auth_bg.png',
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Container(
+
+          // Content
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Container(
               padding: const EdgeInsets.all(32.0),
               decoration: BoxDecoration(
                 color: cardBg,
@@ -259,6 +263,7 @@ class _EmailVerificationPendingScreenState extends State<EmailVerificationPendin
             ),
           ),
         ),
+        ],
       ),
     );
   }

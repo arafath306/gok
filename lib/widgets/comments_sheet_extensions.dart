@@ -562,9 +562,21 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
           'Block @$username?',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18, color: context.textPrimary),
         ),
-        content: Text(
-          'They will not be able to follow you, see your posts, or contact you on Pigeon.',
-          style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary, height: 1.4),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('When you block someone:',
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: context.textPrimary)),
+            const SizedBox(height: 8),
+            _blockBullet(ctx, '• They cannot message or follow you'),
+            _blockBullet(ctx, '• You will unfollow each other'),
+            _blockBullet(ctx, '• They won\'t see your posts'),
+            _blockBullet(ctx, '• You can unblock anytime from Settings'),
+          ],
         ),
         actions: [
           TextButton(
@@ -580,6 +592,7 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
               final settingsProvider = Provider.of<GeneralSettingsProvider>(ctx, listen: false);
               await settingsProvider.blockUserById(author.id);
               await widget.dbService.fetchBlockedMutedLists();
+              await widget.dbService.fetchFollowingList();
               if (ctx.mounted) {
                 _showSuccessSnackBar(ctx, '@$username has been blocked');
               }
@@ -599,10 +612,20 @@ class CommentQuickActionsSheetState extends State<CommentQuickActionsSheet>
     );
   }
 
+  Widget _blockBullet(BuildContext ctx, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(text,
+          style: GoogleFonts.inter(
+              fontSize: 13, color: context.textSecondary, height: 1.4)),
+    );
+  }
+
   Future<void> _unblockUser(BuildContext ctx, String targetId, String username) async {
     final settingsProvider = Provider.of<GeneralSettingsProvider>(ctx, listen: false);
     await settingsProvider.unblockAccount(targetId);
     await widget.dbService.fetchBlockedMutedLists();
+    await widget.dbService.fetchFollowingList();
     if (ctx.mounted) {
       _showSuccessSnackBar(ctx, '@$username has been unblocked');
     }

@@ -11,6 +11,7 @@ import 'chat_settings_screen.dart';
 import 'member_search_sheet.dart';
 import '../../widgets/chat_shimmer.dart';
 
+import 'widgets/user_actions_sheet.dart';
 import '../../services/general_settings_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -111,6 +112,25 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> with Automati
 
   Future<void> _handleRefresh() async {
     await _loadChats();
+  }
+
+  void _showUserActions(BuildContext ctx, Profile profile, int chatIndex) {
+    showModalBottomSheet(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return UserActionsSheet(
+          profile: profile,
+          onChatRemoved: () {
+            setState(() {
+              _chats.removeAt(chatIndex);
+              final myId = Supabase.instance.client.auth.currentUser?.id;
+              if (myId != null) _globalChatsCache[myId] = _chats;
+            });
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -238,9 +258,9 @@ class _MessengerHomeScreenState extends State<MessengerHomeScreen> with Automati
                             context,
                             MaterialPageRoute(builder: (_) => ChatScreen(otherUser: profile)),
                           );
-                          // Refresh inbox silently after returning from chat
                           _loadChats(silent: _chats.isNotEmpty);
                         },
+                        onLongPress: () => _showUserActions(context, profile, index),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         leading: Stack(
                           children: [

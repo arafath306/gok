@@ -987,6 +987,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     await settings.blockUserById(widget.userId!);
                     if (!mounted) return;
                     db.fetchBlockedMutedLists();
+                    db.fetchFollowingList();
                     db.fetchFeed();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Account has been blocked.', style: GoogleFonts.inter())),

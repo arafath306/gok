@@ -562,28 +562,45 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     );
   }
 
+  Widget _buildCardContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildGlassCard(
+          child: _step == 1
+              ? _buildStep1()
+              : _step == 2
+                  ? _buildStep2()
+                  : _step == 3
+                      ? _buildStep3()
+                      : _buildStep4(),
+        ),
+        const SizedBox(height: 32),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final isDark = context.isDarkMode;
-    final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // Theme-aware colors
     final bgColor = context.scaffoldBg;
-    final titleColor = context.textPrimary;
     final subtitleColor = context.textSecondary;
     final backBtnBg = context.customCardBg;
     final backBtnBorder = context.border;
     final backBtnIconColor = context.textPrimary;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: bgColor,
       body: Stack(
         children: [
           // 1. Vector background image
           Positioned.fill(
             child: Opacity(
-              opacity: 0.85,
+              opacity: 0.70,
               child: Image.asset(
                 'assets/auth_bg.png',
                 fit: BoxFit.cover,
@@ -593,141 +610,105 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
 
           // 3. Content
           SafeArea(
-            child: Column(
-              children: [
-                // ── Top: Back button & Mascot ────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 24),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: backBtnBg,
-                            border: Border.all(color: backBtnBorder),
-                            boxShadow: isDark
-                                ? []
-                                : [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.06),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                          ),
-                          child: IconButton(
-                            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                            padding: const EdgeInsets.all(6),
-                            icon: Icon(Icons.arrow_back, color: backBtnIconColor, size: 18),
-                            onPressed: () {
-                              if (_step > 1 && _step < 4) {
-                                setState(() => _step--);
-                              } else {
-                                Navigator.of(context).pop();
-                              }
-                            },
-                          ),
-                        ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Top: Back button ────────────────────────────────
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: backBtnBg,
+                        border: Border.all(color: backBtnBorder),
+                        boxShadow: isDark
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                       ),
-
-                      // Mascot (hidden if keyboard is visible)
-                      if (!isKeyboardOpen) ...[
-                        const SizedBox(height: 24),
-                        Text(
-                          "Pigeon",
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: titleColor,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "Messages. Moments. Together.",
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: subtitleColor,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      ],
-
-                      // Titles & Progress indicator (hidden on success step)
-                      if (_step < 4) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          "Reset Password",
-                          style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: context.authPrimary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _step == 1
-                              ? "Enter your email to request a reset"
-                              : _step == 2
-                                  ? "Enter the code sent to your email"
-                                  : "Type your new strong password",
-                          style: GoogleFonts.inter(fontSize: 13, color: subtitleColor),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 6),
-                        _buildStepIndicator(),
-                      ],
-
-                      // Error Banner
-                      if (authService.errorMessage != null && _step < 4)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(10),
-                          margin: const EdgeInsets.only(top: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.red[900]!.withValues(alpha: isDark ? 0.3 : 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.red[700]!.withValues(alpha: isDark ? 0.5 : 0.35)),
-                          ),
-                          child: Text(
-                            authService.errorMessage!,
-                            style: GoogleFonts.inter(
-                              color: isDark ? Colors.red[100] : Colors.red[900],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-                // ── Bottom: Form card ────────────────────────────────────────
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: isKeyboardOpen ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
-                    child: Column(
-                      children: [
-                        if (!isKeyboardOpen) const SizedBox(height: 16),
-                        _buildGlassCard(
-                          child: _step == 1
-                              ? _buildStep1()
-                              : _step == 2
-                                  ? _buildStep2()
-                                  : _step == 3
-                                      ? _buildStep3()
-                                      : _buildStep4(),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+                      child: IconButton(
+                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                        padding: const EdgeInsets.all(6),
+                        icon: Icon(Icons.arrow_back, color: backBtnIconColor, size: 18),
+                        onPressed: () {
+                          if (_step > 1 && _step < 4) {
+                            setState(() => _step--);
+                          } else {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
+
+
+                  // Titles & Progress indicator (hidden on success step)
+                  if (_step < 4) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      "Reset Password",
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: context.authPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _step == 1
+                          ? "Enter your email to request a reset"
+                          : _step == 2
+                              ? "Enter the code sent to your email"
+                              : "Type your new strong password",
+                      style: GoogleFonts.inter(fontSize: 13, color: subtitleColor),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildStepIndicator(),
+                  ],
+
+                  // Error Banner
+                  if (authService.errorMessage != null && _step < 4) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red[900]!.withValues(alpha: isDark ? 0.3 : 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.red[700]!.withValues(alpha: isDark ? 0.5 : 0.35)),
+                      ),
+                      child: Text(
+                        authService.errorMessage!,
+                        style: GoogleFonts.inter(
+                          color: isDark ? Colors.red[100] : Colors.red[900],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Form card
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: _buildCardContent(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

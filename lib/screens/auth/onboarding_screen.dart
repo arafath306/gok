@@ -193,7 +193,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         // Dark green globe background image
         Positioned.fill(
           child: Opacity(
-            opacity: 0.85,
+            opacity: 0.70,
             child: Image.asset(
               'assets/onboarding_bg_3.png',
               fit: BoxFit.cover,

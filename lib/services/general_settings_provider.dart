@@ -413,7 +413,7 @@ class GeneralSettingsProvider with ChangeNotifier {
       await _supabase.from('blocks').upsert({
         'blocker_id': uid,
         'blocked_id': targetId,
-      });
+      }, onConflict: 'blocker_id, blocked_id');
 
       // Update local cache list
       _blockedAccounts.removeWhere((account) => account['id'] == targetId);
@@ -504,13 +504,29 @@ class GeneralSettingsProvider with ChangeNotifier {
     if (uid.isEmpty || targetId == uid) return;
 
     try {
-      // Add to database
+      // 1. Add block record
       await _supabase.from('blocks').upsert({
         'blocker_id': uid,
         'blocked_id': targetId,
-      });
+      }, onConflict: 'blocker_id, blocked_id');
 
-      // Update local settings state
+      // 2. Remove follows in BOTH directions (standard block behavior)
+      //    - I unfollow them
+      //    - They unfollow me
+      await Future.wait([
+        _supabase
+            .from('follows')
+            .delete()
+            .eq('follower_id', uid)
+            .eq('following_id', targetId),
+        _supabase
+            .from('follows')
+            .delete()
+            .eq('follower_id', targetId)
+            .eq('following_id', uid),
+      ]);
+
+      // 3. Refresh local state
       await fetchSettings();
     } catch (e) {
       debugPrint('[GeneralSettings] Block user by ID error: $e');

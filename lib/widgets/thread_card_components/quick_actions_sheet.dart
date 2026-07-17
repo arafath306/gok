@@ -287,14 +287,28 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
+        backgroundColor: context.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Block @$username?',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18,
+              color: context.textPrimary),
         ),
-        content: Text(
-          'They will not be able to follow you, see your posts, or contact you on Pigeon.',
-          style: GoogleFonts.inter(fontSize: 14, color: context.textSecondary, height: 1.4),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('When you block someone:',
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: context.textPrimary)),
+            const SizedBox(height: 8),
+            _bullet(ctx, '• They cannot message or follow you'),
+            _bullet(ctx, '• You will unfollow each other'),
+            _bullet(ctx, '• They won\'t see your posts'),
+            _bullet(ctx, '• You can unblock anytime from Settings'),
+          ],
         ),
         actions: [
           TextButton(
@@ -306,9 +320,11 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(dialogCtx);
-              final settingsProvider = Provider.of<GeneralSettingsProvider>(ctx, listen: false);
+              final settingsProvider =
+                  Provider.of<GeneralSettingsProvider>(ctx, listen: false);
               await settingsProvider.blockUserById(widget.post.userId);
               await widget.dbService.fetchBlockedMutedLists();
+              await widget.dbService.fetchFollowingList();
               await widget.dbService.fetchFeed();
               if (ctx.mounted) {
                 _showSuccessSnackBar(ctx, '@$username has been blocked');
@@ -328,6 +344,16 @@ class _QuickActionsSheetState extends State<_QuickActionsSheet>
       ),
     );
   }
+
+  Widget _bullet(BuildContext ctx, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(text,
+          style: GoogleFonts.inter(
+              fontSize: 13, color: context.textSecondary, height: 1.4)),
+    );
+  }
+
 
   void _showReportSheet(BuildContext ctx) {
     final reasons = [
