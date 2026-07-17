@@ -201,7 +201,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen>
                 ),
               ),
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
+                preferredSize: const Size.fromHeight(48.8),
                 child: Column(
                   children: [
                     TabBar(
