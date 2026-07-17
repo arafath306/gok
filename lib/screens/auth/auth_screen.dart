@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 import '../../utils/app_theme.dart';
-import 'widgets/auth_background_painter.dart';
 import 'widgets/auth_glass_card.dart';
 import 'widgets/login_form.dart';
 import 'widgets/signup_form.dart';
@@ -123,56 +122,27 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDarkMode;
     final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
-    // Theme-aware colors
-    final bgColor = context.scaffoldBg;
-    final titleColor = context.textPrimary;
-    final subtitleColor = context.textSecondary;
+    return Theme(
+      data: AppTheme.lightTheme,
+      child: Builder(
+        builder: (context) {
+          final bgColor = context.scaffoldBg;
+          final titleColor = context.textPrimary;
+          final subtitleColor = context.textSecondary;
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: Stack(
-        children: [
-          // 1. Animated atmospheric background
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isDark
-                      ? [
-                          context.authBgDark1,
-                          context.authBgDark2,
-                          context.authBgDark3,
-                        ]
-                      : [
-                          context.authBgLight1,
-                          context.authBgLight2,
-                          context.authBgLight3,
-                        ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ),
-
-          // 2. Animated cloud painter
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _cloudController,
-              builder: (context, child) {
-                return CustomPaint(
-                  painter: AtmosphericBackgroundPainter(
-                    cloudOffset: _cloudController.value,
-                    isDark: isDark,
+          return Scaffold(
+            backgroundColor: bgColor,
+            body: Stack(
+              children: [
+                // 1. Vector background image
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/auth_bg.png',
+                    fit: BoxFit.cover,
                   ),
-                );
-              },
-            ),
-          ),
+                ),
 
           // 3. Main content
           Center(
@@ -220,29 +190,29 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                                     height: 110,
                                                     decoration: BoxDecoration(
                                                       shape: BoxShape.circle,
-                                                      gradient: RadialGradient(
-                                                        colors: [
-                                                          context.authPrimary.withValues(alpha: isDark ? 0.32 : 0.16),
-                                                          context.authSecondary.withValues(alpha: isDark ? 0.14 : 0.06),
-                                                          Colors.transparent,
-                                                        ],
-                                                        stops: const [0.0, 0.5, 1.0],
+                                                          gradient: RadialGradient(
+                                                              colors: [
+                                                                context.authPrimary.withValues(alpha: 0.16),
+                                                                context.authSecondary.withValues(alpha: 0.06),
+                                                                Colors.transparent,
+                                                              ],
+                                                              stops: const [0.0, 0.5, 1.0],
+                                                            ),
+                                                          ),
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                // Ring stroke
-                                                Transform.scale(
-                                                  scale: _glowAnimation.value * 0.97,
-                                                  child: Container(
-                                                    width: 104,
-                                                    height: 104,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      border: Border.all(
-                                                        color: context.authPrimary.withValues(alpha: isDark ? 0.2 : 0.12),
-                                                        width: 1.2,
-                                                      ),
+                                                      // Ring stroke
+                                                      Transform.scale(
+                                                        scale: _glowAnimation.value * 0.97,
+                                                        child: Container(
+                                                          width: 104,
+                                                          height: 104,
+                                                          decoration: BoxDecoration(
+                                                            shape: BoxShape.circle,
+                                                            border: Border.all(
+                                                              color: context.authPrimary.withValues(alpha: 0.12),
+                                                              width: 1.2,
+                                                            ),
                                                     ),
                                                   ),
                                                 ),
@@ -342,5 +312,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         ],
       ),
     );
+  },
+),
+);
   }
 }

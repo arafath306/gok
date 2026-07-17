@@ -59,6 +59,7 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
+    - assets/auth_bg.png
     - assets/logo_transparent.png
     - assets/onboarding_illus_4.png
     - assets/dak_icon.png
