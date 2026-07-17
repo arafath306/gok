@@ -30,7 +30,7 @@ class AuthTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDarkMode;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
         obscureText: obscureText,
@@ -40,41 +40,51 @@ class AuthTextField extends StatelessWidget {
         onChanged: onChanged,
         style: GoogleFonts.inter(
           color: context.textPrimary,
-          fontSize: 15,
+          fontSize: 14.5,
+          fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.inter(
             color: context.textMuted,
             fontSize: 14,
+            fontWeight: FontWeight.w400,
           ),
           prefixIcon: Icon(
             prefixIcon,
-            color: context.textMuted,
             size: 20,
           ),
+          prefixIconColor: WidgetStateColor.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return context.authPrimary;
+            }
+            return context.textMuted;
+          }),
           suffixIcon: suffixIcon,
           filled: true,
           fillColor: isDark
-              ? const Color(0xFF070B13).withValues(alpha: 0.6)
-              : const Color(0xFFF8FAFC),
+              ? const Color(0xFF0F172A).withValues(alpha: 0.8)
+              : Colors.white,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: context.border,
-            ),
-          ),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
-              color: context.border,
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              width: 1.2,
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: context.authPrimary, width: 1.5),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: context.authPrimary, width: 1.8),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 1.8),
           ),
         ),
       ),
