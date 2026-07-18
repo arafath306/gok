@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/dak_logo.dart';
+import 'captcha_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final void Function(bool startSignUp) onFinish;
@@ -338,7 +339,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           titleColor: const Color(0xFF1E824C),
                           bgColor: const Color(0xFF1E824C).withValues(alpha: 0.05),
                           borderColor: const Color(0xFF1E824C).withValues(alpha: 0.12),
-                          onTap: () => widget.onFinish(true),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CaptchaScreen(
+                                isSignup: true,
+                                onPass: () {
+                                  Navigator.pop(context);
+                                  widget.onFinish(true);
+                                },
+                              ),
+                            ),
+                          ),
                         ),
 
                         const SizedBox(height: 12),
@@ -352,7 +364,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           titleColor: const Color(0xFF1A365D),
                           bgColor: const Color(0xFF1A365D).withValues(alpha: 0.05),
                           borderColor: const Color(0xFF1A365D).withValues(alpha: 0.12),
-                          onTap: () => widget.onFinish(false),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CaptchaScreen(
+                                isSignup: false,
+                                onPass: () {
+                                  Navigator.pop(context);
+                                  widget.onFinish(false);
+                                },
+                              ),
+                            ),
+                          ),
                         ),
 
                         const SizedBox(height: 24),
