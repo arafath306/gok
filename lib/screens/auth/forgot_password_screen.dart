@@ -371,10 +371,42 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
 
   Widget _buildStep1() {
     final authService = Provider.of<AuthService>(context);
+    final isDark = context.isDarkMode;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Notice Banner
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.amber.withValues(alpha: 0.50),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Forgot password service is currently off. It will not work.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: isDark ? Colors.amber[200] : const Color(0xFF92400E),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         _buildTextField(
           hint: "Your Account Email",
           controller: _emailController,

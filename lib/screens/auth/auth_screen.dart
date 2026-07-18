@@ -299,7 +299,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildFeaturesRow(bool isSignUp) {
-    final isDark = context.isDarkMode;
     final List<Map<String, dynamic>> features = isSignUp
         ? [
             {
