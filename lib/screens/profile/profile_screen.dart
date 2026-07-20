@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/profile_shimmer.dart';
 import '../full_screen_media_viewer.dart';
+import 'package:dak/l10n/generated/app_localizations.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -48,8 +49,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   
   double? _creatorPrice;
 
-  final List<String> _tabs = [
-    'Posts', 'Replies', 'Reposts', 'Media',
+  List<String> get _tabs => [
+    AppLocalizations.of(context)!.posts,
+    AppLocalizations.of(context)!.replies,
+    AppLocalizations.of(context)!.reposts,
+    AppLocalizations.of(context)!.media,
   ];
 
   /// Own profile if userId is null OR matches the current user's Supabase UID
@@ -67,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfileData();
@@ -379,7 +383,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               if (_isOwnProfile) ...[
-                _outlinedBtn('Edit Profile', onTap: () async {
+                _outlinedBtn(AppLocalizations.of(context)!.editProfile, onTap: () async {
                   if (profile != null) {
                     await Navigator.push(
                       context,
@@ -510,7 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   );
                 },
-                child: _statItem(_fmt(profile?.followersCount ?? 0), 'followers'),
+                child: _statItem(_fmt(profile?.followersCount ?? 0), AppLocalizations.of(context)!.followers),
               ),
               const SizedBox(width: 20),
               GestureDetector(
@@ -528,10 +532,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   );
                 },
-                child: _statItem(_fmt(profile?.followingCount ?? 0), 'following'),
+                child: _statItem(_fmt(profile?.followingCount ?? 0), AppLocalizations.of(context)!.following),
               ),
               const SizedBox(width: 20),
-              _statItem(_fmt(threads.length), 'posts'),
+              _statItem(_fmt(threads.length), AppLocalizations.of(context)!.posts),
             ],
           ),
         ),
@@ -733,7 +737,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   size: 34, color: context.textMuted),
             ),
             const SizedBox(height: 14),
-            Text('No posts yet',
+            Text(AppLocalizations.of(context)!.noPostsYet,
                 style: GoogleFonts.hindSiliguri(
                     fontSize: 16,
                     color: context.textSecondary,
@@ -798,7 +802,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   size: 34, color: context.textMuted),
             ),
             const SizedBox(height: 14),
-            Text('No replies yet',
+            Text(AppLocalizations.of(context)!.noRepliesYet,
                 style: GoogleFonts.hindSiliguri(
                     fontSize: 16,
                     color: context.textSecondary,
@@ -842,7 +846,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   size: 34, color: context.textMuted),
             ),
             const SizedBox(height: 14),
-            Text('No reposts yet',
+            Text(AppLocalizations.of(context)!.noRepostsYet,
                 style: GoogleFonts.hindSiliguri(
                     fontSize: 16,
                     color: context.textSecondary,
@@ -888,7 +892,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   size: 34, color: context.textMuted),
             ),
             const SizedBox(height: 14),
-            Text('No media yet',
+            Text(AppLocalizations.of(context)!.noMediaYet,
                 style: GoogleFonts.inter(
                     fontSize: 16,
                     color: context.textSecondary,
@@ -945,7 +949,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                 onTap: () {
                   Navigator.pop(context); // close bottom sheet
                   Provider.of<AuthService>(context, listen: false).handleSignout();
-                  Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
                 },
               ),
             ] else ...[

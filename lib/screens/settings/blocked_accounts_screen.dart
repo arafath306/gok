@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -73,7 +74,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Blocked Accounts',
+          AppLocalizations.of(context)!.blockedAccounts,
           style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
@@ -100,7 +101,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                 child: TextField(
                   controller: _controller,
                   decoration: InputDecoration(
-                    hintText: 'Search user to block...',
+                    hintText: AppLocalizations.of(context)!.searchUserToBlock,
                     hintStyle: GoogleFonts.inter(color: context.textMuted, fontSize: 14),
                     filled: true,
                     fillColor: context.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
@@ -142,7 +143,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                     Icon(Icons.search_off_rounded, size: 60, color: context.textMuted),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'No users found matching "$_searchQuery"',
+                                      '${AppLocalizations.of(context)!.noUsersFoundMatching} "$_searchQuery"',
                                       style: GoogleFonts.inter(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w500,
@@ -219,7 +220,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                                   minimumSize: const Size(0, 32),
                                                 ),
                                                 child: Text(
-                                                  'Unblock',
+                                                  AppLocalizations.of(context)!.unblockUser,
                                                   style: GoogleFonts.inter(
                                                     color: context.textPrimary,
                                                     fontWeight: FontWeight.bold,
@@ -260,7 +261,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                                   minimumSize: const Size(0, 32),
                                                 ),
                                                 child: Text(
-                                                  'Block',
+                                                  AppLocalizations.of(context)!.blockUser,
                                                   style: GoogleFonts.inter(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -287,7 +288,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                         Icon(Icons.block, size: 60, color: context.textMuted),
                                         const SizedBox(height: 16),
                                         Text(
-                                          'No blocked accounts',
+                                          AppLocalizations.of(context)!.noBlockedAccounts,
                                           style: GoogleFonts.inter(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
@@ -361,7 +362,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                                 minimumSize: const Size(0, 32),
                                               ),
                                               child: Text(
-                                                'Unblock',
+                                                AppLocalizations.of(context)!.unblockUser,
                                                 style: GoogleFonts.inter(
                                                   color: context.textPrimary,
                                                   fontWeight: FontWeight.bold,

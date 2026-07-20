@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -100,7 +101,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_dob == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your date of birth')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseSelectYourDateOfBirth)),
       );
       return;
     }
@@ -135,8 +136,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Apply for Blue Badge',
+        title: Text(AppLocalizations.of(context)!.applyForBlueBadge,
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -159,15 +159,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Confirm Personal Details',
+                      Text(AppLocalizations.of(context)!.confirmPersonalDetails,
                           style: GoogleFonts.inter(
                               fontSize: 19,
                               fontWeight: FontWeight.w900,
                               color: context.textPrimary,
                               letterSpacing: -0.4)),
                       const SizedBox(height: 6),
-                      Text(
-                        'Your name, profile photo, and details should match the government-issued photo ID card you upload in the next step.',
+                      Text(AppLocalizations.of(context)!.yourNameProfilePhotoAndDetailsShouldMatc,
                         style: GoogleFonts.inter(
                           color: context.textSecondary, 
                           fontSize: 13,
@@ -177,7 +176,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       const SizedBox(height: 24),
                       
                       PigeonTextField(
-                        label: 'Full Name',
+                        label: AppLocalizations.of(context)!.fullName,
                         hint: 'e.g. Abdullah Al Mamun',
                         controller: _nameController,
                         validator: (v) => (v == null || v.trim().isEmpty)
@@ -187,7 +186,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       const SizedBox(height: 6),
                       
                       PigeonTextField(
-                        label: 'Pigeon Username',
+                        label: AppLocalizations.of(context)!.pigeonUsername,
                         hint: 'yourhandle',
                         controller: _usernameController,
                         validator: (v) => (v == null || v.trim().isEmpty)
@@ -197,7 +196,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       const SizedBox(height: 6),
 
                       PigeonTextField(
-                        label: 'Date of Birth',
+                        label: AppLocalizations.of(context)!.dateOfBirth,
                         hint: 'Tap to select',
                         controller: TextEditingController(
                           text: _dob == null
@@ -212,7 +211,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       const SizedBox(height: 6),
 
                       PigeonTextField(
-                        label: 'Email Address',
+                        label: AppLocalizations.of(context)!.emailAddress,
                         hint: 'your.email@example.com',
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
@@ -230,7 +229,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       const SizedBox(height: 6),
 
                       PigeonTextField(
-                        label: 'Phone Number',
+                        label: AppLocalizations.of(context)!.phoneNumber,
                         hint: '01XXXXXXXXX',
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
@@ -248,7 +247,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       const SizedBox(height: 6),
 
                       PigeonTextField(
-                        label: 'Short Bio (Optional)',
+                        label: AppLocalizations.of(context)!.shortBioOptional,
                         hint: 'Tell us a little about yourself',
                         controller: _bioController,
                         maxLines: 3,
@@ -261,7 +260,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: PigeonPrimaryButton(
-                label: 'Save & Continue',
+                label: AppLocalizations.of(context)!.saveContinue,
                 icon: Icons.arrow_forward_rounded,
                 onPressed: _onContinue,
               ),

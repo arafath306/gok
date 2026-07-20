@@ -20,6 +20,7 @@ extension FeedExtension on DatabaseService {
       },
       (entities) {
         _feed = entities.map((e) => _entityToModel(e)).toList();
+        _feed.removeWhere((p) => p.author.isShadowbanned && p.author.id != _currentUid);
         _updateCache(_feed);
         if (!silent) {
           _isLoading = false;
@@ -36,6 +37,7 @@ extension FeedExtension on DatabaseService {
       (failure) => debugPrint("Fetch my threads error: ${failure.message}"),
       (entities) {
         _myThreads = entities.map((e) => _entityToModel(e)).toList();
+        // No need to filter shadowbanned here since it's the user's own profile/threads
         _updateCache(_myThreads);
         updateState();
       },

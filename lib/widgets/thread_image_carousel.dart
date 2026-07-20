@@ -57,6 +57,7 @@ class _ThreadImageCarouselState extends State<ThreadImageCarousel> {
           borderRadius: borderRadius,
           child: CachedNetworkImage(
             imageUrl: getOptimizedUrl(widget.imageUrls.first),
+            memCacheWidth: 600, // RAM optimization
             height: widget.height,
             width: double.infinity,
             fit: BoxFit.cover,
@@ -113,6 +114,7 @@ class _ThreadImageCarouselState extends State<ThreadImageCarousel> {
                   },
                   child: CachedNetworkImage(
                     imageUrl: getOptimizedUrl(widget.imageUrls[index]),
+                    memCacheWidth: 600, // RAM optimization
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,

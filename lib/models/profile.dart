@@ -23,6 +23,7 @@ class Profile {
   final String allowMentions;
   final bool filterAdult;
   final bool autoplayVideos;
+  final bool isShadowbanned;
   final bool verificationRequested;
   final bool canMonetize;
   final bool isActiveStatusEnabled;
@@ -55,6 +56,7 @@ class Profile {
     this.allowMentions = 'everyone',
     this.filterAdult = true,
     this.autoplayVideos = true,
+    this.isShadowbanned = false,
     this.verificationRequested = false,
     this.canMonetize = false,
     this.isActiveStatusEnabled = true,
@@ -91,6 +93,7 @@ class Profile {
       allowMentions: json['allow_mentions'] as String? ?? 'everyone',
       filterAdult: json['filter_adult'] as bool? ?? true,
       autoplayVideos: json['autoplay_videos'] as bool? ?? true,
+      isShadowbanned: json['is_shadowbanned'] as bool? ?? false,
       verificationRequested: json['verification_requested'] as bool? ?? false,
       canMonetize: json['can_monetize'] as bool? ?? false,
       isActiveStatusEnabled: json['is_active_status_enabled'] as bool? ?? true,
@@ -128,6 +131,7 @@ class Profile {
       'allow_mentions': allowMentions,
       'filter_adult': filterAdult,
       'autoplay_videos': autoplayVideos,
+      'is_shadowbanned': isShadowbanned,
       'verification_requested': verificationRequested,
       'can_monetize': canMonetize,
       'is_active_status_enabled': isActiveStatusEnabled,

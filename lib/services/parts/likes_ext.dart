@@ -128,6 +128,7 @@ extension LikesExtension on DatabaseService {
         
         // Filter out posts hidden from profile or hidden from me
         posts.removeWhere((post) {
+          if (post.author.isShadowbanned && post.userId != _currentUid) return true;
           if (post.hideFromProfile && post.userId != _currentUid) {
             return true;
           }
@@ -168,6 +169,7 @@ extension LikesExtension on DatabaseService {
         
         // Filter out hidden posts
         posts.removeWhere((post) {
+          if (post.author.isShadowbanned && post.userId != _currentUid) return true;
           if (post.hideFromProfile && post.userId != _currentUid) {
             return true;
           }

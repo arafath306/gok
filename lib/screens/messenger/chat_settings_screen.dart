@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +21,7 @@ class ChatSettingsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Chat Settings',
+          AppLocalizations.of(context)!.chatSettings,
           style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
@@ -41,7 +42,7 @@ class ChatSettingsScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
-                  'Allow direct messages from',
+                  AppLocalizations.of(context)!.allowDirectMessagesFrom,
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -53,7 +54,7 @@ class ChatSettingsScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
-                  'You can continue ongoing conversations regardless of which setting you choose.',
+                  AppLocalizations.of(context)!.chatSettingsSubtitle,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     color: context.textSecondary,
@@ -66,21 +67,21 @@ class ChatSettingsScreen extends StatelessWidget {
               // Radios
               _buildRadioTile(
                 context: context,
-                title: 'Everyone',
+                title: AppLocalizations.of(context)!.everyone,
                 value: DMPermission.everyone,
                 groupValue: provider.dmPermission,
                 onTap: () => provider.setDMPermission(DMPermission.everyone),
               ),
               _buildRadioTile(
                 context: context,
-                title: 'Users I follow',
+                title: AppLocalizations.of(context)!.usersIFollow,
                 value: DMPermission.followed,
                 groupValue: provider.dmPermission,
                 onTap: () => provider.setDMPermission(DMPermission.followed),
               ),
               _buildRadioTile(
                 context: context,
-                title: 'No one',
+                title: AppLocalizations.of(context)!.noOne,
                 value: DMPermission.none,
                 groupValue: provider.dmPermission,
                 onTap: () => provider.setDMPermission(DMPermission.none),
@@ -96,7 +97,7 @@ class ChatSettingsScreen extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 leading: Icon(Icons.notifications_none_outlined, color: context.textPrimary, size: 24),
                 title: Text(
-                  'Notification sounds',
+                  AppLocalizations.of(context)!.notificationSounds,
                   style: GoogleFonts.inter(
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
@@ -120,7 +121,7 @@ class ChatSettingsScreen extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 leading: Icon(Icons.archive_outlined, color: context.textPrimary, size: 24),
                 title: Text(
-                  'Export my chat data',
+                  AppLocalizations.of(context)!.exportMyChatData,
                   style: GoogleFonts.inter(
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
@@ -191,18 +192,18 @@ class ChatSettingsScreen extends StatelessWidget {
         backgroundColor: context.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Export Chat Data',
+          AppLocalizations.of(context)!.exportChatDataTitle,
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: context.textPrimary),
         ),
         content: Text(
-          'Your chat data export has been requested. We will prepare the download and notify you soon.',
+          AppLocalizations.of(context)!.exportChatDataMsg,
           style: GoogleFonts.inter(color: context.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'OK',
+              AppLocalizations.of(context)!.okButton,
               style: GoogleFonts.inter(color: const Color(0xFF0085FF), fontWeight: FontWeight.bold),
             ),
           ),

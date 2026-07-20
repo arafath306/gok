@@ -166,6 +166,8 @@ extension RepostsExtension on DatabaseService {
       for (final row in repostsData) {
         final threadMap = row['threads'] as Map<String, dynamic>?;
         if (threadMap != null) {
+          final post = ThreadPost.fromJson(threadMap, currentUid: _currentUid);
+          if (post.author.isShadowbanned && post.userId != _currentUid) continue;
           final reposterProfileMap = row['profiles'] as Map<String, dynamic>?;
           final reposterProfile = reposterProfileMap != null
               ? Profile.fromJson(reposterProfileMap)

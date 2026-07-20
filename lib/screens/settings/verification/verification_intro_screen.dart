@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -75,8 +76,7 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Pigeon Verified',
+        title: Text(AppLocalizations.of(context)!.pigeonVerified,
           style: GoogleFonts.inter(
             fontSize: 16.5,
             fontWeight: FontWeight.w800,
@@ -233,8 +233,7 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Your Identity is Secure',
+                          Text(AppLocalizations.of(context)!.yourIdentityIsSecure,
                             style: GoogleFonts.inter(
                               color: context.textPrimary,
                               fontWeight: FontWeight.bold,
@@ -242,8 +241,7 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            'We do not sell or share your identity details. NID images and face selfie records are immediately encrypted and processed for compliance check only.',
+                          Text(AppLocalizations.of(context)!.weDoNotSellOrShareYourIdentityDetailsNid,
                             style: GoogleFonts.inter(
                               color: context.textSecondary,
                               fontSize: 12,
@@ -294,7 +292,7 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
                 child: Column(
                   children: [
                     PigeonPrimaryButton(
-                      label: 'Subscribe & Continue',
+                      label: AppLocalizations.of(context)!.subscribeContinue,
                       icon: Icons.arrow_forward_rounded,
                       onPressed: () {
                         controller.resetApplication();
@@ -308,7 +306,7 @@ class _VerificationIntroScreenState extends State<VerificationIntroScreen> {
                     if (status != VerificationStatus.incomplete) ...[
                       const SizedBox(height: 12),
                       PigeonPrimaryButton(
-                        label: 'Check Current Status',
+                        label: AppLocalizations.of(context)!.checkCurrentStatus,
                         outlined: true,
                         onPressed: () {
                           Navigator.push(
@@ -549,8 +547,7 @@ class _PulsingAvatarHeaderState extends State<_PulsingAvatarHeader> with SingleT
             },
           ),
           const SizedBox(height: 24),
-          Text(
-            'Pigeon Verified',
+          Text(AppLocalizations.of(context)!.pigeonVerified,
             style: GoogleFonts.inter(
               fontSize: 24,
               fontWeight: FontWeight.w900,
@@ -561,8 +558,7 @@ class _PulsingAvatarHeaderState extends State<_PulsingAvatarHeader> with SingleT
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'A subscription bundle to build your presence and credibility with safety tools and priority support.',
+            child: Text(AppLocalizations.of(context)!.aSubscriptionBundleToBuildYourPresenceAn,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 13.5,
@@ -678,8 +674,7 @@ class _PremiumPlanInfoCard extends StatelessWidget {
                     color: const Color(0xFF10B981),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(
-                    'PROMO OFFER',
+                  child: Text(AppLocalizations.of(context)!.promoOffer,
                     style: GoogleFonts.inter(
                       fontSize: 9,
                       fontWeight: FontWeight.w900,

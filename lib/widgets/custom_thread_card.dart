@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../models/thread_post.dart';
 import '../services/database_service.dart';
 import '../services/general_settings_provider.dart';
+import '../services/view_tracking_service.dart';
 import '../screens/thread_detail_screen.dart';
 import '../screens/create_thread_screen.dart';
 import '../screens/communities/community_detail_screen.dart';
@@ -180,7 +181,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               CircleAvatar(
                 radius: 10,
                 backgroundImage: origPost.author.avatarUrl != null && origPost.author.avatarUrl!.isNotEmpty
-                    ? CachedNetworkImageProvider(origPost.author.avatarUrl!)
+                    ? CachedNetworkImageProvider(origPost.author.avatarUrl!, maxHeight: 150)
                     : null,
                 child: origPost.author.avatarUrl == null || origPost.author.avatarUrl!.isEmpty
                     ? const Icon(Icons.person, size: 10)
@@ -231,8 +232,15 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
 
         final isVerified = post.author.isVerified;
 
-        return RepaintBoundary(
-          child: InkWell(
+        return VisibilityDetector(
+          key: Key('visibility_post_${post.id}'),
+          onVisibilityChanged: (info) {
+            if (info.visibleFraction > 0.5) {
+              Provider.of<ViewTrackingService>(context, listen: false).trackView(post.id);
+            }
+          },
+          child: RepaintBoundary(
+            child: InkWell(
             hoverColor: Colors.transparent,
             onTap: () {
               final targetPost = (post.isRepost && (post.quoteText == null || post.quoteText!.isEmpty)) 
@@ -267,7 +275,8 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
               ],
             ),
           ),
-        );
+        ),
+      );
       },
     );
   }
@@ -279,7 +288,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
           radius: 20,
           backgroundColor: Colors.grey[800],
           backgroundImage: (post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty)
-              ? CachedNetworkImageProvider(post.author.avatarUrl!)
+              ? CachedNetworkImageProvider(post.author.avatarUrl!, maxHeight: 150)
               : null,
           child: (post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty)
               ? const Icon(Icons.person, size: 20, color: Colors.white54)
@@ -495,7 +504,7 @@ class _CustomThreadCardState extends State<CustomThreadCard> {
                 image: Provider.of<GeneralSettingsProvider>(context).lowDataMode 
                     ? null
                     : const DecorationImage(
-                        image: CachedNetworkImageProvider("https://images.unsplash.com/photo-1492691527719-9d1e07e534b4"),
+                        image: CachedNetworkImageProvider("https://images.unsplash.com/photo-1492691527719-9d1e07e534b4", maxHeight: 400),
                         fit: BoxFit.cover,
                         opacity: 0.6,
                       ),

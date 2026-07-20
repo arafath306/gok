@@ -16,6 +16,10 @@ class GeneralSettingsProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _isDarkTheme = prefs.getBool('isDarkTheme') ?? false;
     _lowDataMode = prefs.getBool('lowDataMode') ?? false;
+    String? langCode = prefs.getString('app_language');
+    if (langCode != null) {
+      _appLocale = Locale(langCode);
+    }
     notifyListeners();
   }
 
@@ -582,6 +586,17 @@ class GeneralSettingsProvider with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkTheme', val);
+  }
+
+  // Language Settings
+  Locale? _appLocale;
+  Locale? get appLocale => _appLocale;
+
+  Future<void> changeLanguage(Locale locale) async {
+    _appLocale = locale;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_language', locale.languageCode);
   }
 
   // Low Data Mode

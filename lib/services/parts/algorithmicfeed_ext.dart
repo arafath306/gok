@@ -73,45 +73,47 @@ extension AlgorithmicFeedExtension on DatabaseService {
       }
 
       // Also fetch reposts from users we follow so they appear in the "For You" feed
-      try {
-        final repostsRes = await _supabase
-            .from('reposts')
-            .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*))' )
-            .order('created_at', ascending: false)
-            .limit(20);
+      if (!loadMore) {
+        try {
+          final repostsRes = await _supabase
+              .from('reposts')
+              .select('*, profiles!user_id(*), threads(*, profiles!user_id(*), likes(user_id), thread_hides(user_id), poll_options(*), poll_votes(*))' )
+              .order('created_at', ascending: false)
+              .limit(20);
 
-        final List<dynamic> repostsData = repostsRes as List<dynamic>;
-        for (final repost in repostsData) {
-          if (repost['threads'] != null) {
-            final threadMap = repost['threads'] as Map<String, dynamic>;
-            final reposterProfileMap = repost['profiles'] as Map<String, dynamic>?;
-            final reposterProfile = reposterProfileMap != null
-                ? Profile.fromJson(reposterProfileMap)
-                : Profile(id: repost['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
+          final List<dynamic> repostsData = repostsRes as List<dynamic>;
+          for (final repost in repostsData) {
+            if (repost['threads'] != null) {
+              final threadMap = repost['threads'] as Map<String, dynamic>;
+              final reposterProfileMap = repost['profiles'] as Map<String, dynamic>?;
+              final reposterProfile = reposterProfileMap != null
+                  ? Profile.fromJson(reposterProfileMap)
+                  : Profile(id: repost['user_id'] ?? '', username: 'unknown', fullName: 'Unknown User');
 
-            final originalPost = ThreadPost.fromJson(threadMap, currentUid: _currentUid);
-            final repostPost = ThreadPost(
-              id: repost['id'] as String,
-              userId: repost['user_id'] as String,
-              author: reposterProfile,
-              content: repost['quote_text'] as String? ?? '',
-              createdAt: ThreadPost.formatRelativeTime(repost['created_at'] as String?),
-              isRepost: true,
-              repostedPost: originalPost,
-              quoteText: repost['quote_text'] as String?,
-              likesCount: 0,
-              repliesCount: 0,
-              repostsCount: 0,
-              viewsCount: 0,
-            );
-            // Only add if not already in fetched posts
-            if (!fetchedPosts.any((p) => p.id == repostPost.id)) {
-              fetchedPosts.add(repostPost);
+              final originalPost = ThreadPost.fromJson(threadMap, currentUid: _currentUid);
+              final repostPost = ThreadPost(
+                id: repost['id'] as String,
+                userId: repost['user_id'] as String,
+                author: reposterProfile,
+                content: repost['quote_text'] as String? ?? '',
+                createdAt: ThreadPost.formatRelativeTime(repost['created_at'] as String?),
+                isRepost: true,
+                repostedPost: originalPost,
+                quoteText: repost['quote_text'] as String?,
+                likesCount: 0,
+                repliesCount: 0,
+                repostsCount: 0,
+                viewsCount: 0,
+              );
+              // Only add if not already in fetched posts
+              if (!fetchedPosts.any((p) => p.id == repostPost.id)) {
+                fetchedPosts.add(repostPost);
+              }
             }
           }
+        } catch (e) {
+          debugPrint('Fetch reposts for AI feed error: $e');
         }
-      } catch (e) {
-        debugPrint('Fetch reposts for AI feed error: $e');
       }
     } catch (e) {
       debugPrint("Fetch personalized AI feed RPC error: $e. Falling back to direct fetch.");
@@ -171,6 +173,9 @@ extension AlgorithmicFeedExtension on DatabaseService {
         return true;
       }
       if (post.isHiddenFromMe) {
+        return true;
+      }
+      if (post.author.isShadowbanned && post.userId != _currentUid) {
         return true;
       }
       if (post.userId != _currentUid && post.author.isPrivate) {

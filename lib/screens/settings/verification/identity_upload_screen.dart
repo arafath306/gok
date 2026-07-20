@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -61,13 +62,13 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
               ListTile(
                 leading: Icon(Icons.camera_alt_outlined,
                     color: context.primaryAccent),
-                title: Text('Take a photo', style: GoogleFonts.inter(color: context.textPrimary, fontWeight: FontWeight.w600)),
+                title: Text(AppLocalizations.of(context)!.takeAPhoto, style: GoogleFonts.inter(color: context.textPrimary, fontWeight: FontWeight.w600)),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
                 leading: Icon(Icons.photo_library_outlined,
                     color: context.primaryAccent),
-                title: Text('Choose from gallery', style: GoogleFonts.inter(color: context.textPrimary, fontWeight: FontWeight.w600)),
+                title: Text(AppLocalizations.of(context)!.chooseFromGallery, style: GoogleFonts.inter(color: context.textPrimary, fontWeight: FontWeight.w600)),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -92,14 +93,14 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
   void _onContinue() {
     if (_nidController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your NID number')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseEnterYourNidNumber)),
       );
       return;
     }
     if (_front == null || _back == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please upload both sides of your NID card')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context)!.pleaseUploadBothSidesOfYourNidCard)),
       );
       return;
     }
@@ -128,8 +129,7 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Apply for Blue Badge',
+        title: Text(AppLocalizations.of(context)!.applyForBlueBadge,
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -150,21 +150,20 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Confirm Your Identity',
+                    Text(AppLocalizations.of(context)!.confirmYourIdentity,
                         style: GoogleFonts.inter(
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
                             color: context.textPrimary,
                             letterSpacing: -0.4)),
                     const SizedBox(height: 6),
-                    Text(
-                      'Provide a government-issued photo ID. Make sure the details match your profile and the card is clearly readable.',
+                    Text(AppLocalizations.of(context)!.provideAGovernmentissuedPhotoIdMakeSureT,
                       style: GoogleFonts.inter(color: context.textSecondary, fontSize: 13, height: 1.45),
                     ),
                     const SizedBox(height: 24),
                     
                     PigeonTextField(
-                      label: 'National ID (NID) Number',
+                      label: AppLocalizations.of(context)!.nationalIdNidNumber,
                       hint: 'Enter your 10 or 17 digit NID number',
                       controller: _nidController,
                       keyboardType: TextInputType.number,
@@ -173,14 +172,14 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
                     ),
                     const SizedBox(height: 20),
                     
-                    Text('Upload ID Documents',
+                    Text(AppLocalizations.of(context)!.uploadIdDocuments,
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.w800,
                             fontSize: 14.5,
                             color: context.textPrimary,
                             letterSpacing: -0.2)),
                     const SizedBox(height: 4),
-                    Text('Take clear photos of both the front and back of your NID card.',
+                    Text(AppLocalizations.of(context)!.takeClearPhotosOfBothTheFrontAndBackOfYo,
                         style: GoogleFonts.inter(color: context.textSecondary, fontSize: 12.5)),
                     const SizedBox(height: 16),
                     
@@ -188,8 +187,8 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
                       children: [
                         Expanded(
                           child: IdUploadCard(
-                            title: 'Front Side',
-                            subtitle: 'Tap to upload NID front',
+                            title: AppLocalizations.of(context)!.frontSide,
+                            subtitle: AppLocalizations.of(context)!.tapToUploadNidFront,
                             file: _front,
                             onTap: () => _pickImage(isFront: true),
                           ),
@@ -197,8 +196,8 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: IdUploadCard(
-                            title: 'Back Side',
-                            subtitle: 'Tap to upload NID back',
+                            title: AppLocalizations.of(context)!.backSide,
+                            subtitle: AppLocalizations.of(context)!.tapToUploadNidBack,
                             file: _back,
                             onTap: () => _pickImage(isFront: false),
                           ),
@@ -220,8 +219,7 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
                           const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              'Ensure there are no reflections or glares on the NID photos. All text must be perfectly legible for automatic verification checks to succeed.',
+                            child: Text(AppLocalizations.of(context)!.ensureThereAreNoReflectionsOrGlaresOnThe,
                               style: GoogleFonts.inter(
                                 fontSize: 12.5,
                                 color: context.textSecondary,
@@ -239,7 +237,7 @@ class _IdentityUploadScreenState extends State<IdentityUploadScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: PigeonPrimaryButton(
-                label: 'Save & Continue',
+                label: AppLocalizations.of(context)!.saveContinue,
                 icon: Icons.arrow_forward_rounded,
                 onPressed: _onContinue,
               ),

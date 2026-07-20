@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -42,8 +43,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Apply for Blue Badge',
+        title: Text(AppLocalizations.of(context)!.applyForBlueBadge,
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -64,15 +64,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Review Application',
+                    Text(AppLocalizations.of(context)!.reviewApplication,
                         style: GoogleFonts.inter(
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
                             color: context.textPrimary,
                             letterSpacing: -0.4)),
                     const SizedBox(height: 6),
-                    Text(
-                      'Verify that all information matches your official documents before submitting.',
+                    Text(AppLocalizations.of(context)!.verifyThatAllInformationMatchesYourOffic,
                       style: GoogleFonts.inter(color: context.textSecondary, fontSize: 13, height: 1.45),
                     ),
                     const SizedBox(height: 20),
@@ -154,8 +153,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 2),
-                                child: Text(
-                                  'I confirm all documents and credentials belong to me and represent official, valid, and correct records.',
+                                child: Text(AppLocalizations.of(context)!.iConfirmAllDocumentsAndCredentialsBelong,
                                   style: GoogleFonts.inter(
                                       fontSize: 13, 
                                       color: context.textPrimary, 
@@ -175,7 +173,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: PigeonPrimaryButton(
-                label: 'Proceed to Payment',
+                label: AppLocalizations.of(context)!.proceedToPayment,
                 icon: Icons.arrow_forward_rounded,
                 onPressed: _confirmed
                     ? () {

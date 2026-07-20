@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,28 +35,28 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
   static const _steps = ['Personal', 'Identity', 'Face', 'Review', 'Payment'];
 
   // Crypto-style AI face check steps
-  static const _aiSteps = [
+  List<_AiStep> get _aiSteps => [
     _AiStep(
       icon: Icons.face_retouching_natural_rounded,
-      label: 'Look Straight',
+      label: AppLocalizations.of(context)!.lookStraight,
       subLabel: 'Face the camera directly. Keep a neutral expression.',
       color: Color(0xFF6366F1),
     ),
     _AiStep(
       icon: Icons.rotate_left_rounded,
-      label: 'Turn Left Slightly',
+      label: AppLocalizations.of(context)!.turnLeftSlightly,
       subLabel: 'Slowly rotate your head to the left about 15°.',
       color: Color(0xFF8B5CF6),
     ),
     _AiStep(
       icon: Icons.rotate_right_rounded,
-      label: 'Turn Right Slightly',
+      label: AppLocalizations.of(context)!.turnRightSlightly,
       subLabel: 'Slowly rotate your head to the right about 15°.',
       color: Color(0xFF06B6D4),
     ),
     _AiStep(
       icon: Icons.remove_red_eye_outlined,
-      label: 'Blink Naturally',
+      label: AppLocalizations.of(context)!.blinkNaturally,
       subLabel: 'Blink both eyes once to confirm liveness.',
       color: Color(0xFF10B981),
     ),
@@ -145,8 +146,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
     if (_faceImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please complete face verification to continue.',
+          content: Text(AppLocalizations.of(context)!.pleaseCompleteFaceVerificationToContinue,
             style: GoogleFonts.inter(fontWeight: FontWeight.w500),
           ),
           backgroundColor: const Color(0xFF6366F1),
@@ -176,8 +176,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Apply for Blue Badge',
+        title: Text(AppLocalizations.of(context)!.applyForBlueBadge,
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -199,8 +198,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // ── Header ──────────────────────────────────────────
-                    Text(
-                      'Face Verification',
+                    Text(AppLocalizations.of(context)!.faceVerification,
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
@@ -488,8 +486,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Face Captured',
+                                  Text(AppLocalizations.of(context)!.faceCaptured,
                                     style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 14,
@@ -497,8 +494,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    'Your selfie is ready for identity matching.',
+                                  Text(AppLocalizations.of(context)!.yourSelfieIsReadyForIdentityMatching,
                                     style: GoogleFonts.inter(
                                       fontSize: 12.5,
                                       color: context.textSecondary,
@@ -514,7 +510,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
                       TextButton.icon(
                         onPressed: _retake,
                         icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: Text('Retake Photo', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                        label: Text(AppLocalizations.of(context)!.retakePhoto, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                         style: TextButton.styleFrom(
                           foregroundColor: context.textSecondary,
                         ),
@@ -528,10 +524,10 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
                       spacing: 10,
                       runSpacing: 8,
                       alignment: WrapAlignment.center,
-                      children: const [
-                        _Badge(icon: Icons.security_rounded, label: 'End-to-End Encrypted'),
-                        _Badge(icon: Icons.visibility_off_rounded, label: 'Not Stored Publicly'),
-                        _Badge(icon: Icons.verified_user_rounded, label: 'Liveness Checked'),
+                      children: [
+                        _Badge(icon: Icons.security_rounded, label: AppLocalizations.of(context)!.endtoendEncrypted),
+                        _Badge(icon: Icons.visibility_off_rounded, label: AppLocalizations.of(context)!.notStoredPublicly),
+                        _Badge(icon: Icons.verified_user_rounded, label: AppLocalizations.of(context)!.livenessChecked),
                       ],
                     ),
                   ],
@@ -544,7 +540,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen>
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: PigeonPrimaryButton(
-                  label: 'Save & Continue',
+                  label: AppLocalizations.of(context)!.saveContinue,
                   icon: Icons.arrow_forward_rounded,
                   onPressed: _onContinue,
                 ),

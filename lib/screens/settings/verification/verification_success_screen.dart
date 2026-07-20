@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -21,8 +22,7 @@ class VerificationSuccessScreen extends StatelessWidget {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         automaticallyImplyLeading: false,
-        title: Text(
-          'Verification Active',
+        title: Text(AppLocalizations.of(context)!.verificationActive,
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -129,8 +129,7 @@ class VerificationSuccessScreen extends StatelessWidget {
                   children: [
                     const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 28),
                     const SizedBox(height: 12),
-                    Text(
-                      "Identity Verified",
+                    Text(AppLocalizations.of(context)!.identityVerified,
                       style: GoogleFonts.inter(
                         color: context.textPrimary,
                         fontWeight: FontWeight.w900,
@@ -138,8 +137,7 @@ class VerificationSuccessScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      "Congratulations! Your Pigeon Blue Badge is now active. Your verified checkmark is visible next to your name across the platform.",
+                    Text(AppLocalizations.of(context)!.congratulationsYourPigeonBlueBadgeIsNowA,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         color: context.textSecondary,
@@ -154,7 +152,7 @@ class VerificationSuccessScreen extends StatelessWidget {
               const Spacer(),
               
               PigeonPrimaryButton(
-                label: 'Go to Feed Home',
+                label: AppLocalizations.of(context)!.goToFeedHome,
                 icon: Icons.home_rounded,
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(

@@ -515,7 +515,11 @@ class CommunityService extends ChangeNotifier {
 
       final List<ThreadPost> posts = [];
       for (var row in response) {
-        posts.add(ThreadPost.fromJson(row, currentUid: _currentUid));
+        final post = ThreadPost.fromJson(row, currentUid: _currentUid);
+        if (post.author.isShadowbanned && post.userId != _currentUid) {
+          continue;
+        }
+        posts.add(post);
       }
       return posts;
     } catch (e) {

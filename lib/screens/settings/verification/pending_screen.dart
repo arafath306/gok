@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -81,8 +82,7 @@ class _PendingScreenState extends State<PendingScreen> {
             );
           },
         ),
-        title: Text(
-          'Verification Status',
+        title: Text(AppLocalizations.of(context)!.verificationStatus,
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -165,8 +165,7 @@ class _PendingScreenState extends State<PendingScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Verification Timeline',
+                        Text(AppLocalizations.of(context)!.verificationTimeline,
                           style: GoogleFonts.inter(
                             fontSize: 14.5,
                             fontWeight: FontWeight.bold,
@@ -195,11 +194,11 @@ class _PendingScreenState extends State<PendingScreen> {
                   ),
                   child: Column(
                     children: [
-                      _StatusRow(label: 'Username Handle', value: '@${request.username}'),
+                      _StatusRow(label: AppLocalizations.of(context)!.usernameHandle, value: '@${request.username}'),
                       _StatusRow(
-                          label: 'bKash TrxID', value: request.bkashTrxId.isEmpty ? '-' : request.bkashTrxId),
+                          label: AppLocalizations.of(context)!.bkashTrxid, value: request.bkashTrxId.isEmpty ? '-' : request.bkashTrxId),
                       _StatusRow(
-                        label: 'Status Code',
+                        label: AppLocalizations.of(context)!.statusCode,
                         value: isRejected ? 'Rejected' : 'Pending Review',
                         valueColor: isRejected ? Colors.red : context.primaryAccent,
                       ),
@@ -210,7 +209,7 @@ class _PendingScreenState extends State<PendingScreen> {
                 
                 if (isRejected)
                   PigeonPrimaryButton(
-                    label: 'Re-apply for Blue Badge',
+                    label: AppLocalizations.of(context)!.reapplyForBlueBadge,
                     icon: Icons.refresh_rounded,
                     onPressed: () {
                       final controller = context.read<VerificationController>();
@@ -224,14 +223,14 @@ class _PendingScreenState extends State<PendingScreen> {
                   )
                 else
                   PigeonPrimaryButton(
-                    label: 'Check Status Update',
+                    label: AppLocalizations.of(context)!.checkStatusUpdate,
                     icon: Icons.refresh_rounded,
                     isLoading: _checking,
                     onPressed: () => _refresh(silent: false),
                   ),
                 const SizedBox(height: 12),
                 PigeonPrimaryButton(
-                  label: 'Back to Feed Home',
+                  label: AppLocalizations.of(context)!.backToFeedHome,
                   outlined: true,
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(

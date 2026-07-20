@@ -12,6 +12,7 @@ import 'create_thread_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/database_service.dart';
+import '../services/auth_service.dart';
 import '../state/monetization_controller.dart';
 import '../services/presence_service.dart';
 import '../services/general_settings_provider.dart';
@@ -366,6 +367,11 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    if (!authService.isUserSignedIn) {
+      return Scaffold(backgroundColor: context.scaffoldBg);
+    }
+    
     final bool isDesktop = MediaQuery.of(context).size.width > 800;
 
     final List<Widget> screens = [

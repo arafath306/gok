@@ -52,7 +52,9 @@ class AuthService with ChangeNotifier {
     });
   }
 
-  bool get isUserSignedIn => _currentUser != null;
+  bool _isSigningOut = false;
+  bool get isSigningOut => _isSigningOut;
+  bool get isUserSignedIn => _currentUser != null && !_isSigningOut;
   String get currentUid => _currentUser?.id ?? '';
   bool get isEmailVerified => _currentUser?.emailConfirmedAt != null;
 
@@ -311,18 +313,29 @@ class AuthService with ChangeNotifier {
   }
 
   Future<void> handleSignout() async {
-    final result = await _signOutUseCase();
-    result.fold(
-      (failure) {
-        _errorMessage = failure.message;
-        notifyListeners();
-      },
-      (_) {
-        sl<E2EEService>().clearKeys();
-        _currentUser = null;
-        notifyListeners();
-      },
-    );
+    _isSigningOut = true;
+    notifyListeners();
+
+    try {
+      final result = await _signOutUseCase();
+      result.fold(
+        (failure) {
+          _isSigningOut = false;
+          _errorMessage = failure.message;
+          notifyListeners();
+        },
+        (_) {
+          sl<E2EEService>().clearKeys();
+          _currentUser = null;
+          _isSigningOut = false;
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      _isSigningOut = false;
+      _currentUser = null;
+      notifyListeners();
+    }
   }
 
   void clearErrors() {

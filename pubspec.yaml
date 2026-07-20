@@ -2,13 +2,15 @@ name: dak
 description: "Pigeon - A modern social media platform."
 publish_to: 'none'
 
-version: 4.4.0+44
+version: 4.5.0+45
 
 environment:
   sdk: ^3.12.1
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
@@ -57,6 +59,7 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/launcher_foreground.png"
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/auth_bg.png

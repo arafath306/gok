@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -37,7 +38,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Privacy Settings',
+          AppLocalizations.of(context)!.privacySettingsTitle,
           style: GoogleFonts.inter(
             color: context.textPrimary,
             fontWeight: FontWeight.bold,
@@ -55,17 +56,17 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           return ListView(
             padding: const EdgeInsets.symmetric(vertical: 16),
             children: [
-              _buildSectionHeader(context, 'Account Privacy'),
+              _buildSectionHeader(context, AppLocalizations.of(context)!.accountPrivacy),
               _buildSwitchTile(
                 context,
-                title: 'Private Account',
-                subtitle: 'Only approved followers can see your posts and media.',
+                title: AppLocalizations.of(context)!.privateAccount,
+                subtitle: AppLocalizations.of(context)!.privateAccountSubtitle,
                 value: provider.isPrivateAccount,
                 onChanged: (val) {
                   provider.updatePrivacy(isPrivateAccount: val);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(val ? 'Account set to Private' : 'Account set to Public'),
+                      content: Text(val ? AppLocalizations.of(context)!.accountSetToPrivate : AppLocalizations.of(context)!.accountSetToPublic),
                       backgroundColor: context.primaryAccent,
                       duration: const Duration(seconds: 2),
                     ),
@@ -74,29 +75,29 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               ),
               _buildSwitchTile(
                 context,
-                title: 'Show Active Status',
-                subtitle: 'Allow others to see when you\'re active. If disabled, you won\'t see others\' active status.',
+                title: AppLocalizations.of(context)!.showActiveStatus,
+                subtitle: AppLocalizations.of(context)!.showActiveStatusSubtitle,
                 value: provider.isActiveStatusEnabled,
                 onChanged: (val) {
                   provider.updatePrivacy(isActiveStatusEnabled: val);
                 },
               ),
               const SizedBox(height: 16),
-              _buildSectionHeader(context, 'Interactions'),
+              _buildSectionHeader(context, AppLocalizations.of(context)!.interactions),
               _buildSelectionTile(
                 context,
-                title: 'Who can mention you',
+                title: AppLocalizations.of(context)!.whoCanMentionYou,
                 subtitle: provider.allowMentionsFrom == 'everyone'
-                    ? 'Everyone'
+                    ? AppLocalizations.of(context)!.everyone
                     : provider.allowMentionsFrom == 'people_you_follow'
-                        ? 'People you follow'
-                        : 'No one',
+                        ? AppLocalizations.of(context)!.peopleYouFollow
+                        : AppLocalizations.of(context)!.noOne,
                 onTap: () => _showMentionOptions(context, provider),
               ),
               _buildNavigationTile(
                 context,
-                title: 'Direct Messages',
-                subtitle: 'Control who can send you direct messages',
+                title: AppLocalizations.of(context)!.directMessages,
+                subtitle: AppLocalizations.of(context)!.directMessagesSubtitle,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -105,11 +106,11 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              _buildSectionHeader(context, 'Content Filters'),
+              _buildSectionHeader(context, AppLocalizations.of(context)!.contentFilters),
               _buildSwitchTile(
                 context,
-                title: 'Filter Adult Content',
-                subtitle: 'Hide potentially sensitive content and media from searches and feeds.',
+                title: AppLocalizations.of(context)!.filterAdultContent,
+                subtitle: AppLocalizations.of(context)!.filterAdultContentSubtitle,
                 value: provider.filterAdultContent,
                 onChanged: (val) {
                   provider.updatePrivacy(filterAdultContent: val);
@@ -117,8 +118,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               ),
               _buildSwitchTile(
                 context,
-                title: 'Autoplay Videos',
-                subtitle: 'Automatically play videos when browsing feeds.',
+                title: AppLocalizations.of(context)!.autoplayVideos,
+                subtitle: AppLocalizations.of(context)!.autoplayVideosSubtitle,
                 value: provider.autoplayVideos,
                 onChanged: (val) {
                   provider.updatePrivacy(autoplayVideos: val);
@@ -126,19 +127,19 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               ),
               _buildSwitchTile(
                 context,
-                title: 'Autoplay Music',
-                subtitle: 'Automatically play music tracks on post images.',
+                title: AppLocalizations.of(context)!.autoplayMusic,
+                subtitle: AppLocalizations.of(context)!.autoplayMusicSubtitle,
                 value: musicController.autoplayMusic,
                 onChanged: (val) {
                   musicController.setAutoplayMusic(val);
                 },
               ),
               const SizedBox(height: 16),
-              _buildSectionHeader(context, 'Safety Lists'),
+              _buildSectionHeader(context, AppLocalizations.of(context)!.safetyLists),
               _buildNavigationTile(
                 context,
-                title: 'Blocked Accounts',
-                subtitle: 'Manage accounts you have blocked',
+                title: AppLocalizations.of(context)!.blockedAccounts,
+                subtitle: AppLocalizations.of(context)!.blockedAccountsSubtitle,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -148,8 +149,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               ),
               _buildNavigationTile(
                 context,
-                title: 'Muted Accounts',
-                subtitle: 'Manage accounts you have muted',
+                title: AppLocalizations.of(context)!.mutedAccounts,
+                subtitle: AppLocalizations.of(context)!.mutedAccountsSubtitle,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -322,7 +323,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Who can mention you',
+                    AppLocalizations.of(context)!.whoCanMentionYou,
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -330,9 +331,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildRadioOption(context, provider, 'everyone', 'Everyone'),
-                  _buildRadioOption(context, provider, 'people_you_follow', 'People you follow'),
-                  _buildRadioOption(context, provider, 'no_one', 'No one'),
+                  _buildRadioOption(context, provider, 'everyone', AppLocalizations.of(context)!.everyone),
+                  _buildRadioOption(context, provider, 'people_you_follow', AppLocalizations.of(context)!.peopleYouFollow),
+                  _buildRadioOption(context, provider, 'no_one', AppLocalizations.of(context)!.noOne),
                 ],
               ),
             );

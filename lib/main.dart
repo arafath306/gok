@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
@@ -8,6 +10,7 @@ import 'services/community_service.dart';
 import 'services/notification_settings_provider.dart';
 import 'services/chat_settings_provider.dart';
 import 'services/general_settings_provider.dart';
+import 'services/view_tracking_service.dart';
 import 'state/verification_controller.dart';
 import 'state/monetization_controller.dart';
 import 'state/music_playback_controller.dart';
@@ -87,6 +90,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => MonetizationController()),
           ChangeNotifierProvider(create: (_) => MusicPlaybackController()),
           ChangeNotifierProvider(create: (_) => CommunityService()),
+          ChangeNotifierProvider(create: (_) => ViewTrackingService()),
         ],
         child: const PigeonApp(),
       ),
@@ -128,6 +132,14 @@ class _PigeonAppState extends State<PigeonApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: settingsProvider.themeMode,
+      locale: settingsProvider.appLocale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: _router,
     );
   }

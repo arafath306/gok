@@ -1,3 +1,4 @@
+import 'package:dak/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,8 +38,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     Clipboard.setData(const ClipboardData(text: _bkashNumber));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'bKash number copied to clipboard',
+        content: Text(AppLocalizations.of(context)!.bkashNumberCopiedToClipboard,
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
         ),
         backgroundColor: const Color(0xFF10B981),
@@ -129,8 +129,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Verification Payment',
+        title: Text(AppLocalizations.of(context)!.verificationPayment,
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -153,15 +152,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Verify & Pay',
+                      Text(AppLocalizations.of(context)!.verifyPay,
                           style: GoogleFonts.inter(
                               fontSize: 19,
                               fontWeight: FontWeight.w900,
                               color: context.textPrimary,
                               letterSpacing: -0.4)),
                       const SizedBox(height: 6),
-                      Text(
-                        'Complete your verification by sending the bKash payment to the personal number below.',
+                      Text(AppLocalizations.of(context)!.completeYourVerificationBySendingTheBkas,
                         style: GoogleFonts.inter(color: context.textSecondary, fontSize: 13, height: 1.45),
                       ),
                       const SizedBox(height: 20),
@@ -193,8 +191,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'MEMBERSHIP INVOICE',
+                                  Text(AppLocalizations.of(context)!.membershipInvoice,
                                     style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 12,
@@ -252,8 +249,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'Send bKash Payment',
+                                Text(AppLocalizations.of(context)!.sendBkashPayment,
                                   style: GoogleFonts.inter(
                                     color: const Color(0xFFE2136E),
                                     fontSize: 14,
@@ -305,8 +301,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                     ),
                                     icon: const Icon(Icons.copy_rounded, size: 14),
-                                    label: Text(
-                                      'Copy',
+                                    label: Text(AppLocalizations.of(context)!.copy,
                                       style: GoogleFonts.inter(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.bold,
@@ -322,7 +317,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       const SizedBox(height: 24),
 
                       // 3. Inputs section
-                      Text('Enter Payment Details',
+                      Text(AppLocalizations.of(context)!.enterPaymentDetails,
                           style: GoogleFonts.inter(
                               fontWeight: FontWeight.w800,
                               fontSize: 14.5,
@@ -331,7 +326,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       const SizedBox(height: 12),
                       
                       PigeonTextField(
-                        label: 'Sender bKash Account Number',
+                        label: AppLocalizations.of(context)!.senderBkashAccountNumber,
                         hint: '01XXXXXXXXX',
                         controller: _senderController,
                         keyboardType: TextInputType.phone,
@@ -354,7 +349,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       const SizedBox(height: 6),
 
                       PigeonTextField(
-                        label: 'bKash Transaction ID (TrxID)',
+                        label: AppLocalizations.of(context)!.bkashTransactionIdTrxid,
                         hint: 'e.g. 9F7K2L1A0B',
                         controller: _trxController,
                         prefixIcon: Icon(
@@ -381,7 +376,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: PigeonPrimaryButton(
-                label: 'Submit Verification',
+                label: AppLocalizations.of(context)!.submitVerification,
                 icon: Icons.check_circle_outline_rounded,
                 isLoading: isSubmitting,
                 onPressed: isSubmitting ? null : _onSubmit,
