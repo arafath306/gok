@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../../../core/error/failures.dart';
 import '../../../../models/profile.dart';
@@ -113,9 +113,8 @@ class ChatRepositoryImpl implements IChatRepository {
                 jsonDecode(content) as Map<String, dynamic>;
             content = jsonReply['text'] as String? ?? '';
           } catch (e) {
-      // ignore: avoid_print
-      print("Error in features/chat/data/repositories/chat_repository_impl.dart: $e");
-    }
+            debugPrint('[ChatRepository] Error parsing reply JSON in active chats: $e');
+          }
         }
 
         final String mediaUrl = json['media_url'] as String? ?? '';
@@ -178,9 +177,8 @@ class ChatRepositoryImpl implements IChatRepository {
           replyToSender = jsonReply['reply_to_sender'] as String?;
           text = jsonReply['text'] as String? ?? '';
         } catch (e) {
-      // ignore: avoid_print
-      print("Error in features/chat/data/repositories/chat_repository_impl.dart: $e");
-    }
+          debugPrint('[ChatRepository] Error parsing reply JSON in message stream: $e');
+        }
       }
 
       return MessageEntity(

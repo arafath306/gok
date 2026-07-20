@@ -70,8 +70,7 @@ class MessageBubble extends StatelessWidget {
         if (hour12 == 0) hour12 = 12;
         timeStr = '$hour12:$minute $period';
       } catch (e) {
-      // ignore: avoid_print
-      print("Error in screens/messenger/widgets/message_bubble.dart: $e");
+      debugPrint('[MessageBubble] Error parsing time: $e');
     }
     }
 

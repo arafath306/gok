@@ -55,13 +55,36 @@ class GeneralSettingsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Fetch privacy settings and badge from user profile
-      final profileRes = await _supabase
-          .from('profiles')
-          .select('is_private, allow_mentions, filter_adult, autoplay_videos, is_active_status_enabled, verified_badge')
-          .eq('id', uid)
-          .maybeSingle();
+      // ── Run all 4 independent queries in parallel ──────────────────────
+      final results = await Future.wait<dynamic>([
+        // [0] Privacy settings + badge
+        _supabase
+            .from('profiles')
+            .select('is_private, allow_mentions, filter_adult, autoplay_videos, is_active_status_enabled, verified_badge')
+            .eq('id', uid)
+            .maybeSingle() as Future<dynamic>,
 
+        // [1] Blocked user IDs
+        _supabase
+            .from('blocks')
+            .select('blocked_id')
+            .eq('blocker_id', uid) as Future<dynamic>,
+
+        // [2] Muted user IDs
+        _supabase
+            .from('mutes')
+            .select('muted_id')
+            .eq('muter_id', uid) as Future<dynamic>,
+
+        // [3] Feature flags
+        _supabase
+            .from('system_settings')
+            .select('key, value')
+            .inFilter('key', ['enable_voice_posts', 'enable_tiered_badges', 'enable_algorithmic_priority']) as Future<dynamic>,
+      ]);
+
+      // ── [0] Apply profile/privacy settings ────────────────────────────
+      final profileRes = results[0] as Map<String, dynamic>?;
       String? badgeType;
       if (profileRes != null) {
         _isPrivateAccount = profileRes['is_private'] as bool? ?? false;
@@ -72,23 +95,16 @@ class GeneralSettingsProvider with ChangeNotifier {
         badgeType = profileRes['verified_badge'] as String?;
       }
 
-      // 2. Fetch blocked accounts
-      final blockedRes = await _supabase
-          .from('blocks')
-          .select('blocked_id')
-          .eq('blocker_id', uid);
-
+      // ── [1] Blocked accounts — fetch profiles for blocked IDs ─────────
       _blockedAccounts.clear();
+      final blockedRes = results[1] as List<dynamic>;
       if (blockedRes.isNotEmpty) {
-        final List<String> blockedIds = List<String>.from(
-            blockedRes.map((r) => r['blocked_id'] as String));
-
-        final profilesRes = await _supabase
+        final blockedIds = blockedRes.map((r) => r['blocked_id'] as String).toList();
+        final blockedProfilesRes = await _supabase
             .from('profiles')
             .select('id, full_name, username, avatar_url')
             .inFilter('id', blockedIds);
-
-        for (var profile in profilesRes) {
+        for (var profile in blockedProfilesRes) {
           _blockedAccounts.add({
             'id': profile['id'] as String,
             'name': profile['full_name'] as String? ?? '',
@@ -98,10 +114,29 @@ class GeneralSettingsProvider with ChangeNotifier {
         }
       }
 
-      // 3. Fetch global feature flags
+      // ── [2] Muted accounts — fetch profiles for muted IDs ────────────
+      _mutedAccounts.clear();
+      final mutedRes = results[2] as List<dynamic>;
+      if (mutedRes.isNotEmpty) {
+        final mutedIds = mutedRes.map((r) => r['muted_id'] as String).toList();
+        final mutedProfilesRes = await _supabase
+            .from('profiles')
+            .select('id, full_name, username, avatar_url')
+            .inFilter('id', mutedIds);
+        for (var profile in mutedProfilesRes) {
+          _mutedAccounts.add({
+            'id': profile['id'] as String,
+            'name': profile['full_name'] as String? ?? '',
+            'username': profile['username'] as String? ?? '',
+            'avatar': profile['avatar_url'] as String? ?? '',
+          });
+        }
+      }
+
+      // ── [3] Feature flags ─────────────────────────────────────────────
       try {
-        final sysRes = await _supabase.from('system_settings').select('key, value').inFilter('key', ['enable_voice_posts', 'enable_tiered_badges', 'enable_algorithmic_priority']);
-        
+        final sysRes = results[3] as List<dynamic>;
+
         bool evaluateAccess(String? val) {
           if (val == null) return false;
           try {
@@ -125,7 +160,6 @@ class GeneralSettingsProvider with ChangeNotifier {
         for (var row in sysRes) {
           final key = row['key'] as String;
           final isEnabled = evaluateAccess(row['value'] as String?);
-          
           if (key == 'enable_voice_posts') {
             _isVoicePostEnabled = isEnabled;
           } else if (key == 'enable_tiered_badges') {
@@ -135,36 +169,12 @@ class GeneralSettingsProvider with ChangeNotifier {
           }
         }
       } catch (e) {
-        debugPrint("Error fetching system settings: $e");
+        debugPrint('[GeneralSettings] Error parsing system settings: $e');
       }
 
-      // 4. Fetch muted accounts
-      final mutedRes = await _supabase
-          .from('mutes')
-          .select('muted_id')
-          .eq('muter_id', uid);
-
-      _mutedAccounts.clear();
-      if (mutedRes.isNotEmpty) {
-        final List<String> mutedIds = List<String>.from(
-            mutedRes.map((r) => r['muted_id'] as String));
-
-        final profilesRes = await _supabase
-            .from('profiles')
-            .select('id, full_name, username, avatar_url')
-            .inFilter('id', mutedIds);
-
-        for (var profile in profilesRes) {
-          _mutedAccounts.add({
-            'id': profile['id'] as String,
-            'name': profile['full_name'] as String? ?? '',
-            'username': profile['username'] as String? ?? '',
-            'avatar': profile['avatar_url'] as String? ?? '',
-          });
-        }
-      }
-      // 4. Fetch active sessions
+      // ── [4] Active sessions (depends on profile, so kept sequential) ──
       await fetchActiveSessions();
+
     } catch (e) {
       debugPrint('[GeneralSettings] Fetch settings error: $e');
     } finally {
@@ -336,28 +346,9 @@ class GeneralSettingsProvider with ChangeNotifier {
   }
 
   // Saved Threads State
-  final List<Map<String, dynamic>> _savedThreads = [
-    {
-      'id': 's1',
-      'author_name': 'Tasnim Rahman',
-      'author_username': 'tasnim_dev',
-      'author_avatar': '',
-      'content': 'When designing complex user interfaces with Flutter, always pay special attention to responsiveness and theming. Pigeon Social is going to be an excellent example of that!',
-      'time_ago': '2 hours ago',
-      'likes': 42,
-      'replies': 7,
-    },
-    {
-      'id': 's2',
-      'author_name': 'Zakir Hossain',
-      'author_username': 'zakir30',
-      'author_avatar': '',
-      'content': 'Our Pigeon app design will surpass Twitter and Bluesky, InshaAllah. We are making every feature very premium and interactive.',
-      'time_ago': '5 hours ago',
-      'likes': 118,
-      'replies': 24,
-    }
-  ];
+  // Note: Real saved posts are fetched via DatabaseService.fetchSavedPosts()
+  // This list is kept for any legacy usage but starts empty.
+  final List<Map<String, dynamic>> _savedThreads = [];
   List<Map<String, dynamic>> get savedThreads => _savedThreads;
 
   void unsaveThread(String id) {

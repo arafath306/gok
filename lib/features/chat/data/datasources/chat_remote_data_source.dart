@@ -202,8 +202,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
               payload: {'user_id': currentUserId, 'is_typing': isTyping},
             );
           } catch (e) {
-      // ignore: avoid_print
-      print("Error in features/chat/data/datasources/chat_remote_data_source.dart: $e");
+      debugPrint('[ChatDataSource] Error sending typing indicator: $e');
     }
         }
       });

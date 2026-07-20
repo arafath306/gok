@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'profile.dart';
 
 class AppNotification {
@@ -37,8 +38,7 @@ class AppNotification {
         final normalizedStr = hasTimezone ? rawStr : '${rawStr.replaceAll(' ', 'T')}Z';
         parsedTime = DateTime.parse(normalizedStr).toUtc();
       } catch (e) {
-        // ignore: avoid_print
-        print("Error in models/notification.dart: $e");
+        debugPrint('[AppNotification] Error parsing time: $e');
       }
     }
 

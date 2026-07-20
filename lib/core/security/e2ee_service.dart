@@ -208,8 +208,7 @@ class E2EEService {
       try {
         await _secureStorage.delete(key: _privateKeyKey(_currentUid));
       } catch (e) {
-      // ignore: avoid_print
-      print("Error in core/security/e2ee_service.dart: $e");
+      debugPrint('[E2EEService] Error deleting key from secure storage: $e');
     }
     }
   }

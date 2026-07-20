@@ -431,8 +431,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           );
         }
       } catch (e) {
-      // ignore: avoid_print
-      print("Error in screens/profile/edit_profile_screen.dart: $e");
+      debugPrint('[EditProfileScreen] Error parsing birthday date: $e');
     }
     }
 

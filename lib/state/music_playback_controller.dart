@@ -47,8 +47,7 @@ class MusicPlaybackController with ChangeNotifier {
       _autoplayMusic = prefs.getBool('autoplay_music') ?? true;
       notifyListeners();
     } catch (e) {
-      // ignore: avoid_print
-      print("Error in state/music_playback_controller.dart: $e");
+      debugPrint('[MusicPlaybackController] Error loading autoplay setting: $e');
     }
   }
 
@@ -63,8 +62,7 @@ class MusicPlaybackController with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('autoplay_music', value);
     } catch (e) {
-      // ignore: avoid_print
-      print("Error in state/music_playback_controller.dart: $e");
+      debugPrint('[MusicPlaybackController] Error saving autoplay setting: $e');
     }
   }
 

@@ -169,8 +169,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       await supabaseClient.auth.signOut();
     } catch (e) {
-      // ignore: avoid_print
-      print("Error in features/auth/data/datasources/auth_remote_data_source.dart: $e");
+      debugPrint('[AuthDataSource] Error signing out after signup: $e');
     }
 
     return true;
