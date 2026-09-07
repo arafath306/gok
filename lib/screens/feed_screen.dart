@@ -16,7 +16,7 @@ import '../models/profile.dart';
 import '../models/thread_post.dart';
 import '../state/music_playback_controller.dart';
 import '../utils/routes.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 
 class FeedScreen extends StatefulWidget {
   final VoidCallback onNavigateToChaStation;
@@ -179,7 +179,6 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin, 
                       preferredSize: const Size.fromHeight(44.5),
                       child: Column(
                         children: [
-                          Divider(height: 0.5, thickness: 0.5, color: context.border),
                           _buildTabBar(context),
                         ],
                       ),
@@ -347,50 +346,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin, 
   }
 
   Widget _buildCreatePostRow(BuildContext context, dynamic prof) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      color: Colors.transparent,
-      child: GestureDetector(
-        onTap: widget.onNavigateToCreate,
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
-              backgroundImage: (prof?.avatarUrl != null && prof!.avatarUrl!.isNotEmpty)
-                  ? CachedNetworkImageProvider(prof.avatarUrl!, maxHeight: 150)
-                  : null,
-              child: (prof?.avatarUrl == null || prof!.avatarUrl!.isEmpty)
-                  ? Icon(Icons.person, size: 14, color: context.isDarkMode ? Colors.white54 : Colors.black38)
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Container(
-                height: 32,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                alignment: Alignment.centerLeft,
-                decoration: BoxDecoration(
-                  color: context.isDarkMode ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: context.border.withValues(alpha: 0.5), width: 0.5),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        "Send your thoughts...",
-                        style: GoogleFonts.inter(color: context.textMuted, fontSize: 12.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildEmptyFollowing(BuildContext context) {

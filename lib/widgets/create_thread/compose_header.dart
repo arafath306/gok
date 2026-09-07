@@ -162,18 +162,6 @@ class ComposeHeader extends StatelessWidget {
               child: privacyOpen
                   ? Container(
                       margin: const EdgeInsets.only(top: 4),
-                      decoration: BoxDecoration(
-                        color: context.cardBg,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: context.border, width: 0.8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
                       child: Column(
                         children: [
                           {"label": "Public", "icon": Icons.public},

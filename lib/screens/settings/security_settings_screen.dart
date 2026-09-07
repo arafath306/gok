@@ -7,6 +7,7 @@ import '../../utils/app_theme.dart';
 import 'two_factor_setup_screen.dart';
 import 'change_email_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'deactivate_intro_screen.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -145,6 +146,21 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 )
               else
                 ...sessions.map((session) => _buildSessionTile(context, provider, session)),
+                
+              const SizedBox(height: 16),
+              _buildSectionHeader(context, 'Account Management'),
+              _buildActionTile(
+                context,
+                title: 'Deactivate or Delete Account',
+                subtitle: 'Manage your account presence and data.',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DeactivateIntroScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
             ],
           );
         },

@@ -59,17 +59,17 @@ class CreateThreadToolbar extends StatelessWidget {
           margin: const EdgeInsets.only(right: 6),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isActive ? color.withValues(alpha: 0.12) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            color: isActive ? context.primaryAccent.withValues(alpha: 0.12) : Colors.transparent,
+            borderRadius: BorderRadius.circular(50),
             border: Border.all(
-              color: isActive ? color.withValues(alpha: 0.3) : Colors.transparent,
+              color: isActive ? context.primaryAccent.withValues(alpha: 0.3) : Colors.transparent,
               width: 1,
             ),
           ),
           child: Icon(
             icon,
-            color: isActive ? color : context.textSecondary,
-            size: 20,
+            color: context.primaryAccent,
+            size: 26,
           ),
         ),
       ),
@@ -79,7 +79,7 @@ class CreateThreadToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: context.cardBg,
         border: Border(
@@ -90,93 +90,104 @@ class CreateThreadToolbar extends StatelessWidget {
         children: [
           // Attachment Tool Icons (Horizontal List)
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const ClampingScrollPhysics(),
-              child: Row(
-                children: [
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.image_outlined,
-                    tooltip: "Add Image",
-                    color: Theme.of(context).primaryColor,
-                    isActive: isActiveImage,
-                    onTap: onImageTap,
-                  ),
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.camera_alt_outlined,
-                    tooltip: "Camera Capture",
-                    color: Colors.deepOrange,
-                    isActive: false,
-                    onTap: onCameraTap,
-                  ),
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.music_note_rounded,
-                    tooltip: "Add Music",
-                    color: Colors.redAccent,
-                    isActive: isActiveMusic,
-                    onTap: onMusicTap,
-                  ),
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.play_circle_outline,
-                    tooltip: "Video URL",
-                    color: Colors.purple,
-                    isActive: false,
-                    onTap: () => onComingSoonTap("Video upload/embed"),
-                  ),
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.bar_chart_outlined,
-                    tooltip: "Create Poll",
-                    color: Colors.orange,
-                    isActive: isActivePoll,
-                    onTap: onPollTap,
-                  ),
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.mic_outlined,
-                    tooltip: "Voice Message",
-                    color: Colors.teal,
-                    isActive: isActiveVoice,
-                    onTap: onVoiceTap,
-                  ),
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.location_on_outlined,
-                    tooltip: "Add Location",
-                    color: Colors.blue,
-                    isActive: false,
-                    onTap: () => onComingSoonTap("Location pinning"),
-                  ),
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.security_outlined,
-                    tooltip: "Pigeon Alias Mode",
-                    color: Colors.indigo,
-                    isActive: isActiveAnonymous,
-                    onTap: onAnonymousTap,
-                  ),
-                  if (canMonetize)
+            child: ShaderMask(
+              shaderCallback: (Rect bounds) {
+                return LinearGradient(
+                  colors: [Colors.white, Colors.white, Colors.white.withValues(alpha: 0.0)],
+                  stops: const [0.0, 0.85, 1.0],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ).createShader(bounds);
+              },
+              blendMode: BlendMode.dstIn,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const ClampingScrollPhysics(),
+                child: Row(
+                  children: [
                     _buildToolbarIcon(
                       context,
-                      icon: Icons.monetization_on_outlined,
-                      tooltip: "Subscribers Only",
-                      color: Colors.amber,
-                      isActive: isActiveSubscriber,
-                      onTap: onSubscriberTap,
+                      icon: Icons.image_outlined,
+                      tooltip: "Add Image",
+                      color: Theme.of(context).primaryColor,
+                      isActive: isActiveImage,
+                      onTap: onImageTap,
                     ),
-                  _buildToolbarIcon(
-                    context,
-                    icon: Icons.auto_awesome_outlined,
-                    tooltip: "AI Writer",
-                    color: Colors.pink,
-                    isActive: false,
-                    onTap: () => onComingSoonTap("AI writer assistant"),
-                  ),
-                ],
+                    _buildToolbarIcon(
+                      context,
+                      icon: Icons.camera_alt_outlined,
+                      tooltip: "Camera Capture",
+                      color: Colors.deepOrange,
+                      isActive: false,
+                      onTap: onCameraTap,
+                    ),
+                    _buildToolbarIcon(
+                      context,
+                      icon: Icons.music_note_outlined,
+                      tooltip: "Add Music",
+                      color: Colors.redAccent,
+                      isActive: isActiveMusic,
+                      onTap: onMusicTap,
+                    ),
+                    _buildToolbarIcon(
+                      context,
+                      icon: Icons.play_circle_outline,
+                      tooltip: "Video URL",
+                      color: Colors.purple,
+                      isActive: false,
+                      onTap: () => onComingSoonTap("Video upload/embed"),
+                    ),
+                    _buildToolbarIcon(
+                      context,
+                      icon: Icons.bar_chart_outlined,
+                      tooltip: "Create Poll",
+                      color: Colors.orange,
+                      isActive: isActivePoll,
+                      onTap: onPollTap,
+                    ),
+                    _buildToolbarIcon(
+                      context,
+                      icon: Icons.mic_outlined,
+                      tooltip: "Voice Message",
+                      color: Colors.teal,
+                      isActive: isActiveVoice,
+                      onTap: onVoiceTap,
+                    ),
+                    _buildToolbarIcon(
+                      context,
+                      icon: Icons.location_on_outlined,
+                      tooltip: "Add Location",
+                      color: Colors.blue,
+                      isActive: false,
+                      onTap: () => onComingSoonTap("Location pinning"),
+                    ),
+                    _buildToolbarIcon(
+                      context,
+                      icon: Icons.security_outlined,
+                      tooltip: "Pigeon Alias Mode",
+                      color: Colors.indigo,
+                      isActive: isActiveAnonymous,
+                      onTap: onAnonymousTap,
+                    ),
+                    if (canMonetize)
+                      _buildToolbarIcon(
+                        context,
+                        icon: Icons.monetization_on_outlined,
+                        tooltip: "Subscribers Only",
+                        color: Colors.amber,
+                        isActive: isActiveSubscriber,
+                        onTap: onSubscriberTap,
+                      ),
+                    _buildToolbarIcon(
+                      context,
+                      icon: Icons.auto_awesome_outlined,
+                      tooltip: "AI Writer",
+                      color: Colors.pink,
+                      isActive: false,
+                      onTap: () => onComingSoonTap("AI writer assistant"),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
